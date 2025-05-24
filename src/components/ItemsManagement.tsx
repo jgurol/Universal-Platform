@@ -5,12 +5,25 @@ import { Button } from "@/components/ui/button";
 import { Plus, Package, Edit, Trash2 } from "lucide-react";
 import { useItems } from "@/hooks/useItems";
 import { AddItemDialog } from "@/components/AddItemDialog";
+import { EditItemDialog } from "@/components/EditItemDialog";
 import { Badge } from "@/components/ui/badge";
 import { Item } from "@/types/items";
 
 export const ItemsManagement = () => {
   const [isAddItemOpen, setIsAddItemOpen] = useState(false);
-  const { items, isLoading, addItem } = useItems();
+  const [isEditItemOpen, setIsEditItemOpen] = useState(false);
+  const [selectedItem, setSelectedItem] = useState<Item | null>(null);
+  const { items, isLoading, addItem, updateItem } = useItems();
+
+  const handleEditItem = (item: Item) => {
+    setSelectedItem(item);
+    setIsEditItemOpen(true);
+  };
+
+  const handleUpdateItem = (itemId: string, updates: Partial<Item>) => {
+    updateItem(itemId, updates);
+    setSelectedItem(null);
+  };
 
   if (isLoading) {
     return (
@@ -82,7 +95,7 @@ export const ItemsManagement = () => {
                     )}
                   </div>
                   <div className="flex items-center gap-2">
-                    <Button variant="ghost" size="sm">
+                    <Button variant="ghost" size="sm" onClick={() => handleEditItem(item)}>
                       <Edit className="h-4 w-4" />
                     </Button>
                     <Button variant="ghost" size="sm" className="text-red-600 hover:text-red-700">
@@ -100,6 +113,13 @@ export const ItemsManagement = () => {
         open={isAddItemOpen}
         onOpenChange={setIsAddItemOpen}
         onAddItem={addItem}
+      />
+
+      <EditItemDialog
+        open={isEditItemOpen}
+        onOpenChange={setIsEditItemOpen}
+        onUpdateItem={handleUpdateItem}
+        item={selectedItem}
       />
     </>
   );
