@@ -119,13 +119,13 @@ export default function AgentManagement() {
     }
   };
 
-  // Function to fetch transactions from Supabase
+  // Function to fetch transactions from Supabase (using quotes table)
   const fetchTransactions = async () => {
     if (!user) return;
     
     try {
-      // Similar transaction fetching logic as in Index.tsx
-      let query = supabase.from('transactions').select('*');
+      // Fetch quotes instead of transactions
+      let query = supabase.from('quotes').select('*');
       
       if (isAdmin) {
         // Admins see everything
@@ -141,33 +141,34 @@ export default function AgentManagement() {
       const { data, error } = await query;
 
       if (error) {
-        console.error('Error fetching transactions:', error);
+        console.error('Error fetching quotes:', error);
         return;
       }
 
-      // Map the data to match our Transaction interface
-      const mappedTransactions: Transaction[] = data?.map(transaction => {
-        const client = clients.find(c => c.id === transaction.client_id);
+      // Map the quotes data to match our Transaction interface for backward compatibility
+      const mappedTransactions: Transaction[] = data?.map(quote => {
+        const client = clients.find(c => c.id === quote.client_id);
         
         return {
-          id: transaction.id,
-          clientId: transaction.client_id,
+          id: quote.id,
+          clientId: quote.client_id,
           clientName: client?.name || "Unknown Agent",
           companyName: client?.companyName || "Unknown Company",
-          amount: transaction.amount,
-          date: transaction.date,
-          description: transaction.description,
-          datePaid: transaction.date_paid,
-          paymentMethod: transaction.payment_method,
-          referenceNumber: transaction.reference_number,
-          invoiceMonth: transaction.invoice_month,
-          invoiceYear: transaction.invoice_year,
-          invoiceNumber: transaction.invoice_number,
-          isPaid: transaction.is_paid,
-          commission: transaction.commission,
-          isApproved: transaction.is_approved,
-          clientInfoId: transaction.client_info_id,
-          commissionPaidDate: transaction.commission_paid_date
+          amount: quote.amount,
+          date: quote.date,
+          description: quote.description,
+          // Map quote fields to transaction fields for backward compatibility
+          datePaid: quote.status === 'approved' ? quote.date : undefined,
+          paymentMethod: quote.status === 'approved' ? 'Quote' : undefined,
+          referenceNumber: quote.quote_number,
+          invoiceMonth: quote.quote_month,
+          invoiceYear: quote.quote_year,
+          invoiceNumber: quote.quote_number,
+          isPaid: quote.status === 'approved',
+          commission: quote.commission,
+          isApproved: quote.status === 'approved',
+          clientInfoId: quote.client_info_id,
+          commissionPaidDate: quote.status === 'approved' ? quote.date : undefined
         };
       }) || [];
 
