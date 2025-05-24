@@ -107,6 +107,45 @@ export type Database = {
           },
         ]
       }
+      items: {
+        Row: {
+          category: string | null
+          created_at: string
+          description: string | null
+          id: string
+          is_active: boolean
+          name: string
+          price: number
+          sku: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          category?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          name: string
+          price?: number
+          sku?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          category?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          price?: number
+          sku?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           associated_agent_id: string | null
@@ -144,6 +183,54 @@ export type Database = {
             columns: ["associated_agent_id"]
             isOneToOne: false
             referencedRelation: "agents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      quote_items: {
+        Row: {
+          created_at: string
+          id: string
+          item_id: string
+          quantity: number
+          quote_id: string
+          total_price: number
+          unit_price: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          item_id: string
+          quantity?: number
+          quote_id: string
+          total_price: number
+          unit_price: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          item_id?: string
+          quantity?: number
+          quote_id?: string
+          total_price?: number
+          unit_price?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quote_items_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quote_items_quote_id_fkey"
+            columns: ["quote_id"]
+            isOneToOne: false
+            referencedRelation: "quotes"
             referencedColumns: ["id"]
           },
         ]

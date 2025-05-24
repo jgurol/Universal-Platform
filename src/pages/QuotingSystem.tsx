@@ -1,9 +1,12 @@
 
+import { useState } from "react";
 import { Header } from "@/components/Header";
 import { RecentQuotes } from "@/components/RecentQuotes";
+import { ItemsManagement } from "@/components/ItemsManagement";
 import { useIndexData } from "@/hooks/useIndexData";
 import { useQuoteActions } from "@/hooks/useQuoteActions";
 import { useClientActions } from "@/hooks/useClientActions";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const QuotingSystem = () => {
   const {
@@ -40,16 +43,29 @@ const QuotingSystem = () => {
           <p className="text-gray-600">Create and manage quotes for your clients</p>
         </div>
 
-        {/* Recent Quotes */}
-        <RecentQuotes
-          quotes={quotes}
-          clients={clients}
-          clientInfos={clientInfos}
-          onAddQuote={addQuote}
-          onUpdateQuote={updateQuote}
-          onDeleteQuote={deleteQuote}
-          associatedAgentId={associatedAgentId}
-        />
+        {/* Tabs for different sections */}
+        <Tabs defaultValue="quotes" className="w-full">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="quotes">Quotes</TabsTrigger>
+            <TabsTrigger value="items">Items & Products</TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="quotes" className="mt-6">
+            <RecentQuotes
+              quotes={quotes}
+              clients={clients}
+              clientInfos={clientInfos}
+              onAddQuote={addQuote}
+              onUpdateQuote={updateQuote}
+              onDeleteQuote={deleteQuote}
+              associatedAgentId={associatedAgentId}
+            />
+          </TabsContent>
+          
+          <TabsContent value="items" className="mt-6">
+            <ItemsManagement />
+          </TabsContent>
+        </Tabs>
       </div>
     </div>
   );
