@@ -5,7 +5,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Item } from "@/types/items";
+import { ITEM_CATEGORIES } from "@/utils/categories";
 
 interface EditItemDialogProps {
   open: boolean;
@@ -126,12 +128,18 @@ export const EditItemDialog = ({ open, onOpenChange, onUpdateItem, item }: EditI
 
             <div className="space-y-2">
               <Label htmlFor="edit-category">Category</Label>
-              <Input
-                id="edit-category"
-                value={category}
-                onChange={(e) => setCategory(e.target.value)}
-                placeholder="Enter category"
-              />
+              <Select value={category} onValueChange={setCategory}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select category" />
+                </SelectTrigger>
+                <SelectContent>
+                  {ITEM_CATEGORIES.map((cat) => (
+                    <SelectItem key={cat} value={cat}>
+                      {cat}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           </div>
           

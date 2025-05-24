@@ -5,7 +5,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Item } from "@/types/items";
+import { ITEM_CATEGORIES } from "@/utils/categories";
 
 interface AddItemDialogProps {
   open: boolean;
@@ -92,7 +94,7 @@ export const AddItemDialog = ({ open, onOpenChange, onAddItem }: AddItemDialogPr
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="mrc">MRC ($) *</Label>
+              <Label htmlFor="mrc">MRC ($)</Label>
               <Input
                 id="mrc"
                 type="number"
@@ -101,7 +103,6 @@ export const AddItemDialog = ({ open, onOpenChange, onAddItem }: AddItemDialogPr
                 value={mrc}
                 onChange={(e) => setMrc(e.target.value)}
                 placeholder="0.00"
-                required
               />
             </div>
           </div>
@@ -119,12 +120,18 @@ export const AddItemDialog = ({ open, onOpenChange, onAddItem }: AddItemDialogPr
 
             <div className="space-y-2">
               <Label htmlFor="category">Category</Label>
-              <Input
-                id="category"
-                value={category}
-                onChange={(e) => setCategory(e.target.value)}
-                placeholder="Enter category"
-              />
+              <Select value={category} onValueChange={setCategory}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select category" />
+                </SelectTrigger>
+                <SelectContent>
+                  {ITEM_CATEGORIES.map((cat) => (
+                    <SelectItem key={cat} value={cat}>
+                      {cat}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           </div>
           
