@@ -58,9 +58,16 @@ export const ItemsManagement = () => {
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-1">
                       <h4 className="font-medium text-gray-900">{item.name}</h4>
-                      <Badge variant="outline" className="text-xs">
-                        ${item.price.toFixed(2)}
-                      </Badge>
+                      {item.price > 0 && (
+                        <Badge variant="outline" className="text-xs">
+                          One-time: ${item.price.toFixed(2)}
+                        </Badge>
+                      )}
+                      {item.mrc && item.mrc > 0 && (
+                        <Badge variant="outline" className="text-xs bg-green-50 text-green-700">
+                          MRC: ${item.mrc.toFixed(2)}/mo
+                        </Badge>
+                      )}
                       {item.sku && (
                         <Badge variant="outline" className="text-xs bg-gray-50 text-gray-700">
                           SKU: {item.sku}

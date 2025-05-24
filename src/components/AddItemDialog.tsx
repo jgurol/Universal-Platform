@@ -17,16 +17,18 @@ export const AddItemDialog = ({ open, onOpenChange, onAddItem }: AddItemDialogPr
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [price, setPrice] = useState("");
+  const [mrc, setMrc] = useState("");
   const [category, setCategory] = useState("");
   const [sku, setSku] = useState("");
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (name && price) {
+    if (name && (price || mrc)) {
       onAddItem({
         name,
         description: description || undefined,
-        price: parseFloat(price),
+        price: parseFloat(price) || 0,
+        mrc: mrc ? parseFloat(mrc) : undefined,
         category: category || undefined,
         sku: sku || undefined,
         is_active: true
@@ -36,6 +38,7 @@ export const AddItemDialog = ({ open, onOpenChange, onAddItem }: AddItemDialogPr
       setName("");
       setDescription("");
       setPrice("");
+      setMrc("");
       setCategory("");
       setSku("");
       onOpenChange(false);
@@ -76,7 +79,7 @@ export const AddItemDialog = ({ open, onOpenChange, onAddItem }: AddItemDialogPr
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="price">Price ($) *</Label>
+              <Label htmlFor="price">One-time Price ($)</Label>
               <Input
                 id="price"
                 type="number"
@@ -85,10 +88,25 @@ export const AddItemDialog = ({ open, onOpenChange, onAddItem }: AddItemDialogPr
                 value={price}
                 onChange={(e) => setPrice(e.target.value)}
                 placeholder="0.00"
-                required
               />
             </div>
 
+            <div className="space-y-2">
+              <Label htmlFor="mrc">MRC ($) *</Label>
+              <Input
+                id="mrc"
+                type="number"
+                step="0.01"
+                min="0"
+                value={mrc}
+                onChange={(e) => setMrc(e.target.value)}
+                placeholder="0.00"
+                required
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="sku">SKU</Label>
               <Input
@@ -98,16 +116,16 @@ export const AddItemDialog = ({ open, onOpenChange, onAddItem }: AddItemDialogPr
                 placeholder="Enter SKU"
               />
             </div>
-          </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="category">Category</Label>
-            <Input
-              id="category"
-              value={category}
-              onChange={(e) => setCategory(e.target.value)}
-              placeholder="Enter category"
-            />
+            <div className="space-y-2">
+              <Label htmlFor="category">Category</Label>
+              <Input
+                id="category"
+                value={category}
+                onChange={(e) => setCategory(e.target.value)}
+                placeholder="Enter category"
+              />
+            </div>
           </div>
           
           <div className="flex justify-end space-x-2 mt-6">
@@ -117,7 +135,7 @@ export const AddItemDialog = ({ open, onOpenChange, onAddItem }: AddItemDialogPr
             <Button 
               type="submit" 
               className="bg-blue-600 hover:bg-blue-700"
-              disabled={!name || !price}
+              disabled={!name || (!price && !mrc)}
             >
               Add Item
             </Button>
