@@ -241,6 +241,34 @@ export type Database = {
         Args: { transaction_id: string }
         Returns: undefined
       }
+      get_user_profile: {
+        Args: { user_id: string }
+        Returns: {
+          id: string
+          full_name: string
+          email: string
+          role: string
+          is_associated: boolean
+          associated_agent_id: string
+        }[]
+      }
+      make_user_admin: {
+        Args: { user_id: string }
+        Returns: undefined
+      }
+      make_user_associated: {
+        Args: { user_id: string }
+        Returns: undefined
+      }
+      update_user_profile: {
+        Args: {
+          _user_id: string
+          _email: string
+          _full_name: string
+          _role: string
+        }
+        Returns: undefined
+      }
     }
     Enums: {
       [_ in never]: never
