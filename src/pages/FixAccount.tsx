@@ -7,6 +7,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Navigate, useNavigate } from "react-router-dom";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import { AlertTriangle } from "lucide-react";
+import { makeJimGurolAdmin } from "@/utils/makeUserAdmin";
 
 export default function FixAccount() {
   const { user, signOut, loading } = useAuth();
@@ -90,6 +91,30 @@ export default function FixAccount() {
     }
   };
 
+  const makeJimAdmin = async () => {
+    try {
+      setUpdating(true);
+      setError(null);
+      
+      await makeJimGurolAdmin();
+      
+      toast({
+        title: "Success",
+        description: "Jim Gurol has been made an admin. Please refresh to see the changes.",
+      });
+    } catch (error: any) {
+      console.error("Error making Jim admin:", error);
+      setError(`Failed to make Jim admin: ${error.message}`);
+      toast({
+        title: "Error",
+        description: `Failed to make Jim admin: ${error.message}`,
+        variant: "destructive"
+      });
+    } finally {
+      setUpdating(false);
+    }
+  };
+
   if (loading) {
     return <div className="h-screen flex items-center justify-center">Loading...</div>;
   }
@@ -132,6 +157,16 @@ export default function FixAccount() {
         >
           Make Me Associated Agent
         </Button>
+
+        {userEmail === 'jim@californiatelecom.com' && (
+          <Button
+            onClick={makeJimAdmin}
+            disabled={updating}
+            className="bg-purple-600 hover:bg-purple-700"
+          >
+            Make Jim Gurol Admin
+          </Button>
+        )}
         
         <Button
           onClick={async () => await signOut()}
