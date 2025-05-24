@@ -18,7 +18,7 @@ const programs: Program[] = [
     title: "Quoting System",
     description: "Create and manage quotes for clients",
     icon: FileText,
-    route: "/",
+    route: "/quoting-system",
     color: "bg-blue-500 hover:bg-blue-600"
   },
   {

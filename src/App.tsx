@@ -15,6 +15,7 @@ import AgentManagement from "./pages/AgentManagement";
 import ProfileSettings from "./pages/ProfileSettings";
 import Billing from "./pages/Billing";
 import SystemSettings from "./pages/SystemSettings";
+import QuotingSystem from "./pages/QuotingSystem";
 import { NavigationBar } from "./components/NavigationBar";
 
 // Create a new query client with forceRefetch to ensure fresh data
@@ -74,6 +75,11 @@ const AppRoutes = () => {
         <Route path="/" element={
           <ProtectedRoute>
             <Index />
+          </ProtectedRoute>
+        } />
+        <Route path="/quoting-system" element={
+          <ProtectedRoute>
+            <QuotingSystem />
           </ProtectedRoute>
         } />
         <Route path="/admin" element={
