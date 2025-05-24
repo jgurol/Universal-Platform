@@ -46,8 +46,30 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, currentSession) => {
+      async (event, currentSession) => {
         console.log("Auth state change event:", event);
+        
+        // Handle token refresh errors
+        if (event === 'TOKEN_REFRESHED' && !currentSession) {
+          console.log("Token refresh failed, cleaning up auth state");
+          cleanupAuthState();
+          setSession(null);
+          setUser(null);
+          setIsAdmin(false);
+          setIsAssociated(false);
+          return;
+        }
+        
+        // Handle signed out state
+        if (event === 'SIGNED_OUT' || !currentSession) {
+          console.log("User signed out or no session");
+          setSession(null);
+          setUser(null);
+          setIsAdmin(false);
+          setIsAssociated(false);
+          return;
+        }
+        
         setSession(currentSession);
         setUser(currentSession?.user ?? null);
         
@@ -64,17 +86,36 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     );
 
     // THEN check for existing session
-    supabase.auth.getSession().then(({ data: { session: currentSession } }) => {
-      console.log("Initial session check:", currentSession ? "Session exists" : "No session");
-      setSession(currentSession);
-      setUser(currentSession?.user ?? null);
-      
-      if (currentSession?.user) {
-        fetchUserProfile(currentSession.user.id);
+    const initializeAuth = async () => {
+      try {
+        const { data: { session: currentSession }, error } = await supabase.auth.getSession();
+        
+        if (error) {
+          console.error("Error getting session:", error);
+          // If there's an error with the session, clean up and start fresh
+          cleanupAuthState();
+          setSession(null);
+          setUser(null);
+        } else {
+          console.log("Initial session check:", currentSession ? "Session exists" : "No session");
+          setSession(currentSession);
+          setUser(currentSession?.user ?? null);
+          
+          if (currentSession?.user) {
+            fetchUserProfile(currentSession.user.id);
+          }
+        }
+      } catch (error) {
+        console.error("Error initializing auth:", error);
+        cleanupAuthState();
+        setSession(null);
+        setUser(null);
+      } finally {
+        setLoading(false);
       }
-      
-      setLoading(false);
-    });
+    };
+
+    initializeAuth();
 
     return () => subscription.unsubscribe();
   }, []);
@@ -150,11 +191,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const { error } = await supabase.auth.signInWithPassword({ email, password });
       
       if (error) {
-        toast({
-          title: "Login failed",
-          description: error.message,
-          variant: "destructive"
-        });
+        // Handle specific token-related errors
+        if (error.message.includes('Invalid token') || error.message.includes('signature is invalid')) {
+          cleanupAuthState();
+          toast({
+            title: "Authentication Error",
+            description: "Please try signing in again. Your session may have expired.",
+            variant: "destructive"
+          });
+        } else {
+          toast({
+            title: "Login failed",
+            description: error.message,
+            variant: "destructive"
+          });
+        }
         throw error;
       }
       
@@ -212,7 +263,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       
       // Attempt global sign out
       const { error } = await supabase.auth.signOut({ scope: 'global' });
-      if (error) {
+      if (error && !error.message.includes('Invalid token')) {
+        // Only show error if it's not a token-related issue
         toast({
           title: "Sign out failed",
           description: error.message,
@@ -230,7 +282,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       window.location.href = '/auth';
     } catch (error: any) {
       console.error('Error signing out:', error.message);
-      throw error;
+      // Even if sign out fails, clean up local state
+      cleanupAuthState();
+      window.location.href = '/auth';
     }
   };
 
