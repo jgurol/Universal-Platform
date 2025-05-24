@@ -9,13 +9,238 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      agents: {
+        Row: {
+          commission_rate: number | null
+          company_name: string | null
+          created_at: string | null
+          email: string
+          first_name: string
+          id: string
+          last_name: string
+          last_payment: string | null
+          total_earnings: number | null
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          commission_rate?: number | null
+          company_name?: string | null
+          created_at?: string | null
+          email: string
+          first_name: string
+          id?: string
+          last_name: string
+          last_payment?: string | null
+          total_earnings?: number | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          commission_rate?: number | null
+          company_name?: string | null
+          created_at?: string | null
+          email?: string
+          first_name?: string
+          id?: string
+          last_name?: string
+          last_payment?: string | null
+          total_earnings?: number | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      client_info: {
+        Row: {
+          address: string | null
+          agent_id: string | null
+          commission_override: number | null
+          company_name: string
+          contact_name: string | null
+          created_at: string | null
+          email: string | null
+          id: string
+          notes: string | null
+          phone: string | null
+          revio_id: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          address?: string | null
+          agent_id?: string | null
+          commission_override?: number | null
+          company_name: string
+          contact_name?: string | null
+          created_at?: string | null
+          email?: string | null
+          id?: string
+          notes?: string | null
+          phone?: string | null
+          revio_id?: string | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          address?: string | null
+          agent_id?: string | null
+          commission_override?: number | null
+          company_name?: string
+          contact_name?: string | null
+          created_at?: string | null
+          email?: string | null
+          id?: string
+          notes?: string | null
+          phone?: string | null
+          revio_id?: string | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_info_agent_id_fkey"
+            columns: ["agent_id"]
+            isOneToOne: false
+            referencedRelation: "agents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          associated_agent_id: string | null
+          created_at: string | null
+          email: string | null
+          full_name: string | null
+          id: string
+          is_associated: boolean | null
+          role: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          associated_agent_id?: string | null
+          created_at?: string | null
+          email?: string | null
+          full_name?: string | null
+          id: string
+          is_associated?: boolean | null
+          role?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          associated_agent_id?: string | null
+          created_at?: string | null
+          email?: string | null
+          full_name?: string | null
+          id?: string
+          is_associated?: boolean | null
+          role?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_profiles_associated_agent"
+            columns: ["associated_agent_id"]
+            isOneToOne: false
+            referencedRelation: "agents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      transactions: {
+        Row: {
+          amount: number
+          client_id: string
+          client_info_id: string | null
+          commission: number | null
+          commission_override: number | null
+          commission_paid_date: string | null
+          created_at: string | null
+          date: string
+          date_paid: string | null
+          description: string | null
+          id: string
+          invoice_month: string | null
+          invoice_number: string | null
+          invoice_year: string | null
+          is_approved: boolean | null
+          is_paid: boolean | null
+          payment_method: string | null
+          reference_number: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          client_id: string
+          client_info_id?: string | null
+          commission?: number | null
+          commission_override?: number | null
+          commission_paid_date?: string | null
+          created_at?: string | null
+          date: string
+          date_paid?: string | null
+          description?: string | null
+          id?: string
+          invoice_month?: string | null
+          invoice_number?: string | null
+          invoice_year?: string | null
+          is_approved?: boolean | null
+          is_paid?: boolean | null
+          payment_method?: string | null
+          reference_number?: string | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          client_id?: string
+          client_info_id?: string | null
+          commission?: number | null
+          commission_override?: number | null
+          commission_paid_date?: string | null
+          created_at?: string | null
+          date?: string
+          date_paid?: string | null
+          description?: string | null
+          id?: string
+          invoice_month?: string | null
+          invoice_number?: string | null
+          invoice_year?: string | null
+          is_approved?: boolean | null
+          is_paid?: boolean | null
+          payment_method?: string | null
+          reference_number?: string | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "transactions_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "agents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transactions_client_info_id_fkey"
+            columns: ["client_info_id"]
+            isOneToOne: false
+            referencedRelation: "client_info"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      delete_transaction: {
+        Args: { transaction_id: string }
+        Returns: undefined
+      }
     }
     Enums: {
       [_ in never]: never
