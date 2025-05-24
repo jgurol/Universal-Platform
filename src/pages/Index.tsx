@@ -38,6 +38,30 @@ export interface Quote {
   notes?: string;
 }
 
+// Define the Transaction type for backward compatibility - maps to Quote
+export interface Transaction {
+  id: string;
+  clientId: string;
+  clientName: string;
+  companyName: string;
+  amount: number;
+  date: string;
+  description: string;
+  invoiceNumber?: string;
+  invoiceMonth?: string;
+  invoiceYear?: string;
+  isPaid?: boolean;
+  commission?: number;
+  clientInfoId?: string;
+  clientCompanyName?: string;
+  commissionOverride?: number;
+  datePaid?: string;
+  paymentMethod?: string;
+  referenceNumber?: string;
+  isApproved?: boolean;
+  commissionPaidDate?: string;
+}
+
 // Define the ClientInfo type
 export interface ClientInfo {
   id: string;

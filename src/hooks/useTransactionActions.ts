@@ -45,7 +45,7 @@ export const useTransactionActions = (
     return 0;
   };
 
-  // Function to add a new transaction to Supabase
+  // Function to add a new transaction (stored as quote) to Supabase
   const addTransaction = async (newTransaction: Omit<Transaction, "id">) => {
     if (!user) return;
     
@@ -59,24 +59,21 @@ export const useTransactionActions = (
       );
 
       const { data, error } = await supabase
-        .from('transactions')
+        .from('quotes')
         .insert({
           client_id: newTransaction.clientId,
           client_info_id: newTransaction.clientInfoId === "none" ? null : newTransaction.clientInfoId,
           amount: newTransaction.amount,
           date: newTransaction.date,
           description: newTransaction.description,
-          date_paid: newTransaction.isPaid ? newTransaction.datePaid : null,
-          payment_method: newTransaction.paymentMethod,
-          reference_number: newTransaction.referenceNumber,
-          invoice_month: newTransaction.invoiceMonth,
-          invoice_year: newTransaction.invoiceYear,
-          invoice_number: newTransaction.invoiceNumber,
-          is_paid: newTransaction.isPaid || false,
+          quote_number: newTransaction.invoiceNumber,
+          quote_month: newTransaction.invoiceMonth,
+          quote_year: newTransaction.invoiceYear,
+          status: newTransaction.isPaid ? 'approved' : 'pending',
           commission: commission,
           commission_override: newTransaction.commissionOverride || null,
-          is_approved: false, // Default to not approved
-          commission_paid_date: newTransaction.commissionPaidDate || null,
+          expires_at: null, // Transactions don't have expiration
+          notes: `Payment Method: ${newTransaction.paymentMethod || 'unpaid'}, Reference: ${newTransaction.referenceNumber || 'N/A'}`,
           user_id: user.id
         })
         .select('*')
@@ -123,24 +120,20 @@ export const useTransactionActions = (
       );
 
       const { data, error } = await supabase
-        .from('transactions')
+        .from('quotes')
         .update({
           client_id: updatedTransaction.clientId,
           client_info_id: updatedTransaction.clientInfoId === "none" ? null : updatedTransaction.clientInfoId,
           amount: updatedTransaction.amount,
           date: updatedTransaction.date,
           description: updatedTransaction.description,
-          date_paid: updatedTransaction.isPaid ? updatedTransaction.datePaid : null,
-          payment_method: updatedTransaction.paymentMethod,
-          reference_number: updatedTransaction.referenceNumber,
-          invoice_month: updatedTransaction.invoiceMonth,
-          invoice_year: updatedTransaction.invoiceYear,
-          invoice_number: updatedTransaction.invoiceNumber,
-          is_paid: updatedTransaction.isPaid || false,
+          quote_number: updatedTransaction.invoiceNumber,
+          quote_month: updatedTransaction.invoiceMonth,
+          quote_year: updatedTransaction.invoiceYear,
+          status: updatedTransaction.isPaid ? 'approved' : 'pending',
           commission: commission,
           commission_override: updatedTransaction.commissionOverride || null,
-          is_approved: updatedTransaction.isApproved || false,
-          commission_paid_date: updatedTransaction.commissionPaidDate || null
+          notes: `Payment Method: ${updatedTransaction.paymentMethod || 'unpaid'}, Reference: ${updatedTransaction.referenceNumber || 'N/A'}`
         })
         .eq('id', updatedTransaction.id)
         .select('*')
@@ -173,63 +166,34 @@ export const useTransactionActions = (
     }
   };
 
-  // Function to approve a commission
+  // Function to approve commission
   const approveCommission = async (transactionId: string) => {
     if (!user) return;
     
     try {
-      // First, check if the transaction's invoice has been paid
-      const { data: transactionData, error: fetchError } = await supabase
-        .from('transactions')
-        .select('is_paid')
-        .eq('id', transactionId)
-        .single();
-
-      if (fetchError) {
-        console.error('[approveCommission] Error fetching transaction:', fetchError);
-        toast({
-          title: "Error",
-          description: "Failed to verify transaction status",
-          variant: "destructive"
-        });
-        return;
-      }
-
-      if (!transactionData.is_paid) {
-        toast({
-          title: "Cannot approve commission",
-          description: "The invoice must be paid before approving the commission",
-          variant: "destructive"
-        });
-        return;
-      }
-
-      const { data, error } = await supabase
-        .from('transactions')
+      const { error } = await supabase
+        .from('quotes')
         .update({
-          is_approved: true
+          status: 'approved'
         })
-        .eq('id', transactionId)
-        .select('*')
-        .single();
+        .eq('id', transactionId);
 
       if (error) {
-        console.error('[approveCommission] Error approving commission:', error);
+        console.error('Error approving commission:', error);
         toast({
           title: "Failed to approve commission",
           description: error.message,
           variant: "destructive"
         });
       } else {
-        // Refresh transactions to get the updated one
         fetchTransactions();
         toast({
           title: "Commission approved",
-          description: "The commission has been approved successfully.",
+          description: "Commission has been approved successfully.",
         });
       }
     } catch (err) {
-      console.error('[approveCommission] Error in approve commission operation:', err);
+      console.error('Error in approve commission operation:', err);
       toast({
         title: "Error",
         description: "Failed to approve commission",
@@ -238,7 +202,7 @@ export const useTransactionActions = (
     }
   };
 
-  // Function to mark a commission as paid
+  // Function to pay commission
   const payCommission = async (transactionId: string, paymentData: {
     paidDate: string;
     paymentMethod: string;
@@ -247,63 +211,32 @@ export const useTransactionActions = (
     if (!user) return;
     
     try {
-      // First, check if the transaction's invoice has been paid
-      const { data: transactionData, error: fetchError } = await supabase
-        .from('transactions')
-        .select('is_paid')
-        .eq('id', transactionId)
-        .single();
-
-      if (fetchError) {
-        console.error('[payCommission] Error fetching transaction:', fetchError);
-        toast({
-          title: "Error",
-          description: "Failed to verify transaction status",
-          variant: "destructive"
-        });
-        return;
-      }
-
-      if (!transactionData.is_paid) {
-        toast({
-          title: "Cannot pay commission",
-          description: "The invoice must be paid before paying the commission",
-          variant: "destructive"
-        });
-        return;
-      }
-
-      const { data, error } = await supabase
-        .from('transactions')
+      const { error } = await supabase
+        .from('quotes')
         .update({
-          commission_paid_date: paymentData.paidDate,
-          payment_method: paymentData.paymentMethod,
-          reference_number: paymentData.referenceNumber
+          notes: `Payment Method: ${paymentData.paymentMethod}, Reference: ${paymentData.referenceNumber}, Paid: ${paymentData.paidDate}`
         })
-        .eq('id', transactionId)
-        .select('*')
-        .single();
+        .eq('id', transactionId);
 
       if (error) {
-        console.error('[payCommission] Error marking commission as paid:', error);
+        console.error('Error paying commission:', error);
         toast({
-          title: "Failed to mark commission as paid",
+          title: "Failed to pay commission",
           description: error.message,
           variant: "destructive"
         });
       } else {
-        // Refresh transactions to get the updated one
         fetchTransactions();
         toast({
-          title: "Commission marked as paid",
-          description: `The commission has been marked as paid on ${new Date(paymentData.paidDate).toLocaleDateString()}.`,
+          title: "Commission paid",
+          description: "Commission has been marked as paid successfully.",
         });
       }
     } catch (err) {
-      console.error('[payCommission] Error in pay commission operation:', err);
+      console.error('Error in pay commission operation:', err);
       toast({
         title: "Error",
-        description: "Failed to mark commission as paid",
+        description: "Failed to pay commission",
         variant: "destructive"
       });
     }
@@ -314,8 +247,8 @@ export const useTransactionActions = (
     if (!user) return;
     
     try {
-      const { error } = await supabase.rpc('delete_transaction', {
-        transaction_id: transactionId
+      const { error } = await supabase.rpc('delete_quote', {
+        quote_id: transactionId
       });
 
       if (error) {
