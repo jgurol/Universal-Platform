@@ -1,10 +1,6 @@
 
 import { useState } from "react";
 import { Header } from "@/components/Header";
-import { StatsCards } from "@/components/StatsCards";
-import { RecentQuotes } from "@/components/RecentQuotes";
-import { CommissionChart } from "@/components/CommissionChart";
-import { AgentSummary } from "@/components/AgentSummary";
 import { ProgramsGrid } from "@/components/ProgramsGrid";
 import { AddClientDialog } from "@/components/AddClientDialog";
 import { Client, Quote, ClientInfo } from "@/pages/Index";
@@ -34,34 +30,7 @@ export const IndexPageLayout = ({
   onFetchClients
 }: IndexPageLayoutProps) => {
   const [isAddClientOpen, setIsAddClientOpen] = useState(false);
-  const [quoteFilter, setQuoteFilter] = useState<string | null>(null);
   const { isAdmin } = useAuth();
-
-  // Filter quotes based on the selected filter
-  const getFilteredQuotes = () => {
-    if (!quoteFilter) return quotes;
-
-    switch (quoteFilter) {
-      case 'pending':
-        return quotes.filter(q => q.status === 'pending');
-      
-      case 'approved':
-        return quotes.filter(q => q.status === 'approved');
-      
-      case 'expired':
-        const today = new Date();
-        return quotes.filter(q => q.expiresAt && new Date(q.expiresAt) < today);
-      
-      case 'active':
-        const now = new Date();
-        return quotes.filter(q => !q.expiresAt || new Date(q.expiresAt) >= now);
-      
-      default:
-        return quotes;
-    }
-  };
-
-  const filteredQuotes = getFilteredQuotes();
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
@@ -72,72 +41,23 @@ export const IndexPageLayout = ({
         {/* Programs Grid */}
         <ProgramsGrid />
 
-        {/* Stats Cards */}
-        <StatsCards 
-          clients={clients}
-          quotes={quotes}
-          clientInfos={clientInfos}
-          isAdmin={isAdmin}
-          associatedAgentId={associatedAgentId}
-          onFilterChange={setQuoteFilter}
-          activeFilter={quoteFilter}
-        />
-
-        {/* Main Content - Quotes taking full width */}
-        <div className="space-y-6">
-          {/* Quotes Section - Full Width */}
-          <div>
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-xl font-bold text-gray-900">
-                Recent Quotes
-                {quoteFilter && (
-                  <span className="ml-2 text-sm font-normal text-gray-600">
-                    (Filtered by {quoteFilter === 'pending' ? 'Pending Quotes' : 
-                                quoteFilter === 'approved' ? 'Approved Quotes' :
-                                quoteFilter === 'expired' ? 'Expired Quotes' : 
-                                'Active Quotes'})
-                  </span>
-                )}
-              </h2>
-              {quoteFilter && (
-                <button
-                  onClick={() => setQuoteFilter(null)}
-                  className="text-sm text-blue-600 hover:text-blue-800 underline"
-                >
-                  Clear Filter
-                </button>
-              )}
-            </div>
-            
-            <RecentQuotes 
-              quotes={filteredQuotes} 
-              clients={clients}
-              clientInfos={clientInfos}
-              onAddQuote={onAddQuote}
-              onUpdateQuote={onUpdateQuote}
-              onDeleteQuote={onDeleteQuote}
-              associatedAgentId={associatedAgentId}
-            />
-          </div>
-
-          {/* Bottom section with Chart and Agent Summary */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* Commission Chart */}
-            <div className="lg:col-span-2">
-              <CommissionChart 
-                quotes={filteredQuotes} 
-              />
-            </div>
-
-            {/* Agent Summary - moved to bottom */}
-            <div>
-              <AgentSummary 
-                clients={clients} 
-                quotes={filteredQuotes}
-                allQuotes={quotes}
-                isAdmin={isAdmin}
-                activeFilter={quoteFilter}
-              />
+        {/* Welcome Message */}
+        <div className="mt-12 text-center">
+          <div className="bg-white rounded-lg shadow-lg p-8 max-w-2xl mx-auto">
+            <h2 className="text-2xl font-bold text-gray-900 mb-4">Welcome to Your Dashboard</h2>
+            <p className="text-gray-600 mb-6">
+              Select a program above to get started. Each application provides specialized tools and features 
+              to help you manage different aspects of your business operations.
+            </p>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-gray-500">
+              <div className="p-4 bg-gray-50 rounded-lg">
+                <h3 className="font-semibold text-gray-700 mb-2">Quick Access</h3>
+                <p>Click on any program card to access its features and functionality.</p>
+              </div>
+              <div className="p-4 bg-gray-50 rounded-lg">
+                <h3 className="font-semibold text-gray-700 mb-2">Multi-Program</h3>
+                <p>Switch between different programs seamlessly using the navigation.</p>
+              </div>
             </div>
           </div>
         </div>
