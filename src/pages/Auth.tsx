@@ -307,8 +307,8 @@ const Auth = () => {
                 className="h-16 w-auto"
               />
             </div>
-            <CardTitle className="text-2xl font-bold">Commission Tracker</CardTitle>
-            <CardDescription>Sign in to manage your commissions</CardDescription>
+            <CardTitle className="text-2xl font-bold">Universal Platform</CardTitle>
+            <CardDescription>Sign in to manage your business operations</CardDescription>
           </CardHeader>
           <CardContent>
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">

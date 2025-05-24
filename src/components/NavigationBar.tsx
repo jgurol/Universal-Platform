@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
@@ -25,7 +26,7 @@ export function NavigationBar() {
             alt="California Telecom" 
             className="h-12 w-auto"
           />
-          <h1 className="text-2xl font-bold text-gray-900">Commission Tracker</h1>
+          <h1 className="text-2xl font-bold text-gray-900">Universal Platform</h1>
         </Link>
 
         <NavigationMenu>
