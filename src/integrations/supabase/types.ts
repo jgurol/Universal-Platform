@@ -148,26 +148,23 @@ export type Database = {
           },
         ]
       }
-      transactions: {
+      quotes: {
         Row: {
           amount: number
           client_id: string
           client_info_id: string | null
           commission: number | null
           commission_override: number | null
-          commission_paid_date: string | null
           created_at: string | null
           date: string
-          date_paid: string | null
           description: string | null
+          expires_at: string | null
           id: string
-          invoice_month: string | null
-          invoice_number: string | null
-          invoice_year: string | null
-          is_approved: boolean | null
-          is_paid: boolean | null
-          payment_method: string | null
-          reference_number: string | null
+          notes: string | null
+          quote_month: string | null
+          quote_number: string | null
+          quote_year: string | null
+          status: string | null
           updated_at: string | null
           user_id: string
         }
@@ -177,19 +174,16 @@ export type Database = {
           client_info_id?: string | null
           commission?: number | null
           commission_override?: number | null
-          commission_paid_date?: string | null
           created_at?: string | null
           date: string
-          date_paid?: string | null
           description?: string | null
+          expires_at?: string | null
           id?: string
-          invoice_month?: string | null
-          invoice_number?: string | null
-          invoice_year?: string | null
-          is_approved?: boolean | null
-          is_paid?: boolean | null
-          payment_method?: string | null
-          reference_number?: string | null
+          notes?: string | null
+          quote_month?: string | null
+          quote_number?: string | null
+          quote_year?: string | null
+          status?: string | null
           updated_at?: string | null
           user_id: string
         }
@@ -199,32 +193,29 @@ export type Database = {
           client_info_id?: string | null
           commission?: number | null
           commission_override?: number | null
-          commission_paid_date?: string | null
           created_at?: string | null
           date?: string
-          date_paid?: string | null
           description?: string | null
+          expires_at?: string | null
           id?: string
-          invoice_month?: string | null
-          invoice_number?: string | null
-          invoice_year?: string | null
-          is_approved?: boolean | null
-          is_paid?: boolean | null
-          payment_method?: string | null
-          reference_number?: string | null
+          notes?: string | null
+          quote_month?: string | null
+          quote_number?: string | null
+          quote_year?: string | null
+          status?: string | null
           updated_at?: string | null
           user_id?: string
         }
         Relationships: [
           {
-            foreignKeyName: "transactions_client_id_fkey"
+            foreignKeyName: "quotes_client_id_fkey"
             columns: ["client_id"]
             isOneToOne: false
             referencedRelation: "agents"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "transactions_client_info_id_fkey"
+            foreignKeyName: "quotes_client_info_id_fkey"
             columns: ["client_info_id"]
             isOneToOne: false
             referencedRelation: "client_info"
@@ -237,9 +228,17 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      delete_quote: {
+        Args: { quote_id: string }
+        Returns: undefined
+      }
       delete_transaction: {
         Args: { transaction_id: string }
         Returns: undefined
+      }
+      get_current_user_role: {
+        Args: Record<PropertyKey, never>
+        Returns: string
       }
       get_user_profile: {
         Args: { user_id: string }

@@ -3,11 +3,11 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/context/AuthContext";
-import { Client, Transaction, ClientInfo } from "@/pages/Index";
+import { Client, Quote, ClientInfo } from "@/pages/Index";
 
 export const useIndexData = () => {
   const [clients, setClients] = useState<Client[]>([]);
-  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [quotes, setQuotes] = useState<Quote[]>([]);
   const [clientInfos, setClientInfos] = useState<ClientInfo[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [associatedAgentId, setAssociatedAgentId] = useState<string | null>(null);
@@ -30,10 +30,10 @@ export const useIndexData = () => {
     }
   }, [profileLoaded, associatedAgentId]);
 
-  // Function to fetch transactions from Supabase - only after profile is loaded
+  // Function to fetch quotes from Supabase - only after profile is loaded
   useEffect(() => {
     if (profileLoaded) {
-      fetchTransactions();
+      fetchQuotes();
     }
   }, [profileLoaded, associatedAgentId, isAdmin]);
 
@@ -155,34 +155,34 @@ export const useIndexData = () => {
     }
   };
 
-  // Function to fetch transactions from Supabase
-  const fetchTransactions = async () => {
+  // Function to fetch quotes from Supabase
+  const fetchQuotes = async () => {
     if (!user) {
-      console.log('[fetchTransactions] No user found, skipping transaction fetch');
+      console.log('[fetchQuotes] No user found, skipping quote fetch');
       return;
     }
     
     try {
       setIsLoading(true);
       
-      console.log('[fetchTransactions] Starting transaction fetch - isAdmin:', isAdmin, 'associatedAgentId:', associatedAgentId);
+      console.log('[fetchQuotes] Starting quote fetch - isAdmin:', isAdmin, 'associatedAgentId:', associatedAgentId);
       
       // Build the query with filtering logic
-      let query = supabase.from('transactions').select('*');
+      let query = supabase.from('quotes').select('*');
       
-      // ADMIN USERS: See ALL transactions with NO filtering whatsoever
+      // ADMIN USERS: See ALL quotes with NO filtering whatsoever
       if (isAdmin) {
-        console.log('[fetchTransactions] Admin user - no filtering applied');
+        console.log('[fetchQuotes] Admin user - no filtering applied');
         // Admins see everything - absolutely no WHERE clauses
       } else {
-        // NON-ADMIN USERS: Only see transactions where client_id matches their associated agent
+        // NON-ADMIN USERS: Only see quotes where client_id matches their associated agent
         if (associatedAgentId) {
-          console.log('[fetchTransactions] Non-admin user - filtering by client_id =', associatedAgentId);
+          console.log('[fetchQuotes] Non-admin user - filtering by client_id =', associatedAgentId);
           query = query.eq('client_id', associatedAgentId);
         } else {
-          console.log('[fetchTransactions] Non-admin user without agent ID - returning empty results');
+          console.log('[fetchQuotes] Non-admin user without agent ID - returning empty results');
           // For non-admin users without agent ID, return empty results
-          setTransactions([]);
+          setQuotes([]);
           setIsLoading(false);
           return;
         }
@@ -195,20 +195,20 @@ export const useIndexData = () => {
       const { data, error } = await query;
 
       if (error) {
-        console.error('[fetchTransactions] Error fetching transactions:', error);
+        console.error('[fetchQuotes] Error fetching quotes:', error);
         toast({
-          title: "Failed to load transactions",
+          title: "Failed to load quotes",
           description: error.message,
           variant: "destructive"
         });
         return;
       }
 
-      console.log('[fetchTransactions] Fetched transactions:', data?.length || 0);
+      console.log('[fetchQuotes] Fetched quotes:', data?.length || 0);
 
       if (!data || data.length === 0) {
-        console.log('[fetchTransactions] No transactions found - setting empty array');
-        setTransactions([]);
+        console.log('[fetchQuotes] No quotes found - setting empty array');
+        setQuotes([]);
         setIsLoading(false);
         return;
       }
@@ -222,50 +222,47 @@ export const useIndexData = () => {
       const agentData = agentResponse.data || [];
       const clientInfoData = clientInfoResponse.data || [];
 
-      // Map database transactions to our Transaction interface
-      const mappedTransactions = data.map((transaction) => {
-        // Find client for this transaction
-        const client = agentData.find(c => c.id === transaction.client_id);
+      // Map database quotes to our Quote interface
+      const mappedQuotes = data.map((quote) => {
+        // Find client for this quote
+        const client = agentData.find(c => c.id === quote.client_id);
         
-        // Find client info for this transaction if available
+        // Find client info for this quote if available
         let clientInfo = null;
-        if (transaction.client_info_id) {
-          clientInfo = clientInfoData.find(ci => ci.id === transaction.client_info_id);
+        if (quote.client_info_id) {
+          clientInfo = clientInfoData.find(ci => ci.id === quote.client_info_id);
         }
 
         return {
-          id: transaction.id,
-          clientId: transaction.client_id,
+          id: quote.id,
+          clientId: quote.client_id,
           clientName: client?.first_name && client?.last_name 
             ? `${client.first_name} ${client.last_name}`
             : "Unknown Agent",
           companyName: client?.company_name || (client?.first_name ? `${client.first_name} ${client.last_name}` : "Unknown Company"),
-          amount: transaction.amount,
-          date: transaction.date,
-          description: transaction.description,
-          datePaid: transaction.date_paid,
-          paymentMethod: transaction.payment_method,
-          referenceNumber: transaction.reference_number,
-          invoiceMonth: transaction.invoice_month,
-          invoiceYear: transaction.invoice_year,
-          invoiceNumber: transaction.invoice_number,
-          isPaid: transaction.is_paid,
-          commission: transaction.commission,
-          isApproved: transaction.is_approved,
-          clientInfoId: transaction.client_info_id,
+          amount: quote.amount,
+          date: quote.date,
+          description: quote.description,
+          quoteNumber: quote.quote_number,
+          quoteMonth: quote.quote_month,
+          quoteYear: quote.quote_year,
+          status: quote.status,
+          commission: quote.commission,
+          clientInfoId: quote.client_info_id,
           clientCompanyName: clientInfo?.company_name,
-          commissionPaidDate: transaction.commission_paid_date,
-          commissionOverride: transaction.commission_override
+          commissionOverride: quote.commission_override,
+          expiresAt: quote.expires_at,
+          notes: quote.notes
         };
       });
       
-      console.log('[fetchTransactions] Final mapped transactions count:', mappedTransactions.length);
-      setTransactions(mappedTransactions);
+      console.log('[fetchQuotes] Final mapped quotes count:', mappedQuotes.length);
+      setQuotes(mappedQuotes);
     } catch (err) {
-      console.error('[fetchTransactions] Exception in transaction fetch:', err);
+      console.error('[fetchQuotes] Exception in quote fetch:', err);
       toast({
         title: "Error",
-        description: "Failed to load transaction data",
+        description: "Failed to load quote data",
         variant: "destructive"
       });
     } finally {
@@ -276,14 +273,14 @@ export const useIndexData = () => {
   return {
     clients,
     setClients,
-    transactions,
-    setTransactions,
+    quotes,
+    setQuotes,
     clientInfos,
     setClientInfos,
     isLoading,
     associatedAgentId,
     fetchClients,
-    fetchTransactions,
+    fetchQuotes,
     fetchClientInfos
   };
 };

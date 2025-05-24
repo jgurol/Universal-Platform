@@ -1,7 +1,7 @@
 
 import { IndexPageLayout } from "@/components/IndexPageLayout";
 import { useIndexData } from "@/hooks/useIndexData";
-import { useTransactionActions } from "@/hooks/useTransactionActions";
+import { useQuoteActions } from "@/hooks/useQuoteActions";
 import { useClientActions } from "@/hooks/useClientActions";
 
 // Define the Client type (for agents)
@@ -17,8 +17,8 @@ export interface Client {
   lastPayment: string;
 }
 
-// Define the Transaction type (transformed from database)
-export interface Transaction {
+// Define the Quote type (replacing Transaction)
+export interface Quote {
   id: string;
   clientId: string;
   clientName: string;
@@ -26,19 +26,16 @@ export interface Transaction {
   amount: number;
   date: string;
   description: string;
-  datePaid?: string;
-  paymentMethod?: string;
-  referenceNumber?: string;
-  invoiceMonth?: string;
-  invoiceYear?: string;
-  invoiceNumber?: string;
-  isPaid?: boolean;
+  quoteNumber?: string;
+  quoteMonth?: string;
+  quoteYear?: string;
+  status?: string;
   commission?: number;
-  isApproved?: boolean;
   clientInfoId?: string;
   clientCompanyName?: string;
-  commissionPaidDate?: string;
   commissionOverride?: number;
+  expiresAt?: string;
+  notes?: string;
 }
 
 // Define the ClientInfo type
@@ -62,39 +59,35 @@ const Index = () => {
   const {
     clients,
     setClients,
-    transactions,
-    setTransactions,
+    quotes,
+    setQuotes,
     clientInfos,
     setClientInfos,
     isLoading,
     associatedAgentId,
     fetchClients,
-    fetchTransactions,
+    fetchQuotes,
     fetchClientInfos
   } = useIndexData();
 
   const {
-    addTransaction,
-    updateTransaction,
-    approveCommission,
-    payCommission,
-    deleteTransaction
-  } = useTransactionActions(clients, fetchTransactions);
+    addQuote,
+    updateQuote,
+    deleteQuote
+  } = useQuoteActions(clients, fetchQuotes);
 
   const { addClient } = useClientActions(clients, setClients, fetchClients);
 
   return (
     <IndexPageLayout
       clients={clients}
-      transactions={transactions}
+      quotes={quotes}
       clientInfos={clientInfos}
       associatedAgentId={associatedAgentId}
       onAddClient={addClient}
-      onAddTransaction={addTransaction}
-      onUpdateTransaction={updateTransaction}
-      onApproveCommission={approveCommission}
-      onPayCommission={payCommission}
-      onDeleteTransaction={deleteTransaction}
+      onAddQuote={addQuote}
+      onUpdateQuote={updateQuote}
+      onDeleteQuote={deleteQuote}
       onFetchClients={fetchClients}
     />
   );
