@@ -5,6 +5,7 @@ import { StatsCards } from "@/components/StatsCards";
 import { RecentQuotes } from "@/components/RecentQuotes";
 import { CommissionChart } from "@/components/CommissionChart";
 import { AgentSummary } from "@/components/AgentSummary";
+import { ProgramsGrid } from "@/components/ProgramsGrid";
 import { AddClientDialog } from "@/components/AddClientDialog";
 import { Client, Quote, ClientInfo } from "@/pages/Index";
 import { useAuth } from "@/context/AuthContext";
@@ -67,6 +68,9 @@ export const IndexPageLayout = ({
       <div className="container mx-auto px-4 py-8 max-w-7xl">
         {/* Header */}
         <Header />
+
+        {/* Programs Grid */}
+        <ProgramsGrid />
 
         {/* Stats Cards */}
         <StatsCards 
