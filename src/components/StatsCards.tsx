@@ -1,224 +1,109 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Users, TrendingUp, DollarSign, Calendar, CheckCircle, Clock, AlertCircle, ArrowRight, Building } from "lucide-react";
-import { Link } from "react-router-dom";
-import { Client, Transaction, ClientInfo } from "@/pages/Index";
+
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { DollarSign, Users, FileText, Clock } from "lucide-react";
+import { Client, Quote, ClientInfo } from "@/pages/Index";
 
 interface StatsCardsProps {
   clients: Client[];
-  transactions: Transaction[];
+  quotes: Quote[];
   clientInfos: ClientInfo[];
   isAdmin: boolean;
-  associatedAgentId?: string | null;
-  onFilterChange?: (filter: string | null) => void;
-  activeFilter?: string | null;
+  associatedAgentId: string | null;
+  onFilterChange: (filter: string | null) => void;
+  activeFilter: string | null;
 }
 
 export const StatsCards = ({ 
   clients, 
-  transactions, 
+  quotes, 
   clientInfos, 
   isAdmin, 
   associatedAgentId,
   onFilterChange,
   activeFilter
 }: StatsCardsProps) => {
-  // Safely calculate totals with null checks
-  const totalRevenue = transactions && transactions.length > 0
-    ? transactions.reduce((sum, transaction) => sum + transaction.amount, 0)
-    : 0;
+  const safeQuotes = quotes || [];
   
-  const avgCommissionRate = clients && clients.length > 0 
-    ? clients.reduce((sum, client) => sum + client.commissionRate, 0) / clients.length 
-    : 0;
-    
-  // Calculate qualified commissions with null checks - transactions with paid invoices but not approved commissions
-  const qualifiedCommissions = transactions && transactions.length > 0
-    ? transactions
-        .filter(t => t.isPaid && !t.isApproved && t.commission)
-        .reduce((sum, t) => sum + (t.commission || 0), 0)
-    : 0;
-
-  // Calculate commission totals with null checks
-  const paidCommissions = transactions && transactions.length > 0
-    ? transactions
-        .filter(t => t.commissionPaidDate && t.commission)
-        .reduce((sum, t) => sum + (t.commission || 0), 0)
-    : 0;
-    
-  const approvedUnpaidCommissions = transactions && transactions.length > 0
-    ? transactions
-        .filter(t => !t.commissionPaidDate && t.isApproved && t.commission)
-        .reduce((sum, t) => sum + (t.commission || 0), 0)
-    : 0;
-    
-  // Updated calculation for unpaid commissions - transactions with unpaid invoices, unpaid commissions, and unapproved status
-  const unpaidCommissions = transactions && transactions.length > 0
-    ? transactions
-        .filter(t => !t.isPaid && !t.commissionPaidDate && !t.isApproved && t.commission)
-        .reduce((sum, t) => sum + (t.commission || 0), 0)
-    : 0;
-
-  // Filter client infos for agents - only show clients associated with this agent
-  const getClientInfoCount = () => {
-    if (isAdmin) {
-      return clientInfos ? clientInfos.length : 0;
+  // Calculate total commission from quotes
+  const totalCommission = safeQuotes.reduce((sum, quote) => sum + (quote.commission || 0), 0);
+  
+  // Count different quote statuses
+  const pendingQuotes = safeQuotes.filter(q => q.status === 'pending').length;
+  const approvedQuotes = safeQuotes.filter(q => q.status === 'approved').length;
+  
+  // Count expired quotes
+  const today = new Date();
+  const expiredQuotes = safeQuotes.filter(q => q.expiresAt && new Date(q.expiresAt) < today).length;
+  
+  const handleFilterClick = (filter: string) => {
+    if (activeFilter === filter) {
+      onFilterChange(null);
     } else {
-      // For agents, only count client infos where agent_id matches associatedAgentId
-      return clientInfos 
-        ? clientInfos.filter(clientInfo => clientInfo.agent_id === associatedAgentId).length 
-        : 0;
-    }
-  };
-
-  const handleFilterClick = (filterType: string) => {
-    if (onFilterChange) {
-      // If clicking the same filter, clear it; otherwise set the new filter
-      onFilterChange(activeFilter === filterType ? null : filterType);
+      onFilterChange(filter);
     }
   };
 
   return (
-    <div className="space-y-6 mb-8">
-      {/* Basic Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {isAdmin ? (
-          <>
-            <Link to="/agent-management" className="block">
-              <Card className="bg-white shadow-lg hover:shadow-xl transition-shadow duration-200 border-0 hover:scale-105 transform cursor-pointer">
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium text-gray-600">Total Agents</CardTitle>
-                  <Users className="h-4 w-4 text-blue-600" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold text-gray-900">{clients ? clients.length : 0}</div>
-                  <p className="text-xs text-gray-500">Active commission agents</p>
-                </CardContent>
-              </Card>
-            </Link>
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+      <Card className="bg-white shadow-lg border-0 hover:shadow-xl transition-shadow cursor-pointer transform hover:scale-105" onClick={() => handleFilterClick('pending')}>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardTitle className="text-sm font-medium text-gray-600">Pending Quotes</CardTitle>
+          <Clock className={`h-4 w-4 ${activeFilter === 'pending' ? 'text-yellow-600' : 'text-yellow-500'}`} />
+        </CardHeader>
+        <CardContent>
+          <div className={`text-2xl font-bold ${activeFilter === 'pending' ? 'text-yellow-600' : 'text-gray-900'}`}>
+            {pendingQuotes}
+          </div>
+          <p className="text-xs text-gray-500 mt-1">
+            Awaiting approval
+          </p>
+        </CardContent>
+      </Card>
 
-            <Link to="/client-management" className="block">
-              <Card className="bg-white shadow-lg hover:shadow-xl transition-shadow duration-200 border-0 hover:scale-105 transform cursor-pointer">
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium text-gray-600">Total Clients</CardTitle>
-                  <Building className="h-4 w-4 text-purple-600" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold text-gray-900">{getClientInfoCount()}</div>
-                  <p className="text-xs text-gray-500">Client companies</p>
-                </CardContent>
-              </Card>
-            </Link>
-          </>
-        ) : (
-          <Link to="/client-management" className="block">
-            <Card className="bg-white shadow-lg hover:shadow-xl transition-shadow duration-200 border-0 hover:scale-105 transform cursor-pointer">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium text-gray-600">Total Clients</CardTitle>
-                <Building className="h-4 w-4 text-purple-600" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold text-gray-900">{getClientInfoCount()}</div>
-                <p className="text-xs text-gray-500">Associated client companies</p>
-              </CardContent>
-            </Card>
-          </Link>
-        )}
+      <Card className="bg-white shadow-lg border-0 hover:shadow-xl transition-shadow cursor-pointer transform hover:scale-105" onClick={() => handleFilterClick('approved')}>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardTitle className="text-sm font-medium text-gray-600">Approved Quotes</CardTitle>
+          <FileText className={`h-4 w-4 ${activeFilter === 'approved' ? 'text-green-600' : 'text-green-500'}`} />
+        </CardHeader>
+        <CardContent>
+          <div className={`text-2xl font-bold ${activeFilter === 'approved' ? 'text-green-600' : 'text-gray-900'}`}>
+            {approvedQuotes}
+          </div>
+          <p className="text-xs text-gray-500 mt-1">
+            Ready to proceed
+          </p>
+        </CardContent>
+      </Card>
 
-        <Card className="bg-white shadow-lg hover:shadow-xl transition-shadow duration-200 border-0">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-gray-600">Total Revenue</CardTitle>
-            <DollarSign className="h-4 w-4 text-green-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-gray-900">${totalRevenue.toLocaleString()}</div>
-            <p className="text-xs text-gray-500">All-time invoice amounts</p>
-          </CardContent>
-        </Card>
+      <Card className="bg-white shadow-lg border-0 hover:shadow-xl transition-shadow cursor-pointer transform hover:scale-105" onClick={() => handleFilterClick('expired')}>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardTitle className="text-sm font-medium text-gray-600">Expired Quotes</CardTitle>
+          <Clock className={`h-4 w-4 ${activeFilter === 'expired' ? 'text-red-600' : 'text-red-500'}`} />
+        </CardHeader>
+        <CardContent>
+          <div className={`text-2xl font-bold ${activeFilter === 'expired' ? 'text-red-600' : 'text-gray-900'}`}>
+            {expiredQuotes}
+          </div>
+          <p className="text-xs text-gray-500 mt-1">
+            Need renewal
+          </p>
+        </CardContent>
+      </Card>
 
-        <Card className="bg-white shadow-lg hover:shadow-xl transition-shadow duration-200 border-0">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-gray-600">Avg Commission Rate</CardTitle>
-            <TrendingUp className="h-4 w-4 text-purple-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-gray-900">{avgCommissionRate.toFixed(1)}%</div>
-            <p className="text-xs text-gray-500">Average across all clients</p>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Commission Flow Cards - Linear Row with Arrows */}
-      <div className="flex items-center gap-4 overflow-x-auto">
-        <Card 
-          className={`bg-white shadow-lg hover:shadow-xl transition-all duration-200 border-0 flex-shrink-0 cursor-pointer hover:scale-105 ${
-            activeFilter === 'unapproved' ? 'ring-2 ring-gray-600 ring-opacity-50' : ''
-          }`}
-          onClick={() => handleFilterClick('unapproved')}
-        >
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-gray-600">Unqualified Commissions</CardTitle>
-            <AlertCircle className="h-4 w-4 text-gray-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-gray-500">${unpaidCommissions.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
-            <p className="text-xs text-gray-500">Customer hasn't paid yet</p>
-          </CardContent>
-        </Card>
-
-        <ArrowRight className="h-6 w-6 text-gray-400 flex-shrink-0" />
-
-        <Card 
-          className={`bg-white shadow-lg hover:shadow-xl transition-all duration-200 border-0 flex-shrink-0 cursor-pointer hover:scale-105 ${
-            activeFilter === 'qualified' ? 'ring-2 ring-orange-600 ring-opacity-50' : ''
-          }`}
-          onClick={() => handleFilterClick('qualified')}
-        >
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-gray-600">Qualified Commissions</CardTitle>
-            <Calendar className="h-4 w-4 text-orange-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-red-600">${qualifiedCommissions.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
-            <p className="text-xs text-gray-500">Paid invoices with unapproved commissions</p>
-          </CardContent>
-        </Card>
-
-        <ArrowRight className="h-6 w-6 text-gray-400 flex-shrink-0" />
-
-        <Card 
-          className={`bg-white shadow-lg hover:shadow-xl transition-all duration-200 border-0 flex-shrink-0 cursor-pointer hover:scale-105 ${
-            activeFilter === 'approved' ? 'ring-2 ring-amber-600 ring-opacity-50' : ''
-          }`}
-          onClick={() => handleFilterClick('approved')}
-        >
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-gray-600">Approved Commissions</CardTitle>
-            <Clock className="h-4 w-4 text-amber-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-amber-600">${approvedUnpaidCommissions.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
-            <p className="text-xs text-gray-500">Approved but unpaid</p>
-          </CardContent>
-        </Card>
-
-        <ArrowRight className="h-6 w-6 text-gray-400 flex-shrink-0" />
-
-        <Card 
-          className={`bg-white shadow-lg hover:shadow-xl transition-all duration-200 border-0 flex-shrink-0 cursor-pointer hover:scale-105 ${
-            activeFilter === 'paid' ? 'ring-2 ring-green-600 ring-opacity-50' : ''
-          }`}
-          onClick={() => handleFilterClick('paid')}
-        >
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-gray-600">Paid Commissions</CardTitle>
-            <CheckCircle className="h-4 w-4 text-green-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-green-600">${paidCommissions.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
-            <p className="text-xs text-gray-500">Transactions marked paid</p>
-          </CardContent>
-        </Card>
-      </div>
+      <Card className="bg-white shadow-lg border-0">
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardTitle className="text-sm font-medium text-gray-600">Total Commission</CardTitle>
+          <DollarSign className="h-4 w-4 text-green-500" />
+        </CardHeader>
+        <CardContent>
+          <div className="text-2xl font-bold text-gray-900">
+            ${totalCommission.toLocaleString()}
+          </div>
+          <p className="text-xs text-gray-500 mt-1">
+            From {safeQuotes.length} quotes
+          </p>
+        </CardContent>
+      </Card>
     </div>
   );
 };

@@ -1,15 +1,18 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from "recharts";
-import { Transaction } from "@/pages/Index";
+import { Quote } from "@/pages/Index";
 
 interface CommissionChartProps {
-  transactions: Transaction[];
+  quotes: Quote[];
 }
 
-export const CommissionChart = ({ transactions }: CommissionChartProps) => {
+export const CommissionChart = ({ quotes }: CommissionChartProps) => {
+  // Handle undefined quotes prop
+  const safeQuotes = quotes || [];
+  
   // Get unique agents and assign colors
-  const uniqueAgents = Array.from(new Set(transactions.map(t => t.clientName)));
+  const uniqueAgents = Array.from(new Set(safeQuotes.map(q => q.clientName)));
   const colors = [
     "#3b82f6", // Blue
     "#ef4444", // Red
@@ -23,11 +26,11 @@ export const CommissionChart = ({ transactions }: CommissionChartProps) => {
     "#6b7280"  // Gray
   ];
 
-  // Group transactions by month and agent
-  const monthlyData = transactions.reduce((acc, transaction) => {
-    const date = new Date(transaction.date);
+  // Group quotes by month and agent
+  const monthlyData = safeQuotes.reduce((acc, quote) => {
+    const date = new Date(quote.date);
     const monthKey = date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
-    const agentName = transaction.clientName;
+    const agentName = quote.clientName;
     
     if (!acc[monthKey]) {
       acc[monthKey] = { month: monthKey };
@@ -41,7 +44,7 @@ export const CommissionChart = ({ transactions }: CommissionChartProps) => {
       acc[monthKey][agentName] = 0;
     }
     
-    acc[monthKey][agentName] += transaction.commission || 0;
+    acc[monthKey][agentName] += quote.commission || 0;
     
     return acc;
   }, {} as Record<string, any>);

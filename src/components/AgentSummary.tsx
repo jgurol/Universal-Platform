@@ -1,81 +1,119 @@
 
-import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { UserCog, ChevronRight } from "lucide-react";
-import { Link } from "react-router-dom";
-import { Client, Transaction } from "@/pages/Index";
+import { Badge } from "@/components/ui/badge";
+import { DollarSign, TrendingUp, Calendar, Users } from "lucide-react";
+import { Client, Quote } from "@/pages/Index";
 
 interface AgentSummaryProps {
   clients: Client[];
-  transactions: Transaction[];
-  allTransactions: Transaction[];
+  quotes: Quote[];
+  allQuotes: Quote[];
   isAdmin: boolean;
-  activeFilter?: string | null;
+  activeFilter: string | null;
 }
 
-export function AgentSummary({ clients, transactions, allTransactions, isAdmin, activeFilter }: AgentSummaryProps) {
-  // Calculate total approved commissions for each agent using ALL transactions (not filtered ones)
-  const getTotalApprovedCommissions = (agentId: string) => {
-    return allTransactions
-      .filter(t => t.clientId === agentId && t.isApproved)
-      .reduce((sum, t) => sum + (t.commission || 0), 0);
+export const AgentSummary = ({ clients, quotes, allQuotes, isAdmin, activeFilter }: AgentSummaryProps) => {
+  const safeQuotes = quotes || [];
+  const safeAllQuotes = allQuotes || [];
+  
+  // Calculate summary stats from quotes
+  const totalCommission = safeQuotes.reduce((sum, quote) => sum + (quote.commission || 0), 0);
+  const avgQuoteValue = safeQuotes.length > 0 
+    ? safeQuotes.reduce((sum, quote) => sum + quote.amount, 0) / safeQuotes.length 
+    : 0;
+  
+  // Get top performing agent from all quotes
+  const agentPerformance = safeAllQuotes.reduce((acc, quote) => {
+    if (!acc[quote.clientName]) {
+      acc[quote.clientName] = 0;
+    }
+    acc[quote.clientName] += quote.commission || 0;
+    return acc;
+  }, {} as Record<string, number>);
+  
+  const topAgent = Object.entries(agentPerformance)
+    .sort(([,a], [,b]) => b - a)[0];
+  
+  const getFilterLabel = () => {
+    switch (activeFilter) {
+      case 'pending': return 'Pending Quotes';
+      case 'approved': return 'Approved Quotes'; 
+      case 'expired': return 'Expired Quotes';
+      case 'active': return 'Active Quotes';
+      default: return 'All Quotes';
+    }
   };
 
-  // Get top 3 agents by total approved commissions
-  const topAgents = [...clients]
-    .map(agent => ({
-      ...agent,
-      totalApprovedCommissions: getTotalApprovedCommissions(agent.id)
-    }))
-    .sort((a, b) => b.totalApprovedCommissions - a.totalApprovedCommissions)
-    .slice(0, 3);
-
-  // Determine what to show based on active filter
-  const shouldShowApprovedCommissions = activeFilter === 'unapproved';
-  const cardTitle = shouldShowApprovedCommissions ? "Approved Commissions" : "Agent Summary";
-  const cardDescription = shouldShowApprovedCommissions ? "Total approved commissions by agent" : "Top agents by approved commissions";
-
   return (
-    <Card className="bg-white shadow border-0">
-      <CardHeader className="pb-2">
-        <div className="flex justify-between items-center">
-          <div>
-            <CardTitle className="text-lg font-medium text-gray-900">{cardTitle}</CardTitle>
-            <CardDescription>{cardDescription}</CardDescription>
-          </div>
-          <Link to="/agent-management">
-            <Button variant="ghost" size="sm" className="text-blue-600 hover:text-blue-800 hover:bg-blue-50">
-              View All
-              <ChevronRight className="ml-1 h-4 w-4" />
-            </Button>
-          </Link>
-        </div>
+    <Card className="bg-white shadow-lg border-0">
+      <CardHeader>
+        <CardTitle className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+          <TrendingUp className="h-5 w-5 text-blue-500" />
+          Quote Summary
+        </CardTitle>
+        <CardDescription>
+          {activeFilter ? `Performance metrics for ${getFilterLabel()}` : 'Overall quote performance metrics'}
+        </CardDescription>
       </CardHeader>
-      <CardContent>
-        {topAgents.length === 0 ? (
-          <div className="text-center py-6 text-gray-500">
-            <UserCog className="h-8 w-8 mx-auto mb-2 text-gray-400" />
-            <p>No agents added yet</p>
+      <CardContent className="space-y-6">
+        {/* Total Commission */}
+        <div className="flex items-center justify-between p-3 bg-green-50 rounded-lg">
+          <div className="flex items-center gap-2">
+            <DollarSign className="h-4 w-4 text-green-600" />
+            <span className="text-sm font-medium text-green-800">Total Commission</span>
           </div>
-        ) : (
-          <div className="space-y-3">
-            {topAgents.map((agent) => (
-              <div key={agent.id} className="flex justify-between items-center p-3 rounded-md border border-gray-100 hover:bg-gray-50 transition-colors">
-                <div>
-                  <h4 className="font-medium text-gray-900">{agent.name}</h4>
-                  <p className="text-sm text-gray-500">{agent.companyName || 'Independent'}</p>
-                </div>
-                <div className="text-right">
-                  <span className="bg-green-100 text-green-800 text-xs font-medium px-2 py-1 rounded">
-                    ${agent.totalApprovedCommissions.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})} approved
-                  </span>
-                </div>
-              </div>
-            ))}
+          <span className="text-lg font-bold text-green-600">
+            ${totalCommission.toLocaleString()}
+          </span>
+        </div>
+
+        {/* Average Quote Value */}
+        <div className="flex items-center justify-between p-3 bg-blue-50 rounded-lg">
+          <div className="flex items-center gap-2">
+            <Calendar className="h-4 w-4 text-blue-600" />
+            <span className="text-sm font-medium text-blue-800">Avg Quote Value</span>
+          </div>
+          <span className="text-lg font-bold text-blue-600">
+            ${avgQuoteValue.toLocaleString()}
+          </span>
+        </div>
+
+        {/* Quote Count */}
+        <div className="flex items-center justify-between p-3 bg-purple-50 rounded-lg">
+          <div className="flex items-center gap-2">
+            <Users className="h-4 w-4 text-purple-600" />
+            <span className="text-sm font-medium text-purple-800">Total Quotes</span>
+          </div>
+          <span className="text-lg font-bold text-purple-600">
+            {safeQuotes.length}
+          </span>
+        </div>
+
+        {/* Top Performing Agent (only for admins viewing all quotes) */}
+        {isAdmin && !activeFilter && topAgent && (
+          <div className="p-3 bg-yellow-50 rounded-lg">
+            <div className="flex items-center gap-2 mb-2">
+              <TrendingUp className="h-4 w-4 text-yellow-600" />
+              <span className="text-sm font-medium text-yellow-800">Top Performer</span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-yellow-700">{topAgent[0]}</span>
+              <Badge variant="outline" className="bg-yellow-100 text-yellow-800 border-yellow-300">
+                ${topAgent[1].toLocaleString()}
+              </Badge>
+            </div>
+          </div>
+        )}
+
+        {/* Filter Status */}
+        {activeFilter && (
+          <div className="text-center pt-2 border-t">
+            <Badge variant="outline" className="text-xs">
+              Filtered: {getFilterLabel()}
+            </Badge>
           </div>
         )}
       </CardContent>
     </Card>
   );
-}
+};
