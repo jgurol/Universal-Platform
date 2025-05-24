@@ -2,75 +2,65 @@
 import { useState } from "react";
 import { Header } from "@/components/Header";
 import { StatsCards } from "@/components/StatsCards";
-import { RecentTransactions } from "@/components/RecentTransactions";
+import { RecentQuotes } from "@/components/RecentQuotes";
 import { CommissionChart } from "@/components/CommissionChart";
 import { AgentSummary } from "@/components/AgentSummary";
 import { AddClientDialog } from "@/components/AddClientDialog";
-import { Client, Transaction, ClientInfo } from "@/pages/Index";
+import { Client, Quote, ClientInfo } from "@/pages/Index";
 import { useAuth } from "@/context/AuthContext";
 
 interface IndexPageLayoutProps {
   clients: Client[];
-  transactions: Transaction[];
+  quotes: Quote[];
   clientInfos: ClientInfo[];
   associatedAgentId: string | null;
   onAddClient: (client: Omit<Client, "id" | "totalEarnings" | "lastPayment">) => Promise<void>;
-  onAddTransaction: (transaction: Omit<Transaction, "id">) => void;
-  onUpdateTransaction: (transaction: Transaction) => void;
-  onApproveCommission: (transactionId: string) => void;
-  onPayCommission: (transactionId: string, paymentData: {
-    paidDate: string;
-    paymentMethod: string;
-    referenceNumber: string;
-  }) => void;
-  onDeleteTransaction: (transactionId: string) => void;
+  onAddQuote: (quote: Omit<Quote, "id">) => void;
+  onUpdateQuote: (quote: Quote) => void;
+  onDeleteQuote: (quoteId: string) => void;
   onFetchClients: () => Promise<void>;
 }
 
 export const IndexPageLayout = ({
   clients,
-  transactions,
+  quotes,
   clientInfos,
   associatedAgentId,
   onAddClient,
-  onAddTransaction,
-  onUpdateTransaction,
-  onApproveCommission,
-  onPayCommission,
-  onDeleteTransaction,
+  onAddQuote,
+  onUpdateQuote,
+  onDeleteQuote,
   onFetchClients
 }: IndexPageLayoutProps) => {
   const [isAddClientOpen, setIsAddClientOpen] = useState(false);
-  const [transactionFilter, setTransactionFilter] = useState<string | null>(null);
+  const [quoteFilter, setQuoteFilter] = useState<string | null>(null);
   const { isAdmin } = useAuth();
 
-  // Filter transactions based on the selected filter
-  const getFilteredTransactions = () => {
-    if (!transactionFilter) return transactions;
+  // Filter quotes based on the selected filter
+  const getFilteredQuotes = () => {
+    if (!quoteFilter) return quotes;
 
-    switch (transactionFilter) {
-      case 'unapproved':
-        // Transactions with unpaid invoices, unpaid commissions, and unapproved status
-        return transactions.filter(t => !t.isPaid && !t.commissionPaidDate && !t.isApproved);
-      
-      case 'qualified':
-        // Transactions with paid invoices but not commissioned or approved for commission
-        return transactions.filter(t => t.isPaid && !t.isApproved && !t.commissionPaidDate);
+    switch (quoteFilter) {
+      case 'pending':
+        return quotes.filter(q => q.status === 'pending');
       
       case 'approved':
-        // Transactions that are paid invoices and have been approved
-        return transactions.filter(t => t.isPaid && t.isApproved && !t.commissionPaidDate);
+        return quotes.filter(q => q.status === 'approved');
       
-      case 'paid':
-        // Transactions that are paid invoice, commission paid
-        return transactions.filter(t => t.isPaid && t.commissionPaidDate);
+      case 'expired':
+        const today = new Date();
+        return quotes.filter(q => q.expiresAt && new Date(q.expiresAt) < today);
+      
+      case 'active':
+        const now = new Date();
+        return quotes.filter(q => !q.expiresAt || new Date(q.expiresAt) >= now);
       
       default:
-        return transactions;
+        return quotes;
     }
   };
 
-  const filteredTransactions = getFilteredTransactions();
+  const filteredQuotes = getFilteredQuotes();
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
@@ -81,33 +71,33 @@ export const IndexPageLayout = ({
         {/* Stats Cards */}
         <StatsCards 
           clients={clients}
-          transactions={transactions}
+          quotes={quotes}
           clientInfos={clientInfos}
           isAdmin={isAdmin}
           associatedAgentId={associatedAgentId}
-          onFilterChange={setTransactionFilter}
-          activeFilter={transactionFilter}
+          onFilterChange={setQuoteFilter}
+          activeFilter={quoteFilter}
         />
 
-        {/* Main Content - Transactions taking full width */}
+        {/* Main Content - Quotes taking full width */}
         <div className="space-y-6">
-          {/* Transactions Section - Full Width */}
+          {/* Quotes Section - Full Width */}
           <div>
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-xl font-bold text-gray-900">
-                Recent Activity
-                {transactionFilter && (
+                Recent Quotes
+                {quoteFilter && (
                   <span className="ml-2 text-sm font-normal text-gray-600">
-                    (Filtered by {transactionFilter === 'unapproved' ? 'Unqualified Commissions' : 
-                                transactionFilter === 'qualified' ? 'Qualified Commissions' :
-                                transactionFilter === 'approved' ? 'Approved Commissions' : 
-                                'Paid Commissions'})
+                    (Filtered by {quoteFilter === 'pending' ? 'Pending Quotes' : 
+                                quoteFilter === 'approved' ? 'Approved Quotes' :
+                                quoteFilter === 'expired' ? 'Expired Quotes' : 
+                                'Active Quotes'})
                   </span>
                 )}
               </h2>
-              {transactionFilter && (
+              {quoteFilter && (
                 <button
-                  onClick={() => setTransactionFilter(null)}
+                  onClick={() => setQuoteFilter(null)}
                   className="text-sm text-blue-600 hover:text-blue-800 underline"
                 >
                   Clear Filter
@@ -115,15 +105,13 @@ export const IndexPageLayout = ({
               )}
             </div>
             
-            <RecentTransactions 
-              transactions={filteredTransactions} 
+            <RecentQuotes 
+              quotes={filteredQuotes} 
               clients={clients}
               clientInfos={clientInfos}
-              onAddTransaction={onAddTransaction}
-              onUpdateTransaction={onUpdateTransaction}
-              onApproveCommission={onApproveCommission}
-              onPayCommission={onPayCommission}
-              onDeleteTransaction={onDeleteTransaction}
+              onAddQuote={onAddQuote}
+              onUpdateQuote={onUpdateQuote}
+              onDeleteQuote={onDeleteQuote}
               associatedAgentId={associatedAgentId}
             />
           </div>
@@ -133,7 +121,7 @@ export const IndexPageLayout = ({
             {/* Commission Chart */}
             <div className="lg:col-span-2">
               <CommissionChart 
-                transactions={filteredTransactions} 
+                quotes={filteredQuotes} 
               />
             </div>
 
@@ -141,10 +129,10 @@ export const IndexPageLayout = ({
             <div>
               <AgentSummary 
                 clients={clients} 
-                transactions={filteredTransactions}
-                allTransactions={transactions}
+                quotes={filteredQuotes}
+                allQuotes={quotes}
                 isAdmin={isAdmin}
-                activeFilter={transactionFilter}
+                activeFilter={quoteFilter}
               />
             </div>
           </div>
