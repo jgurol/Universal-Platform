@@ -6,7 +6,7 @@ export interface Item {
   description?: string;
   price: number;
   mrc?: number; // Monthly Recurring Charge
-  category?: string;
+  category_id?: string;
   sku?: string;
   is_active: boolean;
   created_at: string;

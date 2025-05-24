@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Plus, Package, Edit, Trash2 } from "lucide-react";
 import { useItems } from "@/hooks/useItems";
+import { useCategories } from "@/hooks/useCategories";
 import { AddItemDialog } from "@/components/AddItemDialog";
 import { EditItemDialog } from "@/components/EditItemDialog";
 import { Badge } from "@/components/ui/badge";
@@ -14,6 +15,13 @@ export const ItemsManagement = () => {
   const [isEditItemOpen, setIsEditItemOpen] = useState(false);
   const [selectedItem, setSelectedItem] = useState<Item | null>(null);
   const { items, isLoading, addItem, updateItem } = useItems();
+  const { categories } = useCategories();
+
+  const getCategoryName = (categoryId?: string) => {
+    if (!categoryId) return null;
+    const category = categories.find(cat => cat.id === categoryId);
+    return category?.name;
+  };
 
   const handleEditItem = (item: Item) => {
     setSelectedItem(item);
@@ -90,8 +98,8 @@ export const ItemsManagement = () => {
                     {item.description && (
                       <p className="text-sm text-gray-600 mb-1">{item.description}</p>
                     )}
-                    {item.category && (
-                      <p className="text-xs text-gray-500">Category: {item.category}</p>
+                    {getCategoryName(item.category_id) && (
+                      <p className="text-xs text-gray-500">Category: {getCategoryName(item.category_id)}</p>
                     )}
                   </div>
                   <div className="flex items-center gap-2">

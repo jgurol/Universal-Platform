@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Item } from "@/types/items";
-import { ITEM_CATEGORIES } from "@/utils/categories";
+import { useCategories } from "@/hooks/useCategories";
 
 interface EditItemDialogProps {
   open: boolean;
@@ -21,8 +21,9 @@ export const EditItemDialog = ({ open, onOpenChange, onUpdateItem, item }: EditI
   const [description, setDescription] = useState("");
   const [price, setPrice] = useState("");
   const [mrc, setMrc] = useState("");
-  const [category, setCategory] = useState("");
+  const [categoryId, setCategoryId] = useState("");
   const [sku, setSku] = useState("");
+  const { categories } = useCategories();
 
   useEffect(() => {
     if (item) {
@@ -30,7 +31,7 @@ export const EditItemDialog = ({ open, onOpenChange, onUpdateItem, item }: EditI
       setDescription(item.description || "");
       setPrice(item.price.toString());
       setMrc(item.mrc ? item.mrc.toString() : "");
-      setCategory(item.category || "");
+      setCategoryId(item.category_id || "");
       setSku(item.sku || "");
     }
   }, [item]);
@@ -43,7 +44,7 @@ export const EditItemDialog = ({ open, onOpenChange, onUpdateItem, item }: EditI
         description: description || undefined,
         price: parseFloat(price) || 0,
         mrc: mrc ? parseFloat(mrc) : undefined,
-        category: category || undefined,
+        category_id: categoryId || undefined,
         sku: sku || undefined,
       });
       
@@ -128,14 +129,14 @@ export const EditItemDialog = ({ open, onOpenChange, onUpdateItem, item }: EditI
 
             <div className="space-y-2">
               <Label htmlFor="edit-category">Category</Label>
-              <Select value={category} onValueChange={setCategory}>
+              <Select value={categoryId} onValueChange={setCategoryId}>
                 <SelectTrigger>
                   <SelectValue placeholder="Select category" />
                 </SelectTrigger>
                 <SelectContent>
-                  {ITEM_CATEGORIES.map((cat) => (
-                    <SelectItem key={cat} value={cat}>
-                      {cat}
+                  {categories.map((category) => (
+                    <SelectItem key={category.id} value={category.id}>
+                      {category.name}
                     </SelectItem>
                   ))}
                 </SelectContent>
