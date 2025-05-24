@@ -133,12 +133,18 @@ const Auth = () => {
     try {
       setIsSubmitting(true);
       
-      // Get the fully qualified URL with deployment domain
+      // Use the deployed URL instead of localhost
       const currentUrl = window.location.origin;
-      const redirectUrl = `${currentUrl}/auth`;
+      
+      // Check if we're on localhost and use the production URL instead
+      const isLocalhost = currentUrl.includes('localhost') || currentUrl.includes('127.0.0.1');
+      const redirectUrl = isLocalhost 
+        ? 'https://34d679df-b261-47ea-b136-e7aae591255b.lovableproject.com/auth'
+        : `${currentUrl}/auth`;
       
       console.log('Current origin URL:', currentUrl);
       console.log('Full redirect URL:', redirectUrl);
+      console.log('Is localhost?', isLocalhost);
       
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
         redirectTo: redirectUrl,
