@@ -76,16 +76,16 @@ export const ClientList = ({
       
       toast({
         title: "Success",
-        description: "Agent updated successfully in the database",
+        description: "Salesperson updated successfully in the database",
       });
       
       // Refresh clients list to get the latest data
       onFetchClients();
     } catch (error: any) {
-      console.error('Error updating agent in database:', error);
+      console.error('Error updating salesperson in database:', error);
       toast({
         title: "Error",
-        description: `Failed to update agent in database: ${error.message}`,
+        description: `Failed to update salesperson in database: ${error.message}`,
         variant: "destructive"
       });
     }
@@ -133,7 +133,7 @@ export const ClientList = ({
           .eq('associated_agent_id', deletingClient.id);
 
         if (updateError) {
-          console.error('Error reassigning users to new agent:', updateError);
+          console.error('Error reassigning users to new salesperson:', updateError);
           toast({
             title: "Error",
             description: `Failed to reassign users: ${updateError.message}`,
@@ -152,10 +152,10 @@ export const ClientList = ({
           .eq('associated_agent_id', deletingClient.id);
 
         if (updateError) {
-          console.error('Error removing agent associations:', updateError);
+          console.error('Error removing salesperson associations:', updateError);
           toast({
             title: "Error",
-            description: `Failed to remove agent associations: ${updateError.message}`,
+            description: `Failed to remove salesperson associations: ${updateError.message}`,
             variant: "destructive"
           });
           return;
@@ -169,10 +169,10 @@ export const ClientList = ({
         .eq('id', deletingClient.id);
 
       if (deleteError) {
-        console.error('Error deleting agent from database:', deleteError);
+        console.error('Error deleting salesperson from database:', deleteError);
         toast({
           title: "Error",
-          description: `Failed to delete agent from database: ${deleteError.message}`,
+          description: `Failed to delete salesperson from database: ${deleteError.message}`,
           variant: "destructive"
         });
         return;
@@ -184,14 +184,14 @@ export const ClientList = ({
       toast({
         title: "Success",
         description: reassignToAgentId 
-          ? "Agent deleted and users reassigned successfully" 
-          : "Agent deleted successfully from the database",
+          ? "Salesperson deleted and users reassigned successfully" 
+          : "Salesperson deleted successfully from the database",
       });
     } catch (error: any) {
-      console.error('Exception deleting agent from database:', error);
+      console.error('Exception deleting salesperson from database:', error);
       toast({
         title: "Error",
-        description: `Failed to delete agent from database: ${error.message}`,
+        description: `Failed to delete salesperson from database: ${error.message}`,
         variant: "destructive"
       });
     }
@@ -201,15 +201,15 @@ export const ClientList = ({
     <>
       <Card className="bg-white shadow-lg border-0">
         <CardHeader>
-          <CardTitle className="text-xl font-semibold text-gray-900">Agent Management</CardTitle>
-          <CardDescription>Manage your commission agents and their rates</CardDescription>
+          <CardTitle className="text-xl font-semibold text-gray-900">Salesperson Management</CardTitle>
+          <CardDescription>Manage your commission salespersons and their rates</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
             {clients.length === 0 ? (
               <div className="text-center py-8 text-gray-500">
                 <Users className="w-12 h-12 mx-auto mb-4 text-gray-300" />
-                <p>No agents added yet. Click "Add Agent" to get started!</p>
+                <p>No salespersons added yet. Click "Add Salesperson" to get started!</p>
               </div>
             ) : (
               clients.map((client) => {

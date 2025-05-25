@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -99,19 +98,19 @@ export const EditClientDialog = ({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>Edit Agent</DialogTitle>
+          <DialogTitle>Edit Salesperson</DialogTitle>
           <DialogDescription>
-            Update the agent details and commission rate.
+            Update the salesperson details and commission rate.
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="edit-companyName">Agent Name</Label>
+            <Label htmlFor="edit-companyName">Salesperson Name</Label>
             <Input
               id="edit-companyName"
               value={companyName}
               onChange={(e) => setCompanyName(e.target.value)}
-              placeholder="Enter agent name"
+              placeholder="Enter salesperson name"
             />
           </div>
           <div className="space-y-2">
@@ -164,7 +163,7 @@ export const EditClientDialog = ({
               Cancel
             </Button>
             <Button type="submit" className="bg-blue-600 hover:bg-blue-700">
-              Update Agent
+              Update Salesperson
             </Button>
           </div>
         </form>

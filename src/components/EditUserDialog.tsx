@@ -225,14 +225,14 @@ export const EditUserDialog = ({
               name="associated_agent_id"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Associate with Agent</FormLabel>
+                  <FormLabel>Associate with Salesperson</FormLabel>
                   <Select 
                     onValueChange={field.onChange} 
                     value={field.value || "none"}
                   >
                     <FormControl>
                       <SelectTrigger>
-                        <SelectValue placeholder="Select an agent" />
+                        <SelectValue placeholder="Select a salesperson" />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
@@ -245,7 +245,7 @@ export const EditUserDialog = ({
                         ))
                       ) : (
                         <SelectItem value="no-agents" disabled>
-                          No agents available
+                          No salespersons available
                         </SelectItem>
                       )}
                     </SelectContent>

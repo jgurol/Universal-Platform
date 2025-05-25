@@ -85,7 +85,7 @@ export const EditQuoteDialog = ({
     }
   };
 
-  const selectedAgent = clientId ? clients.find(c => c.id === clientId) : null;
+  const selectedSalesperson = clientId ? clients.find(c => c.id === clientId) : null;
 
   if (!quote) return null;
 
@@ -117,12 +117,12 @@ export const EditQuoteDialog = ({
             </Select>
           </div>
 
-          {/* Agent Display */}
-          {selectedAgent && (
+          {/* Salesperson Display */}
+          {selectedSalesperson && (
             <div className="space-y-2">
-              <Label>Associated Agent</Label>
+              <Label>Associated Salesperson</Label>
               <div className="border rounded-md px-3 py-2 bg-muted text-muted-foreground">
-                {selectedAgent.name} {selectedAgent.companyName && `(${selectedAgent.companyName})`}
+                {selectedSalesperson.name} {selectedSalesperson.companyName && `(${selectedSalesperson.companyName})`}
               </div>
             </div>
           )}

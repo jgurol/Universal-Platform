@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { 
   Table, 
@@ -79,9 +78,9 @@ export const ClientInfoList = ({ clientInfos, onUpdateClientInfo, agentMapping =
     setDeletingClientId(null);
   };
 
-  const getAgentName = (agentId: string | null) => {
+  const getSalespersonName = (agentId: string | null) => {
     if (!agentId || agentId === "none") return "-";
-    return agentMapping[agentId] || "Unknown agent";
+    return agentMapping[agentId] || "Unknown salesperson";
   };
 
   const selectedClient = viewingAddressesClientId 
@@ -102,7 +101,7 @@ export const ClientInfoList = ({ clientInfos, onUpdateClientInfo, agentMapping =
               <TableRow>
                 <TableHead>Company Name</TableHead>
                 <TableHead>Revio ID</TableHead>
-                <TableHead>Associated Agent</TableHead>
+                <TableHead>Associated Salesperson</TableHead>
                 <TableHead>Last Updated</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
@@ -112,7 +111,7 @@ export const ClientInfoList = ({ clientInfos, onUpdateClientInfo, agentMapping =
                 <TableRow key={clientInfo.id}>
                   <TableCell className="font-medium">{clientInfo.company_name}</TableCell>
                   <TableCell className="font-mono text-sm">{clientInfo.revio_id || "-"}</TableCell>
-                  <TableCell>{getAgentName(clientInfo.agent_id)}</TableCell>
+                  <TableCell>{getSalespersonName(clientInfo.agent_id)}</TableCell>
                   <TableCell>{new Date(clientInfo.updated_at).toLocaleDateString()}</TableCell>
                   <TableCell className="text-right">
                     <div className="flex justify-end gap-2">

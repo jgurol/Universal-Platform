@@ -54,9 +54,9 @@ export const AddClientDialog = ({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>Add New Agent</DialogTitle>
+          <DialogTitle>Add New Salesperson</DialogTitle>
           <DialogDescription>
-            Add a new agent to receive commission payments
+            Add a new salesperson to receive commission payments
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
@@ -145,7 +145,7 @@ export const AddClientDialog = ({
             >
               Cancel
             </Button>
-            <Button type="submit">Add Agent</Button>
+            <Button type="submit">Add Salesperson</Button>
           </div>
         </form>
       </DialogContent>

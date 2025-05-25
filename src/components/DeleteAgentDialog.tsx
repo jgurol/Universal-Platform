@@ -51,7 +51,7 @@ export const DeleteAgentDialog = ({
         <AlertDialogHeader>
           <div className="flex items-center gap-2">
             <AlertTriangle className="h-5 w-5 text-red-600" />
-            <AlertDialogTitle>Delete Agent</AlertDialogTitle>
+            <AlertDialogTitle>Delete Salesperson</AlertDialogTitle>
           </div>
           <AlertDialogDescription className="text-left space-y-3">
             <p>
@@ -60,7 +60,7 @@ export const DeleteAgentDialog = ({
             {associatedUsersCount > 0 && (
               <div className="bg-yellow-50 border border-yellow-200 rounded-md p-3">
                 <p className="text-yellow-800 font-medium">
-                  ⚠️ Warning: This agent has {associatedUsersCount} associated user(s).
+                  ⚠️ Warning: This salesperson has {associatedUsersCount} associated user(s).
                 </p>
                 <p className="text-yellow-700 text-sm mt-1">
                   What would you like to do with the associated users?
@@ -94,18 +94,18 @@ export const DeleteAgentDialog = ({
                   onChange={() => setDeleteAction("reassign")}
                   className="text-blue-600"
                 />
-                <span className="text-sm">Reassign users to another agent</span>
+                <span className="text-sm">Reassign users to another salesperson</span>
               </label>
             </div>
 
             {deleteAction === "reassign" && (
               <div className="ml-6">
                 <label className="text-sm font-medium text-gray-700">
-                  Select agent to reassign users to:
+                  Select salesperson to reassign users to:
                 </label>
                 <Select value={selectedReassignAgent} onValueChange={setSelectedReassignAgent}>
                   <SelectTrigger className="mt-1">
-                    <SelectValue placeholder="Choose an agent" />
+                    <SelectValue placeholder="Choose a salesperson" />
                   </SelectTrigger>
                   <SelectContent>
                     {availableAgents
@@ -129,7 +129,7 @@ export const DeleteAgentDialog = ({
             disabled={deleteAction === "reassign" && !selectedReassignAgent}
             className="bg-red-600 hover:bg-red-700 text-white"
           >
-            Delete Agent
+            Delete Salesperson
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>

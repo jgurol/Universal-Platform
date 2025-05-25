@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Header } from "@/components/Header";
 import { ClientList } from "@/components/ClientList";
@@ -199,9 +198,9 @@ export default function AgentManagement() {
         .single();
 
       if (error) {
-        console.error('Error adding agent:', error);
+        console.error('Error adding salesperson:', error);
         toast({
-          title: "Failed to add agent",
+          title: "Failed to add salesperson",
           description: error.message,
           variant: "destructive"
         });
@@ -221,7 +220,7 @@ export default function AgentManagement() {
 
         setClients([...clients, newClientWithId]);
         toast({
-          title: "Agent added",
+          title: "Salesperson added",
           description: `${newClientWithId.name} has been added successfully.`,
         });
       }
@@ -229,7 +228,7 @@ export default function AgentManagement() {
       console.error('Error in add client operation:', err);
       toast({
         title: "Error",
-        description: "Failed to add agent",
+        description: "Failed to add salesperson",
         variant: "destructive"
       });
     }
@@ -254,8 +253,8 @@ export default function AgentManagement() {
       
       <Card className="bg-white shadow-lg border-0 mt-8">
         <CardHeader>
-          <CardTitle className="text-2xl font-bold text-gray-900">Agent Management</CardTitle>
-          <CardDescription>Manage your commission agents and their rates</CardDescription>
+          <CardTitle className="text-2xl font-bold text-gray-900">Salesperson Management</CardTitle>
+          <CardDescription>Manage your commission salespersons and their rates</CardDescription>
         </CardHeader>
         <CardContent>
           {isAdmin && (
@@ -265,7 +264,7 @@ export default function AgentManagement() {
                 className="bg-green-600 hover:bg-green-700 text-white"
               >
                 <Plus className="w-4 h-4 mr-1" />
-                Add Agent
+                Add Salesperson
               </Button>
             </div>
           )}

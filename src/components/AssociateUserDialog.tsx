@@ -48,7 +48,7 @@ export const AssociateUserDialog = ({
     if (!selectedAgentId) {
       toast({
         title: "Selection required",
-        description: "Please select an agent to associate with",
+        description: "Please select a salesperson to associate with",
         variant: "destructive",
       });
       return;
@@ -61,7 +61,7 @@ export const AssociateUserDialog = ({
       if (!selectedAgent) {
         toast({
           title: "Association failed",
-          description: "Selected agent not found",
+          description: "Selected salesperson not found",
           variant: "destructive",
         });
         return;
@@ -98,7 +98,7 @@ export const AssociateUserDialog = ({
       
       toast({
         title: "User associated",
-        description: "User has been successfully associated with the agent",
+        description: "User has been successfully associated with the salesperson",
       });
 
       onUpdateUser(updatedUser);
@@ -122,16 +122,16 @@ export const AssociateUserDialog = ({
         <DialogHeader>
           <DialogTitle>Associate User</DialogTitle>
           <DialogDescription>
-            Associate {user.full_name || user.email} with an agent.
+            Associate {user.full_name || user.email} with a salesperson.
           </DialogDescription>
         </DialogHeader>
         
         <div className="space-y-4">
           <div>
-            <label className="text-sm font-medium">Select Agent</label>
+            <label className="text-sm font-medium">Select Salesperson</label>
             <Select value={selectedAgentId} onValueChange={setSelectedAgentId}>
               <SelectTrigger className="mt-1">
-                <SelectValue placeholder="Choose an agent" />
+                <SelectValue placeholder="Choose a salesperson" />
               </SelectTrigger>
               <SelectContent>
                 {agents.length > 0 ? (
@@ -142,7 +142,7 @@ export const AssociateUserDialog = ({
                   ))
                 ) : (
                   <SelectItem value="no-agents" disabled>
-                    No agents available
+                    No salespersons available
                   </SelectItem>
                 )}
               </SelectContent>
