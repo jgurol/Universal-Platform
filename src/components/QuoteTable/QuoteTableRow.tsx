@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Quote, ClientInfo } from "@/pages/Index";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -34,6 +34,27 @@ export const QuoteTableRow = ({
   const { toast } = useToast();
   const [isEmailDialogOpen, setIsEmailDialogOpen] = useState(false);
   const [emailStatus, setEmailStatus] = useState<'idle' | 'success' | 'error'>('idle');
+
+  // Load email status from database when component mounts
+  useEffect(() => {
+    const loadEmailStatus = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('quotes')
+          .select('email_status')
+          .eq('id', quote.id)
+          .single();
+
+        if (!error && data?.email_status) {
+          setEmailStatus(data.email_status as 'idle' | 'success' | 'error');
+        }
+      } catch (err) {
+        console.error('Error loading email status:', err);
+      }
+    };
+
+    loadEmailStatus();
+  }, [quote.id]);
 
   const clientInfo = clientInfos.find(ci => ci.id === quote.clientInfoId);
   const salespersonName = agentMapping[quote.clientId] || quote.clientName;
@@ -115,25 +136,51 @@ export const QuoteTableRow = ({
     }
   };
 
-  const handleEmailSuccess = () => {
-    console.log('Email success - setting status to success permanently');
+  const handleEmailSuccess = async () => {
+    console.log('Email success - updating database with success status');
     setEmailStatus('success');
+    
+    // Update email status in database
+    try {
+      await supabase
+        .from('quotes')
+        .update({ 
+          email_status: 'success',
+          email_sent_at: new Date().toISOString()
+        })
+        .eq('id', quote.id);
+    } catch (error) {
+      console.error('Error updating email status in database:', error);
+    }
+
     toast({
       title: "Email sent!",
       description: "Quote email has been sent successfully",
     });
-    // Status now persists permanently - no setTimeout to reset
   };
 
-  const handleEmailError = () => {
-    console.log('Email error - setting status to error permanently');
+  const handleEmailError = async () => {
+    console.log('Email error - updating database with error status');
     setEmailStatus('error');
+    
+    // Update email status in database
+    try {
+      await supabase
+        .from('quotes')
+        .update({ 
+          email_status: 'error',
+          email_sent_at: new Date().toISOString()
+        })
+        .eq('id', quote.id);
+    } catch (error) {
+      console.error('Error updating email status in database:', error);
+    }
+
     toast({
       title: "Email failed",
       description: "Failed to send quote email",
       variant: "destructive"
     });
-    // Status now persists permanently - no setTimeout to reset
   };
 
   const getEmailIcon = () => {
