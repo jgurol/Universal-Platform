@@ -1,4 +1,3 @@
-
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
@@ -73,17 +72,9 @@ export const QuoteStatusBadge = ({ quoteId, status, onStatusUpdate }: QuoteStatu
         onStatusUpdate(newStatus);
       }
 
-      // Show different messages based on status change
-      let description = `Quote status changed to ${newStatus}`;
-      if (newStatus === 'approved') {
-        description += '. An order has been automatically created and circuit tracking initiated if applicable.';
-      } else if (newStatus === 'pending') {
-        description += ' and digital signature evidence removed';
-      }
-
       toast({
         title: "Status updated",
-        description: description,
+        description: `Quote status changed to ${newStatus}${newStatus === 'pending' ? ' and digital signature evidence removed' : ''}`,
       });
     } catch (err) {
       console.error('Error updating quote status:', err);

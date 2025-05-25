@@ -318,7 +318,7 @@ const AcceptQuote = () => {
 
       if (acceptanceError) {
         console.error('AcceptQuote - Error saving acceptance:', acceptanceError);
-        throw new Error(`Failed to save acceptance: ${acceptanceError.message}`);
+        throw acceptanceError;
       }
 
       // Update quote status to approved and set acceptance details
@@ -334,25 +334,7 @@ const AcceptQuote = () => {
 
       if (quoteError) {
         console.error('AcceptQuote - Error updating quote status:', quoteError);
-        throw new Error(`Failed to update quote status: ${quoteError.message}`);
-      }
-
-      // Call the edge function to handle order creation and circuit tracking
-      try {
-        const { data: orderResult, error: orderError } = await supabase.functions
-          .invoke('fix-quote-approval', {
-            body: { quoteId: quote.id }
-          });
-
-        if (orderError) {
-          console.error('AcceptQuote - Error creating order:', orderError);
-          // Don't fail the acceptance process if order creation fails
-        } else {
-          console.log('AcceptQuote - Order created successfully:', orderResult);
-        }
-      } catch (orderErr) {
-        console.error('AcceptQuote - Order creation failed:', orderErr);
-        // Continue with acceptance even if order creation fails
+        throw quoteError;
       }
 
       console.log('AcceptQuote - Quote acceptance completed successfully - status updated to approved');
@@ -362,11 +344,11 @@ const AcceptQuote = () => {
         description: "Thank you for accepting the agreement. We will be in touch soon!",
       });
 
-    } catch (error: any) {
+    } catch (error) {
       console.error('AcceptQuote - Error accepting quote:', error);
       toast({
         title: "Error",
-        description: error.message || "Failed to accept agreement. Please try again.",
+        description: "Failed to accept agreement. Please try again.",
         variant: "destructive"
       });
     } finally {
