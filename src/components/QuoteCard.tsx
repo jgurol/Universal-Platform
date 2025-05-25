@@ -1,210 +1,141 @@
-
-import { Badge } from "@/components/ui/badge";
+import React, { useState } from "react";
+import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Clock, Building, FileText, Users, Pencil, Trash2, Calendar, Copy } from "lucide-react";
-import { Quote, ClientInfo } from "@/pages/Index";
-import { useAuth } from "@/context/AuthContext";
-import { formatDateForDisplay } from "@/utils/dateUtils";
+import { Badge } from "@/components/ui/badge";
+import { Download, Edit, Trash2, PenTool } from "lucide-react";
+import { Quote, Client, ClientInfo } from "@/pages/Index";
+import { generateQuotePDF } from "@/utils/pdfUtils";
+import { useToast } from "@/hooks/use-toast";
+import { SignatureDialog } from "@/components/SignatureDialog";
+import { useSignatureWorkflow } from "@/hooks/useSignatureWorkflow";
 
 interface QuoteCardProps {
   quote: Quote;
+  clients: Client[];
   clientInfos: ClientInfo[];
-  onEditClick?: (quote: Quote) => void;
-  onDeleteQuote?: (quoteId: string) => void;
-  onCopyQuote?: (quote: Quote) => void;
+  onEdit: (id: string) => void;
+  onDelete: (id: string) => void;
 }
 
-// Array for month names - needed for display
-const months = [
-  { value: "1", label: "January" },
-  { value: "2", label: "February" },
-  { value: "3", label: "March" },
-  { value: "4", label: "April" },
-  { value: "5", label: "May" },
-  { value: "6", label: "June" },
-  { value: "7", label: "July" },
-  { value: "8", label: "August" },
-  { value: "9", label: "September" },
-  { value: "10", label: "October" },
-  { value: "11", label: "November" },
-  { value: "12", label: "December" },
-];
+export const QuoteCard = ({ quote, clients, clientInfos, onEdit, onDelete }: QuoteCardProps) => {
+  const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
+  const { toast } = useToast();
 
-export const QuoteCard = ({
-  quote,
-  clientInfos,
-  onEditClick,
-  onDeleteQuote,
-  onCopyQuote
-}: QuoteCardProps) => {
-  const { isAdmin } = useAuth();
+  const {
+    isSignatureDialogOpen,
+    setIsSignatureDialogOpen,
+    currentQuote,
+    currentClientInfo,
+    initiateSignature,
+    handleSignatureComplete
+  } = useSignatureWorkflow();
 
-  const handleDeleteQuote = () => {
-    if (onDeleteQuote) {
-      onDeleteQuote(quote.id);
+  const handleDownloadPDF = async () => {
+    setIsGeneratingPDF(true);
+    try {
+      const clientInfo = clientInfos.find(info => info.id === quote.clientInfoId);
+      const doc = await generateQuotePDF(quote, clientInfo);
+      const fileName = `quote-${quote.quoteNumber || quote.id.slice(0, 8)}.pdf`;
+      doc.save(fileName);
+      toast({
+        title: "PDF Download Started",
+        description: `The quote has been downloaded as ${fileName}`,
+      });
+    } catch (error) {
+      console.error("Error generating PDF:", error);
+      toast({
+        title: "Error",
+        description: "Failed to generate PDF. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsGeneratingPDF(false);
     }
   };
 
-  const handleCopyQuote = () => {
-    if (onCopyQuote) {
-      onCopyQuote(quote);
-    }
+  const handleEdit = () => {
+    onEdit(quote.id);
   };
 
-  const isExpired = quote.expiresAt && new Date(quote.expiresAt) < new Date();
-
-  // Use the already calculated totals from the quote data
-  const getMRCTotal = () => {
-    if (!quote.quoteItems || quote.quoteItems.length === 0) {
-      return 0;
-    }
-    
-    const mrcTotal = quote.quoteItems
-      .filter(item => item.charge_type === 'MRC')
-      .reduce((total, item) => total + (Number(item.total_price) || 0), 0);
-    
-    console.info('[QuoteCard] MRC total calculated:', mrcTotal);
-    return mrcTotal;
+  const handleDelete = () => {
+    onDelete(quote.id);
   };
 
-  const getNRCTotal = () => {
-    if (!quote.quoteItems || quote.quoteItems.length === 0) {
-      return 0;
-    }
+  const handleAcceptAgreement = () => {
+    const clientInfo = clientInfos.find(info => info.id === quote.clientInfoId);
+    const salesperson = quote.clientId ? clients.find(c => c.id === quote.clientId) : null;
     
-    const nrcTotal = quote.quoteItems
-      .filter(item => item.charge_type === 'NRC')
-      .reduce((total, item) => total + (Number(item.total_price) || 0), 0);
-    
-    console.info('[QuoteCard] NRC total calculated:', nrcTotal);
-    return nrcTotal;
+    initiateSignature(quote, clientInfo, salesperson?.name);
   };
-
-  const mrcTotal = getMRCTotal();
-  const nrcTotal = getNRCTotal();
-  const totalAmount = mrcTotal + nrcTotal;
-
-  console.info('[QuoteCard] Final totals for quote', quote.id, '- MRC:', mrcTotal, 'NRC:', nrcTotal, 'Total:', totalAmount);
 
   return (
-    <div className="flex items-center justify-between p-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors duration-200">
-      <div className="flex-1">
-        <div className="flex items-center gap-2 mb-1">
-          <h4 className="font-medium text-gray-900">{quote.clientName}</h4>
-          <Badge variant="outline" className="text-xs">
-            ${totalAmount.toLocaleString()}
-          </Badge>
-          {nrcTotal > 0 && (
-            <Badge variant="outline" className="text-xs bg-blue-50 text-blue-700 border-blue-200">
-              NRC: ${nrcTotal.toLocaleString()}
-            </Badge>
-          )}
-          {mrcTotal > 0 && (
-            <Badge variant="outline" className="text-xs bg-green-50 text-green-700 border-green-200">
-              MRC: ${mrcTotal.toLocaleString()}
-            </Badge>
-          )}
-          <Badge variant="outline" className="text-xs bg-gray-50 text-gray-700 border-gray-200 font-mono">
-            ID: {quote.id.slice(0, 8)}...
-          </Badge>
-          {quote.status && (
-            <Badge 
-              variant="outline" 
-              className={`text-xs ${
-                quote.status === 'approved' ? 'bg-green-50 text-green-700 border-green-200' :
-                quote.status === 'pending' ? 'bg-yellow-50 text-yellow-700 border-yellow-200' :
-                'bg-gray-50 text-gray-700 border-gray-200'
-              }`}
-            >
-              {quote.status.charAt(0).toUpperCase() + quote.status.slice(1)}
-            </Badge>
-          )}
-          {isExpired && (
-            <Badge variant="outline" className="text-xs bg-red-50 text-red-700 border-red-200">
-              <Clock className="w-3 h-3 mr-1" />
-              Expired
-            </Badge>
-          )}
-        </div>
-        <div className="flex items-center gap-1 mb-1 text-sm text-gray-600">
-          <Building className="w-4 h-4" />
-          {quote.companyName}
-        </div>
-        {/* Display client company if available */}
-        {quote.clientInfoId && quote.clientInfoId !== "none" && (
-          <div className="flex items-center gap-1 mb-1 text-sm text-gray-600">
-            <Users className="w-4 h-4" />
-            Client: {quote.clientCompanyName || clientInfos.find(ci => ci.id === quote.clientInfoId)?.company_name || "N/A"}
+    <>
+      <Card className="p-6 hover:shadow-lg transition-shadow">
+        <div className="flex justify-between items-center mb-4">
+          <div>
+            <h3 className="text-lg font-semibold">{quote.description}</h3>
+            <p className="text-sm text-gray-500">
+              Quote Number: {quote.quoteNumber || `Q-${quote.id.slice(0, 8)}`}
+            </p>
           </div>
-        )}
-        <div className="text-sm text-gray-600 flex items-center gap-1">
-          {quote.quoteNumber && (
-            <>
-              <FileText className="w-3 h-3" />
-              <span>Quote #{quote.quoteNumber}</span>
-              {quote.quoteMonth && quote.quoteYear && (
-                <span className="text-gray-500">
-                  ({months.find(m => m.value === quote.quoteMonth)?.label} {quote.quoteYear})
-                </span>
-              )}
-            </>
-          )}
+          <Badge variant="secondary">{quote.status}</Badge>
         </div>
-        <div className="text-sm text-gray-600 mt-1">
-          {quote.description}
-        </div>
-        
-        <div className="text-xs text-gray-500 mt-1 flex flex-wrap gap-2">
-          <span>Date: {formatDateForDisplay(quote.date)}</span>
+
+        <div className="mb-4">
+          <p className="text-gray-600">
+            Client: {quote.clientName} ({quote.companyName})
+          </p>
+          <p className="text-gray-600">Amount: ${quote.amount.toFixed(2)}</p>
+          <p className="text-gray-600">Date: {new Date(quote.date).toLocaleDateString()}</p>
           {quote.expiresAt && (
-            <span className="flex items-center gap-1">
-              <Calendar className="w-3 h-3" />
-              Expires: {formatDateForDisplay(quote.expiresAt)}
-            </span>
+            <p className="text-gray-600">
+              Expires: {new Date(quote.expiresAt).toLocaleDateString()}
+            </p>
           )}
         </div>
-        
-        {/* Commission section */}
-        <div className="flex items-center justify-between mt-3 pt-2 border-t border-gray-100">
-          <div className="font-medium text-gray-600">
-            Commission: ${quote.commission?.toFixed(2) || '0.00'}
-          </div>
-          {isAdmin && (onDeleteQuote || onCopyQuote) && (
-            <div className="flex gap-2">
-              {onCopyQuote && (
-                <Button 
-                  size="sm" 
-                  variant="outline" 
-                  className="text-xs h-7 text-green-600 border-green-200 hover:bg-green-50"
-                  onClick={handleCopyQuote}
-                >
-                  <Copy className="w-3 h-3 mr-1 text-green-600" /> Copy
-                </Button>
-              )}
-              {onDeleteQuote && (
-                <Button 
-                  size="sm" 
-                  variant="outline" 
-                  className="text-xs h-7 text-red-600 border-red-200 hover:bg-red-50"
-                  onClick={handleDeleteQuote}
-                >
-                  <Trash2 className="w-3 h-3 mr-1 text-red-600" /> Delete
-                </Button>
-              )}
-            </div>
-          )}
+
+        <div className="flex flex-wrap gap-2 mt-4">
+          <Button
+            onClick={handleDownloadPDF}
+            className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700"
+            disabled={isGeneratingPDF}
+          >
+            <Download className="h-4 w-4" />
+            Download PDF
+          </Button>
+          
+          <Button
+            onClick={handleAcceptAgreement}
+            className="flex items-center gap-2 bg-green-600 hover:bg-green-700"
+          >
+            <PenTool className="h-4 w-4" />
+            Accept Agreement
+          </Button>
+
+          <Button
+            onClick={handleEdit}
+            className="flex items-center gap-2 bg-yellow-500 hover:bg-yellow-600"
+          >
+            <Edit className="h-4 w-4" />
+            Edit
+          </Button>
+          <Button
+            onClick={handleDelete}
+            className="flex items-center gap-2 bg-red-600 hover:bg-red-700"
+          >
+            <Trash2 className="h-4 w-4" />
+            Delete
+          </Button>
         </div>
-      </div>
-      {isAdmin && onEditClick && (
-        <Button 
-          variant="ghost" 
-          size="sm" 
-          className="text-gray-500 hover:text-blue-600"
-          onClick={() => onEditClick(quote)}
-        >
-          <Pencil className="w-4 h-4" />
-        </Button>
-      )}
-    </div>
+      </Card>
+
+      <SignatureDialog
+        open={isSignatureDialogOpen}
+        onOpenChange={setIsSignatureDialogOpen}
+        quote={currentQuote || quote}
+        clientInfo={currentClientInfo}
+        onSignatureComplete={handleSignatureComplete}
+      />
+    </>
   );
 };

@@ -2,6 +2,7 @@ import jsPDF from 'jspdf';
 import { Quote, ClientInfo } from '@/pages/Index';
 import { supabase } from '@/integrations/supabase/client';
 import { addMarkdownTextToPDF } from './markdownToPdf';
+import { SignatureData } from '@/components/SignatureDialog';
 
 // Helper function to load settings from database
 const loadSettingsFromDatabase = async () => {
@@ -550,6 +551,71 @@ export const generateQuotePDF = async (quote: Quote, clientInfo?: ClientInfo, sa
     doc.setFontSize(8);
     const splitNotes = doc.splitTextToSize(quote.notes, 175);
     doc.text(splitNotes, 20, yPos);
+  }
+  
+  return doc;
+};
+
+export const generateSignedQuotePDF = async (
+  quote: Quote, 
+  clientInfo?: ClientInfo, 
+  salespersonName?: string,
+  signatureData?: SignatureData
+) => {
+  // Generate the base PDF first
+  const doc = await generateQuotePDF(quote, clientInfo, salespersonName);
+  
+  if (signatureData) {
+    // Add signature page
+    doc.addPage();
+    
+    // Title
+    doc.setFontSize(16);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Electronic Signature Page', 20, 30);
+    
+    // Agreement details
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'normal');
+    doc.text(`Quote Number: ${quote.quoteNumber || `Q-${quote.id.slice(0, 8)}`}`, 20, 50);
+    doc.text(`Company: ${clientInfo?.company_name || 'N/A'}`, 20, 60);
+    doc.text(`Agreement Amount: $${quote.amount.toFixed(2)}`, 20, 70);
+    doc.text(`Signed Date: ${signatureData.signedDate}`, 20, 80);
+    
+    // Signature section
+    doc.setFontSize(12);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Customer Signature:', 20, 110);
+    
+    // Add signature image
+    if (signatureData.signatureImageData) {
+      try {
+        doc.addImage(signatureData.signatureImageData, 'PNG', 20, 120, 150, 60);
+      } catch (error) {
+        console.error('Error adding signature image to PDF:', error);
+        // Fallback: add text indicating signature was provided
+        doc.setFont('helvetica', 'italic');
+        doc.text('[Electronic Signature Applied]', 20, 150);
+      }
+    }
+    
+    // Signer information
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(10);
+    doc.text(`Name: ${signatureData.signerName}`, 20, 200);
+    if (signatureData.signerTitle) {
+      doc.text(`Title: ${signatureData.signerTitle}`, 20, 210);
+    }
+    doc.text(`Date: ${signatureData.signedDate}`, 20, 220);
+    
+    // Legal disclaimer
+    doc.setFontSize(8);
+    doc.setTextColor(100, 100, 100);
+    const disclaimerText = doc.splitTextToSize(
+      'This document has been electronically signed and is legally binding. The electronic signature above has the same legal effect as a handwritten signature.',
+      170
+    );
+    doc.text(disclaimerText, 20, 240);
   }
   
   return doc;
