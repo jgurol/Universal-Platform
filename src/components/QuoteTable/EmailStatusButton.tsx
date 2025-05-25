@@ -40,7 +40,7 @@ export const EmailStatusButton = ({ quoteId, onEmailClick }: EmailStatusButtonPr
   }, [quoteId]);
 
   const getEmailIcon = () => {
-    if (emailStatus === 'success') return <CheckCircle className="w-4 h-4 text-green-600" />;
+    if (emailStatus === 'success') return <Mail className="w-4 h-4 text-green-600" />;
     if (emailStatus === 'error') return <XCircle className="w-4 h-4 text-red-600" />;
     return <Mail className="w-4 h-4" />;
   };
