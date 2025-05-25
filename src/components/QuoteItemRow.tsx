@@ -36,6 +36,11 @@ export const QuoteItemRow = ({ quoteItem, addresses, onUpdateItem, onRemoveItem 
     setIsDescriptionOpen(false);
   };
 
+  const handleAddressChange = (addressId: string) => {
+    console.log(`[QuoteItemRow] Address changed for item ${quoteItem.id} to address ${addressId}`);
+    onUpdateItem(quoteItem.id, 'address_id', addressId);
+  };
+
   return (
     <div className="flex items-start gap-2 p-3 border rounded bg-gray-50">
       {/* Drag Handle */}
@@ -96,7 +101,7 @@ export const QuoteItemRow = ({ quoteItem, addresses, onUpdateItem, onRemoveItem 
             <MapPin className="w-3 h-3" />
             <Select 
               value={quoteItem.address_id || ""} 
-              onValueChange={(value) => onUpdateItem(quoteItem.id, 'address_id', value)}
+              onValueChange={handleAddressChange}
             >
               <SelectTrigger className="text-xs h-6 border-gray-300">
                 <SelectValue placeholder="Select location" />

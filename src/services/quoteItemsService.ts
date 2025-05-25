@@ -43,7 +43,7 @@ export const fetchQuoteItems = async (quoteId: string): Promise<QuoteItemData[]>
 
 export const updateQuoteItems = async (quoteId: string, quoteItems: QuoteItemData[]): Promise<void> => {
   try {
-    console.log('[QuoteItemsService] Updating quote items with custom descriptions');
+    console.log('[QuoteItemsService] Updating quote items with address assignments:', quoteItems.map(item => ({ id: item.id, address_id: item.address_id })));
     
     // Delete existing quote items
     await supabase
@@ -76,16 +76,19 @@ export const updateQuoteItems = async (quoteId: string, quoteItems: QuoteItemDat
         }
       }
 
-      // Then insert the quote items
-      const itemsToInsert = quoteItems.map(item => ({
-        quote_id: quoteId,
-        item_id: item.item_id,
-        quantity: item.quantity,
-        unit_price: item.unit_price,
-        total_price: item.total_price,
-        charge_type: item.charge_type,
-        address_id: item.address_id || null
-      }));
+      // Then insert the quote items with proper address_id handling
+      const itemsToInsert = quoteItems.map(item => {
+        console.log(`[QuoteItemsService] Inserting item ${item.id} with address_id: ${item.address_id}`);
+        return {
+          quote_id: quoteId,
+          item_id: item.item_id,
+          quantity: item.quantity,
+          unit_price: item.unit_price,
+          total_price: item.total_price,
+          charge_type: item.charge_type,
+          address_id: item.address_id || null
+        };
+      });
 
       const { error: insertError } = await supabase
         .from('quote_items')
@@ -94,7 +97,7 @@ export const updateQuoteItems = async (quoteId: string, quoteItems: QuoteItemDat
       if (insertError) {
         console.error('Error inserting quote items:', insertError);
       } else {
-        console.log('[QuoteItemsService] Successfully saved quote items with custom descriptions');
+        console.log('[QuoteItemsService] Successfully saved quote items with address assignments');
       }
     }
   } catch (err) {
