@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -54,13 +55,13 @@ export default function SystemSettings() {
   useEffect(() => {
     const loadSettings = () => {
       const savedSettings = {
-        timezone: localStorage.getItem('app_timezone') || settings.timezone,
-        companyName: localStorage.getItem('company_name') || settings.companyName,
-        businessAddress: localStorage.getItem('business_address') || settings.businessAddress,
-        businessPhone: localStorage.getItem('business_phone') || settings.businessPhone,
-        businessFax: localStorage.getItem('business_fax') || settings.businessFax,
-        supportEmail: localStorage.getItem('support_email') || settings.supportEmail,
-        defaultCommissionRate: localStorage.getItem('default_commission_rate') || settings.defaultCommissionRate,
+        timezone: localStorage.getItem('app_timezone') ?? settings.timezone,
+        companyName: localStorage.getItem('company_name') ?? settings.companyName,
+        businessAddress: localStorage.getItem('business_address') ?? settings.businessAddress,
+        businessPhone: localStorage.getItem('business_phone') ?? settings.businessPhone,
+        businessFax: localStorage.getItem('business_fax') ?? settings.businessFax,
+        supportEmail: localStorage.getItem('support_email') ?? settings.supportEmail,
+        defaultCommissionRate: localStorage.getItem('default_commission_rate') ?? settings.defaultCommissionRate,
         showCompanyNameOnPDF: localStorage.getItem('show_company_name_on_pdf') !== 'false'
       };
       
