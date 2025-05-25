@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-import { Trash2, Plus } from "lucide-react";
+import { Trash2, Plus, MapPin } from "lucide-react";
 import { Item } from "@/types/items";
 import { useItems } from "@/hooks/useItems";
 import { useClientAddresses } from "@/hooks/useClientAddresses";
@@ -125,44 +125,52 @@ export const QuoteItemsManager = ({ items, onItemsChange, clientInfoId }: QuoteI
           <Label>Quote Items</Label>
           
           {/* Column Headers */}
-          <div className="grid grid-cols-8 gap-2 items-center p-2 border-b bg-gray-100 rounded-t-lg font-medium text-sm">
-            <div>Item</div>
-            <div>Location</div>
+          <div className="grid grid-cols-6 gap-2 items-center p-2 border-b bg-gray-100 rounded-t-lg font-medium text-sm">
+            <div className="col-span-2">Item & Location</div>
             <div>Qty</div>
             <div>Sell Price</div>
             <div>Cost</div>
-            <div>Total</div>
-            <div>Type</div>
-            <div>Action</div>
+            <div>Total & Type</div>
           </div>
           
           <div className="border rounded-lg space-y-3 max-h-60 overflow-y-auto">
             {items.map((quoteItem) => (
-              <div key={quoteItem.id} className="grid grid-cols-8 gap-2 items-center p-2 border rounded bg-gray-50">
-                <div className="text-sm font-medium">
-                  {quoteItem.item?.name || 'Unknown Item'}
+              <div key={quoteItem.id} className="grid grid-cols-6 gap-2 items-start p-3 border rounded bg-gray-50">
+                {/* Item & Location Column */}
+                <div className="col-span-2 space-y-2">
+                  <div className="text-sm font-medium">
+                    {quoteItem.item?.name || 'Unknown Item'}
+                  </div>
+                  {quoteItem.item?.description && (
+                    <div className="text-xs text-gray-600">
+                      {quoteItem.item.description}
+                    </div>
+                  )}
+                  <div className="flex items-center gap-1 text-xs text-gray-500">
+                    <MapPin className="w-3 h-3" />
+                    <Select 
+                      value={quoteItem.address_id || ""} 
+                      onValueChange={(value) => updateItem(quoteItem.id, 'address_id', value)}
+                    >
+                      <SelectTrigger className="text-xs h-6 border-gray-300">
+                        <SelectValue placeholder="Select location" />
+                      </SelectTrigger>
+                      <SelectContent className="bg-white border border-gray-200 shadow-lg z-50">
+                        {addresses.length === 0 ? (
+                          <SelectItem value="no-addresses" disabled>No addresses available</SelectItem>
+                        ) : (
+                          addresses.map((address) => (
+                            <SelectItem key={address.id} value={address.id}>
+                              {formatAddressShort(address)}
+                            </SelectItem>
+                          ))
+                        )}
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
-                <div>
-                  <Select 
-                    value={quoteItem.address_id || ""} 
-                    onValueChange={(value) => updateItem(quoteItem.id, 'address_id', value)}
-                  >
-                    <SelectTrigger className="text-xs h-8">
-                      <SelectValue placeholder="Select location" />
-                    </SelectTrigger>
-                    <SelectContent className="bg-white border border-gray-200 shadow-lg z-50">
-                      {addresses.length === 0 ? (
-                        <SelectItem value="no-addresses" disabled>No addresses available</SelectItem>
-                      ) : (
-                        addresses.map((address) => (
-                          <SelectItem key={address.id} value={address.id}>
-                            {formatAddressShort(address)}
-                          </SelectItem>
-                        ))
-                      )}
-                    </SelectContent>
-                  </Select>
-                </div>
+
+                {/* Quantity */}
                 <div>
                   <Input
                     type="number"
@@ -173,6 +181,8 @@ export const QuoteItemsManager = ({ items, onItemsChange, clientInfoId }: QuoteI
                     placeholder="Qty"
                   />
                 </div>
+
+                {/* Sell Price */}
                 <div>
                   <Input
                     type="number"
@@ -184,6 +194,8 @@ export const QuoteItemsManager = ({ items, onItemsChange, clientInfoId }: QuoteI
                     placeholder="Sell $"
                   />
                 </div>
+
+                {/* Cost */}
                 <div>
                   <Input
                     type="number"
@@ -195,27 +207,33 @@ export const QuoteItemsManager = ({ items, onItemsChange, clientInfoId }: QuoteI
                     placeholder="Cost $"
                   />
                 </div>
-                <div className="text-sm font-medium">
-                  ${quoteItem.total_price.toFixed(2)}
+
+                {/* Total & Type */}
+                <div className="space-y-2">
+                  <div className="text-sm font-medium">
+                    ${quoteItem.total_price.toFixed(2)}
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-1">
+                      <Switch
+                        checked={quoteItem.charge_type === 'MRC'}
+                        onCheckedChange={(checked) => updateItem(quoteItem.id, 'charge_type', checked ? 'MRC' : 'NRC')}
+                      />
+                      <span className="text-xs font-medium">
+                        {quoteItem.charge_type}
+                      </span>
+                    </div>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => removeItem(quoteItem.id)}
+                      className="h-6 w-6 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
+                    >
+                      <Trash2 className="w-3 h-3" />
+                    </Button>
+                  </div>
                 </div>
-                <div className="flex items-center space-x-2">
-                  <Switch
-                    checked={quoteItem.charge_type === 'MRC'}
-                    onCheckedChange={(checked) => updateItem(quoteItem.id, 'charge_type', checked ? 'MRC' : 'NRC')}
-                  />
-                  <span className="text-xs font-medium">
-                    {quoteItem.charge_type}
-                  </span>
-                </div>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => removeItem(quoteItem.id)}
-                  className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
-                >
-                  <Trash2 className="w-3 h-3" />
-                </Button>
               </div>
             ))}
           </div>
