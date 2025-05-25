@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -62,11 +63,20 @@ export const QuoteCard = ({ quote, clients, clientInfos, onEdit, onDelete }: Quo
   };
 
   const handleAcceptAgreement = () => {
+    console.log("Accept Agreement button clicked for quote:", quote.id);
+    
     const clientInfo = clientInfos.find(info => info.id === quote.clientInfoId);
     const salesperson = quote.clientId ? clients.find(c => c.id === quote.clientId) : null;
     
+    console.log("Client info found:", clientInfo);
+    console.log("Salesperson found:", salesperson);
+    
     initiateSignature(quote, clientInfo, salesperson?.name);
+    
+    console.log("Signature dialog should now be open");
   };
+
+  console.log("QuoteCard render - isSignatureDialogOpen:", isSignatureDialogOpen);
 
   return (
     <>

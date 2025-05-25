@@ -13,14 +13,23 @@ export const useSignatureWorkflow = () => {
   const { toast } = useToast();
 
   const initiateSignature = (quote: Quote, clientInfo?: ClientInfo, salesperson?: string) => {
+    console.log("initiateSignature called with:", { quote: quote.id, clientInfo: clientInfo?.id, salesperson });
+    
     setCurrentQuote(quote);
     setCurrentClientInfo(clientInfo);
     setSalespersonName(salesperson);
     setIsSignatureDialogOpen(true);
+    
+    console.log("Signature dialog state set to open");
   };
 
   const handleSignatureComplete = async (signatureData: SignatureData) => {
-    if (!currentQuote) return;
+    console.log("handleSignatureComplete called with signature data");
+    
+    if (!currentQuote) {
+      console.error("No current quote available for signature");
+      return;
+    }
 
     try {
       // Generate signed PDF
@@ -55,6 +64,8 @@ export const useSignatureWorkflow = () => {
       });
     }
   };
+
+  console.log("useSignatureWorkflow state:", { isSignatureDialogOpen, currentQuote: currentQuote?.id });
 
   return {
     isSignatureDialogOpen,
