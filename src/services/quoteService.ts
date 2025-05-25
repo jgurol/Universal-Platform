@@ -62,7 +62,7 @@ export const addQuoteToDatabase = async (
       return null;
     }
 
-    console.log('[addQuote] Quote created successfully with template_id:', quoteData.template_id);
+    console.log('[addQuote] Quote created successfully with template_id:', (quoteData as any).template_id);
 
     // Add quote items if any exist
     if (quoteData && newQuote.quoteItems && newQuote.quoteItems.length > 0) {
@@ -158,7 +158,7 @@ export const updateQuoteInDatabase = async (
       return null;
     }
 
-    console.log('[updateQuote] Successfully updated quote with template_id:', data.template_id);
+    console.log('[updateQuote] Successfully updated quote with template_id:', (data as any).template_id);
     return data;
   } catch (err) {
     console.error('Error in update quote operation:', err);
