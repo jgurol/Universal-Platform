@@ -1,3 +1,4 @@
+
 import jsPDF from 'jspdf';
 import { Quote, ClientInfo } from '@/pages/Index';
 import { supabase } from '@/integrations/supabase/client';
@@ -8,6 +9,7 @@ const addFormattedTextToPDF = (doc: jsPDF, htmlContent: string, startX: number, 
   const pageHeight = 297;
   const bottomMargin = 20;
   const topMargin = 20;
+  const paragraphSpacing = lineHeight * 1.2; // Consistent paragraph spacing
   
   // Clean and parse the HTML content
   const cleanContent = cleanHtmlContent(htmlContent);
@@ -19,9 +21,9 @@ const addFormattedTextToPDF = (doc: jsPDF, htmlContent: string, startX: number, 
     .filter(p => p.length > 0);
   
   paragraphs.forEach((paragraph, paragraphIndex) => {
-    // Add extra spacing between paragraphs (except for the first one)
+    // Add consistent spacing between paragraphs (except for the first one)
     if (paragraphIndex > 0) {
-      currentY += lineHeight * 1.5;
+      currentY += paragraphSpacing;
     }
     
     // Parse inline formatting within the paragraph
@@ -52,7 +54,7 @@ const addFormattedTextToPDF = (doc: jsPDF, htmlContent: string, startX: number, 
         doc.setFont('helvetica', 'normal');
       }
       
-      // Handle line breaks
+      // Handle line breaks within sections
       if (section.text === '\n') {
         currentY += lineHeight;
         return;
@@ -65,9 +67,6 @@ const addFormattedTextToPDF = (doc: jsPDF, htmlContent: string, startX: number, 
       doc.text(splitText, startX, currentY);
       currentY += splitText.length * lineHeight;
     });
-    
-    // Add some space after each paragraph
-    currentY += lineHeight * 0.5;
   });
   
   return currentY;
@@ -97,18 +96,24 @@ const cleanHtmlContent = (htmlContent: string): string => {
         return `<${tagName}>`;
       }
       
-      // Convert paragraph tags to double line breaks
+      // Convert paragraph tags to double line breaks for consistent spacing
       if (tagName === 'p') return '\n\n';
-      if (tagName === '/p') return '\n\n';
+      if (tagName === '/p') return '';
+      
+      // Convert div tags to paragraph breaks
+      if (tagName === 'div') return '\n\n';
+      if (tagName === '/div') return '';
       
       // Remove everything else
       return '';
     });
   
-  // Clean up multiple consecutive whitespace/newlines
+  // Clean up spacing more aggressively
   cleaned = cleaned
     .replace(/\s+/g, ' ') // Multiple spaces to single space
-    .replace(/\n\s*\n/g, '\n\n') // Multiple newlines to double newline
+    .replace(/\n\s+/g, '\n') // Remove spaces after newlines
+    .replace(/\s+\n/g, '\n') // Remove spaces before newlines
+    .replace(/\n{3,}/g, '\n\n') // Limit to maximum double newlines
     .trim();
   
   return cleaned;
