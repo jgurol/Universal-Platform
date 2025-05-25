@@ -152,13 +152,57 @@ export const AddQuoteDialog = ({ open, onOpenChange, onAddQuote, clients, client
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[1000px] max-h-[90vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-[1200px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Add Quote</DialogTitle>
-          <DialogDescription>
-            Create a new quote for a client.
-          </DialogDescription>
+          <div className="flex justify-between items-start">
+            <div>
+              <DialogTitle>Add Quote</DialogTitle>
+              <DialogDescription>
+                Create a new quote for a client.
+              </DialogDescription>
+            </div>
+            
+            {/* Quote Details - Top Right */}
+            <div className="grid grid-cols-1 gap-3 min-w-[280px]">
+              <div className="space-y-2">
+                <Label htmlFor="quoteNumber" className="text-sm">Quote Number</Label>
+                <Input
+                  id="quoteNumber"
+                  value={quoteNumber}
+                  onChange={(e) => setQuoteNumber(e.target.value)}
+                  placeholder="Auto-generated"
+                  disabled
+                  className="h-8"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="date" className="text-sm">Quote Date</Label>
+                <Input
+                  id="date"
+                  type="date"
+                  value={date}
+                  onChange={(e) => setDate(e.target.value)}
+                  required
+                  className="h-8"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="expiresAt" className="text-sm">Expiration Date</Label>
+                <Input
+                  id="expiresAt"
+                  type="date"
+                  value={expiresAt}
+                  onChange={(e) => setExpiresAt(e.target.value)}
+                  placeholder="Optional"
+                  className="h-8"
+                />
+              </div>
+            </div>
+          </div>
         </DialogHeader>
+        
         <form onSubmit={handleSubmit} className="space-y-4">
           {/* Client Selection */}
           <div className="space-y-2">
@@ -199,32 +243,19 @@ export const AddQuoteDialog = ({ open, onOpenChange, onAddQuote, clients, client
             clientInfoId={clientInfoId !== "none" ? clientInfoId : undefined}
           />
 
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="amount">Total Amount ($)</Label>
-              <Input
-                id="amount"
-                type="number"
-                step="0.01"
-                min="0"
-                value={amount}
-                onChange={(e) => setAmount(e.target.value)}
-                placeholder="Calculated from items"
-                readOnly
-                className="bg-gray-100"
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="date">Quote Date</Label>
-              <Input
-                id="date"
-                type="date"
-                value={date}
-                onChange={(e) => setDate(e.target.value)}
-                required
-              />
-            </div>
+          <div className="space-y-2">
+            <Label htmlFor="amount">Total Amount ($)</Label>
+            <Input
+              id="amount"
+              type="number"
+              step="0.01"
+              min="0"
+              value={amount}
+              onChange={(e) => setAmount(e.target.value)}
+              placeholder="Calculated from items"
+              readOnly
+              className="bg-gray-100"
+            />
           </div>
 
           <div className="space-y-2">
@@ -237,41 +268,18 @@ export const AddQuoteDialog = ({ open, onOpenChange, onAddQuote, clients, client
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="quoteNumber">Quote Number</Label>
-              <Input
-                id="quoteNumber"
-                value={quoteNumber}
-                onChange={(e) => setQuoteNumber(e.target.value)}
-                placeholder="Auto-generated"
-                disabled
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="status">Status</Label>
-              <Select value={status} onValueChange={setStatus}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="pending">Pending</SelectItem>
-                  <SelectItem value="approved">Approved</SelectItem>
-                  <SelectItem value="rejected">Rejected</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-
           <div className="space-y-2">
-            <Label htmlFor="expiresAt">Expiration Date (Optional)</Label>
-            <Input
-              id="expiresAt"
-              type="date"
-              value={expiresAt}
-              onChange={(e) => setExpiresAt(e.target.value)}
-            />
+            <Label htmlFor="status">Status</Label>
+            <Select value={status} onValueChange={setStatus}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="pending">Pending</SelectItem>
+                <SelectItem value="approved">Approved</SelectItem>
+                <SelectItem value="rejected">Rejected</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
 
           <div className="space-y-2">
