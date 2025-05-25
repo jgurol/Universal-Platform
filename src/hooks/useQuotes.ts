@@ -46,12 +46,24 @@ export const useQuotes = (
       }
 
       console.info('[fetchQuotes] Raw quotesData from database:', quotesData);
+      
+      // Log description values specifically
+      if (quotesData) {
+        quotesData.forEach((quote, index) => {
+          console.log(`[fetchQuotes] Quote ${index} - ID: ${quote.id}, Description from DB: "${quote.description}"`);
+        });
+      }
 
       if (quotesData) {
-        const mappedQuotes = quotesData.map(quote => mapQuoteData(quote, clients, clientInfos));
+        const mappedQuotes = quotesData.map(quote => {
+          const mapped = mapQuoteData(quote, clients, clientInfos);
+          console.log(`[fetchQuotes] Mapped quote ${quote.id} - Description: "${mapped.description}"`);
+          return mapped;
+        });
         
         setQuotes(mappedQuotes);
         console.info('[fetchQuotes] Final mapped quotes count:', mappedQuotes.length);
+        console.info('[fetchQuotes] Final quotes with descriptions:', mappedQuotes.map(q => ({ id: q.id, description: q.description })));
       }
     } catch (err) {
       console.error('Error in fetchQuotes:', err);
