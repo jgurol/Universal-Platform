@@ -1,14 +1,14 @@
-
 import { Quote, ClientInfo } from "@/pages/Index";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Pencil, Trash2, ChevronDown } from "lucide-react";
+import { Pencil, Trash2, ChevronDown, ChevronUp, ArrowUpDown } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { useAgentMapping } from "@/hooks/useAgentMapping";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { useState } from "react";
 
 interface QuoteTableProps {
   quotes: Quote[];
@@ -17,6 +17,9 @@ interface QuoteTableProps {
   onDeleteQuote?: (quoteId: string) => void;
   onUpdateQuote?: (quote: Quote) => void;
 }
+
+type SortField = 'salesperson' | 'quoteNumber' | 'customerName' | 'status';
+type SortDirection = 'asc' | 'desc';
 
 export const QuoteTable = ({
   quotes,
@@ -28,6 +31,57 @@ export const QuoteTable = ({
   const { isAdmin } = useAuth();
   const { agentMapping } = useAgentMapping();
   const { toast } = useToast();
+  const [sortField, setSortField] = useState<SortField | null>(null);
+  const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
+
+  const handleSort = (field: SortField) => {
+    if (sortField === field) {
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortField(field);
+      setSortDirection('asc');
+    }
+  };
+
+  const getSortIcon = (field: SortField) => {
+    if (sortField !== field) {
+      return <ArrowUpDown className="w-4 h-4 ml-1" />;
+    }
+    return sortDirection === 'asc' ? 
+      <ChevronUp className="w-4 h-4 ml-1" /> : 
+      <ChevronDown className="w-4 h-4 ml-1" />;
+  };
+
+  const sortedQuotes = [...quotes].sort((a, b) => {
+    if (!sortField) return 0;
+
+    let aValue: string;
+    let bValue: string;
+
+    switch (sortField) {
+      case 'salesperson':
+        aValue = agentMapping[a.clientId] || a.clientName || '';
+        bValue = agentMapping[b.clientId] || b.clientName || '';
+        break;
+      case 'quoteNumber':
+        aValue = a.quoteNumber || `Q-${a.id.slice(0, 8)}`;
+        bValue = b.quoteNumber || `Q-${b.id.slice(0, 8)}`;
+        break;
+      case 'customerName':
+        aValue = clientInfos.find(ci => ci.id === a.clientInfoId)?.company_name || '';
+        bValue = clientInfos.find(ci => ci.id === b.clientInfoId)?.company_name || '';
+        break;
+      case 'status':
+        aValue = a.status || 'pending';
+        bValue = b.status || 'pending';
+        break;
+      default:
+        return 0;
+    }
+
+    const comparison = aValue.localeCompare(bValue);
+    return sortDirection === 'asc' ? comparison : -comparison;
+  });
 
   const handleDeleteQuote = (quoteId: string) => {
     if (onDeleteQuote) {
@@ -157,18 +211,54 @@ export const QuoteTable = ({
       <Table>
         <TableHeader>
           <TableRow className="bg-gray-50">
-            <TableHead className="font-semibold">Salesperson</TableHead>
-            <TableHead className="font-semibold">Quote Number</TableHead>
-            <TableHead className="font-semibold">Customer Name</TableHead>
+            <TableHead className="font-semibold">
+              <Button 
+                variant="ghost" 
+                className="h-auto p-0 font-semibold text-left hover:bg-transparent flex items-center"
+                onClick={() => handleSort('salesperson')}
+              >
+                Salesperson
+                {getSortIcon('salesperson')}
+              </Button>
+            </TableHead>
+            <TableHead className="font-semibold">
+              <Button 
+                variant="ghost" 
+                className="h-auto p-0 font-semibold text-left hover:bg-transparent flex items-center"
+                onClick={() => handleSort('quoteNumber')}
+              >
+                Quote Number
+                {getSortIcon('quoteNumber')}
+              </Button>
+            </TableHead>
+            <TableHead className="font-semibold">
+              <Button 
+                variant="ghost" 
+                className="h-auto p-0 font-semibold text-left hover:bg-transparent flex items-center"
+                onClick={() => handleSort('customerName')}
+              >
+                Customer Name
+                {getSortIcon('customerName')}
+              </Button>
+            </TableHead>
             <TableHead className="font-semibold">Quote Name</TableHead>
             <TableHead className="font-semibold text-right">Total NRC</TableHead>
             <TableHead className="font-semibold text-right">Total MRC</TableHead>
-            <TableHead className="font-semibold">Status</TableHead>
+            <TableHead className="font-semibold">
+              <Button 
+                variant="ghost" 
+                className="h-auto p-0 font-semibold text-left hover:bg-transparent flex items-center"
+                onClick={() => handleSort('status')}
+              >
+                Status
+                {getSortIcon('status')}
+              </Button>
+            </TableHead>
             {isAdmin && <TableHead className="font-semibold text-center">Actions</TableHead>}
           </TableRow>
         </TableHeader>
         <TableBody>
-          {quotes.map((quote) => {
+          {sortedQuotes.map((quote) => {
             const clientInfo = clientInfos.find(ci => ci.id === quote.clientInfoId);
             const salespersonName = agentMapping[quote.clientId] || quote.clientName;
             const mrcTotal = getMRCTotal(quote);
