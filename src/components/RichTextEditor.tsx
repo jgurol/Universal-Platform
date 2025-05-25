@@ -35,33 +35,42 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
       .replace(/^(.*)$/, '<p>$1</p>'); // Wrap in paragraph tags
   };
 
-  // Convert HTML back to markdown - improved version
+  // Convert HTML back to markdown - enhanced to better preserve line breaks
   const htmlToMarkdown = (html: string): string => {
     if (!html) return '';
     
+    console.log('RichTextEditor - Converting HTML to markdown:', html.substring(0, 200));
+    
     let markdown = html
-      // Remove paragraph tags and convert to proper line breaks
-      .replace(/<p[^>]*>/gi, '')
-      .replace(/<\/p>/gi, '\n\n')
-      // Convert line breaks
-      .replace(/<br\s*\/?>/gi, '\n')
-      // Convert bold formatting
+      // Handle different types of line breaks and paragraphs
+      .replace(/<div><br><\/div>/gi, '\n') // Empty div with br
+      .replace(/<div><\/div>/gi, '\n') // Empty divs
+      .replace(/<div[^>]*>/gi, '\n') // Div starts
+      .replace(/<\/div>/gi, '') // Div ends
+      .replace(/<p[^>]*>/gi, '') // Remove paragraph opening tags
+      .replace(/<\/p>/gi, '\n\n') // Convert paragraph closes to double newlines
+      .replace(/<br\s*\/?>/gi, '\n') // Convert line breaks to actual newlines
+      // Convert formatting
       .replace(/<strong[^>]*>(.*?)<\/strong>/gi, '**$1**')
       .replace(/<b[^>]*>(.*?)<\/b>/gi, '**$1**')
-      // Convert italic formatting
       .replace(/<em[^>]*>(.*?)<\/em>/gi, '*$1*')
       .replace(/<i[^>]*>(.*?)<\/i>/gi, '*$1*')
       // Remove any remaining HTML tags
       .replace(/<[^>]*>/g, '')
-      // Clean up multiple newlines
-      .replace(/\n{3,}/g, '\n\n')
-      // Remove leading/trailing whitespace
-      .trim();
+      // Clean up excessive newlines but preserve intentional ones
+      .replace(/\n{3,}/g, '\n\n') // Max 2 consecutive newlines
+      .replace(/^\n+/, '') // Remove leading newlines
+      .replace(/\n+$/, ''); // Remove trailing newlines
     
     // Decode HTML entities
     const div = document.createElement('div');
     div.innerHTML = markdown;
-    return div.textContent || div.innerText || markdown;
+    const decodedMarkdown = div.textContent || div.innerText || markdown;
+    
+    console.log('RichTextEditor - Converted markdown:', decodedMarkdown.substring(0, 200));
+    console.log('RichTextEditor - Newline count:', (decodedMarkdown.match(/\n/g) || []).length);
+    
+    return decodedMarkdown;
   };
 
   // Initialize the editor content
@@ -83,6 +92,23 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
       // Only call onChange if the content actually changed
       if (markdownContent !== value) {
         onChange(markdownContent);
+      }
+    }
+  };
+
+  // Handle Enter key to ensure proper line breaks
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      if (e.shiftKey) {
+        // Shift+Enter should create a line break
+        e.preventDefault();
+        document.execCommand('insertHTML', false, '<br><br>');
+        handleInput();
+      } else {
+        // Regular Enter should create a paragraph break
+        e.preventDefault();
+        document.execCommand('insertHTML', false, '<br><br>');
+        handleInput();
       }
     }
   };
@@ -165,6 +191,7 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
           ref={editorRef}
           contentEditable
           onInput={handleInput}
+          onKeyDown={handleKeyDown}
           onKeyUp={handleKeyUp}
           onMouseUp={handleMouseUp}
           className={cn(
