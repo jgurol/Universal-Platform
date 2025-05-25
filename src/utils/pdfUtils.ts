@@ -333,7 +333,7 @@ export const generateQuotePDF = async (quote: Quote, clientInfo?: ClientInfo, sa
     }
   }
   
-  // Agreement status indicator - IMPROVED CENTERING AND CHECKMARK
+  // Agreement status indicator - IMPROVED CENTERING
   const buttonX = 110;
   const buttonY = 120;
   const buttonWidth = 85;
@@ -348,11 +348,11 @@ export const generateQuotePDF = async (quote: Quote, clientInfo?: ClientInfo, sa
     doc.setFontSize(10);
     
     // Calculate text width for perfect centering
-    const checkmarkText = '✓ APPROVED';
-    const textWidth = doc.getTextWidth(checkmarkText);
+    const approvedText = 'APPROVED';
+    const textWidth = doc.getTextWidth(approvedText);
     const centeredX = buttonX + (buttonWidth - textWidth) / 2;
     
-    doc.text(checkmarkText, centeredX, buttonY + 8);
+    doc.text(approvedText, centeredX, buttonY + 8);
   } else {
     console.log('PDF Generation - Adding ACCEPT AGREEMENT button to PDF');
     const acceptanceUrl = `${window.location.origin}/accept-quote/${quote.id}`;
