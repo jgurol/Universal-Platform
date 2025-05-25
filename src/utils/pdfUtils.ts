@@ -1,3 +1,4 @@
+
 import jsPDF from 'jspdf';
 import { Quote, ClientInfo } from '@/pages/Index';
 
@@ -254,12 +255,12 @@ export const generateQuotePDF = (quote: Quote, clientInfo?: ClientInfo, salesper
       doc.text('Monthly Fees', 20, yPos);
       yPos += 12;
       
-      // Table structure with proper column alignment
+      // Table structure with properly aligned columns
       const colX = {
         description: 20,
-        qty: 145,
-        price: 165,
-        total: 185
+        qty: 150,        // Moved further right for better alignment
+        price: 165,      // Aligned with Qty column
+        total: 180       // Aligned with Price column
       };
       
       // Table headers with background
@@ -319,12 +320,24 @@ export const generateQuotePDF = (quote: Quote, clientInfo?: ClientInfo, salesper
         doc.setTextColor(0, 0, 0); // Black color for address
         doc.text(`Location: ${addressText}`, colX.description + 4, yPos + 7);
         
-        // Reset color and font for other columns
+        // Reset color and font for other columns - right-aligned for numbers
         doc.setTextColor(0, 0, 0);
         doc.setFontSize(8);
-        doc.text(item.quantity.toString(), colX.qty + 2, yPos);
-        doc.text(`$${Number(item.unit_price).toFixed(2)}`, colX.price + 2, yPos);
-        doc.text(`$${Number(item.total_price).toFixed(2)}`, colX.total + 2, yPos);
+        
+        // Right-align the quantity, price, and total
+        const qtyText = item.quantity.toString();
+        const priceText = `$${Number(item.unit_price).toFixed(2)}`;
+        const totalText = `$${Number(item.total_price).toFixed(2)}`;
+        
+        // Calculate text width for right alignment
+        const qtyWidth = doc.getTextWidth(qtyText);
+        const priceWidth = doc.getTextWidth(priceText);
+        const totalWidth = doc.getTextWidth(totalText);
+        
+        doc.text(qtyText, colX.qty + 15 - qtyWidth, yPos);
+        doc.text(priceText, colX.price + 15 - priceWidth, yPos);
+        doc.text(totalText, colX.total + 15 - totalWidth, yPos);
+        
         yPos += rowHeight;
       });
       
@@ -337,8 +350,15 @@ export const generateQuotePDF = (quote: Quote, clientInfo?: ClientInfo, salesper
       const mrcTotal = mrcItems.reduce((total, item) => total + (Number(item.total_price) || 0), 0);
       doc.setFontSize(9);
       doc.setFont('helvetica', 'bold');
-      doc.text('Total Monthly:', colX.price - 20, yPos);
-      doc.text(`$${mrcTotal.toFixed(2)} USD`, colX.total + 2, yPos);
+      
+      // Right-align the total label and amount
+      const totalLabelText = 'Total Monthly:';
+      const totalAmountText = `$${mrcTotal.toFixed(2)} USD`;
+      const totalLabelWidth = doc.getTextWidth(totalLabelText);
+      const totalAmountWidth = doc.getTextWidth(totalAmountText);
+      
+      doc.text(totalLabelText, colX.total - 20, yPos);
+      doc.text(totalAmountText, colX.total + 15 - totalAmountWidth, yPos);
     }
     
     // One-Time Fees (compact format if space allows)
@@ -346,10 +366,14 @@ export const generateQuotePDF = (quote: Quote, clientInfo?: ClientInfo, salesper
       yPos += 10;
       doc.setFontSize(10);
       doc.setFont('helvetica', 'bold');
-      doc.text('One-Time Setup Fees:', 20, yPos);
       
       const nrcTotal = nrcItems.reduce((total, item) => total + (Number(item.total_price) || 0), 0);
-      doc.text(`$${nrcTotal.toFixed(2)} USD`, 175, yPos);
+      const nrcTotalText = `$${nrcTotal.toFixed(2)} USD`;
+      const nrcTotalWidth = doc.getTextWidth(nrcTotalText);
+      
+      doc.text('One-Time Setup Fees:', 20, yPos);
+      // Align with the total column from the table above
+      doc.text(nrcTotalText, colX.total + 15 - nrcTotalWidth, yPos);
     }
   }
   
