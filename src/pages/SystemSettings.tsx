@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -51,27 +50,57 @@ export default function SystemSettings() {
     { value: "UTC", label: "UTC (Coordinated Universal Time)" }
   ];
 
-  // Load settings from localStorage on component mount
+  // Load settings from database on component mount
   useEffect(() => {
-    const loadSettings = () => {
-      const savedSettings = {
-        timezone: localStorage.getItem('app_timezone') ?? settings.timezone,
-        companyName: localStorage.getItem('company_name') ?? settings.companyName,
-        businessAddress: localStorage.getItem('business_address') ?? settings.businessAddress,
-        businessPhone: localStorage.getItem('business_phone') ?? settings.businessPhone,
-        businessFax: localStorage.getItem('business_fax') ?? settings.businessFax,
-        supportEmail: localStorage.getItem('support_email') ?? settings.supportEmail,
-        defaultCommissionRate: localStorage.getItem('default_commission_rate') ?? settings.defaultCommissionRate,
-        showCompanyNameOnPDF: localStorage.getItem('show_company_name_on_pdf') !== 'false'
-      };
-      
-      setSettings(savedSettings);
+    const loadSettings = async () => {
+      try {
+        console.log('Loading settings from database...');
+        const { data, error } = await supabase
+          .from('system_settings')
+          .select('setting_key, setting_value');
+
+        if (error) {
+          console.error('Error loading settings:', error);
+          toast({
+            title: "Error loading settings",
+            description: error.message,
+            variant: "destructive",
+          });
+          return;
+        }
+
+        if (data) {
+          const settingsMap = data.reduce((acc, setting) => {
+            acc[setting.setting_key] = setting.setting_value;
+            return acc;
+          }, {} as Record<string, string>);
+
+          console.log('Loaded settings from database:', settingsMap);
+
+          setSettings({
+            timezone: settingsMap.timezone || settings.timezone,
+            companyName: settingsMap.company_name || settings.companyName,
+            businessAddress: settingsMap.business_address || settings.businessAddress,
+            businessPhone: settingsMap.business_phone || settings.businessPhone,
+            businessFax: settingsMap.business_fax || settings.businessFax,
+            supportEmail: settingsMap.support_email || settings.supportEmail,
+            defaultCommissionRate: settingsMap.default_commission_rate || settings.defaultCommissionRate,
+            showCompanyNameOnPDF: settingsMap.show_company_name_on_pdf !== 'false'
+          });
+
+          if (settingsMap.company_logo_url) {
+            setLogoUrl(settingsMap.company_logo_url);
+          }
+        }
+      } catch (error) {
+        console.error('Error loading settings:', error);
+        toast({
+          title: "Error loading settings",
+          description: "Failed to load system settings",
+          variant: "destructive",
+        });
+      }
     };
-    
-    const savedLogoUrl = localStorage.getItem('company_logo_url');
-    if (savedLogoUrl) {
-      setLogoUrl(savedLogoUrl);
-    }
 
     loadSettings();
     fetchTemplates();
@@ -105,11 +134,22 @@ export default function SystemSettings() {
 
     setLoading(true);
     try {
-      // Convert to base64 for localStorage
+      // Convert to base64 for database storage
       const reader = new FileReader();
-      reader.onload = (e) => {
+      reader.onload = async (e) => {
         const base64String = e.target?.result as string;
-        localStorage.setItem('company_logo_url', base64String);
+        
+        // Save logo URL to database
+        const { error } = await supabase
+          .from('system_settings')
+          .upsert({
+            setting_key: 'company_logo_url',
+            setting_value: base64String,
+            updated_at: new Date().toISOString()
+          });
+
+        if (error) throw error;
+
         setLogoUrl(base64String);
         toast({
           title: "Logo uploaded",
@@ -129,14 +169,31 @@ export default function SystemSettings() {
     }
   };
 
-  const handleRemoveLogo = () => {
-    localStorage.removeItem('company_logo_url');
-    setLogoUrl("");
-    setLogoFile(null);
-    toast({
-      title: "Logo removed",
-      description: "Company logo has been removed",
-    });
+  const handleRemoveLogo = async () => {
+    try {
+      const { error } = await supabase
+        .from('system_settings')
+        .upsert({
+          setting_key: 'company_logo_url',
+          setting_value: '',
+          updated_at: new Date().toISOString()
+        });
+
+      if (error) throw error;
+
+      setLogoUrl("");
+      setLogoFile(null);
+      toast({
+        title: "Logo removed",
+        description: "Company logo has been removed",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Error removing logo",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
   };
 
   const handleAddTemplate = async () => {
@@ -277,19 +334,30 @@ export default function SystemSettings() {
     setLoading(true);
 
     try {
-      // Save all settings to localStorage with clear logging
-      console.log('Saving settings to localStorage:', settings);
-      
-      localStorage.setItem('app_timezone', settings.timezone);
-      localStorage.setItem('company_name', settings.companyName);
-      localStorage.setItem('business_address', settings.businessAddress);
-      localStorage.setItem('business_phone', settings.businessPhone);
-      localStorage.setItem('business_fax', settings.businessFax);
-      localStorage.setItem('support_email', settings.supportEmail);
-      localStorage.setItem('default_commission_rate', settings.defaultCommissionRate);
-      localStorage.setItem('show_company_name_on_pdf', settings.showCompanyNameOnPDF.toString());
-      
-      console.log('Settings saved successfully');
+      console.log('Saving settings to database:', settings);
+
+      // Prepare settings data for upsert
+      const settingsData = [
+        { setting_key: 'timezone', setting_value: settings.timezone },
+        { setting_key: 'company_name', setting_value: settings.companyName },
+        { setting_key: 'business_address', setting_value: settings.businessAddress },
+        { setting_key: 'business_phone', setting_value: settings.businessPhone },
+        { setting_key: 'business_fax', setting_value: settings.businessFax },
+        { setting_key: 'support_email', setting_value: settings.supportEmail },
+        { setting_key: 'default_commission_rate', setting_value: settings.defaultCommissionRate },
+        { setting_key: 'show_company_name_on_pdf', setting_value: settings.showCompanyNameOnPDF.toString() }
+      ].map(item => ({
+        ...item,
+        updated_at: new Date().toISOString()
+      }));
+
+      const { error } = await supabase
+        .from('system_settings')
+        .upsert(settingsData);
+
+      if (error) throw error;
+
+      console.log('Settings saved successfully to database');
       
       toast({
         title: "Settings saved",
