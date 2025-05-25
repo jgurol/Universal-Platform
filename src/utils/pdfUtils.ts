@@ -3,6 +3,128 @@ import jsPDF from 'jspdf';
 import { Quote, ClientInfo } from '@/pages/Index';
 import { supabase } from '@/integrations/supabase/client';
 
+// Helper function to parse HTML and apply formatting to PDF
+const addFormattedTextToPDF = (doc: jsPDF, htmlContent: string, startX: number, startY: number, maxWidth: number, lineHeight: number = 4) => {
+  let currentY = startY;
+  const pageHeight = 297;
+  const bottomMargin = 20;
+  const topMargin = 20;
+  
+  // Split content by paragraphs (using <p> tags or double line breaks)
+  const paragraphs = htmlContent
+    .split(/<\/p>|<br\s*\/?>\s*<br\s*\/?>|\n\n/)
+    .map(p => p.replace(/<\/?p[^>]*>/g, '').trim())
+    .filter(p => p.length > 0);
+  
+  paragraphs.forEach((paragraph, paragraphIndex) => {
+    // Add extra spacing between paragraphs (except for the first one)
+    if (paragraphIndex > 0) {
+      currentY += lineHeight * 1.5;
+    }
+    
+    // Parse inline formatting within the paragraph
+    const formattedSections = parseInlineFormatting(paragraph);
+    
+    formattedSections.forEach(section => {
+      // Check if we need a new page
+      if (currentY > pageHeight - bottomMargin) {
+        doc.addPage();
+        currentY = topMargin;
+        
+        // Add header on new page
+        doc.setFontSize(9);
+        doc.setFont('helvetica', 'bold');
+        doc.text('Terms & Conditions (continued):', startX, currentY);
+        currentY += 8;
+      }
+      
+      // Set font style based on formatting
+      doc.setFontSize(8);
+      if (section.bold && section.italic) {
+        doc.setFont('helvetica', 'bolditalic');
+      } else if (section.bold) {
+        doc.setFont('helvetica', 'bold');
+      } else if (section.italic) {
+        doc.setFont('helvetica', 'italic');
+      } else {
+        doc.setFont('helvetica', 'normal');
+      }
+      
+      // Split text to fit within the specified width
+      const splitText = doc.splitTextToSize(section.text, maxWidth);
+      
+      // Add the text to the PDF
+      doc.text(splitText, startX, currentY);
+      currentY += splitText.length * lineHeight;
+    });
+    
+    // Add some space after each paragraph
+    currentY += lineHeight * 0.5;
+  });
+  
+  return currentY;
+};
+
+// Helper function to parse inline formatting (bold, italic)
+const parseInlineFormatting = (text: string) => {
+  const sections = [];
+  let currentText = text;
+  
+  // Remove HTML tags but preserve their formatting information
+  const formatRegex = /<(\/?)([bi]|strong|em)[^>]*>/gi;
+  let lastIndex = 0;
+  let isBold = false;
+  let isItalic = false;
+  
+  const matches = [...currentText.matchAll(formatRegex)];
+  
+  matches.forEach(match => {
+    const beforeTag = currentText.substring(lastIndex, match.index);
+    
+    // Add text before the tag if it exists
+    if (beforeTag.trim()) {
+      sections.push({
+        text: beforeTag.replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>'),
+        bold: isBold,
+        italic: isItalic
+      });
+    }
+    
+    // Update formatting state based on the tag
+    const isClosing = match[1] === '/';
+    const tagName = match[2].toLowerCase();
+    
+    if (tagName === 'b' || tagName === 'strong') {
+      isBold = !isClosing;
+    } else if (tagName === 'i' || tagName === 'em') {
+      isItalic = !isClosing;
+    }
+    
+    lastIndex = match.index + match[0].length;
+  });
+  
+  // Add remaining text after the last tag
+  const remainingText = currentText.substring(lastIndex);
+  if (remainingText.trim()) {
+    sections.push({
+      text: remainingText.replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>'),
+      bold: isBold,
+      italic: isItalic
+    });
+  }
+  
+  // If no formatting tags were found, return the whole text as normal
+  if (sections.length === 0) {
+    sections.push({
+      text: currentText.replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>'),
+      bold: false,
+      italic: false
+    });
+  }
+  
+  return sections;
+};
+
 export const generateQuotePDF = async (quote: Quote, clientInfo?: ClientInfo, salespersonName?: string) => {
   const doc = new jsPDF();
   
@@ -395,74 +517,20 @@ export const generateQuotePDF = async (quote: Quote, clientInfo?: ClientInfo, sa
     }
   }
   
-  // Template content section (Terms & Conditions) with multi-page support
+  // Template content section (Terms & Conditions) with proper rich text formatting
   if (templateContent) {
     yPos += 15;
-    
-    // Strip HTML tags and convert to plain text for PDF
-    const plainTextContent = templateContent
-      .replace(/<[^>]*>/g, '') // Remove HTML tags
-      .replace(/&nbsp;/g, ' ') // Replace non-breaking spaces
-      .replace(/&amp;/g, '&') // Replace HTML entities
-      .replace(/&lt;/g, '<')
-      .replace(/&gt;/g, '>')
-      .trim();
-    
-    // Constants for pagination
-    const pageHeight = 297; // A4 height in mm
-    const bottomMargin = 20;
-    const topMargin = 20;
-    const usableHeight = pageHeight - bottomMargin - topMargin;
-    const lineHeight = 4;
-    const linesPerPage = Math.floor(usableHeight / lineHeight);
     
     // Add Terms & Conditions header
     doc.setFontSize(9);
     doc.setFont('helvetica', 'bold');
+    doc.setTextColor(0, 0, 0);
     doc.text('Terms & Conditions:', 20, yPos);
     yPos += 8;
     
-    // Prepare text content
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(8);
-    const splitContent = doc.splitTextToSize(plainTextContent, 175);
-    
-    let currentLineIndex = 0;
-    let currentY = yPos;
-    
-    while (currentLineIndex < splitContent.length) {
-      // Check if we need a new page
-      if (currentY > pageHeight - bottomMargin) {
-        doc.addPage();
-        currentY = topMargin;
-        
-        // Add header on new page
-        doc.setFontSize(9);
-        doc.setFont('helvetica', 'bold');
-        doc.text('Terms & Conditions (continued):', 20, currentY);
-        currentY += 8;
-        doc.setFont('helvetica', 'normal');
-        doc.setFontSize(8);
-      }
-      
-      // Calculate how many lines we can fit on current page
-      const remainingSpace = pageHeight - bottomMargin - currentY;
-      const remainingLines = Math.floor(remainingSpace / lineHeight);
-      const linesToAdd = Math.min(remainingLines, splitContent.length - currentLineIndex);
-      
-      if (linesToAdd > 0) {
-        const linesToRender = splitContent.slice(currentLineIndex, currentLineIndex + linesToAdd);
-        doc.text(linesToRender, 20, currentY);
-        currentY += linesToAdd * lineHeight;
-        currentLineIndex += linesToAdd;
-      } else {
-        // Force new page if we can't fit any lines
-        doc.addPage();
-        currentY = topMargin;
-      }
-    }
-    
-    yPos = currentY;
+    // Use the new formatted text function
+    const finalY = addFormattedTextToPDF(doc, templateContent, 20, yPos, 175);
+    yPos = finalY;
   }
   
   // Notes section (if space allows and on current page)
