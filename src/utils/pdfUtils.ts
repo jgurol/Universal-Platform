@@ -1,9 +1,14 @@
-
 import jsPDF from 'jspdf';
 import { Quote, ClientInfo } from '@/pages/Index';
 
 export const generateQuotePDF = (quote: Quote, clientInfo?: ClientInfo, salespersonName?: string) => {
   const doc = new jsPDF();
+  
+  // Debug logging - let's see exactly what we're getting
+  console.log('PDF Generation - Full quote object received:', quote);
+  console.log('PDF Generation - Quote serviceAddress:', quote.serviceAddress);
+  console.log('PDF Generation - Quote billingAddress:', quote.billingAddress);
+  console.log('PDF Generation - ClientInfo object:', clientInfo);
   
   // Company Header with branding
   doc.setFontSize(20);
@@ -79,8 +84,6 @@ export const generateQuotePDF = (quote: Quote, clientInfo?: ClientInfo, salesper
     
     // Use custom billing address from quote if provided, otherwise fall back to client info address
     const billingAddress = quote.billingAddress || clientInfo.address;
-    console.log('PDF Generation - Quote billing address:', quote.billingAddress);
-    console.log('PDF Generation - Client info address:', clientInfo.address);
     console.log('PDF Generation - Final billing address used:', billingAddress);
     
     if (billingAddress) {
@@ -95,32 +98,40 @@ export const generateQuotePDF = (quote: Quote, clientInfo?: ClientInfo, salesper
       doc.text(`Email: ${clientInfo.email}`, 20, yPos + 35);
     }
     
-    // Service address (right column) - Fixed to use service address properly
+    // Service address (right column) - Let's debug this more thoroughly
     doc.text(clientInfo.company_name, 110, yPos);
     if (clientInfo.contact_name) {
       doc.text(clientInfo.contact_name, 110, yPos + 7);
     }
     
-    // Determine which address to use for service address
-    let finalServiceAddress = null;
-    console.log('PDF Generation - Determining service address...');
-    console.log('PDF Generation - quote.serviceAddress:', quote.serviceAddress);
-    console.log('PDF Generation - quote.billingAddress:', quote.billingAddress);
-    console.log('PDF Generation - clientInfo.address:', clientInfo.address);
+    // Enhanced debugging for service address determination
+    console.log('PDF Generation - Service address determination:');
+    console.log('  - quote.serviceAddress exists?', !!quote.serviceAddress);
+    console.log('  - quote.serviceAddress value:', quote.serviceAddress);
+    console.log('  - quote.serviceAddress type:', typeof quote.serviceAddress);
+    console.log('  - quote.billingAddress exists?', !!quote.billingAddress);
+    console.log('  - quote.billingAddress value:', quote.billingAddress);
+    console.log('  - clientInfo.address exists?', !!clientInfo.address);
+    console.log('  - clientInfo.address value:', clientInfo.address);
     
-    // Priority: serviceAddress > billingAddress > clientInfo.address
+    // Determine service address with explicit checks
+    let finalServiceAddress = null;
+    
+    // Check if serviceAddress exists and is not empty/null/undefined
     if (quote.serviceAddress && quote.serviceAddress.trim() !== '') {
       finalServiceAddress = quote.serviceAddress;
-      console.log('PDF Generation - Using quote service address');
+      console.log('PDF Generation - Using quote.serviceAddress:', finalServiceAddress);
     } else if (quote.billingAddress && quote.billingAddress.trim() !== '') {
       finalServiceAddress = quote.billingAddress;
-      console.log('PDF Generation - Using quote billing address as fallback');
+      console.log('PDF Generation - Using quote.billingAddress as fallback:', finalServiceAddress);
     } else if (clientInfo.address && clientInfo.address.trim() !== '') {
       finalServiceAddress = clientInfo.address;
-      console.log('PDF Generation - Using client info address as fallback');
+      console.log('PDF Generation - Using clientInfo.address as fallback:', finalServiceAddress);
+    } else {
+      console.log('PDF Generation - No service address found');
     }
     
-    console.log('PDF Generation - Final service address used:', finalServiceAddress);
+    console.log('PDF Generation - Final service address to display:', finalServiceAddress);
     
     if (finalServiceAddress) {
       const serviceAddressLines = doc.splitTextToSize(finalServiceAddress, 75);
