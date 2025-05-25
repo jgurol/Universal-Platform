@@ -52,18 +52,30 @@ export const addClientInfo = (doc: jsPDF, context: PDFGenerationContext): number
   
   console.log('PDF clientInfo.ts - Billing address determination:', {
     quoteBillingAddress: quote.billingAddress,
+    quoteBillingAddressLength: quote.billingAddress?.length,
+    quoteBillingAddressTrimmed: quote.billingAddress?.trim(),
     clientInfoAddress: clientInfo.address,
-    finalBillingAddress: billingAddress
+    finalBillingAddress: billingAddress,
+    finalBillingAddressLength: billingAddress?.length
   });
   
   if (billingAddress && billingAddress.trim() !== '') {
+    console.log('PDF clientInfo.ts - Processing billing address:', billingAddress);
     const formattedBilling = formatAddress(billingAddress);
-    console.log('PDF clientInfo.ts - Formatted billing address:', formattedBilling);
+    console.log('PDF clientInfo.ts - Formatted billing address result:', formattedBilling);
+    
     if (formattedBilling) {
+      console.log('PDF clientInfo.ts - Adding billing street at Y position:', yPos + 7, 'Text:', formattedBilling.street);
       doc.text(formattedBilling.street, 20, yPos + 7);
+      
       if (formattedBilling.cityStateZip) {
+        console.log('PDF clientInfo.ts - Adding billing cityStateZip at Y position:', yPos + 14, 'Text:', formattedBilling.cityStateZip);
         doc.text(formattedBilling.cityStateZip, 20, yPos + 14);
+      } else {
+        console.log('PDF clientInfo.ts - No cityStateZip for billing address');
       }
+    } else {
+      console.log('PDF clientInfo.ts - formatAddress returned null for billing');
     }
   } else {
     console.log('PDF clientInfo.ts - No billing address found, showing fallback');
@@ -75,9 +87,11 @@ export const addClientInfo = (doc: jsPDF, context: PDFGenerationContext): number
   }
   
   if (clientInfo.phone) {
+    console.log('PDF clientInfo.ts - Adding phone at Y position:', yPos + 28, 'Text:', `Tel: ${clientInfo.phone}`);
     doc.text(`Tel: ${clientInfo.phone}`, 20, yPos + 28);
   }
   if (clientInfo.email) {
+    console.log('PDF clientInfo.ts - Adding email at Y position:', yPos + 35, 'Text:', `Email: ${clientInfo.email}`);
     doc.text(`Email: ${clientInfo.email}`, 20, yPos + 35);
   }
   
@@ -109,19 +123,34 @@ export const addClientInfo = (doc: jsPDF, context: PDFGenerationContext): number
   
   console.log('PDF clientInfo.ts - Final service address determination:', {
     quoteServiceAddress: quote.serviceAddress,
+    quoteServiceAddressLength: quote.serviceAddress?.length,
+    quoteServiceAddressTrimmed: quote.serviceAddress?.trim(),
     billingAddress: billingAddress,
     clientInfoAddress: clientInfo.address,
-    finalServiceAddress: finalServiceAddress
+    finalServiceAddress: finalServiceAddress,
+    finalServiceAddressLength: finalServiceAddress?.length
   });
   
   if (finalServiceAddress && finalServiceAddress.trim() !== '') {
+    console.log('PDF clientInfo.ts - Processing service address:', finalServiceAddress);
     const formattedService = formatAddress(finalServiceAddress);
-    console.log('PDF clientInfo.ts - Formatted service address:', formattedService);
+    console.log('PDF clientInfo.ts - Formatted service address result:', formattedService);
+    
     if (formattedService) {
-      doc.text(formattedService.street, 110, rightColYPos + 7 + rightYOffset);
+      const serviceStreetY = rightColYPos + 7 + rightYOffset;
+      const serviceCityY = rightColYPos + 14 + rightYOffset;
+      
+      console.log('PDF clientInfo.ts - Adding service street at Y position:', serviceStreetY, 'Text:', formattedService.street);
+      doc.text(formattedService.street, 110, serviceStreetY);
+      
       if (formattedService.cityStateZip) {
-        doc.text(formattedService.cityStateZip, 110, rightColYPos + 14 + rightYOffset);
+        console.log('PDF clientInfo.ts - Adding service cityStateZip at Y position:', serviceCityY, 'Text:', formattedService.cityStateZip);
+        doc.text(formattedService.cityStateZip, 110, serviceCityY);
+      } else {
+        console.log('PDF clientInfo.ts - No cityStateZip for service address');
       }
+    } else {
+      console.log('PDF clientInfo.ts - formatAddress returned null for service');
     }
   } else {
     console.log('PDF clientInfo.ts - No service address found, showing fallback message');
@@ -133,9 +162,11 @@ export const addClientInfo = (doc: jsPDF, context: PDFGenerationContext): number
   }
   
   if (clientInfo.phone) {
+    console.log('PDF clientInfo.ts - Adding right column phone at Y position:', rightColYPos + 28);
     doc.text(`Tel: ${clientInfo.phone}`, 110, rightColYPos + 28);
   }
   if (clientInfo.email) {
+    console.log('PDF clientInfo.ts - Adding right column email at Y position:', rightColYPos + 35);
     doc.text(`Email: ${clientInfo.email}`, 110, rightColYPos + 35);
   }
   
