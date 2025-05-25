@@ -8,27 +8,29 @@ const addFormattedTextToPDF = (doc: jsPDF, htmlContent: string, startX: number, 
   const pageHeight = 297;
   const bottomMargin = 20;
   const topMargin = 20;
-  const paragraphSpacing = lineHeight * 1.5; // Slightly more spacing between paragraphs
+  const paragraphSpacing = lineHeight * 1.8; // Consistent spacing between paragraphs
   
   // Clean and parse the HTML content
   const cleanContent = cleanHtmlContent(htmlContent);
   
-  // Split by paragraphs and process each one
+  // Split content into paragraphs with more consistent logic
   const paragraphs = cleanContent
-    .split(/\n\n+/)
+    .split(/\n\n+/) // Split on double newlines
     .map(p => p.trim())
     .filter(p => p.length > 0);
   
+  console.log('PDF Generation - Paragraphs detected:', paragraphs.length);
+  console.log('PDF Generation - Paragraph content:', paragraphs);
+  
   paragraphs.forEach((paragraph, paragraphIndex) => {
-    // Add consistent spacing between paragraphs
+    // Add consistent spacing between ALL paragraphs except the first
     if (paragraphIndex > 0) {
       currentY += paragraphSpacing;
+      console.log(`PDF Generation - Adding paragraph spacing: ${paragraphSpacing} after paragraph ${paragraphIndex - 1}`);
     }
     
     // Parse inline formatting within the paragraph
     const formattedSections = parseInlineFormatting(paragraph);
-    
-    let sectionYStart = currentY;
     
     formattedSections.forEach(section => {
       // Check if we need a new page
@@ -41,7 +43,6 @@ const addFormattedTextToPDF = (doc: jsPDF, htmlContent: string, startX: number, 
         doc.setFont('helvetica', 'bold');
         doc.text('Terms & Conditions (continued):', startX, currentY);
         currentY += 8;
-        sectionYStart = currentY;
       }
       
       // Set font style based on formatting
@@ -74,9 +75,11 @@ const addFormattedTextToPDF = (doc: jsPDF, htmlContent: string, startX: number, 
   return currentY;
 };
 
-// Helper function to completely clean HTML content
+// Helper function to completely clean HTML content with more consistent handling
 const cleanHtmlContent = (htmlContent: string): string => {
   if (!htmlContent) return '';
+  
+  console.log('PDF Generation - Original HTML content:', htmlContent);
   
   // First, let's handle common HTML entities
   let cleaned = htmlContent
@@ -87,34 +90,35 @@ const cleanHtmlContent = (htmlContent: string): string => {
     .replace(/&quot;/g, '"')
     .replace(/&#39;/g, "'");
   
-  // Remove all HTML attributes and complex tags but keep basic formatting tags
+  // More aggressive HTML tag cleaning - normalize all paragraph-like tags to consistent breaks
   cleaned = cleaned
+    .replace(/<\/?(p|div|article|section)[^>]*>/gi, '\n\n') // All paragraph-like tags to double newlines
+    .replace(/<br\s*\/?>/gi, '\n') // Line breaks to single newlines
     .replace(/<([^>]+)>/g, (match, tag) => {
       // Extract just the tag name (first word)
-      const tagName = tag.split(/\s+/)[0].toLowerCase();
+      const tagName = tag.split(/\s+/)[0].toLowerCase().replace('/', '');
       
       // Keep only basic formatting tags
-      if (['b', 'strong', 'i', 'em', 'br', '/b', '/strong', '/i', '/em'].includes(tagName)) {
-        return `<${tagName}>`;
+      if (['b', 'strong', 'i', 'em'].includes(tagName)) {
+        return match.includes('/') ? `</${tagName}>` : `<${tagName}>`;
       }
-      
-      // Convert paragraph and div tags to consistent double line breaks
-      if (tagName === 'p' || tagName === 'div') return '\n\n';
-      if (tagName === '/p' || tagName === '/div') return '';
       
       // Remove everything else
       return '';
     });
   
-  // More aggressive cleaning for consistent spacing
+  // Normalize whitespace and newlines very aggressively
   cleaned = cleaned
-    .replace(/\s+/g, ' ') // Multiple spaces to single space
-    .replace(/\n\s+/g, '\n') // Remove spaces after newlines
-    .replace(/\s+\n/g, '\n') // Remove spaces before newlines
-    .replace(/\n{3,}/g, '\n\n') // Limit to maximum double newlines
+    .replace(/[ \t]+/g, ' ') // Multiple spaces/tabs to single space
+    .replace(/\n[ \t]+/g, '\n') // Remove spaces after newlines
+    .replace(/[ \t]+\n/g, '\n') // Remove spaces before newlines
+    .replace(/\n{3,}/g, '\n\n') // Multiple newlines to exactly double newlines
     .replace(/^\n+/, '') // Remove leading newlines
     .replace(/\n+$/, '') // Remove trailing newlines
     .trim();
+  
+  console.log('PDF Generation - Cleaned content:', cleaned);
+  console.log('PDF Generation - Number of paragraph breaks found:', (cleaned.match(/\n\n/g) || []).length);
   
   return cleaned;
 };
