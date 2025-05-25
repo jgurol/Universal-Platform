@@ -1,4 +1,3 @@
-
 import jsPDF from 'jspdf';
 import { Quote, ClientInfo } from '@/pages/Index';
 
@@ -95,15 +94,24 @@ export const generateQuotePDF = (quote: Quote, clientInfo?: ClientInfo, salesper
       doc.text(`Email: ${clientInfo.email}`, 20, yPos + 35);
     }
     
-    // Service address (right column) - Use custom service address if available
+    // Service address (right column) - Fixed logic to properly use service address
     doc.text(clientInfo.company_name, 110, yPos);
     if (clientInfo.contact_name) {
       doc.text(clientInfo.contact_name, 110, yPos + 7);
     }
     
-    // Use custom service address from quote if provided, otherwise fall back to billing address
-    const serviceAddress = quote.serviceAddress || quote.billingAddress || clientInfo.address;
+    // Use service address from quote if provided, otherwise fall back to billing address, then client info address
+    let serviceAddress = null;
+    if (quote.serviceAddress && quote.serviceAddress.trim() !== '') {
+      serviceAddress = quote.serviceAddress;
+    } else if (quote.billingAddress && quote.billingAddress.trim() !== '') {
+      serviceAddress = quote.billingAddress;
+    } else {
+      serviceAddress = clientInfo.address;
+    }
+    
     console.log('PDF Generation - Quote service address:', quote.serviceAddress);
+    console.log('PDF Generation - Quote billing address fallback:', quote.billingAddress);
     console.log('PDF Generation - Final service address used:', serviceAddress);
     
     if (serviceAddress) {
