@@ -125,16 +125,17 @@ export const QuoteItemsManager = ({ items, onItemsChange, clientInfoId }: QuoteI
           <Label>Quote Items</Label>
           
           {/* Column Headers */}
-          <div className="grid grid-cols-5 gap-2 items-center p-2 border-b bg-gray-100 rounded-t-lg font-medium text-sm">
+          <div className="grid grid-cols-6 gap-2 items-center p-2 border-b bg-gray-100 rounded-t-lg font-medium text-sm">
             <div className="col-span-2">Item & Location</div>
             <div>Qty</div>
             <div>Sell / Cost</div>
-            <div>Total & Type</div>
+            <div>Total</div>
+            <div>Type</div>
           </div>
           
           <div className="border rounded-lg space-y-3 max-h-60 overflow-y-auto">
             {items.map((quoteItem) => (
-              <div key={quoteItem.id} className="grid grid-cols-5 gap-2 items-start p-3 border rounded bg-gray-50">
+              <div key={quoteItem.id} className="grid grid-cols-6 gap-2 items-start p-3 border rounded bg-gray-50">
                 {/* Item & Location Column */}
                 <div className="col-span-2 space-y-2">
                   <div className="text-sm font-medium">
@@ -183,50 +184,58 @@ export const QuoteItemsManager = ({ items, onItemsChange, clientInfoId }: QuoteI
 
                 {/* Sell Price / Cost */}
                 <div className="space-y-1">
-                  <Input
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    value={quoteItem.unit_price}
-                    onChange={(e) => updateItem(quoteItem.id, 'unit_price', parseFloat(e.target.value) || 0)}
-                    className="text-xs h-8"
-                    placeholder="Sell $"
-                  />
-                  <Input
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    value={quoteItem.cost_override || 0}
-                    onChange={(e) => updateItem(quoteItem.id, 'cost_override', parseFloat(e.target.value) || 0)}
-                    className="text-xs h-8"
-                    placeholder="Cost $"
-                  />
+                  <div className="flex items-center gap-1">
+                    <span className="text-xs text-gray-500">Sell:</span>
+                    <Input
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      value={quoteItem.unit_price}
+                      onChange={(e) => updateItem(quoteItem.id, 'unit_price', parseFloat(e.target.value) || 0)}
+                      className="text-xs h-8"
+                      placeholder="$"
+                    />
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <span className="text-xs text-gray-500">Cost:</span>
+                    <Input
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      value={quoteItem.cost_override || 0}
+                      onChange={(e) => updateItem(quoteItem.id, 'cost_override', parseFloat(e.target.value) || 0)}
+                      className="text-xs h-8"
+                      placeholder="$"
+                    />
+                  </div>
                 </div>
 
-                {/* Total & Type */}
-                <div className="space-y-2">
+                {/* Total */}
+                <div className="flex items-center justify-between">
                   <div className="text-sm font-medium">
                     ${quoteItem.total_price.toFixed(2)}
                   </div>
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-1">
-                      <Switch
-                        checked={quoteItem.charge_type === 'MRC'}
-                        onCheckedChange={(checked) => updateItem(quoteItem.id, 'charge_type', checked ? 'MRC' : 'NRC')}
-                      />
-                      <span className="text-xs font-medium">
-                        {quoteItem.charge_type}
-                      </span>
-                    </div>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => removeItem(quoteItem.id)}
-                      className="h-6 w-6 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
-                    >
-                      <Trash2 className="w-3 h-3" />
-                    </Button>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => removeItem(quoteItem.id)}
+                    className="h-6 w-6 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
+                  >
+                    <Trash2 className="w-3 h-3" />
+                  </Button>
+                </div>
+
+                {/* Type Column */}
+                <div className="flex items-center justify-center">
+                  <div className="flex items-center space-x-1">
+                    <Switch
+                      checked={quoteItem.charge_type === 'MRC'}
+                      onCheckedChange={(checked) => updateItem(quoteItem.id, 'charge_type', checked ? 'MRC' : 'NRC')}
+                    />
+                    <span className="text-xs font-medium">
+                      {quoteItem.charge_type}
+                    </span>
                   </div>
                 </div>
               </div>
