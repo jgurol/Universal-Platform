@@ -63,6 +63,25 @@ export const addMarkdownTextToPDF = (
     const lines = paragraph.split(/\n|\r\n/).map(line => line.trim()).filter(line => line.length > 0);
     console.log(`PDF Generation - Paragraph ${paragraphIndex + 1} has ${lines.length} lines`);
     
+    // Estimate paragraph height to check if it fits on current page
+    const estimatedParagraphHeight = lines.length * lineHeight + (lines.length - 1) * lineHeight + paragraphSpacing;
+    const spaceRemaining = pageHeight - bottomMargin - currentY;
+    
+    console.log(`PDF Generation - Paragraph estimated height: ${estimatedParagraphHeight}, space remaining: ${spaceRemaining}`);
+    
+    // If paragraph doesn't fit on current page, move to next page
+    if (estimatedParagraphHeight > spaceRemaining && currentY > topMargin + 20) {
+      console.log('PDF Generation - Moving entire paragraph to next page');
+      doc.addPage();
+      currentY = topMargin;
+      
+      // Add header on new page
+      doc.setFontSize(9);
+      doc.setFont('helvetica', 'bold');
+      doc.text('Terms & Conditions (continued):', startX, currentY);
+      currentY += 8;
+    }
+    
     lines.forEach((line, lineIndex) => {
       console.log(`PDF Generation - Processing line ${lineIndex + 1}:`, line.substring(0, 50));
       
@@ -75,7 +94,7 @@ export const addMarkdownTextToPDF = (
       sections.forEach((section, sectionIndex) => {
         console.log(`PDF Generation - Processing section ${sectionIndex + 1}:`, section.text.substring(0, 50));
         
-        // Check if we need a new page
+        // Check if we need a new page (only for individual sections, not whole paragraphs)
         if (currentY > pageHeight - bottomMargin) {
           console.log('PDF Generation - Adding new page at Y:', currentY);
           doc.addPage();
