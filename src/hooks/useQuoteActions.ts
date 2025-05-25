@@ -61,7 +61,7 @@ export const useQuoteActions = (
       const { data: quoteData, error: quoteError } = await supabase
         .from('quotes')
         .insert({
-          client_id: newQuote.clientId,
+          client_id: newQuote.clientId || null, // Fix: Use null instead of empty string
           client_info_id: newQuote.clientInfoId === "none" ? null : newQuote.clientInfoId,
           amount: newQuote.amount,
           date: newQuote.date,
@@ -120,7 +120,7 @@ export const useQuoteActions = (
         const client = clients.find(c => c.id === newQuote.clientId);
         toast({
           title: "Quote added",
-          description: `Quote for ${client?.name} has been added successfully.`,
+          description: `Quote for ${client?.name || "client"} has been added successfully.`,
         });
       }
     } catch (err) {
@@ -149,7 +149,7 @@ export const useQuoteActions = (
       const { data, error } = await supabase
         .from('quotes')
         .update({
-          client_id: updatedQuote.clientId,
+          client_id: updatedQuote.clientId || null, // Fix: Use null instead of empty string
           client_info_id: updatedQuote.clientInfoId === "none" ? null : updatedQuote.clientInfoId,
           amount: updatedQuote.amount,
           date: updatedQuote.date,
@@ -181,7 +181,7 @@ export const useQuoteActions = (
         const client = clients.find(c => c.id === updatedQuote.clientId);
         toast({
           title: "Quote updated",
-          description: `Quote for ${client?.name} has been updated successfully.`,
+          description: `Quote for ${client?.name || "client"} has been updated successfully.`,
         });
       }
     } catch (err) {
