@@ -245,8 +245,6 @@ export const generateQuotePDF = async (quote: Quote, clientInfo?: ClientInfo, sa
   // Items Section - More compact to save space
   yPos += 12;
   
-  let itemsSectionHeight = 0;
-  
   if (quote.quoteItems && quote.quoteItems.length > 0) {
     const mrcItems = quote.quoteItems.filter(item => item.charge_type === 'MRC');
     const nrcItems = quote.quoteItems.filter(item => item.charge_type === 'NRC');
@@ -355,12 +353,10 @@ export const generateQuotePDF = async (quote: Quote, clientInfo?: ClientInfo, sa
       
       doc.text(totalLabelText, colX.price - 30, yPos);
       doc.text(totalAmountText, colX.total + 12 - totalAmountWidth, yPos);
-      
-      itemsSectionHeight = yPos - 167; // Track items section height
     }
     
     // One-Time Fees - more compact
-    if (nrcItems.length > 0 && yPos < 240) {
+    if (nrcItems.length > 0) {
       yPos += 8;
       doc.setFontSize(8);
       doc.setFont('helvetica', 'bold');
@@ -369,10 +365,15 @@ export const generateQuotePDF = async (quote: Quote, clientInfo?: ClientInfo, sa
       const nrcTotalText = `$${nrcTotal.toFixed(2)} USD`;
       const nrcTotalWidth = doc.getTextWidth(nrcTotalText);
       
+      const colX = {
+        description: 20,
+        qty: 150,
+        price: 165,
+        total: 180
+      };
+      
       doc.text('One-Time Setup Fees:', colX.price - 30, yPos);
       doc.text(nrcTotalText, colX.total + 12 - nrcTotalWidth, yPos);
-      
-      itemsSectionHeight = yPos - 167; // Update items section height
     }
   }
   
@@ -394,23 +395,9 @@ export const generateQuotePDF = async (quote: Quote, clientInfo?: ClientInfo, sa
     }
   }
   
-  // Calculate available space for template content
-  const maxYPosition = 270; // Bottom margin
-  const currentYPosition = yPos + 10;
-  const availableSpace = maxYPosition - currentYPosition;
-  const lineHeight = 4;
-  const maxLines = Math.floor(availableSpace / lineHeight);
-  
-  // Template content section (Terms & Conditions) - Better space management
-  if (templateContent && maxLines > 2) {
-    yPos += 10;
-    doc.setFontSize(9);
-    doc.setFont('helvetica', 'bold');
-    doc.text('Terms & Conditions:', 20, yPos);
-    yPos += 6;
-    
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(7); // Smaller font to fit more content
+  // Template content section (Terms & Conditions) with multi-page support
+  if (templateContent) {
+    yPos += 15;
     
     // Strip HTML tags and convert to plain text for PDF
     const plainTextContent = templateContent
@@ -421,44 +408,84 @@ export const generateQuotePDF = async (quote: Quote, clientInfo?: ClientInfo, sa
       .replace(/&gt;/g, '>')
       .trim();
     
+    // Constants for pagination
+    const pageHeight = 297; // A4 height in mm
+    const bottomMargin = 20;
+    const topMargin = 20;
+    const usableHeight = pageHeight - bottomMargin - topMargin;
+    const lineHeight = 4;
+    const linesPerPage = Math.floor(usableHeight / lineHeight);
+    
+    // Add Terms & Conditions header
+    doc.setFontSize(9);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Terms & Conditions:', 20, yPos);
+    yPos += 8;
+    
+    // Prepare text content
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(8);
     const splitContent = doc.splitTextToSize(plainTextContent, 175);
     
-    // Use all available lines
-    const contentToShow = splitContent.slice(0, maxLines);
-    doc.text(contentToShow, 20, yPos);
+    let currentLineIndex = 0;
+    let currentY = yPos;
     
-    // If content was truncated, add "continued..." indicator
-    if (splitContent.length > maxLines) {
-      const lastLineY = yPos + (contentToShow.length * lineHeight);
-      if (lastLineY < maxYPosition - 5) {
-        doc.setFont('helvetica', 'italic');
-        doc.setFontSize(6);
-        doc.text('(Terms and conditions continue - see full agreement)', 20, lastLineY + 5);
+    while (currentLineIndex < splitContent.length) {
+      // Check if we need a new page
+      if (currentY > pageHeight - bottomMargin) {
+        doc.addPage();
+        currentY = topMargin;
+        
+        // Add header on new page
+        doc.setFontSize(9);
+        doc.setFont('helvetica', 'bold');
+        doc.text('Terms & Conditions (continued):', 20, currentY);
+        currentY += 8;
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(8);
+      }
+      
+      // Calculate how many lines we can fit on current page
+      const remainingSpace = pageHeight - bottomMargin - currentY;
+      const remainingLines = Math.floor(remainingSpace / lineHeight);
+      const linesToAdd = Math.min(remainingLines, splitContent.length - currentLineIndex);
+      
+      if (linesToAdd > 0) {
+        const linesToRender = splitContent.slice(currentLineIndex, currentLineIndex + linesToAdd);
+        doc.text(linesToRender, 20, currentY);
+        currentY += linesToAdd * lineHeight;
+        currentLineIndex += linesToAdd;
+      } else {
+        // Force new page if we can't fit any lines
+        doc.addPage();
+        currentY = topMargin;
       }
     }
-  } else if (templateContent) {
-    // If no space for template content, add a note
-    if (yPos < maxYPosition - 10) {
-      yPos += 10;
-      doc.setFontSize(8);
-      doc.setFont('helvetica', 'italic');
-      doc.text('Complete terms and conditions are available upon request.', 20, yPos);
-    }
+    
+    yPos = currentY;
   }
   
-  // Notes section (if space allows and very compact)
-  if (quote.notes && yPos < maxYPosition - 15) {
-    yPos += 8;
-    doc.setFontSize(8);
+  // Notes section (if space allows and on current page)
+  if (quote.notes) {
+    const remainingSpace = 297 - 20 - yPos; // Page height - bottom margin - current position
+    
+    if (remainingSpace < 25) {
+      // Not enough space, add new page
+      doc.addPage();
+      yPos = 30;
+    } else {
+      yPos += 10;
+    }
+    
+    doc.setFontSize(9);
     doc.setFont('helvetica', 'bold');
     doc.text('Additional Notes:', 20, yPos);
-    yPos += 4;
+    yPos += 6;
     
     doc.setFont('helvetica', 'normal');
-    doc.setFontSize(7);
-    const remainingLines = Math.floor((maxYPosition - yPos) / 4);
+    doc.setFontSize(8);
     const splitNotes = doc.splitTextToSize(quote.notes, 175);
-    doc.text(splitNotes.slice(0, Math.min(remainingLines, 2)), 20, yPos);
+    doc.text(splitNotes, 20, yPos);
   }
   
   return doc;
