@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -102,13 +101,26 @@ export const AddQuoteDialog = ({ open, onOpenChange, onAddQuote, clients, client
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    console.log('Form submitted!');
+    console.log('Current form state:', {
+      clientId,
+      clientInfoId,
+      date,
+      quoteItems: quoteItems.length,
+      totalAmount: calculateTotalAmount()
+    });
+    
     const totalAmount = calculateTotalAmount();
     
     if (clientId && date) {
+      console.log('Form validation passed');
       const selectedClient = clients.find(client => client.id === clientId);
       const selectedClientInfo = clientInfoId && clientInfoId !== "none" ? clientInfos.find(info => info.id === clientInfoId) : null;
       
       if (selectedClient) {
+        console.log('Selected client found:', selectedClient.name);
+        console.log('Calling onAddQuote with data...');
+        
         onAddQuote({
           clientId,
           clientName: selectedClient.name,
@@ -142,7 +154,11 @@ export const AddQuoteDialog = ({ open, onOpenChange, onAddQuote, clients, client
         setCommissionOverride("");
         setQuoteItems([]);
         onOpenChange(false);
+      } else {
+        console.log('Selected client not found!');
       }
+    } else {
+      console.log('Form validation failed:', { clientId, date });
     }
   };
 
@@ -151,6 +167,13 @@ export const AddQuoteDialog = ({ open, onOpenChange, onAddQuote, clients, client
 
   // Check if form is valid for submission
   const isFormValid = clientInfoId && clientInfoId !== "none" && quoteItems.length > 0;
+
+  console.log('Form validation state:', {
+    clientInfoId,
+    clientInfoIdValid: clientInfoId !== "none",
+    quoteItemsLength: quoteItems.length,
+    isFormValid
+  });
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
