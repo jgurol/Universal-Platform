@@ -1,4 +1,3 @@
-
 import jsPDF from 'jspdf';
 import { Quote, ClientInfo } from '@/pages/Index';
 import { supabase } from '@/integrations/supabase/client';
@@ -18,6 +17,7 @@ export const generateQuotePDF = async (quote: Quote, clientInfo?: ClientInfo, sa
   const businessAddress = localStorage.getItem('business_address') || '14538 Central Ave, Chino, CA 91710, United States';
   const businessPhone = localStorage.getItem('business_phone') || '213-270-1349';
   const businessFax = localStorage.getItem('business_fax') || '213-232-3304';
+  const showCompanyNameOnPDF = localStorage.getItem('show_company_name_on_pdf') !== 'false';
   
   // Parse business address
   const addressParts = businessAddress.split(',').map(part => part.trim());
@@ -71,16 +71,30 @@ export const generateQuotePDF = async (quote: Quote, clientInfo?: ClientInfo, sa
   const companyInfoY = 40; // Moved up from 50
   doc.setFontSize(9);
   doc.setTextColor(0, 0, 0);
-  doc.setFont('helvetica', 'bold');
-  doc.text(companyName, 20, companyInfoY);
-  doc.setFont('helvetica', 'normal');
-  doc.text(streetAddress, 20, companyInfoY + 3); // Reduced spacing from 4 to 3
-  if (city) {
-    doc.text(city + (stateZip ? ', ' + stateZip : ''), 20, companyInfoY + 6); // Reduced spacing
+  
+  let currentY = companyInfoY;
+  
+  // Only show company name if setting is enabled
+  if (showCompanyNameOnPDF) {
+    doc.setFont('helvetica', 'bold');
+    doc.text(companyName, 20, currentY);
+    currentY += 3;
   }
-  doc.text(`Tel: ${businessPhone}`, 20, companyInfoY + 9); // Reduced spacing
+  
+  doc.setFont('helvetica', 'normal');
+  doc.text(streetAddress, 20, currentY);
+  currentY += 3;
+  
+  if (city) {
+    doc.text(city + (stateZip ? ', ' + stateZip : ''), 20, currentY);
+    currentY += 3;
+  }
+  
+  doc.text(`Tel: ${businessPhone}`, 20, currentY);
+  currentY += 3;
+  
   if (businessFax) {
-    doc.text(`Fax: ${businessFax}`, 20, companyInfoY + 12); // Reduced spacing
+    doc.text(`Fax: ${businessFax}`, 20, currentY);
   }
   
   // Agreement details box (right side) - moved higher

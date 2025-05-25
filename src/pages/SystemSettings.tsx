@@ -13,6 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { RichTextEditor } from "@/components/RichTextEditor";
+import { Checkbox } from "@/components/ui/checkbox";
 import type { Database } from "@/integrations/supabase/types";
 
 type QuoteTemplate = Database['public']['Tables']['quote_templates']['Row'];
@@ -33,7 +34,8 @@ export default function SystemSettings() {
     timezone: "America/Los_Angeles",
     businessAddress: "14538 Central Ave, Chino, CA 91710, United States",
     businessPhone: "213-270-1349",
-    businessFax: "213-232-3304"
+    businessFax: "213-232-3304",
+    showCompanyNameOnPDF: true
   });
 
   // Common timezones for the select dropdown
@@ -58,7 +60,8 @@ export default function SystemSettings() {
         businessPhone: localStorage.getItem('business_phone') || settings.businessPhone,
         businessFax: localStorage.getItem('business_fax') || settings.businessFax,
         supportEmail: localStorage.getItem('support_email') || settings.supportEmail,
-        defaultCommissionRate: localStorage.getItem('default_commission_rate') || settings.defaultCommissionRate
+        defaultCommissionRate: localStorage.getItem('default_commission_rate') || settings.defaultCommissionRate,
+        showCompanyNameOnPDF: localStorage.getItem('show_company_name_on_pdf') !== 'false'
       };
       
       setSettings(savedSettings);
@@ -283,6 +286,7 @@ export default function SystemSettings() {
       localStorage.setItem('business_fax', settings.businessFax);
       localStorage.setItem('support_email', settings.supportEmail);
       localStorage.setItem('default_commission_rate', settings.defaultCommissionRate);
+      localStorage.setItem('show_company_name_on_pdf', settings.showCompanyNameOnPDF.toString());
       
       console.log('Settings saved successfully');
       
@@ -349,6 +353,15 @@ export default function SystemSettings() {
                       onChange={(e) => setSettings(prev => ({ ...prev, companyName: e.target.value }))}
                       placeholder="Enter company name"
                     />
+                  </div>
+
+                  <div className="flex items-center space-x-2">
+                    <Checkbox
+                      id="showCompanyNameOnPDF"
+                      checked={settings.showCompanyNameOnPDF}
+                      onCheckedChange={(checked) => setSettings(prev => ({ ...prev, showCompanyNameOnPDF: checked as boolean }))}
+                    />
+                    <Label htmlFor="showCompanyNameOnPDF">Display company name on PDF quotes</Label>
                   </div>
 
                   <div className="space-y-2">
