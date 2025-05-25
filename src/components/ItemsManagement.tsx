@@ -79,9 +79,14 @@ export const ItemsManagement = () => {
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-1">
                       <h4 className="font-medium text-gray-900">{item.name}</h4>
+                      {item.cost > 0 && (
+                        <Badge variant="outline" className="text-xs bg-orange-50 text-orange-700">
+                          Cost: ${item.cost.toFixed(2)}
+                        </Badge>
+                      )}
                       {item.price > 0 && (
                         <Badge variant="outline" className="text-xs">
-                          One-time: ${item.price.toFixed(2)}
+                          Sell: ${item.price.toFixed(2)}
                         </Badge>
                       )}
                       {item.mrc && item.mrc > 0 && (

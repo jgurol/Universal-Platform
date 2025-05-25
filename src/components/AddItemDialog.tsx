@@ -19,6 +19,7 @@ export const AddItemDialog = ({ open, onOpenChange, onAddItem }: AddItemDialogPr
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [price, setPrice] = useState("");
+  const [cost, setCost] = useState("");
   const [mrc, setMrc] = useState("");
   const [categoryId, setCategoryId] = useState("");
   const [sku, setSku] = useState("");
@@ -31,6 +32,7 @@ export const AddItemDialog = ({ open, onOpenChange, onAddItem }: AddItemDialogPr
         name,
         description: description || undefined,
         price: parseFloat(price) || 0,
+        cost: parseFloat(cost) || 0,
         mrc: mrc ? parseFloat(mrc) : undefined,
         category_id: categoryId || undefined,
         sku: sku || undefined,
@@ -41,6 +43,7 @@ export const AddItemDialog = ({ open, onOpenChange, onAddItem }: AddItemDialogPr
       setName("");
       setDescription("");
       setPrice("");
+      setCost("");
       setMrc("");
       setCategoryId("");
       setSku("");
@@ -82,7 +85,20 @@ export const AddItemDialog = ({ open, onOpenChange, onAddItem }: AddItemDialogPr
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="price">One-time Price ($)</Label>
+              <Label htmlFor="cost">Cost ($)</Label>
+              <Input
+                id="cost"
+                type="number"
+                step="0.01"
+                min="0"
+                value={cost}
+                onChange={(e) => setCost(e.target.value)}
+                placeholder="0.00"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="price">Sell Price ($)</Label>
               <Input
                 id="price"
                 type="number"
@@ -93,19 +109,19 @@ export const AddItemDialog = ({ open, onOpenChange, onAddItem }: AddItemDialogPr
                 placeholder="0.00"
               />
             </div>
+          </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="mrc">MRC ($)</Label>
-              <Input
-                id="mrc"
-                type="number"
-                step="0.01"
-                min="0"
-                value={mrc}
-                onChange={(e) => setMrc(e.target.value)}
-                placeholder="0.00"
-              />
-            </div>
+          <div className="space-y-2">
+            <Label htmlFor="mrc">MRC ($)</Label>
+            <Input
+              id="mrc"
+              type="number"
+              step="0.01"
+              min="0"
+              value={mrc}
+              onChange={(e) => setMrc(e.target.value)}
+              placeholder="0.00"
+            />
           </div>
 
           <div className="grid grid-cols-2 gap-4">

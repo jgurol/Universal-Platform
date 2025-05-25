@@ -20,6 +20,7 @@ export const EditItemDialog = ({ open, onOpenChange, onUpdateItem, item }: EditI
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [price, setPrice] = useState("");
+  const [cost, setCost] = useState("");
   const [mrc, setMrc] = useState("");
   const [categoryId, setCategoryId] = useState("");
   const [sku, setSku] = useState("");
@@ -30,6 +31,7 @@ export const EditItemDialog = ({ open, onOpenChange, onUpdateItem, item }: EditI
       setName(item.name);
       setDescription(item.description || "");
       setPrice(item.price.toString());
+      setCost(item.cost.toString());
       setMrc(item.mrc ? item.mrc.toString() : "");
       setCategoryId(item.category_id || "");
       setSku(item.sku || "");
@@ -43,6 +45,7 @@ export const EditItemDialog = ({ open, onOpenChange, onUpdateItem, item }: EditI
         name,
         description: description || undefined,
         price: parseFloat(price) || 0,
+        cost: parseFloat(cost) || 0,
         mrc: mrc ? parseFloat(mrc) : undefined,
         category_id: categoryId || undefined,
         sku: sku || undefined,
@@ -90,7 +93,20 @@ export const EditItemDialog = ({ open, onOpenChange, onUpdateItem, item }: EditI
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="edit-price">One-time Price ($)</Label>
+              <Label htmlFor="edit-cost">Cost ($)</Label>
+              <Input
+                id="edit-cost"
+                type="number"
+                step="0.01"
+                min="0"
+                value={cost}
+                onChange={(e) => setCost(e.target.value)}
+                placeholder="0.00"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="edit-price">Sell Price ($)</Label>
               <Input
                 id="edit-price"
                 type="number"
@@ -101,19 +117,19 @@ export const EditItemDialog = ({ open, onOpenChange, onUpdateItem, item }: EditI
                 placeholder="0.00"
               />
             </div>
+          </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="edit-mrc">MRC ($)</Label>
-              <Input
-                id="edit-mrc"
-                type="number"
-                step="0.01"
-                min="0"
-                value={mrc}
-                onChange={(e) => setMrc(e.target.value)}
-                placeholder="0.00"
-              />
-            </div>
+          <div className="space-y-2">
+            <Label htmlFor="edit-mrc">MRC ($)</Label>
+            <Input
+              id="edit-mrc"
+              type="number"
+              step="0.01"
+              min="0"
+              value={mrc}
+              onChange={(e) => setMrc(e.target.value)}
+              placeholder="0.00"
+            />
           </div>
 
           <div className="grid grid-cols-2 gap-4">
