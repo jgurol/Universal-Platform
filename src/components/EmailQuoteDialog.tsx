@@ -20,6 +20,8 @@ interface EmailQuoteDialogProps {
   quote: Quote;
   clientInfo?: ClientInfo;
   salespersonName?: string;
+  onEmailSuccess?: () => void;
+  onEmailError?: () => void;
 }
 
 export const EmailQuoteDialog = ({ 
@@ -27,7 +29,9 @@ export const EmailQuoteDialog = ({
   onOpenChange, 
   quote, 
   clientInfo, 
-  salespersonName 
+  salespersonName,
+  onEmailSuccess,
+  onEmailError
 }: EmailQuoteDialogProps) => {
   const [recipientEmail, setRecipientEmail] = useState("");
   const [ccEmails, setCcEmails] = useState<string[]>([]);
@@ -159,6 +163,7 @@ ${salespersonName || 'Sales Team'}`);
 
           if (data?.success) {
             setEmailStatus('success');
+            onEmailSuccess?.(); // Call parent callback
             toast({
               title: "Email sent successfully",
               description: `Quote has been sent to ${recipientEmail}${ccEmails.length > 0 ? ` and ${ccEmails.length} CC recipient(s)` : ''}`,
@@ -174,6 +179,7 @@ ${salespersonName || 'Sales Team'}`);
         } catch (emailError) {
           console.error('Error calling email function:', emailError);
           setEmailStatus('error');
+          onEmailError?.(); // Call parent callback
           toast({
             title: "Failed to send email",
             description: "There was an error sending the quote. Please try again.",
@@ -188,6 +194,7 @@ ${salespersonName || 'Sales Team'}`);
     } catch (error) {
       console.error('Error generating PDF:', error);
       setEmailStatus('error');
+      onEmailError?.(); // Call parent callback
       toast({
         title: "Failed to generate PDF",
         description: "There was an error generating the quote PDF. Please try again.",

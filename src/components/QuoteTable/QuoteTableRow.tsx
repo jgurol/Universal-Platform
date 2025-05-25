@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { TableCell, TableRow } from "@/components/ui/table";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Pencil, Trash2, ChevronDown, FileText, Copy, Mail } from "lucide-react";
+import { Pencil, Trash2, ChevronDown, FileText, Copy, Mail, CheckCircle, XCircle } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { generateQuotePDF } from "@/utils/pdfUtils";
 import { useToast } from "@/hooks/use-toast";
@@ -33,6 +33,7 @@ export const QuoteTableRow = ({
   const { isAdmin } = useAuth();
   const { toast } = useToast();
   const [isEmailDialogOpen, setIsEmailDialogOpen] = useState(false);
+  const [emailStatus, setEmailStatus] = useState<'idle' | 'success' | 'error'>('idle');
 
   const clientInfo = clientInfos.find(ci => ci.id === quote.clientInfoId);
   const salespersonName = agentMapping[quote.clientId] || quote.clientName;
@@ -112,6 +113,34 @@ export const QuoteTableRow = ({
         variant: "destructive"
       });
     }
+  };
+
+  const handleEmailSuccess = () => {
+    setEmailStatus('success');
+    // Reset status after 3 seconds
+    setTimeout(() => {
+      setEmailStatus('idle');
+    }, 3000);
+  };
+
+  const handleEmailError = () => {
+    setEmailStatus('error');
+    // Reset status after 3 seconds
+    setTimeout(() => {
+      setEmailStatus('idle');
+    }, 3000);
+  };
+
+  const getEmailIcon = () => {
+    if (emailStatus === 'success') return <CheckCircle className="w-4 h-4 text-green-600" />;
+    if (emailStatus === 'error') return <XCircle className="w-4 h-4 text-red-600" />;
+    return <Mail className="w-4 h-4" />;
+  };
+
+  const getEmailButtonClass = () => {
+    if (emailStatus === 'success') return 'text-green-600 hover:text-green-700';
+    if (emailStatus === 'error') return 'text-red-600 hover:text-red-700';
+    return 'text-gray-500 hover:text-blue-600';
   };
 
   const getStatusBadge = () => {
@@ -218,11 +247,11 @@ export const QuoteTableRow = ({
             <Button 
               variant="ghost" 
               size="sm" 
-              className="h-8 w-8 p-0 text-gray-500 hover:text-blue-600"
+              className={`h-8 w-8 p-0 transition-colors duration-300 ${getEmailButtonClass()}`}
               onClick={() => setIsEmailDialogOpen(true)}
               title="Email Quote"
             >
-              <Mail className="w-4 h-4" />
+              {getEmailIcon()}
             </Button>
             {isAdmin && onCopyQuote && (
               <Button 
@@ -267,6 +296,8 @@ export const QuoteTableRow = ({
         quote={quote}
         clientInfo={clientInfo}
         salespersonName={salespersonName}
+        onEmailSuccess={handleEmailSuccess}
+        onEmailError={handleEmailError}
       />
     </>
   );
