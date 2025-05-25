@@ -60,6 +60,22 @@ export const clientAddressService = {
   },
 
   async deleteClientAddress(addressId: string): Promise<void> {
+    // First check if this address is referenced by any quote items
+    const { data: quoteItems, error: checkError } = await supabase
+      .from('quote_items')
+      .select('id')
+      .eq('address_id', addressId)
+      .limit(1);
+
+    if (checkError) {
+      console.error('Error checking address references:', checkError);
+      throw checkError;
+    }
+
+    if (quoteItems && quoteItems.length > 0) {
+      throw new Error('This address cannot be deleted because it is being used in existing quotes. Please remove it from all quotes first.');
+    }
+
     const { error } = await supabase
       .from('client_addresses')
       .delete()
@@ -67,6 +83,9 @@ export const clientAddressService = {
 
     if (error) {
       console.error('Error deleting client address:', error);
+      if (error.code === '23503') {
+        throw new Error('This address cannot be deleted because it is being used in existing quotes. Please remove it from all quotes first.');
+      }
       throw error;
     }
   }
