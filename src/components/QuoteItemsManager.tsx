@@ -125,17 +125,16 @@ export const QuoteItemsManager = ({ items, onItemsChange, clientInfoId }: QuoteI
           <Label>Quote Items</Label>
           
           {/* Column Headers */}
-          <div className="grid grid-cols-6 gap-2 items-center p-2 border-b bg-gray-100 rounded-t-lg font-medium text-sm">
+          <div className="grid grid-cols-5 gap-2 items-center p-2 border-b bg-gray-100 rounded-t-lg font-medium text-sm">
             <div className="col-span-2">Item & Location</div>
             <div>Qty</div>
-            <div>Sell Price</div>
-            <div>Cost</div>
+            <div>Sell / Cost</div>
             <div>Total & Type</div>
           </div>
           
           <div className="border rounded-lg space-y-3 max-h-60 overflow-y-auto">
             {items.map((quoteItem) => (
-              <div key={quoteItem.id} className="grid grid-cols-6 gap-2 items-start p-3 border rounded bg-gray-50">
+              <div key={quoteItem.id} className="grid grid-cols-5 gap-2 items-start p-3 border rounded bg-gray-50">
                 {/* Item & Location Column */}
                 <div className="col-span-2 space-y-2">
                   <div className="text-sm font-medium">
@@ -182,8 +181,8 @@ export const QuoteItemsManager = ({ items, onItemsChange, clientInfoId }: QuoteI
                   />
                 </div>
 
-                {/* Sell Price */}
-                <div>
+                {/* Sell Price / Cost */}
+                <div className="space-y-1">
                   <Input
                     type="number"
                     step="0.01"
@@ -193,10 +192,6 @@ export const QuoteItemsManager = ({ items, onItemsChange, clientInfoId }: QuoteI
                     className="text-xs h-8"
                     placeholder="Sell $"
                   />
-                </div>
-
-                {/* Cost */}
-                <div>
                   <Input
                     type="number"
                     step="0.01"
