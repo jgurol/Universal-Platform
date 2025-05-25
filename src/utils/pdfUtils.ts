@@ -42,34 +42,34 @@ export const generateQuotePDF = async (quote: Quote, clientInfo?: ClientInfo, sa
       
       // Wait a moment for the image to load
       await new Promise(resolve => setTimeout(resolve, 100));
-      logoYOffset = 30; // Reduced from 35 to bring content closer to logo
+      logoYOffset = 30;
     } catch (error) {
       console.error('Error loading logo:', error);
       logoYOffset = 0;
     }
   }
   
-  // Document type in top right - moved up and made black
+  // Document type in top right - aligned with logo top
   doc.setFontSize(14);
-  doc.setTextColor(0, 0, 0); // Black color instead of gray
-  doc.text('Agreement', 160, 15); // Moved up even higher
+  doc.setTextColor(0, 0, 0);
+  doc.text('Agreement', 160, 20); // Aligned with logo top
   
-  // Company Information (left side) - Start immediately after logo with compact spacing
-  const companyInfoY = 15 + logoYOffset;
+  // Company Information (left side) - positioned right below logo
+  const companyInfoY = 50; // Fixed position below logo area
   doc.setFontSize(9);
-  doc.setTextColor(0, 0, 0); // Black
+  doc.setTextColor(0, 0, 0);
   doc.setFont('helvetica', 'bold');
   doc.text('California Telecom, Inc.', 20, companyInfoY);
   doc.setFont('helvetica', 'normal');
-  doc.text('14538 Central Ave', 20, companyInfoY + 4); // Further reduced spacing
-  doc.text('Chino, CA 91710', 20, companyInfoY + 8); // Further reduced spacing
-  doc.text('United States', 20, companyInfoY + 12); // Further reduced spacing
-  doc.text('Tel: 213-270-1349', 20, companyInfoY + 16); // Further reduced spacing
-  doc.text('Fax: 213-232-3304', 20, companyInfoY + 20); // Further reduced spacing
+  doc.text('14538 Central Ave', 20, companyInfoY + 4);
+  doc.text('Chino, CA 91710', 20, companyInfoY + 8);
+  doc.text('United States', 20, companyInfoY + 12);
+  doc.text('Tel: 213-270-1349', 20, companyInfoY + 16);
+  doc.text('Fax: 213-232-3304', 20, companyInfoY + 20);
   
-  // Agreement details box (right side) - Moved higher
+  // Agreement details box (right side) - aligned with logo
   const boxX = 125;
-  const boxY = 15; // Moved up to align with Agreement text
+  const boxY = 15; // Aligned with logo and Agreement text
   const boxWidth = 70;
   const boxHeight = 40;
   
@@ -79,7 +79,7 @@ export const generateQuotePDF = async (quote: Quote, clientInfo?: ClientInfo, sa
   doc.setDrawColor(200, 200, 200);
   doc.rect(boxX, boxY, boxWidth, boxHeight);
   
-  // Agreement details inside box - Better aligned
+  // Agreement details inside box
   doc.setFontSize(9);
   doc.setFont('helvetica', 'bold');
   doc.text('Agreement #:', boxX + 4, boxY + 8);
@@ -93,8 +93,8 @@ export const generateQuotePDF = async (quote: Quote, clientInfo?: ClientInfo, sa
   doc.text(quote.expiresAt ? new Date(quote.expiresAt).toLocaleDateString() : 'N/A', boxX + 22, boxY + 24);
   doc.text(salespersonName || 'N/A', boxX + 4, boxY + 38);
   
-  // Billing Information and Service Address sections (side by side) - Better positioning
-  let yPos = companyInfoY + 30; // Further reduced from 35 to 30
+  // Billing Information and Service Address sections - better aligned
+  let yPos = 85; // Fixed position for better alignment
   doc.setFontSize(11);
   doc.setFont('helvetica', 'bold');
   doc.text('Billing Information', 20, yPos);
@@ -166,7 +166,7 @@ export const generateQuotePDF = async (quote: Quote, clientInfo?: ClientInfo, sa
   };
   
   if (clientInfo) {
-    // Billing info (left column) - Use custom billing address if available
+    // Billing info (left column)
     doc.setFont('helvetica', 'bold');
     doc.text(clientInfo.company_name, 20, yPos);
     doc.setFont('helvetica', 'normal');
@@ -197,13 +197,16 @@ export const generateQuotePDF = async (quote: Quote, clientInfo?: ClientInfo, sa
       doc.text(`Email: ${clientInfo.email}`, 20, yPos + 35);
     }
     
-    // Service address (right column) - Let's debug this more thoroughly
+    // Service address (right column) - reset yPos for right column
+    const rightColYPos = 93; // Same starting position as left column
     doc.setFont('helvetica', 'bold');
-    doc.text(clientInfo.company_name, 110, yPos);
+    doc.text(clientInfo.company_name, 110, rightColYPos);
     doc.setFont('helvetica', 'normal');
     
+    let rightYOffset = 0;
     if (clientInfo.contact_name) {
-      doc.text(clientInfo.contact_name, 110, yPos + 7);
+      doc.text(clientInfo.contact_name, 110, rightColYPos + 7);
+      rightYOffset = 7;
     }
     
     // Enhanced debugging for service address determination
@@ -238,25 +241,25 @@ export const generateQuotePDF = async (quote: Quote, clientInfo?: ClientInfo, sa
     if (finalServiceAddress) {
       const formattedService = formatAddress(finalServiceAddress);
       if (formattedService) {
-        doc.text(formattedService.street, 110, yPos + 7);
+        doc.text(formattedService.street, 110, rightColYPos + 7 + rightYOffset);
         if (formattedService.cityStateZip) {
-          doc.text(formattedService.cityStateZip, 110, yPos + 14);
+          doc.text(formattedService.cityStateZip, 110, rightColYPos + 14 + rightYOffset);
         }
       }
     }
     
     if (clientInfo.phone) {
-      doc.text(`Tel: ${clientInfo.phone}`, 110, yPos + 28);
+      doc.text(`Tel: ${clientInfo.phone}`, 110, rightColYPos + 28);
     }
     if (clientInfo.email) {
-      doc.text(`Email: ${clientInfo.email}`, 110, yPos + 35);
+      doc.text(`Email: ${clientInfo.email}`, 110, rightColYPos + 35);
     }
   }
   
-  // Accept Agreement button (green box) - Moved closer to address sections
-  const buttonX = 125;
-  const buttonY = yPos + 38; // Reduced spacing from 45 to 38
-  const buttonWidth = 70;
+  // Accept Agreement button (green box) - positioned right after service address
+  const buttonX = 110; // Aligned with service address column
+  const buttonY = 140; // Fixed position for better alignment
+  const buttonWidth = 85; // Made wider to fit under service address
   const buttonHeight = 12;
   
   doc.setFillColor(76, 175, 80); // Green color
@@ -264,10 +267,10 @@ export const generateQuotePDF = async (quote: Quote, clientInfo?: ClientInfo, sa
   doc.setTextColor(255, 255, 255); // White text
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(10);
-  doc.text('ACCEPT AGREEMENT', buttonX + 10, buttonY + 8);
+  doc.text('ACCEPT AGREEMENT', buttonX + 12, buttonY + 8);
   
-  // Quote Title - Properly spaced
-  yPos = 140; // Adjusted to account for the higher positioning
+  // Quote Title - positioned after accept button
+  yPos = 165; // Fixed position for consistency
   doc.setTextColor(0, 0, 0);
   doc.setFontSize(14);
   doc.setFont('helvetica', 'bold');
