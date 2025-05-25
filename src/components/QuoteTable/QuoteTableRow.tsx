@@ -1,14 +1,15 @@
-
+import { useState } from "react";
 import { Quote, ClientInfo } from "@/pages/Index";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { TableCell, TableRow } from "@/components/ui/table";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Pencil, Trash2, ChevronDown, FileText, Copy } from "lucide-react";
+import { Pencil, Trash2, ChevronDown, FileText, Copy, Mail } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { generateQuotePDF } from "@/utils/pdfUtils";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { EmailQuoteDialog } from "@/components/EmailQuoteDialog";
 
 interface QuoteTableRowProps {
   quote: Quote;
@@ -31,6 +32,7 @@ export const QuoteTableRow = ({
 }: QuoteTableRowProps) => {
   const { isAdmin } = useAuth();
   const { toast } = useToast();
+  const [isEmailDialogOpen, setIsEmailDialogOpen] = useState(false);
 
   const clientInfo = clientInfos.find(ci => ci.id === quote.clientInfoId);
   const salespersonName = agentMapping[quote.clientId] || quote.clientName;
@@ -175,78 +177,97 @@ export const QuoteTableRow = ({
   const nrcTotal = getNRCTotal(quote);
 
   return (
-    <TableRow className="hover:bg-gray-50">
-      <TableCell className="font-medium">
-        {salespersonName}
-      </TableCell>
-      <TableCell>
-        <div className="font-mono text-sm">
-          {quote.quoteNumber || `Q-${quote.id.slice(0, 8)}`}
-        </div>
-      </TableCell>
-      <TableCell>
-        {clientInfo?.company_name || 'N/A'}
-      </TableCell>
-      <TableCell>
-        <div className="max-w-xs truncate" title={quote.description}>
-          {quote.description || 'Untitled Quote'}
-        </div>
-      </TableCell>
-      <TableCell className="text-right font-mono">
-        ${nrcTotal.toLocaleString()}
-      </TableCell>
-      <TableCell className="text-right font-mono">
-        ${mrcTotal.toLocaleString()}
-      </TableCell>
-      <TableCell>
-        {getStatusBadge()}
-      </TableCell>
-      <TableCell className="text-center">
-        <div className="flex gap-1 justify-center">
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            className="h-8 w-8 p-0 text-gray-500 hover:text-blue-600"
-            onClick={handlePreviewPDF}
-            title="Preview PDF"
-          >
-            <FileText className="w-4 h-4" />
-          </Button>
-          {isAdmin && onCopyQuote && (
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              className="h-8 w-8 p-0 text-gray-500 hover:text-green-600"
-              onClick={() => onCopyQuote(quote)}
-              title="Copy Quote"
-            >
-              <Copy className="w-4 h-4" />
-            </Button>
-          )}
-          {isAdmin && onEditClick && (
+    <>
+      <TableRow className="hover:bg-gray-50">
+        <TableCell className="font-medium">
+          {salespersonName}
+        </TableCell>
+        <TableCell>
+          <div className="font-mono text-sm">
+            {quote.quoteNumber || `Q-${quote.id.slice(0, 8)}`}
+          </div>
+        </TableCell>
+        <TableCell>
+          {clientInfo?.company_name || 'N/A'}
+        </TableCell>
+        <TableCell>
+          <div className="max-w-xs truncate" title={quote.description}>
+            {quote.description || 'Untitled Quote'}
+          </div>
+        </TableCell>
+        <TableCell className="text-right font-mono">
+          ${nrcTotal.toLocaleString()}
+        </TableCell>
+        <TableCell className="text-right font-mono">
+          ${mrcTotal.toLocaleString()}
+        </TableCell>
+        <TableCell>
+          {getStatusBadge()}
+        </TableCell>
+        <TableCell className="text-center">
+          <div className="flex gap-1 justify-center">
             <Button 
               variant="ghost" 
               size="sm" 
               className="h-8 w-8 p-0 text-gray-500 hover:text-blue-600"
-              onClick={() => onEditClick(quote)}
-              title="Edit Quote"
+              onClick={handlePreviewPDF}
+              title="Preview PDF"
             >
-              <Pencil className="w-4 h-4" />
+              <FileText className="w-4 h-4" />
             </Button>
-          )}
-          {isAdmin && onDeleteQuote && (
             <Button 
               variant="ghost" 
               size="sm" 
-              className="h-8 w-8 p-0 text-gray-500 hover:text-red-600"
-              onClick={() => onDeleteQuote(quote.id)}
-              title="Delete Quote"
+              className="h-8 w-8 p-0 text-gray-500 hover:text-blue-600"
+              onClick={() => setIsEmailDialogOpen(true)}
+              title="Email Quote"
             >
-              <Trash2 className="w-4 h-4" />
+              <Mail className="w-4 h-4" />
             </Button>
-          )}
-        </div>
-      </TableCell>
-    </TableRow>
+            {isAdmin && onCopyQuote && (
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="h-8 w-8 p-0 text-gray-500 hover:text-green-600"
+                onClick={() => onCopyQuote(quote)}
+                title="Copy Quote"
+              >
+                <Copy className="w-4 h-4" />
+              </Button>
+            )}
+            {isAdmin && onEditClick && (
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="h-8 w-8 p-0 text-gray-500 hover:text-blue-600"
+                onClick={() => onEditClick(quote)}
+                title="Edit Quote"
+              >
+                <Pencil className="w-4 h-4" />
+              </Button>
+            )}
+            {isAdmin && onDeleteQuote && (
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="h-8 w-8 p-0 text-gray-500 hover:text-red-600"
+                onClick={() => onDeleteQuote(quote.id)}
+                title="Delete Quote"
+              >
+                <Trash2 className="w-4 h-4" />
+              </Button>
+            )}
+          </div>
+        </TableCell>
+      </TableRow>
+
+      <EmailQuoteDialog
+        open={isEmailDialogOpen}
+        onOpenChange={setIsEmailDialogOpen}
+        quote={quote}
+        clientInfo={clientInfo}
+        salespersonName={salespersonName}
+      />
+    </>
   );
 };
