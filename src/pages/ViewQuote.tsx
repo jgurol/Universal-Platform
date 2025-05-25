@@ -1,4 +1,3 @@
-
 import { useParams } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -6,16 +5,20 @@ import { Quote, ClientInfo } from "@/pages/Index";
 import { NavigationBar } from "@/components/NavigationBar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, FileText } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { generateQuotePDF } from "@/utils/pdfUtils";
+import { useToast } from "@/hooks/use-toast";
 
 const ViewQuote = () => {
   const { quoteId } = useParams();
   const navigate = useNavigate();
+  const { toast } = useToast();
   const [quote, setQuote] = useState<Quote | null>(null);
   const [clientInfo, setClientInfo] = useState<ClientInfo | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
 
   useEffect(() => {
     const fetchQuoteData = async () => {
@@ -94,6 +97,27 @@ const ViewQuote = () => {
     fetchQuoteData();
   }, [quoteId]);
 
+  const handleViewPDF = async () => {
+    if (!quote) return;
+    
+    setIsGeneratingPDF(true);
+    try {
+      const pdf = await generateQuotePDF(quote, clientInfo);
+      const pdfBlob = pdf.output('blob');
+      const pdfUrl = URL.createObjectURL(pdfBlob);
+      window.open(pdfUrl, '_blank');
+    } catch (error) {
+      console.error('Error generating PDF:', error);
+      toast({
+        title: "Error",
+        description: "Failed to generate PDF",
+        variant: "destructive",
+      });
+    } finally {
+      setIsGeneratingPDF(false);
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
@@ -129,14 +153,24 @@ const ViewQuote = () => {
       
       <div className="container mx-auto px-4 py-8 max-w-4xl">
         <div className="mb-6">
-          <Button 
-            variant="outline" 
-            onClick={() => navigate(-1)}
-            className="mb-4"
-          >
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            Back
-          </Button>
+          <div className="flex items-center justify-between mb-4">
+            <Button 
+              variant="outline" 
+              onClick={() => navigate(-1)}
+            >
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              Back
+            </Button>
+            
+            <Button 
+              onClick={handleViewPDF}
+              disabled={isGeneratingPDF}
+              className="bg-blue-600 hover:bg-blue-700"
+            >
+              <FileText className="w-4 h-4 mr-2" />
+              {isGeneratingPDF ? "Generating..." : "View PDF"}
+            </Button>
+          </div>
           
           <h1 className="text-3xl font-bold text-gray-900 mb-2">
             Quote {quote.quoteNumber || `Q-${quote.id.slice(0, 8)}`}
