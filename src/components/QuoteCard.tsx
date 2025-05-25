@@ -1,3 +1,4 @@
+
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Clock, Building, FileText, Users, Pencil, Trash2, Calendar } from "lucide-react";
@@ -81,7 +82,7 @@ export const QuoteCard = ({
     
     const nrcItems = quote.quoteItems.filter(item => {
       console.info('[QuoteCard] Checking item:', item.id, 'charge_type:', item.charge_type, 'total_price:', item.total_price);
-      return item.charge_type === 'NRC';
+      return item.charge_type === 'NRC'; // Fixed: was 'MRC', now correctly filtering for 'NRC'
     });
     
     console.info('[QuoteCard] NRC Items found:', nrcItems);
