@@ -333,7 +333,7 @@ export const generateQuotePDF = async (quote: Quote, clientInfo?: ClientInfo, sa
     }
   }
   
-  // Agreement status indicator
+  // Agreement status indicator - IMPROVED CENTERING AND CHECKMARK
   const buttonX = 110;
   const buttonY = 120;
   const buttonWidth = 85;
@@ -346,7 +346,13 @@ export const generateQuotePDF = async (quote: Quote, clientInfo?: ClientInfo, sa
     doc.setTextColor(255, 255, 255);
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(10);
-    doc.text('✓ APPROVED', buttonX + 20, buttonY + 8);
+    
+    // Calculate text width for perfect centering
+    const checkmarkText = '✓ APPROVED';
+    const textWidth = doc.getTextWidth(checkmarkText);
+    const centeredX = buttonX + (buttonWidth - textWidth) / 2;
+    
+    doc.text(checkmarkText, centeredX, buttonY + 8);
   } else {
     console.log('PDF Generation - Adding ACCEPT AGREEMENT button to PDF');
     const acceptanceUrl = `${window.location.origin}/accept-quote/${quote.id}`;
@@ -356,7 +362,13 @@ export const generateQuotePDF = async (quote: Quote, clientInfo?: ClientInfo, sa
     doc.setTextColor(255, 255, 255);
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(10);
-    doc.text('ACCEPT AGREEMENT', buttonX + 12, buttonY + 8);
+    
+    // Calculate text width for perfect centering
+    const buttonText = 'ACCEPT AGREEMENT';
+    const textWidth = doc.getTextWidth(buttonText);
+    const centeredX = buttonX + (buttonWidth - textWidth) / 2;
+    
+    doc.text(buttonText, centeredX, buttonY + 8);
     
     doc.link(buttonX, buttonY, buttonWidth, buttonHeight, { url: acceptanceUrl });
   }
