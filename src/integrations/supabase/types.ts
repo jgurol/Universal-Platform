@@ -140,12 +140,12 @@ export type Database = {
       items: {
         Row: {
           category_id: string | null
+          charge_type: string | null
           cost: number
           created_at: string
           description: string | null
           id: string
           is_active: boolean
-          mrc: number | null
           name: string
           price: number
           sku: string | null
@@ -154,12 +154,12 @@ export type Database = {
         }
         Insert: {
           category_id?: string | null
+          charge_type?: string | null
           cost?: number
           created_at?: string
           description?: string | null
           id?: string
           is_active?: boolean
-          mrc?: number | null
           name: string
           price?: number
           sku?: string | null
@@ -168,12 +168,12 @@ export type Database = {
         }
         Update: {
           category_id?: string | null
+          charge_type?: string | null
           cost?: number
           created_at?: string
           description?: string | null
           id?: string
           is_active?: boolean
-          mrc?: number | null
           name?: string
           price?: number
           sku?: string | null

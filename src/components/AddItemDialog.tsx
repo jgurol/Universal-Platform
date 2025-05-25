@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
 import { Item } from "@/types/items";
 import { useCategories } from "@/hooks/useCategories";
 
@@ -20,20 +21,20 @@ export const AddItemDialog = ({ open, onOpenChange, onAddItem }: AddItemDialogPr
   const [description, setDescription] = useState("");
   const [price, setPrice] = useState("");
   const [cost, setCost] = useState("");
-  const [mrc, setMrc] = useState("");
+  const [chargeType, setChargeType] = useState("MRC");
   const [categoryId, setCategoryId] = useState("");
   const [sku, setSku] = useState("");
   const { categories } = useCategories();
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (name && (price || mrc)) {
+    if (name && price) {
       onAddItem({
         name,
         description: description || undefined,
         price: parseFloat(price) || 0,
         cost: parseFloat(cost) || 0,
-        mrc: mrc ? parseFloat(mrc) : undefined,
+        charge_type: chargeType,
         category_id: categoryId || undefined,
         sku: sku || undefined,
         is_active: true
@@ -44,7 +45,7 @@ export const AddItemDialog = ({ open, onOpenChange, onAddItem }: AddItemDialogPr
       setDescription("");
       setPrice("");
       setCost("");
-      setMrc("");
+      setChargeType("MRC");
       setCategoryId("");
       setSku("");
       onOpenChange(false);
@@ -98,7 +99,7 @@ export const AddItemDialog = ({ open, onOpenChange, onAddItem }: AddItemDialogPr
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="price">Sell Price ($)</Label>
+              <Label htmlFor="price">Price ($) *</Label>
               <Input
                 id="price"
                 type="number"
@@ -107,21 +108,25 @@ export const AddItemDialog = ({ open, onOpenChange, onAddItem }: AddItemDialogPr
                 value={price}
                 onChange={(e) => setPrice(e.target.value)}
                 placeholder="0.00"
+                required
               />
             </div>
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="mrc">MRC ($)</Label>
-            <Input
-              id="mrc"
-              type="number"
-              step="0.01"
-              min="0"
-              value={mrc}
-              onChange={(e) => setMrc(e.target.value)}
-              placeholder="0.00"
-            />
+            <Label htmlFor="charge-type">Charge Type</Label>
+            <div className="flex items-center space-x-2">
+              <Label htmlFor="charge-toggle" className="text-sm">NRC</Label>
+              <Switch
+                id="charge-toggle"
+                checked={chargeType === "MRC"}
+                onCheckedChange={(checked) => setChargeType(checked ? "MRC" : "NRC")}
+              />
+              <Label htmlFor="charge-toggle" className="text-sm">MRC</Label>
+            </div>
+            <p className="text-xs text-gray-500">
+              {chargeType === "MRC" ? "Monthly Recurring Charge" : "Non-Recurring Charge"}
+            </p>
           </div>
 
           <div className="grid grid-cols-2 gap-4">
@@ -159,7 +164,7 @@ export const AddItemDialog = ({ open, onOpenChange, onAddItem }: AddItemDialogPr
             <Button 
               type="submit" 
               className="bg-blue-600 hover:bg-blue-700"
-              disabled={!name || (!price && !mrc)}
+              disabled={!name || !price}
             >
               Add Item
             </Button>

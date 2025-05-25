@@ -5,8 +5,8 @@ export interface Item {
   name: string;
   description?: string;
   price: number;
-  cost: number; // Added cost field
-  mrc?: number; // Monthly Recurring Charge
+  cost: number;
+  charge_type?: string; // 'NRC' or 'MRC'
   category_id?: string;
   sku?: string;
   is_active: boolean;

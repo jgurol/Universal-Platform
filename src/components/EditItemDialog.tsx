@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
 import { Item } from "@/types/items";
 import { useCategories } from "@/hooks/useCategories";
 
@@ -21,7 +22,7 @@ export const EditItemDialog = ({ open, onOpenChange, onUpdateItem, item }: EditI
   const [description, setDescription] = useState("");
   const [price, setPrice] = useState("");
   const [cost, setCost] = useState("");
-  const [mrc, setMrc] = useState("");
+  const [chargeType, setChargeType] = useState("MRC");
   const [categoryId, setCategoryId] = useState("");
   const [sku, setSku] = useState("");
   const { categories } = useCategories();
@@ -32,7 +33,7 @@ export const EditItemDialog = ({ open, onOpenChange, onUpdateItem, item }: EditI
       setDescription(item.description || "");
       setPrice(item.price.toString());
       setCost(item.cost.toString());
-      setMrc(item.mrc ? item.mrc.toString() : "");
+      setChargeType(item.charge_type || "MRC");
       setCategoryId(item.category_id || "");
       setSku(item.sku || "");
     }
@@ -40,13 +41,13 @@ export const EditItemDialog = ({ open, onOpenChange, onUpdateItem, item }: EditI
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (item && name && (price || mrc)) {
+    if (item && name && price) {
       onUpdateItem(item.id, {
         name,
         description: description || undefined,
         price: parseFloat(price) || 0,
         cost: parseFloat(cost) || 0,
-        mrc: mrc ? parseFloat(mrc) : undefined,
+        charge_type: chargeType,
         category_id: categoryId || undefined,
         sku: sku || undefined,
       });
@@ -106,7 +107,7 @@ export const EditItemDialog = ({ open, onOpenChange, onUpdateItem, item }: EditI
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="edit-price">Sell Price ($)</Label>
+              <Label htmlFor="edit-price">Price ($) *</Label>
               <Input
                 id="edit-price"
                 type="number"
@@ -115,21 +116,25 @@ export const EditItemDialog = ({ open, onOpenChange, onUpdateItem, item }: EditI
                 value={price}
                 onChange={(e) => setPrice(e.target.value)}
                 placeholder="0.00"
+                required
               />
             </div>
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="edit-mrc">MRC ($)</Label>
-            <Input
-              id="edit-mrc"
-              type="number"
-              step="0.01"
-              min="0"
-              value={mrc}
-              onChange={(e) => setMrc(e.target.value)}
-              placeholder="0.00"
-            />
+            <Label htmlFor="edit-charge-type">Charge Type</Label>
+            <div className="flex items-center space-x-2">
+              <Label htmlFor="edit-charge-toggle" className="text-sm">NRC</Label>
+              <Switch
+                id="edit-charge-toggle"
+                checked={chargeType === "MRC"}
+                onCheckedChange={(checked) => setChargeType(checked ? "MRC" : "NRC")}
+              />
+              <Label htmlFor="edit-charge-toggle" className="text-sm">MRC</Label>
+            </div>
+            <p className="text-xs text-gray-500">
+              {chargeType === "MRC" ? "Monthly Recurring Charge" : "Non-Recurring Charge"}
+            </p>
           </div>
 
           <div className="grid grid-cols-2 gap-4">
@@ -167,7 +172,7 @@ export const EditItemDialog = ({ open, onOpenChange, onUpdateItem, item }: EditI
             <Button 
               type="submit" 
               className="bg-blue-600 hover:bg-blue-700"
-              disabled={!name || (!price && !mrc)}
+              disabled={!name || !price}
             >
               Update Item
             </Button>

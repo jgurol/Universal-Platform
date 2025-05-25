@@ -86,17 +86,17 @@ export const ItemsManagement = () => {
                       )}
                       {item.price > 0 && (
                         <Badge variant="outline" className="text-xs">
-                          Sell: ${item.price.toFixed(2)}
-                        </Badge>
-                      )}
-                      {item.mrc && item.mrc > 0 && (
-                        <Badge variant="outline" className="text-xs bg-green-50 text-green-700">
-                          MRC: ${item.mrc.toFixed(2)}/mo
+                          {item.charge_type === "MRC" ? "MRC" : "Price"}: ${item.price.toFixed(2)}{item.charge_type === "MRC" ? "/mo" : ""}
                         </Badge>
                       )}
                       {item.sku && (
                         <Badge variant="outline" className="text-xs bg-gray-50 text-gray-700">
                           SKU: {item.sku}
+                        </Badge>
+                      )}
+                      {item.charge_type && (
+                        <Badge variant="outline" className="text-xs bg-blue-50 text-blue-700">
+                          {item.charge_type}
                         </Badge>
                       )}
                     </div>
