@@ -47,23 +47,23 @@ export const useQuotes = (
 
       console.info('[fetchQuotes] Raw quotesData from database:', quotesData);
       
-      // Log email status values specifically
+      // Log description values specifically
       if (quotesData) {
         quotesData.forEach((quote, index) => {
-          console.log(`[fetchQuotes] Quote ${index} - ID: ${quote.id}, Email Status: "${quote.email_status}", Description: "${quote.description}"`);
+          console.log(`[fetchQuotes] Quote ${index} - ID: ${quote.id}, Description from DB: "${quote.description}"`);
         });
       }
 
       if (quotesData) {
         const mappedQuotes = quotesData.map(quote => {
           const mapped = mapQuoteData(quote, clients, clientInfos);
-          console.log(`[fetchQuotes] Mapped quote ${quote.id} - Email Status: "${mapped.email_status}", Description: "${mapped.description}"`);
+          console.log(`[fetchQuotes] Mapped quote ${quote.id} - Description: "${mapped.description}"`);
           return mapped;
         });
         
         setQuotes(mappedQuotes);
         console.info('[fetchQuotes] Final mapped quotes count:', mappedQuotes.length);
-        console.info('[fetchQuotes] Final quotes with email status:', mappedQuotes.map(q => ({ id: q.id, email_status: q.email_status, description: q.description })));
+        console.info('[fetchQuotes] Final quotes with descriptions:', mappedQuotes.map(q => ({ id: q.id, description: q.description })));
       }
     } catch (err) {
       console.error('Error in fetchQuotes:', err);

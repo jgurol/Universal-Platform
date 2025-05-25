@@ -16,7 +16,6 @@ import ProfileSettings from "./pages/ProfileSettings";
 import Billing from "./pages/Billing";
 import FixAccount from "./pages/FixAccount";
 import AcceptQuote from "./pages/AcceptQuote";
-import ViewQuote from "./pages/ViewQuote";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -39,7 +38,6 @@ const App = () => (
             <Route path="/profile-settings" element={<ProfileSettings />} />
             <Route path="/billing" element={<Billing />} />
             <Route path="/fix-account" element={<FixAccount />} />
-            <Route path="/quote/:quoteId" element={<ViewQuote />} />
             <Route path="/accept-quote/:quoteId" element={<AcceptQuote />} />
             <Route path="*" element={<NotFound />} />
           </Routes>

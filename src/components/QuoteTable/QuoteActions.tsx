@@ -1,8 +1,10 @@
+
 import { Button } from "@/components/ui/button";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger, DropdownMenuItem } from "@/components/ui/dropdown-menu";
-import { MoreHorizontal, Eye, Edit, Copy, Trash2 } from "lucide-react";
-import { Quote, ClientInfo } from "@/pages/Index";
+import { Pencil, Trash2, FileText, Copy } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
+import { Quote, ClientInfo } from "@/pages/Index";
+import { generateQuotePDF } from "@/utils/pdfUtils";
+import { useToast } from "@/hooks/use-toast";
 import { EmailStatusButton } from "./EmailStatusButton";
 
 interface QuoteActionsProps {
@@ -25,79 +27,81 @@ export const QuoteActions = ({
   onEmailClick
 }: QuoteActionsProps) => {
   const { isAdmin } = useAuth();
+  const { toast } = useToast();
 
-  console.log('QuoteActions - Rendering for quote:', quote.id, 'Email status:', quote.email_status);
+  const handlePreviewPDF = async () => {
+    try {
+      const pdf = await generateQuotePDF(quote, clientInfo, salespersonName);
+      const pdfBlob = pdf.output('blob');
+      const pdfUrl = URL.createObjectURL(pdfBlob);
+      window.open(pdfUrl, '_blank');
+      
+      toast({
+        title: "PDF Generated",
+        description: "Quote PDF has been opened in a new tab",
+      });
+    } catch (error) {
+      console.error('Error generating PDF:', error);
+      toast({
+        title: "Error",
+        description: "Failed to generate PDF preview",
+        variant: "destructive"
+      });
+    }
+  };
 
   return (
-    <div className="flex items-center gap-1">
-      <EmailStatusButton 
-        quoteId={quote.id} 
-        onEmailClick={onEmailClick}
-      />
-      
-      {/* View Quote button - always visible */}
+    <div className="flex gap-1 justify-center">
       <Button 
         variant="ghost" 
         size="sm" 
-        className="h-8 w-8 p-0 text-gray-600 hover:text-gray-700 hover:bg-gray-50"
-        onClick={() => window.open(`/quote/${quote.id}`, '_blank')}
-        title="View Quote"
+        className="h-8 w-8 p-0 text-gray-500 hover:text-blue-600"
+        onClick={handlePreviewPDF}
+        title="Preview PDF"
       >
-        <Eye className="h-4 w-4" />
+        <FileText className="w-4 h-4" />
       </Button>
       
-      {/* Direct action buttons for admins */}
-      {isAdmin && (
-        <>
-          {onEditClick && (
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              className="h-8 w-8 p-0 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
-              onClick={() => onEditClick(quote)}
-              title="Edit Quote"
-            >
-              <Edit className="h-4 w-4" />
-            </Button>
-          )}
-          
-          {onCopyQuote && (
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              className="h-8 w-8 p-0 text-green-600 hover:text-green-700 hover:bg-green-50"
-              onClick={() => onCopyQuote(quote)}
-              title="Copy Quote"
-            >
-              <Copy className="h-4 w-4" />
-            </Button>
-          )}
-          
-          {onDeleteQuote && (
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
-              onClick={() => onDeleteQuote(quote.id)}
-              title="Delete Quote"
-            >
-              <Trash2 className="h-4 w-4" />
-            </Button>
-          )}
-        </>
+      <EmailStatusButton 
+        quoteId={quote.id}
+        onEmailClick={onEmailClick}
+      />
+      
+      {isAdmin && onCopyQuote && (
+        <Button 
+          variant="ghost" 
+          size="sm" 
+          className="h-8 w-8 p-0 text-gray-500 hover:text-green-600"
+          onClick={() => onCopyQuote(quote)}
+          title="Copy Quote"
+        >
+          <Copy className="w-4 h-4" />
+        </Button>
       )}
       
-      {/* Dropdown menu for additional actions */}
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-            <MoreHorizontal className="h-4 w-4" />
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="end">
-          {/* Keep dropdown empty for now or add other future actions */}
-        </DropdownMenuContent>
-      </DropdownMenu>
+      {isAdmin && onEditClick && (
+        <Button 
+          variant="ghost" 
+          size="sm" 
+          className="h-8 w-8 p-0 text-gray-500 hover:text-blue-600"
+          onClick={() => onEditClick(quote)}
+          title="Edit Quote"
+        >
+          <Pencil className="w-4 h-4" />
+        </Button>
+      )}
+      
+      {isAdmin && onDeleteQuote && (
+        <Button 
+          variant="ghost" 
+          size="sm" 
+          className="h-8 w-8 p-0 text-gray-500 hover:text-red-600"
+          onClick={() => onDeleteQuote(quote.id)}
+          title="Delete Quote"
+        >
+          <Trash2 className="w-4 h-4" />
+        </Button>
+      )}
     </div>
   );
 };

@@ -1,5 +1,5 @@
+
 import jsPDF from 'jspdf';
-import { Quote, ClientInfo } from "@/pages/Index";
 
 interface TextSection {
   text: string;
@@ -288,34 +288,4 @@ const parseMarkdownInline = (text: string): TextSection[] => {
   
   console.log('Total sections created:', sections.length);
   return sections;
-};
-
-// Main function to generate PDF
-export const markdownToPdf = async (quote: Quote, clientInfo?: ClientInfo, salespersonName?: string): Promise<Blob> => {
-  const doc = new jsPDF();
-  
-  // Add quote header
-  doc.setFontSize(20);
-  doc.setFont('helvetica', 'bold');
-  doc.text('Quote', 20, 30);
-  
-  // Add quote details
-  doc.setFontSize(12);
-  doc.setFont('helvetica', 'normal');
-  doc.text(`Quote #: ${quote.quoteNumber || quote.id.slice(0, 8)}`, 20, 50);
-  doc.text(`Date: ${quote.date}`, 20, 60);
-  doc.text(`Amount: $${quote.amount.toFixed(2)}`, 20, 70);
-  
-  if (clientInfo) {
-    doc.text(`Customer: ${clientInfo.company_name}`, 20, 80);
-  }
-  
-  // Add description if available
-  if (quote.description) {
-    doc.text(`Description: ${quote.description}`, 20, 90);
-  }
-  
-  // Convert to blob and return
-  const pdfBlob = doc.output('blob');
-  return pdfBlob;
 };
