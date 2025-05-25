@@ -4,6 +4,30 @@ import { Quote, Client } from "@/pages/Index";
 import { calculateCommission } from "@/services/commissionService";
 import { useToast } from "@/hooks/use-toast";
 
+// Define the database quote type to include template_id
+type DatabaseQuote = {
+  id: string;
+  client_id: string | null;
+  client_info_id: string | null;
+  amount: number;
+  date: string;
+  description: string | null;
+  quote_number: string | null;
+  quote_month: string | null;
+  quote_year: string | null;
+  status: string | null;
+  commission: number | null;
+  commission_override: number | null;
+  expires_at: string | null;
+  notes: string | null;
+  billing_address: string | null;
+  service_address: string | null;
+  template_id: string | null;
+  user_id: string;
+  created_at: string | null;
+  updated_at: string | null;
+};
+
 export const addQuoteToDatabase = async (
   newQuote: Omit<Quote, "id">,
   clients: Client[],
@@ -62,7 +86,8 @@ export const addQuoteToDatabase = async (
       return null;
     }
 
-    console.log('[addQuote] Quote created successfully with template_id:', (quoteData as any).template_id);
+    const typedQuoteData = quoteData as DatabaseQuote;
+    console.log('[addQuote] Quote created successfully with template_id:', typedQuoteData.template_id);
 
     // Add quote items if any exist
     if (quoteData && newQuote.quoteItems && newQuote.quoteItems.length > 0) {
@@ -158,7 +183,8 @@ export const updateQuoteInDatabase = async (
       return null;
     }
 
-    console.log('[updateQuote] Successfully updated quote with template_id:', (data as any).template_id);
+    const typedData = data as DatabaseQuote;
+    console.log('[updateQuote] Successfully updated quote with template_id:', typedData.template_id);
     return data;
   } catch (err) {
     console.error('Error in update quote operation:', err);
