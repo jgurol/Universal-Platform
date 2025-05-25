@@ -58,19 +58,24 @@ const handler = async (req: Request): Promise<Response> => {
 
     console.log('Processing quote approval for:', quoteId);
 
-    // First, check if orders already exist for this quote
-    const { data: existingOrders } = await supabase
+    // First, check if orders already exist for this quote with a more robust check
+    const { data: existingOrders, error: existingOrdersError } = await supabase
       .from('orders')
       .select('id, order_number')
       .eq('quote_id', quoteId);
 
+    if (existingOrdersError) {
+      console.error('Error checking existing orders:', existingOrdersError);
+    }
+
     if (existingOrders && existingOrders.length > 0) {
-      console.log('Orders already exist for quote:', quoteId);
+      console.log('Orders already exist for quote:', quoteId, 'Count:', existingOrders.length);
       return new Response(JSON.stringify({ 
         success: true, 
         orderIds: existingOrders.map(o => o.id),
         orderNumbers: existingOrders.map(o => o.order_number),
-        message: 'Orders already exist for this quote'
+        message: 'Orders already exist for this quote',
+        ordersCount: existingOrders.length
       }), {
         status: 200,
         headers: { "Content-Type": "application/json", ...corsHeaders },
@@ -135,15 +140,35 @@ const handler = async (req: Request): Promise<Response> => {
 
       console.log('Order data to insert:', orderData);
 
+      // Use upsert to handle potential duplicates gracefully
       const { data: newOrder, error: orderError } = await supabase
         .from('orders')
-        .insert(orderData)
+        .upsert(orderData, { 
+          onConflict: 'quote_id',
+          ignoreDuplicates: false 
+        })
         .select()
         .single();
 
       if (orderError) {
         console.error(`Failed to create order for item ${quoteItem.id}:`, orderError);
-        console.error('Order data that failed:', orderData);
+        
+        // If it's a duplicate key error, try to fetch the existing order
+        if (orderError.code === '23505') {
+          console.log('Duplicate order detected, fetching existing order');
+          const { data: existingOrder } = await supabase
+            .from('orders')
+            .select('*')
+            .eq('quote_id', quoteId)
+            .single();
+          
+          if (existingOrder) {
+            console.log('Found existing order:', existingOrder.id);
+            createdOrders.push(existingOrder);
+            continue;
+          }
+        }
+        
         throw new Error(`Failed to create order for item: ${orderError.message}`);
       }
 

@@ -51,6 +51,53 @@ export const QuoteStatusBadge = ({ quoteId, status, onStatusUpdate }: QuoteStatu
           });
           return;
         }
+      } else if (newStatus === 'approved') {
+        // For approval, first update the quote status
+        const { error: quoteUpdateError } = await supabase
+          .from('quotes')
+          .update({ status: newStatus })
+          .eq('id', quoteId);
+
+        if (quoteUpdateError) {
+          console.error('Error updating quote status:', quoteUpdateError);
+          toast({
+            title: "Failed to update status",
+            description: quoteUpdateError.message,
+            variant: "destructive"
+          });
+          return;
+        }
+
+        // Then try to create orders, but handle gracefully if they already exist
+        try {
+          const { data: orderResult, error: orderError } = await supabase.functions
+            .invoke('fix-quote-approval', {
+              body: { quoteId: quoteId }
+            });
+
+          if (orderError) {
+            console.error('Error in order creation:', orderError);
+            // Don't fail the status update if order creation fails
+            toast({
+              title: "Status updated",
+              description: "Quote approved but there was an issue creating orders. Orders may already exist.",
+              variant: "default"
+            });
+          } else {
+            console.log('Order creation result:', orderResult);
+            toast({
+              title: "Status updated",
+              description: `Quote approved and ${orderResult.ordersCount || 0} order(s) created.`,
+            });
+          }
+        } catch (orderErr) {
+          console.error('Order creation failed:', orderErr);
+          // Still show success for status update
+          toast({
+            title: "Status updated",
+            description: "Quote approved. Orders may already exist for this quote.",
+          });
+        }
       } else {
         // For other status changes, just update the status
         const { error } = await supabase
@@ -67,24 +114,17 @@ export const QuoteStatusBadge = ({ quoteId, status, onStatusUpdate }: QuoteStatu
           });
           return;
         }
+
+        toast({
+          title: "Status updated",
+          description: `Quote status changed to ${newStatus}`,
+        });
       }
 
       if (onStatusUpdate) {
         onStatusUpdate(newStatus);
       }
 
-      // Show different messages based on status change
-      let description = `Quote status changed to ${newStatus}`;
-      if (newStatus === 'approved') {
-        description += '. An order has been automatically created and circuit tracking initiated if applicable.';
-      } else if (newStatus === 'pending') {
-        description += ' and digital signature evidence removed';
-      }
-
-      toast({
-        title: "Status updated",
-        description: description,
-      });
     } catch (err) {
       console.error('Error updating quote status:', err);
       toast({
