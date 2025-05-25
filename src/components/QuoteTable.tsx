@@ -196,12 +196,13 @@ export const QuoteTable = ({
     );
   };
 
-  const handlePreviewPDF = (quote: Quote) => {
+  const handlePreviewPDF = async (quote: Quote) => {
     try {
       const clientInfo = clientInfos.find(ci => ci.id === quote.clientInfoId);
       const salespersonName = agentMapping[quote.clientId] || quote.clientName;
       
-      const pdf = generateQuotePDF(quote, clientInfo, salespersonName);
+      // Wait for the PDF to be generated
+      const pdf = await generateQuotePDF(quote, clientInfo, salespersonName);
       
       // Open PDF in new window/tab
       const pdfBlob = pdf.output('blob');

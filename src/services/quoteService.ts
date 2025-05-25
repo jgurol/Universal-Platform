@@ -38,8 +38,12 @@ export const addQuoteToDatabase = async (
       expires_at: newQuote.expiresAt,
       notes: newQuote.notes,
       billing_address: newQuote.billingAddress,
+      service_address: newQuote.serviceAddress,
+      template_id: newQuote.templateId,
       user_id: userId
     };
+
+    console.log('[addQuote] Template ID being saved:', newQuote.templateId);
 
     const { data: quoteData, error: quoteError } = await supabase
       .from('quotes')
@@ -103,7 +107,7 @@ export const updateQuoteInDatabase = async (
 ) => {
   try {
     console.log('[updateQuote] Received quote data:', updatedQuote);
-    console.log('[updateQuote] Service address being saved:', updatedQuote.serviceAddress);
+    console.log('[updateQuote] Template ID being saved:', updatedQuote.templateId);
     
     const commission = await calculateCommission(
       updatedQuote.amount,
@@ -128,7 +132,8 @@ export const updateQuoteInDatabase = async (
       expires_at: updatedQuote.expiresAt || null,
       notes: updatedQuote.notes || null,
       billing_address: updatedQuote.billingAddress || null,
-      service_address: updatedQuote.serviceAddress || null
+      service_address: updatedQuote.serviceAddress || null,
+      template_id: updatedQuote.templateId || null
     };
 
     console.log('[updateQuote] Data being sent to database:', quoteUpdateData);
@@ -150,7 +155,7 @@ export const updateQuoteInDatabase = async (
       return null;
     }
 
-    console.log('[updateQuote] Successfully updated quote with addresses:', data);
+    console.log('[updateQuote] Successfully updated quote with template:', data);
     return data;
   } catch (err) {
     console.error('Error in update quote operation:', err);
