@@ -299,10 +299,11 @@ const AcceptQuote = () => {
         throw acceptanceError;
       }
 
-      // Update quote status
+      // Update quote status to "approved" and set acceptance details
       const { error: quoteError } = await supabase
         .from('quotes')
         .update({
+          status: 'approved',
           acceptance_status: 'accepted',
           accepted_at: new Date().toISOString(),
           accepted_by: clientName.trim()
