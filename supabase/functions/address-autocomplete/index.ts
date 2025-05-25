@@ -24,7 +24,7 @@ serve(async (req) => {
       });
     }
 
-    // Use Google Places API (new) Autocomplete
+    // Use Google Places API (new) Autocomplete with correct place types
     const response = await fetch(`https://places.googleapis.com/v1/places:autocomplete`, {
       method: 'POST',
       headers: {
@@ -34,7 +34,7 @@ serve(async (req) => {
       body: JSON.stringify({
         input: input.trim(),
         sessionToken: sessionToken,
-        includedPrimaryTypes: ['address'],
+        includedPrimaryTypes: ['street_address', 'premise', 'subpremise'],
         languageCode: 'en',
         regionCode: 'US',
       }),
