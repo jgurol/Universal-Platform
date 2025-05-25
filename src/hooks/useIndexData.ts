@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
@@ -81,7 +80,9 @@ export const useIndexData = () => {
     if (!user) return;
     
     try {
-      console.info('[fetchQuotes] Starting quote fetch - isAdmin:', isAdmin, 'associatedAgentId:', associatedAgentId);
+      console.info('[fetchQuotes] ========== STARTING QUOTE FETCH ==========');
+      console.info('[fetchQuotes] User ID:', user.id);
+      console.info('[fetchQuotes] isAdmin:', isAdmin, 'associatedAgentId:', associatedAgentId);
       
       let query = supabase
         .from('quotes')
@@ -109,58 +110,75 @@ export const useIndexData = () => {
         return;
       }
 
-      console.info('[fetchQuotes] Raw quotesData:', quotesData);
+      console.info('[fetchQuotes] Raw quotesData from database:', quotesData);
+      console.info('[fetchQuotes] Number of quotes returned:', quotesData?.length || 0);
 
       if (quotesData) {
         const mappedQuotes = quotesData.map(quote => {
-          console.info('[fetchQuotes] ===========================================');
-          console.info('[fetchQuotes] Processing quote:', quote.id);
-          console.info('[fetchQuotes] Raw quote_items:', quote.quote_items);
+          console.info('\n[fetchQuotes] =================== PROCESSING QUOTE ===================');
+          console.info('[fetchQuotes] Quote ID:', quote.id);
+          console.info('[fetchQuotes] Quote description:', quote.description);
+          console.info('[fetchQuotes] Raw quote object from DB:', quote);
+          console.info('[fetchQuotes] Quote items array:', quote.quote_items);
+          console.info('[fetchQuotes] Quote items count:', quote.quote_items?.length || 0);
           
-          // Log each quote item in detail
-          quote.quote_items?.forEach((item, index) => {
-            console.info(`[fetchQuotes] Item ${index}:`, {
-              id: item.id,
-              charge_type: item.charge_type,
-              total_price: item.total_price,
-              quantity: item.quantity,
-              unit_price: item.unit_price,
-              raw_item: item
+          // Log each quote item in extreme detail
+          if (quote.quote_items && quote.quote_items.length > 0) {
+            quote.quote_items.forEach((item, index) => {
+              console.info(`\n[fetchQuotes] ---- QUOTE ITEM ${index + 1} DETAILS ----`);
+              console.info(`[fetchQuotes] Item ID: ${item.id}`);
+              console.info(`[fetchQuotes] Item charge_type: "${item.charge_type}"`);
+              console.info(`[fetchQuotes] Item charge_type type: ${typeof item.charge_type}`);
+              console.info(`[fetchQuotes] Item total_price: ${item.total_price}`);
+              console.info(`[fetchQuotes] Item total_price type: ${typeof item.total_price}`);
+              console.info(`[fetchQuotes] Item quantity: ${item.quantity}`);
+              console.info(`[fetchQuotes] Item unit_price: ${item.unit_price}`);
+              console.info(`[fetchQuotes] Full item object:`, item);
+              console.info(`[fetchQuotes] ---- END ITEM ${index + 1} ----\n`);
             });
+          } else {
+            console.info('[fetchQuotes] NO QUOTE ITEMS FOUND FOR THIS QUOTE!');
+          }
+          
+          // Calculate totals from quote items by charge type with detailed logging
+          const allItems = quote.quote_items || [];
+          console.info('[fetchQuotes] All items for filtering:', allItems);
+          
+          const nrcItems = allItems.filter(item => {
+            const isNRC = item.charge_type === 'NRC';
+            console.info(`[fetchQuotes] Item ${item.id}: charge_type="${item.charge_type}", isNRC=${isNRC}`);
+            return isNRC;
           });
           
-          // Calculate totals from quote items by charge type
-          const nrcItems = quote.quote_items?.filter(item => {
-            const isNRC = item.charge_type === 'NRC';
-            console.info('[fetchQuotes] Item', item.id, 'charge_type:', item.charge_type, 'is NRC:', isNRC, 'total_price:', item.total_price);
-            return isNRC;
-          }) || [];
-          
-          const mrcItems = quote.quote_items?.filter(item => {
+          const mrcItems = allItems.filter(item => {
             const isMRC = item.charge_type === 'MRC';
-            console.info('[fetchQuotes] Item', item.id, 'charge_type:', item.charge_type, 'is MRC:', isMRC, 'total_price:', item.total_price);
+            console.info(`[fetchQuotes] Item ${item.id}: charge_type="${item.charge_type}", isMRC=${isMRC}`);
             return isMRC;
-          }) || [];
+          });
           
-          console.info('[fetchQuotes] NRC Items for quote', quote.id, ':', nrcItems);
-          console.info('[fetchQuotes] MRC Items for quote', quote.id, ':', mrcItems);
+          console.info('[fetchQuotes] Filtered NRC Items:', nrcItems);
+          console.info('[fetchQuotes] Filtered MRC Items:', mrcItems);
           
           const nrcTotal = nrcItems.reduce((total, item) => {
             const itemTotal = item.total_price || 0;
-            console.info('[fetchQuotes] Adding NRC item total:', itemTotal, 'running total:', total + itemTotal);
+            console.info(`[fetchQuotes] Adding NRC item total: ${itemTotal}, running total: ${total + itemTotal}`);
             return total + itemTotal;
           }, 0);
           
           const mrcTotal = mrcItems.reduce((total, item) => {
             const itemTotal = item.total_price || 0;
-            console.info('[fetchQuotes] Adding MRC item total:', itemTotal, 'running total:', total + itemTotal);
+            console.info(`[fetchQuotes] Adding MRC item total: ${itemTotal}, running total: ${total + itemTotal}`);
             return total + itemTotal;
           }, 0);
           
           const totalAmount = nrcTotal + mrcTotal;
 
-          console.info('[fetchQuotes] Quote', quote.id, '- NRC Total:', nrcTotal, 'MRC Total:', mrcTotal, 'Grand Total:', totalAmount);
-          console.info('[fetchQuotes] ===========================================');
+          console.info('[fetchQuotes] ---- FINAL CALCULATIONS ----');
+          console.info(`[fetchQuotes] Quote ${quote.id}:`);
+          console.info(`[fetchQuotes]   - NRC Total: ${nrcTotal}`);
+          console.info(`[fetchQuotes]   - MRC Total: ${mrcTotal}`);
+          console.info(`[fetchQuotes]   - Grand Total: ${totalAmount}`);
+          console.info('[fetchQuotes] =================== END QUOTE PROCESSING ===================\n');
 
           return {
             id: quote.id,
@@ -185,8 +203,10 @@ export const useIndexData = () => {
         });
         
         setQuotes(mappedQuotes);
+        console.info('[fetchQuotes] ========== FINAL RESULTS ==========');
         console.info('[fetchQuotes] Final mapped quotes count:', mappedQuotes.length);
         console.info('[fetchQuotes] Final mapped quotes:', mappedQuotes);
+        console.info('[fetchQuotes] ========== END QUOTE FETCH ==========');
       }
     } catch (err) {
       console.error('Error in fetchQuotes:', err);
