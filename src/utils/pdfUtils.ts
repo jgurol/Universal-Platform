@@ -52,7 +52,7 @@ export const generateQuotePDF = async (quote: Quote, clientInfo?: ClientInfo, sa
   // Document type in top right - moved up and made black
   doc.setFontSize(14);
   doc.setTextColor(0, 0, 0); // Black color instead of gray
-  doc.text('Agreement', 160, 20); // Moved up from headerYStart to fixed position
+  doc.text('Agreement', 160, 15); // Moved up even higher
   
   // Company Information (left side) - Start immediately after logo with compact spacing
   const companyInfoY = 15 + logoYOffset;
@@ -61,15 +61,15 @@ export const generateQuotePDF = async (quote: Quote, clientInfo?: ClientInfo, sa
   doc.setFont('helvetica', 'bold');
   doc.text('California Telecom, Inc.', 20, companyInfoY);
   doc.setFont('helvetica', 'normal');
-  doc.text('14538 Central Ave', 20, companyInfoY + 5); // Reduced from 7 to 5
-  doc.text('Chino, CA 91710', 20, companyInfoY + 10); // Reduced spacing
-  doc.text('United States', 20, companyInfoY + 15); // Reduced spacing
-  doc.text('Tel: 213-270-1349', 20, companyInfoY + 20); // Reduced spacing
-  doc.text('Fax: 213-232-3304', 20, companyInfoY + 25); // Reduced spacing
+  doc.text('14538 Central Ave', 20, companyInfoY + 4); // Further reduced spacing
+  doc.text('Chino, CA 91710', 20, companyInfoY + 8); // Further reduced spacing
+  doc.text('United States', 20, companyInfoY + 12); // Further reduced spacing
+  doc.text('Tel: 213-270-1349', 20, companyInfoY + 16); // Further reduced spacing
+  doc.text('Fax: 213-232-3304', 20, companyInfoY + 20); // Further reduced spacing
   
-  // Agreement details box (right side) - Same Y position as company info
+  // Agreement details box (right side) - Moved higher
   const boxX = 125;
-  const boxY = companyInfoY;
+  const boxY = 15; // Moved up to align with Agreement text
   const boxWidth = 70;
   const boxHeight = 40;
   
@@ -94,7 +94,7 @@ export const generateQuotePDF = async (quote: Quote, clientInfo?: ClientInfo, sa
   doc.text(salespersonName || 'N/A', boxX + 4, boxY + 38);
   
   // Billing Information and Service Address sections (side by side) - Better positioning
-  let yPos = companyInfoY + 35; // Reduced from 50 to 35 for more compact layout
+  let yPos = companyInfoY + 30; // Further reduced from 35 to 30
   doc.setFontSize(11);
   doc.setFont('helvetica', 'bold');
   doc.text('Billing Information', 20, yPos);
@@ -253,9 +253,9 @@ export const generateQuotePDF = async (quote: Quote, clientInfo?: ClientInfo, sa
     }
   }
   
-  // Accept Agreement button (green box) - Better positioned
+  // Accept Agreement button (green box) - Moved closer to address sections
   const buttonX = 125;
-  const buttonY = yPos + 45;
+  const buttonY = yPos + 38; // Reduced spacing from 45 to 38
   const buttonWidth = 70;
   const buttonHeight = 12;
   
@@ -267,7 +267,7 @@ export const generateQuotePDF = async (quote: Quote, clientInfo?: ClientInfo, sa
   doc.text('ACCEPT AGREEMENT', buttonX + 10, buttonY + 8);
   
   // Quote Title - Properly spaced
-  yPos = 155;
+  yPos = 140; // Adjusted to account for the higher positioning
   doc.setTextColor(0, 0, 0);
   doc.setFontSize(14);
   doc.setFont('helvetica', 'bold');
