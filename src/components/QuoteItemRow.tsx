@@ -6,7 +6,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Trash2, MapPin, FileText } from "lucide-react";
+import { Trash2, MapPin, FileText, GripVertical } from "lucide-react";
 import { QuoteItemData } from "@/types/quoteItems";
 import { ClientAddress } from "@/types/clientAddress";
 
@@ -37,144 +37,152 @@ export const QuoteItemRow = ({ quoteItem, addresses, onUpdateItem, onRemoveItem 
   };
 
   return (
-    <div className="grid grid-cols-6 gap-2 items-start p-3 border rounded bg-gray-50">
-      {/* Item & Location Column */}
-      <div className="col-span-2 space-y-2">
-        <Input
-          value={quoteItem.name || quoteItem.item?.name || ''}
-          onChange={(e) => onUpdateItem(quoteItem.id, 'name', e.target.value)}
-          placeholder="Item name"
-          className="text-sm font-medium h-8"
-        />
-        <div className="space-y-1">
-          <Dialog open={isDescriptionOpen} onOpenChange={setIsDescriptionOpen}>
-            <DialogTrigger asChild>
-              <Button
-                variant="outline"
-                size="sm"
-                className="w-full h-8 justify-start text-xs text-gray-600"
-              >
-                <FileText className="w-3 h-3 mr-1" />
-                {quoteItem.description || quoteItem.item?.description ? 
-                  `${(quoteItem.description || quoteItem.item?.description || '').substring(0, 20)}...` : 
-                  'Add description'
-                }
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="sm:max-w-[500px]">
-              <DialogHeader>
-                <DialogTitle>Edit Item Description</DialogTitle>
-              </DialogHeader>
-              <div className="space-y-4">
-                <Textarea
-                  value={tempDescription}
-                  onChange={(e) => setTempDescription(e.target.value)}
-                  placeholder="Enter item description"
-                  rows={6}
-                  className="resize-none"
-                />
-                <div className="flex justify-end space-x-2">
-                  <Button variant="outline" onClick={handleDescriptionCancel}>
-                    Cancel
-                  </Button>
-                  <Button onClick={handleDescriptionSave}>
-                    Save
-                  </Button>
+    <div className="flex items-start gap-2 p-3 border rounded bg-gray-50">
+      {/* Drag Handle */}
+      <div className="flex items-center justify-center pt-2">
+        <GripVertical className="w-4 h-4 text-gray-400 cursor-grab active:cursor-grabbing" />
+      </div>
+
+      {/* Main Content Grid */}
+      <div className="grid grid-cols-6 gap-2 items-start flex-1">
+        {/* Item & Location Column */}
+        <div className="col-span-2 space-y-2">
+          <Input
+            value={quoteItem.name || quoteItem.item?.name || ''}
+            onChange={(e) => onUpdateItem(quoteItem.id, 'name', e.target.value)}
+            placeholder="Item name"
+            className="text-sm font-medium h-8"
+          />
+          <div className="space-y-1">
+            <Dialog open={isDescriptionOpen} onOpenChange={setIsDescriptionOpen}>
+              <DialogTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="w-full h-8 justify-start text-xs text-gray-600"
+                >
+                  <FileText className="w-3 h-3 mr-1" />
+                  {quoteItem.description || quoteItem.item?.description ? 
+                    `${(quoteItem.description || quoteItem.item?.description || '').substring(0, 20)}...` : 
+                    'Add description'
+                  }
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-[500px]">
+                <DialogHeader>
+                  <DialogTitle>Edit Item Description</DialogTitle>
+                </DialogHeader>
+                <div className="space-y-4">
+                  <Textarea
+                    value={tempDescription}
+                    onChange={(e) => setTempDescription(e.target.value)}
+                    placeholder="Enter item description"
+                    rows={6}
+                    className="resize-none"
+                  />
+                  <div className="flex justify-end space-x-2">
+                    <Button variant="outline" onClick={handleDescriptionCancel}>
+                      Cancel
+                    </Button>
+                    <Button onClick={handleDescriptionSave}>
+                      Save
+                    </Button>
+                  </div>
                 </div>
-              </div>
-            </DialogContent>
-          </Dialog>
+              </DialogContent>
+            </Dialog>
+          </div>
+          <div className="flex items-center gap-1 text-xs text-gray-500">
+            <MapPin className="w-3 h-3" />
+            <Select 
+              value={quoteItem.address_id || ""} 
+              onValueChange={(value) => onUpdateItem(quoteItem.id, 'address_id', value)}
+            >
+              <SelectTrigger className="text-xs h-6 border-gray-300">
+                <SelectValue placeholder="Select location" />
+              </SelectTrigger>
+              <SelectContent className="bg-white border border-gray-200 shadow-lg z-50">
+                {addresses.length === 0 ? (
+                  <SelectItem value="no-addresses" disabled>No addresses available</SelectItem>
+                ) : (
+                  addresses.map((address) => (
+                    <SelectItem key={address.id} value={address.id}>
+                      {formatAddressShort(address)}
+                    </SelectItem>
+                  ))
+                )}
+              </SelectContent>
+            </Select>
+          </div>
         </div>
-        <div className="flex items-center gap-1 text-xs text-gray-500">
-          <MapPin className="w-3 h-3" />
-          <Select 
-            value={quoteItem.address_id || ""} 
-            onValueChange={(value) => onUpdateItem(quoteItem.id, 'address_id', value)}
+
+        {/* Quantity */}
+        <div>
+          <Input
+            type="number"
+            min="1"
+            value={quoteItem.quantity}
+            onChange={(e) => onUpdateItem(quoteItem.id, 'quantity', parseInt(e.target.value) || 1)}
+            className="text-xs h-8"
+            placeholder="Qty"
+          />
+        </div>
+
+        {/* Sell Price / Cost */}
+        <div className="space-y-1">
+          <div className="flex items-center gap-1">
+            <span className="text-xs text-gray-500">Sell:</span>
+            <Input
+              type="number"
+              step="0.01"
+              min="0"
+              value={quoteItem.unit_price}
+              onChange={(e) => onUpdateItem(quoteItem.id, 'unit_price', parseFloat(e.target.value) || 0)}
+              className="text-xs h-8"
+              placeholder="$"
+            />
+          </div>
+          <div className="flex items-center gap-1">
+            <span className="text-xs text-gray-500">Cost:</span>
+            <Input
+              type="number"
+              step="0.01"
+              min="0"
+              value={quoteItem.cost_override || 0}
+              onChange={(e) => onUpdateItem(quoteItem.id, 'cost_override', parseFloat(e.target.value) || 0)}
+              className="text-xs h-8"
+              placeholder="$"
+            />
+          </div>
+        </div>
+
+        {/* Total */}
+        <div className="flex items-center justify-between">
+          <div className="text-sm font-medium">
+            ${quoteItem.total_price.toFixed(2)}
+          </div>
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={() => onRemoveItem(quoteItem.id)}
+            className="h-6 w-6 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
           >
-            <SelectTrigger className="text-xs h-6 border-gray-300">
-              <SelectValue placeholder="Select location" />
-            </SelectTrigger>
-            <SelectContent className="bg-white border border-gray-200 shadow-lg z-50">
-              {addresses.length === 0 ? (
-                <SelectItem value="no-addresses" disabled>No addresses available</SelectItem>
-              ) : (
-                addresses.map((address) => (
-                  <SelectItem key={address.id} value={address.id}>
-                    {formatAddressShort(address)}
-                  </SelectItem>
-                ))
-              )}
-            </SelectContent>
-          </Select>
+            <Trash2 className="w-3 h-3" />
+          </Button>
         </div>
-      </div>
 
-      {/* Quantity */}
-      <div>
-        <Input
-          type="number"
-          min="1"
-          value={quoteItem.quantity}
-          onChange={(e) => onUpdateItem(quoteItem.id, 'quantity', parseInt(e.target.value) || 1)}
-          className="text-xs h-8"
-          placeholder="Qty"
-        />
-      </div>
-
-      {/* Sell Price / Cost */}
-      <div className="space-y-1">
-        <div className="flex items-center gap-1">
-          <span className="text-xs text-gray-500">Sell:</span>
-          <Input
-            type="number"
-            step="0.01"
-            min="0"
-            value={quoteItem.unit_price}
-            onChange={(e) => onUpdateItem(quoteItem.id, 'unit_price', parseFloat(e.target.value) || 0)}
-            className="text-xs h-8"
-            placeholder="$"
-          />
-        </div>
-        <div className="flex items-center gap-1">
-          <span className="text-xs text-gray-500">Cost:</span>
-          <Input
-            type="number"
-            step="0.01"
-            min="0"
-            value={quoteItem.cost_override || 0}
-            onChange={(e) => onUpdateItem(quoteItem.id, 'cost_override', parseFloat(e.target.value) || 0)}
-            className="text-xs h-8"
-            placeholder="$"
-          />
-        </div>
-      </div>
-
-      {/* Total */}
-      <div className="flex items-center justify-between">
-        <div className="text-sm font-medium">
-          ${quoteItem.total_price.toFixed(2)}
-        </div>
-        <Button
-          type="button"
-          variant="ghost"
-          size="sm"
-          onClick={() => onRemoveItem(quoteItem.id)}
-          className="h-6 w-6 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
-        >
-          <Trash2 className="w-3 h-3" />
-        </Button>
-      </div>
-
-      {/* Type Column */}
-      <div className="flex items-center justify-center">
-        <div className="flex items-center space-x-1">
-          <Switch
-            checked={quoteItem.charge_type === 'MRC'}
-            onCheckedChange={(checked) => onUpdateItem(quoteItem.id, 'charge_type', checked ? 'MRC' : 'NRC')}
-          />
-          <span className="text-xs font-medium">
-            {quoteItem.charge_type}
-          </span>
+        {/* Type Column */}
+        <div className="flex items-center justify-center">
+          <div className="flex items-center space-x-1">
+            <Switch
+              checked={quoteItem.charge_type === 'MRC'}
+              onCheckedChange={(checked) => onUpdateItem(quoteItem.id, 'charge_type', checked ? 'MRC' : 'NRC')}
+            />
+            <span className="text-xs font-medium">
+              {quoteItem.charge_type}
+            </span>
+          </div>
         </div>
       </div>
     </div>

@@ -7,6 +7,7 @@ import { useClientAddresses } from "@/hooks/useClientAddresses";
 import { QuoteItemForm } from "@/components/QuoteItemForm";
 import { QuoteItemRow } from "@/components/QuoteItemRow";
 import { QuoteItemTotals } from "@/components/QuoteItemTotals";
+import { DragDropContext, Droppable, Draggable, DropResult } from 'react-beautiful-dnd';
 
 interface QuoteItemsManagerProps {
   items: QuoteItemData[];
@@ -34,8 +35,8 @@ export const QuoteItemsManager = ({ items, onItemsChange, clientInfoId }: QuoteI
       total_price: selectedItem.price,
       charge_type: (selectedItem.charge_type as 'NRC' | 'MRC') || 'NRC',
       address_id: addresses.length > 0 ? addresses[0].id : undefined,
-      name: selectedItem.name, // Initialize with item name
-      description: selectedItem.description || '', // Initialize with item description
+      name: selectedItem.name,
+      description: selectedItem.description || '',
       item: selectedItem,
       address: addresses.length > 0 ? addresses[0] : undefined
     };
@@ -70,6 +71,18 @@ export const QuoteItemsManager = ({ items, onItemsChange, clientInfoId }: QuoteI
     onItemsChange(items.filter(item => item.id !== itemId));
   };
 
+  const handleDragEnd = (result: DropResult) => {
+    if (!result.destination) {
+      return;
+    }
+
+    const newItems = Array.from(items);
+    const [reorderedItem] = newItems.splice(result.source.index, 1);
+    newItems.splice(result.destination.index, 0, reorderedItem);
+
+    onItemsChange(newItems);
+  };
+
   return (
     <div className="space-y-4">
       <QuoteItemForm
@@ -94,17 +107,42 @@ export const QuoteItemsManager = ({ items, onItemsChange, clientInfoId }: QuoteI
             <div>Type</div>
           </div>
           
-          <div className="border rounded-lg space-y-3 max-h-96 overflow-y-auto">
-            {items.map((quoteItem) => (
-              <QuoteItemRow
-                key={quoteItem.id}
-                quoteItem={quoteItem}
-                addresses={addresses}
-                onUpdateItem={updateItem}
-                onRemoveItem={removeItem}
-              />
-            ))}
-          </div>
+          <DragDropContext onDragEnd={handleDragEnd}>
+            <Droppable droppableId="quote-items">
+              {(provided) => (
+                <div
+                  {...provided.droppableProps}
+                  ref={provided.innerRef}
+                  className="border rounded-lg space-y-3 max-h-96 overflow-y-auto"
+                >
+                  {items.map((quoteItem, index) => (
+                    <Draggable
+                      key={quoteItem.id}
+                      draggableId={quoteItem.id}
+                      index={index}
+                    >
+                      {(provided, snapshot) => (
+                        <div
+                          ref={provided.innerRef}
+                          {...provided.draggableProps}
+                          {...provided.dragHandleProps}
+                          className={`${snapshot.isDragging ? 'shadow-lg' : ''}`}
+                        >
+                          <QuoteItemRow
+                            quoteItem={quoteItem}
+                            addresses={addresses}
+                            onUpdateItem={updateItem}
+                            onRemoveItem={removeItem}
+                          />
+                        </div>
+                      )}
+                    </Draggable>
+                  ))}
+                  {provided.placeholder}
+                </div>
+              )}
+            </Droppable>
+          </DragDropContext>
           
           <QuoteItemTotals items={items} />
         </div>
