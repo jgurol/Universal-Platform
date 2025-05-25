@@ -1,4 +1,3 @@
-
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Clock, Building, FileText, Users, Pencil, Trash2, Calendar } from "lucide-react";
@@ -45,14 +44,43 @@ export const QuoteCard = ({
 
   const isExpired = quote.expiresAt && new Date(quote.expiresAt) < new Date();
 
+  // Calculate MRC and NRC totals from quote items
+  const getMRCTotal = () => {
+    if (!quote.quoteItems || quote.quoteItems.length === 0) return 0;
+    return quote.quoteItems
+      .filter(item => item.charge_type === 'MRC')
+      .reduce((total, item) => total + (item.total_price || 0), 0);
+  };
+
+  const getNRCTotal = () => {
+    if (!quote.quoteItems || quote.quoteItems.length === 0) return 0;
+    return quote.quoteItems
+      .filter(item => item.charge_type === 'NRC')
+      .reduce((total, item) => total + (item.total_price || 0), 0);
+  };
+
+  const mrcTotal = getMRCTotal();
+  const nrcTotal = getNRCTotal();
+  const totalAmount = mrcTotal + nrcTotal;
+
   return (
     <div className="flex items-center justify-between p-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors duration-200">
       <div className="flex-1">
         <div className="flex items-center gap-2 mb-1">
           <h4 className="font-medium text-gray-900">{quote.clientName}</h4>
           <Badge variant="outline" className="text-xs">
-            ${quote.amount.toLocaleString()}
+            ${totalAmount.toLocaleString()}
           </Badge>
+          {nrcTotal > 0 && (
+            <Badge variant="outline" className="text-xs bg-blue-50 text-blue-700 border-blue-200">
+              NRC: ${nrcTotal.toLocaleString()}
+            </Badge>
+          )}
+          {mrcTotal > 0 && (
+            <Badge variant="outline" className="text-xs bg-green-50 text-green-700 border-green-200">
+              MRC: ${mrcTotal.toLocaleString()}
+            </Badge>
+          )}
           <Badge variant="outline" className="text-xs bg-gray-50 text-gray-700 border-gray-200 font-mono">
             ID: {quote.id.slice(0, 8)}...
           </Badge>
