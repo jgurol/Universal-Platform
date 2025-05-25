@@ -1,5 +1,6 @@
 
 import { useState } from "react";
+import { NavigationBar } from "@/components/NavigationBar";
 import { Header } from "@/components/Header";
 import { RecentQuotes } from "@/components/RecentQuotes";
 import { ItemsManagement } from "@/components/ItemsManagement";
@@ -9,6 +10,9 @@ import { useIndexData } from "@/hooks/useIndexData";
 import { useQuoteActions } from "@/hooks/useQuoteActions";
 import { useClientActions } from "@/hooks/useClientActions";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Button } from "@/components/ui/button";
+import { Home } from "lucide-react";
+import { Link } from "react-router-dom";
 
 const QuotingSystem = () => {
   const {
@@ -35,14 +39,21 @@ const QuotingSystem = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
+      <NavigationBar />
+      
       <div className="container mx-auto px-4 py-8 max-w-7xl">
-        {/* Header */}
-        <Header />
-
-        {/* Page Title */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Quoting System</h1>
-          <p className="text-gray-600">Create and manage quotes for your clients</p>
+        {/* Header with Dashboard Button */}
+        <div className="flex justify-between items-center mb-8">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900 mb-2">Quoting System</h1>
+            <p className="text-gray-600">Create and manage quotes for your clients</p>
+          </div>
+          <Link to="/">
+            <Button variant="outline" className="flex items-center gap-2">
+              <Home className="h-4 w-4" />
+              Dashboard
+            </Button>
+          </Link>
         </div>
 
         {/* Tabs for different sections */}
