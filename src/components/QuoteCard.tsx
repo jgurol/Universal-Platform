@@ -7,8 +7,6 @@ import { Download, Edit, Trash2, PenTool } from "lucide-react";
 import { Quote, Client, ClientInfo } from "@/pages/Index";
 import { generateQuotePDF } from "@/utils/pdfUtils";
 import { useToast } from "@/hooks/use-toast";
-import { SignatureDialog } from "@/components/SignatureDialog";
-import { useSignatureWorkflow } from "@/hooks/useSignatureWorkflow";
 
 interface QuoteCardProps {
   quote: Quote;
@@ -16,20 +14,19 @@ interface QuoteCardProps {
   clientInfos: ClientInfo[];
   onEdit: (id: string) => void;
   onDelete: (id: string) => void;
+  onInitiateSignature: (quote: Quote, clientInfo?: ClientInfo, salesperson?: string) => void;
 }
 
-export const QuoteCard = ({ quote, clients, clientInfos, onEdit, onDelete }: QuoteCardProps) => {
+export const QuoteCard = ({ 
+  quote, 
+  clients, 
+  clientInfos, 
+  onEdit, 
+  onDelete, 
+  onInitiateSignature 
+}: QuoteCardProps) => {
   const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
   const { toast } = useToast();
-
-  const {
-    isSignatureDialogOpen,
-    setIsSignatureDialogOpen,
-    currentQuote,
-    currentClientInfo,
-    initiateSignature,
-    handleSignatureComplete
-  } = useSignatureWorkflow();
 
   const handleDownloadPDF = async () => {
     setIsGeneratingPDF(true);
@@ -71,81 +68,69 @@ export const QuoteCard = ({ quote, clients, clientInfos, onEdit, onDelete }: Quo
     console.log("Client info found:", clientInfo);
     console.log("Salesperson found:", salesperson);
     
-    initiateSignature(quote, clientInfo, salesperson?.name);
+    onInitiateSignature(quote, clientInfo, salesperson?.name);
     
-    console.log("Signature dialog should now be open");
+    console.log("Signature initiated");
   };
 
-  console.log("QuoteCard render - isSignatureDialogOpen:", isSignatureDialogOpen);
-
   return (
-    <>
-      <Card className="p-6 hover:shadow-lg transition-shadow">
-        <div className="flex justify-between items-center mb-4">
-          <div>
-            <h3 className="text-lg font-semibold">{quote.description}</h3>
-            <p className="text-sm text-gray-500">
-              Quote Number: {quote.quoteNumber || `Q-${quote.id.slice(0, 8)}`}
-            </p>
-          </div>
-          <Badge variant="secondary">{quote.status}</Badge>
-        </div>
-
-        <div className="mb-4">
-          <p className="text-gray-600">
-            Client: {quote.clientName} ({quote.companyName})
+    <Card className="p-6 hover:shadow-lg transition-shadow">
+      <div className="flex justify-between items-center mb-4">
+        <div>
+          <h3 className="text-lg font-semibold">{quote.description}</h3>
+          <p className="text-sm text-gray-500">
+            Quote Number: {quote.quoteNumber || `Q-${quote.id.slice(0, 8)}`}
           </p>
-          <p className="text-gray-600">Amount: ${quote.amount.toFixed(2)}</p>
-          <p className="text-gray-600">Date: {new Date(quote.date).toLocaleDateString()}</p>
-          {quote.expiresAt && (
-            <p className="text-gray-600">
-              Expires: {new Date(quote.expiresAt).toLocaleDateString()}
-            </p>
-          )}
         </div>
+        <Badge variant="secondary">{quote.status}</Badge>
+      </div>
 
-        <div className="flex flex-wrap gap-2 mt-4">
-          <Button
-            onClick={handleDownloadPDF}
-            className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700"
-            disabled={isGeneratingPDF}
-          >
-            <Download className="h-4 w-4" />
-            Download PDF
-          </Button>
-          
-          <Button
-            onClick={handleAcceptAgreement}
-            className="flex items-center gap-2 bg-green-600 hover:bg-green-700"
-          >
-            <PenTool className="h-4 w-4" />
-            Accept Agreement
-          </Button>
+      <div className="mb-4">
+        <p className="text-gray-600">
+          Client: {quote.clientName} ({quote.companyName})
+        </p>
+        <p className="text-gray-600">Amount: ${quote.amount.toFixed(2)}</p>
+        <p className="text-gray-600">Date: {new Date(quote.date).toLocaleDateString()}</p>
+        {quote.expiresAt && (
+          <p className="text-gray-600">
+            Expires: {new Date(quote.expiresAt).toLocaleDateString()}
+          </p>
+        )}
+      </div>
 
-          <Button
-            onClick={handleEdit}
-            className="flex items-center gap-2 bg-yellow-500 hover:bg-yellow-600"
-          >
-            <Edit className="h-4 w-4" />
-            Edit
-          </Button>
-          <Button
-            onClick={handleDelete}
-            className="flex items-center gap-2 bg-red-600 hover:bg-red-700"
-          >
-            <Trash2 className="h-4 w-4" />
-            Delete
-          </Button>
-        </div>
-      </Card>
+      <div className="flex flex-wrap gap-2 mt-4">
+        <Button
+          onClick={handleDownloadPDF}
+          className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700"
+          disabled={isGeneratingPDF}
+        >
+          <Download className="h-4 w-4" />
+          Download PDF
+        </Button>
+        
+        <Button
+          onClick={handleAcceptAgreement}
+          className="flex items-center gap-2 bg-green-600 hover:bg-green-700"
+        >
+          <PenTool className="h-4 w-4" />
+          Accept Agreement
+        </Button>
 
-      <SignatureDialog
-        open={isSignatureDialogOpen}
-        onOpenChange={setIsSignatureDialogOpen}
-        quote={currentQuote || quote}
-        clientInfo={currentClientInfo}
-        onSignatureComplete={handleSignatureComplete}
-      />
-    </>
+        <Button
+          onClick={handleEdit}
+          className="flex items-center gap-2 bg-yellow-500 hover:bg-yellow-600"
+        >
+          <Edit className="h-4 w-4" />
+          Edit
+        </Button>
+        <Button
+          onClick={handleDelete}
+          className="flex items-center gap-2 bg-red-600 hover:bg-red-700"
+        >
+          <Trash2 className="h-4 w-4" />
+          Delete
+        </Button>
+      </div>
+    </Card>
   );
 };
