@@ -5,7 +5,12 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
 const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
-const supabase = createClient(supabaseUrl, supabaseServiceKey);
+const supabase = createClient(supabaseUrl, supabaseServiceKey, {
+  auth: {
+    autoRefreshToken: false,
+    persistSession: false
+  }
+});
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -105,28 +110,40 @@ const handler = async (req: Request): Promise<Response> => {
     for (const quoteItem of quote.quote_items) {
       const orderNumber = await generateUniqueOrderNumber();
 
-      // Create order for this item
+      // Ensure user_id is properly set - this is crucial for RLS
+      if (!quote.user_id) {
+        throw new Error('Quote user_id is missing - cannot create order');
+      }
+
+      console.log(`Creating order for quote item ${quoteItem.id} with user_id: ${quote.user_id}`);
+
+      // Create order for this item with explicit user_id
+      const orderData = {
+        quote_id: quoteId,
+        order_number: orderNumber,
+        user_id: quote.user_id, // Explicitly set the user_id
+        client_id: quote.client_id,
+        client_info_id: quote.client_info_id,
+        amount: quoteItem.total_price, // Use the item's total price
+        status: 'pending',
+        billing_address: quote.billing_address,
+        service_address: quote.service_address,
+        notes: `Order for: ${quoteItem.item?.name || 'Unknown Item'} (Qty: ${quoteItem.quantity})`,
+        commission: quote.commission ? (quote.commission * quoteItem.total_price / quote.amount) : 0,
+        commission_override: quote.commission_override ? (quote.commission_override * quoteItem.total_price / quote.amount) : undefined
+      };
+
+      console.log('Order data to insert:', orderData);
+
       const { data: newOrder, error: orderError } = await supabase
         .from('orders')
-        .insert({
-          quote_id: quoteId,
-          order_number: orderNumber,
-          user_id: quote.user_id,
-          client_id: quote.client_id,
-          client_info_id: quote.client_info_id,
-          amount: quoteItem.total_price, // Use the item's total price
-          status: 'pending',
-          billing_address: quote.billing_address,
-          service_address: quote.service_address,
-          notes: `Order for: ${quoteItem.item?.name || 'Unknown Item'} (Qty: ${quoteItem.quantity})`,
-          commission: quote.commission ? (quote.commission * quoteItem.total_price / quote.amount) : 0,
-          commission_override: quote.commission_override ? (quote.commission_override * quoteItem.total_price / quote.amount) : undefined
-        })
+        .insert(orderData)
         .select()
         .single();
 
       if (orderError) {
         console.error(`Failed to create order for item ${quoteItem.id}:`, orderError);
+        console.error('Order data that failed:', orderData);
         throw new Error(`Failed to create order for item: ${orderError.message}`);
       }
 
