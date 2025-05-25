@@ -12,6 +12,37 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+const generateUniqueOrderNumber = async (attempts = 0): Promise<string> => {
+  const now = new Date();
+  const year = now.getFullYear();
+  const dayOfYear = Math.floor((now - new Date(year, 0, 0)) / (1000 * 60 * 60 * 24));
+  const hour = now.getHours();
+  const minute = now.getMinutes();
+  const second = now.getSeconds();
+  const millisecond = now.getMilliseconds();
+  
+  // Add attempt number and milliseconds to ensure uniqueness
+  const suffix = attempts > 0 ? `-${attempts}` : '';
+  const orderNumber = `ORD-${year}-${dayOfYear.toString().padStart(3, '0')}-${hour.toString().padStart(2, '0')}${minute.toString().padStart(2, '0')}${second.toString().padStart(2, '0')}${millisecond.toString().padStart(3, '0')}${suffix}`;
+
+  // Check if this order number already exists
+  const { data: existingOrderNumber } = await supabase
+    .from('orders')
+    .select('id')
+    .eq('order_number', orderNumber)
+    .single();
+
+  if (!existingOrderNumber) {
+    return orderNumber;
+  } else if (attempts < 10) {
+    // Wait a bit and try again with incremented attempt
+    await new Promise(resolve => setTimeout(resolve, 50));
+    return generateUniqueOrderNumber(attempts + 1);
+  } else {
+    throw new Error('Failed to generate unique order number after multiple attempts');
+  }
+};
+
 const handler = async (req: Request): Promise<Response> => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -22,22 +53,26 @@ const handler = async (req: Request): Promise<Response> => {
 
     console.log('Processing quote approval for:', quoteId);
 
-    // First, check if an order already exists for this quote
-    const { data: existingOrder } = await supabase
+    // First, check if orders already exist for this quote
+    const { data: existingOrders } = await supabase
       .from('orders')
-      .select('id')
-      .eq('quote_id', quoteId)
-      .single();
+      .select('id, order_number')
+      .eq('quote_id', quoteId);
 
-    if (existingOrder) {
-      console.log('Order already exists for quote:', quoteId);
-      return new Response(JSON.stringify({ success: true, orderId: existingOrder.id }), {
+    if (existingOrders && existingOrders.length > 0) {
+      console.log('Orders already exist for quote:', quoteId);
+      return new Response(JSON.stringify({ 
+        success: true, 
+        orderIds: existingOrders.map(o => o.id),
+        orderNumbers: existingOrders.map(o => o.order_number),
+        message: 'Orders already exist for this quote'
+      }), {
         status: 200,
         headers: { "Content-Type": "application/json", ...corsHeaders },
       });
     }
 
-    // Get quote details
+    // Get quote details with items
     const { data: quote, error: quoteError } = await supabase
       .from('quotes')
       .select(`
@@ -57,103 +92,82 @@ const handler = async (req: Request): Promise<Response> => {
       throw new Error(`Failed to fetch quote: ${quoteError?.message}`);
     }
 
-    // Generate unique order number by checking existing orders
-    let orderNumber: string;
-    let isUnique = false;
-    let attempts = 0;
-    const maxAttempts = 10;
+    if (!quote.quote_items || quote.quote_items.length === 0) {
+      throw new Error('No quote items found for this quote');
+    }
 
-    while (!isUnique && attempts < maxAttempts) {
-      const now = new Date();
-      const year = now.getFullYear();
-      const dayOfYear = Math.floor((now - new Date(year, 0, 0)) / (1000 * 60 * 60 * 24));
-      const hour = now.getHours();
-      const minute = now.getMinutes();
-      const second = now.getSeconds();
-      
-      // Add attempt number to ensure uniqueness if there are conflicts
-      const suffix = attempts > 0 ? `-${attempts}` : '';
-      orderNumber = `ORD-${year}-${dayOfYear.toString().padStart(3, '0')}-${hour.toString().padStart(2, '0')}${minute.toString().padStart(2, '0')}${second.toString().padStart(2, '0')}${suffix}`;
+    console.log(`Creating ${quote.quote_items.length} orders for quote items`);
 
-      // Check if this order number already exists
-      const { data: existingOrderNumber } = await supabase
+    const createdOrders = [];
+    const circuitCategories = ['broadband', 'dedicated fiber', 'fixed wireless', '4g/5g'];
+
+    // Create an order for each quote item
+    for (const quoteItem of quote.quote_items) {
+      const orderNumber = await generateUniqueOrderNumber();
+
+      // Create order for this item
+      const { data: newOrder, error: orderError } = await supabase
         .from('orders')
-        .select('id')
-        .eq('order_number', orderNumber)
+        .insert({
+          quote_id: quoteId,
+          order_number: orderNumber,
+          user_id: quote.user_id,
+          client_id: quote.client_id,
+          client_info_id: quote.client_info_id,
+          amount: quoteItem.total_price, // Use the item's total price
+          status: 'pending',
+          billing_address: quote.billing_address,
+          service_address: quote.service_address,
+          notes: `Order for: ${quoteItem.item?.name || 'Unknown Item'} (Qty: ${quoteItem.quantity})`,
+          commission: quote.commission ? (quote.commission * quoteItem.total_price / quote.amount) : 0,
+          commission_override: quote.commission_override ? (quote.commission_override * quoteItem.total_price / quote.amount) : undefined
+        })
+        .select()
         .single();
 
-      if (!existingOrderNumber) {
-        isUnique = true;
-      } else {
-        attempts++;
-        // Wait a bit before retrying to ensure timestamp difference
-        await new Promise(resolve => setTimeout(resolve, 100));
+      if (orderError) {
+        console.error(`Failed to create order for item ${quoteItem.id}:`, orderError);
+        throw new Error(`Failed to create order for item: ${orderError.message}`);
       }
-    }
 
-    if (!isUnique) {
-      throw new Error('Failed to generate unique order number after multiple attempts');
-    }
+      console.log(`Created order ${newOrder.id} with number ${orderNumber} for item: ${quoteItem.item?.name}`);
+      createdOrders.push(newOrder);
 
-    // Create order
-    const { data: newOrder, error: orderError } = await supabase
-      .from('orders')
-      .insert({
-        quote_id: quoteId,
-        order_number: orderNumber,
-        user_id: quote.user_id,
-        client_id: quote.client_id,
-        client_info_id: quote.client_info_id,
-        amount: quote.amount,
-        status: 'pending',
-        billing_address: quote.billing_address,
-        service_address: quote.service_address,
-        notes: quote.notes,
-        commission: quote.commission,
-        commission_override: quote.commission_override
-      })
-      .select()
-      .single();
+      // Check if this item is circuit-related
+      if (quoteItem.item?.category && 
+          circuitCategories.includes(quoteItem.item.category.name.toLowerCase())) {
+        
+        const circuitType = quoteItem.item.category.name.toLowerCase();
+        
+        // Create circuit tracking for this order
+        const { error: trackingError } = await supabase
+          .from('circuit_tracking')
+          .insert({
+            order_id: newOrder.id,
+            circuit_type: circuitType,
+            status: 'ordered',
+            progress_percentage: 0
+          });
 
-    if (orderError) {
-      throw new Error(`Failed to create order: ${orderError.message}`);
-    }
-
-    console.log('Created order:', newOrder.id, 'with order number:', orderNumber);
-
-    // Check for circuit-related items
-    const circuitCategories = ['broadband', 'dedicated fiber', 'fixed wireless', '4g/5g'];
-    const circuitItems = quote.quote_items?.filter(item => 
-      item.item?.category && 
-      circuitCategories.includes(item.item.category.name.toLowerCase())
-    ) || [];
-
-    if (circuitItems.length > 0) {
-      const circuitType = circuitItems[0].item.category.name.toLowerCase();
-      
-      // Create circuit tracking
-      const { error: trackingError } = await supabase
-        .from('circuit_tracking')
-        .insert({
-          order_id: newOrder.id,
-          circuit_type: circuitType,
-          status: 'ordered',
-          progress_percentage: 0
-        });
-
-      if (trackingError) {
-        console.error('Failed to create circuit tracking:', trackingError);
-        // Don't fail the entire process if circuit tracking fails
-      } else {
-        console.log('Created circuit tracking for order:', newOrder.id);
+        if (trackingError) {
+          console.error(`Failed to create circuit tracking for order ${newOrder.id}:`, trackingError);
+        } else {
+          console.log(`Created circuit tracking for order ${newOrder.id}`);
+        }
       }
     }
 
     return new Response(JSON.stringify({ 
       success: true, 
-      orderId: newOrder.id,
-      orderNumber: orderNumber,
-      hasCircuitTracking: circuitItems.length > 0
+      orderIds: createdOrders.map(o => o.id),
+      orderNumbers: createdOrders.map(o => o.order_number),
+      ordersCount: createdOrders.length,
+      hasCircuitTracking: createdOrders.some(order => 
+        quote.quote_items.some(item => 
+          item.item?.category && 
+          circuitCategories.includes(item.item.category.name.toLowerCase())
+        )
+      )
     }), {
       status: 200,
       headers: { "Content-Type": "application/json", ...corsHeaders },
