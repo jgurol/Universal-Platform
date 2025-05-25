@@ -3,12 +3,13 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Pencil, Trash2, ChevronDown, ChevronUp, ArrowUpDown } from "lucide-react";
+import { Pencil, Trash2, ChevronDown, ChevronUp, ArrowUpDown, FileText } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { useAgentMapping } from "@/hooks/useAgentMapping";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useState } from "react";
+import { generateQuotePDF } from "@/utils/pdfUtils";
 
 interface QuoteTableProps {
   quotes: Quote[];
@@ -187,7 +188,32 @@ export const QuoteTable = ({
     );
   };
 
-  // Helper functions to calculate MRC and NRC totals
+  const handlePreviewPDF = (quote: Quote) => {
+    try {
+      const clientInfo = clientInfos.find(ci => ci.id === quote.clientInfoId);
+      const salespersonName = agentMapping[quote.clientId] || quote.clientName;
+      
+      const pdf = generateQuotePDF(quote, clientInfo, salespersonName);
+      
+      // Open PDF in new window/tab
+      const pdfBlob = pdf.output('blob');
+      const pdfUrl = URL.createObjectURL(pdfBlob);
+      window.open(pdfUrl, '_blank');
+      
+      toast({
+        title: "PDF Generated",
+        description: "Quote PDF has been opened in a new tab",
+      });
+    } catch (error) {
+      console.error('Error generating PDF:', error);
+      toast({
+        title: "Error",
+        description: "Failed to generate PDF preview",
+        variant: "destructive"
+      });
+    }
+  };
+
   const getMRCTotal = (quote: Quote) => {
     if (!quote.quoteItems || quote.quoteItems.length === 0) {
       return 0;
@@ -254,7 +280,7 @@ export const QuoteTable = ({
                 {getSortIcon('status')}
               </Button>
             </TableHead>
-            {isAdmin && <TableHead className="font-semibold text-center">Actions</TableHead>}
+            <TableHead className="font-semibold text-center">Actions</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -291,32 +317,41 @@ export const QuoteTable = ({
                 <TableCell>
                   {getStatusBadge(quote)}
                 </TableCell>
-                {isAdmin && (
-                  <TableCell className="text-center">
-                    <div className="flex gap-1 justify-center">
-                      {onEditClick && (
-                        <Button 
-                          variant="ghost" 
-                          size="sm" 
-                          className="h-8 w-8 p-0 text-gray-500 hover:text-blue-600"
-                          onClick={() => onEditClick(quote)}
-                        >
-                          <Pencil className="w-4 h-4" />
-                        </Button>
-                      )}
-                      {onDeleteQuote && (
-                        <Button 
-                          variant="ghost" 
-                          size="sm" 
-                          className="h-8 w-8 p-0 text-gray-500 hover:text-red-600"
-                          onClick={() => handleDeleteQuote(quote.id)}
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
-                      )}
-                    </div>
-                  </TableCell>
-                )}
+                <TableCell className="text-center">
+                  <div className="flex gap-1 justify-center">
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      className="h-8 w-8 p-0 text-gray-500 hover:text-blue-600"
+                      onClick={() => handlePreviewPDF(quote)}
+                      title="Preview PDF"
+                    >
+                      <FileText className="w-4 h-4" />
+                    </Button>
+                    {isAdmin && onEditClick && (
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        className="h-8 w-8 p-0 text-gray-500 hover:text-blue-600"
+                        onClick={() => onEditClick(quote)}
+                        title="Edit Quote"
+                      >
+                        <Pencil className="w-4 h-4" />
+                      </Button>
+                    )}
+                    {isAdmin && onDeleteQuote && (
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        className="h-8 w-8 p-0 text-gray-500 hover:text-red-600"
+                        onClick={() => handleDeleteQuote(quote.id)}
+                        title="Delete Quote"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    )}
+                  </div>
+                </TableCell>
               </TableRow>
             );
           })}
