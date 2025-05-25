@@ -57,13 +57,43 @@ const handler = async (req: Request): Promise<Response> => {
       throw new Error(`Failed to fetch quote: ${quoteError?.message}`);
     }
 
-    // Generate order number
-    const now = new Date();
-    const year = now.getFullYear();
-    const dayOfYear = Math.floor((now - new Date(year, 0, 0)) / (1000 * 60 * 60 * 24));
-    const hour = now.getHours();
-    const minute = now.getMinutes();
-    const orderNumber = `ORD-${year}-${dayOfYear.toString().padStart(3, '0')}-${hour.toString().padStart(2, '0')}${minute.toString().padStart(2, '0')}`;
+    // Generate unique order number by checking existing orders
+    let orderNumber: string;
+    let isUnique = false;
+    let attempts = 0;
+    const maxAttempts = 10;
+
+    while (!isUnique && attempts < maxAttempts) {
+      const now = new Date();
+      const year = now.getFullYear();
+      const dayOfYear = Math.floor((now - new Date(year, 0, 0)) / (1000 * 60 * 60 * 24));
+      const hour = now.getHours();
+      const minute = now.getMinutes();
+      const second = now.getSeconds();
+      
+      // Add attempt number to ensure uniqueness if there are conflicts
+      const suffix = attempts > 0 ? `-${attempts}` : '';
+      orderNumber = `ORD-${year}-${dayOfYear.toString().padStart(3, '0')}-${hour.toString().padStart(2, '0')}${minute.toString().padStart(2, '0')}${second.toString().padStart(2, '0')}${suffix}`;
+
+      // Check if this order number already exists
+      const { data: existingOrderNumber } = await supabase
+        .from('orders')
+        .select('id')
+        .eq('order_number', orderNumber)
+        .single();
+
+      if (!existingOrderNumber) {
+        isUnique = true;
+      } else {
+        attempts++;
+        // Wait a bit before retrying to ensure timestamp difference
+        await new Promise(resolve => setTimeout(resolve, 100));
+      }
+    }
+
+    if (!isUnique) {
+      throw new Error('Failed to generate unique order number after multiple attempts');
+    }
 
     // Create order
     const { data: newOrder, error: orderError } = await supabase
@@ -89,7 +119,7 @@ const handler = async (req: Request): Promise<Response> => {
       throw new Error(`Failed to create order: ${orderError.message}`);
     }
 
-    console.log('Created order:', newOrder.id);
+    console.log('Created order:', newOrder.id, 'with order number:', orderNumber);
 
     // Check for circuit-related items
     const circuitCategories = ['broadband', 'dedicated fiber', 'fixed wireless', '4g/5g'];
@@ -122,6 +152,7 @@ const handler = async (req: Request): Promise<Response> => {
     return new Response(JSON.stringify({ 
       success: true, 
       orderId: newOrder.id,
+      orderNumber: orderNumber,
       hasCircuitTracking: circuitItems.length > 0
     }), {
       status: 200,
