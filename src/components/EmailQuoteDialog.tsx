@@ -134,33 +134,54 @@ ${salespersonName || 'Sales Team'}`);
       
       // Convert PDF to base64 for email attachment
       const reader = new FileReader();
-      reader.onload = function() {
+      reader.onload = async function() {
         const base64String = (reader.result as string).split(',')[1];
         
-        // Here you would typically call your email service
-        console.log('Email would be sent with:', {
-          to: recipientEmail,
-          cc: ccEmails,
-          subject,
-          message,
-          attachment: base64String
-        });
-        
-        toast({
-          title: "Email sent successfully",
-          description: `Quote has been sent to ${recipientEmail}${ccEmails.length > 0 ? ` and ${ccEmails.length} CC recipient(s)` : ''}`,
-        });
-        
-        onOpenChange(false);
-        setIsLoading(false);
+        try {
+          // Call the Supabase Edge Function to send email
+          const { data, error } = await supabase.functions.invoke('send-quote-email', {
+            body: {
+              to: recipientEmail,
+              cc: ccEmails.length > 0 ? ccEmails : undefined,
+              subject,
+              message,
+              pdfBase64: base64String,
+              fileName: `Quote_${quote.quoteNumber || quote.id.slice(0, 8)}.pdf`
+            }
+          });
+
+          if (error) {
+            throw error;
+          }
+
+          if (data?.success) {
+            toast({
+              title: "Email sent successfully",
+              description: `Quote has been sent to ${recipientEmail}${ccEmails.length > 0 ? ` and ${ccEmails.length} CC recipient(s)` : ''}`,
+            });
+            
+            onOpenChange(false);
+          } else {
+            throw new Error(data?.error || 'Failed to send email');
+          }
+        } catch (emailError) {
+          console.error('Error calling email function:', emailError);
+          toast({
+            title: "Failed to send email",
+            description: "There was an error sending the quote. Please try again.",
+            variant: "destructive"
+          });
+        } finally {
+          setIsLoading(false);
+        }
       };
       reader.readAsDataURL(pdfBlob);
       
     } catch (error) {
-      console.error('Error sending email:', error);
+      console.error('Error generating PDF:', error);
       toast({
-        title: "Failed to send email",
-        description: "There was an error sending the quote. Please try again.",
+        title: "Failed to generate PDF",
+        description: "There was an error generating the quote PDF. Please try again.",
         variant: "destructive"
       });
       setIsLoading(false);
