@@ -88,24 +88,24 @@ const AcceptQuote = () => {
 
         console.log('AcceptQuote - Quote data loaded:', quoteData);
 
-        // Step 3: Fetch clients and client_infos for proper mapping
-        console.log('AcceptQuote - Fetching clients and client infos for mapping...');
-        const [clientsResult, clientInfosResult] = await Promise.all([
+        // Step 3: Fetch agents and client_infos separately for proper mapping
+        console.log('AcceptQuote - Fetching agents and client infos for mapping...');
+        const [agentsResult, clientInfosResult] = await Promise.all([
           supabase.from('agents').select('*'),
           supabase.from('client_info').select('*')
         ]);
 
-        const rawClients = clientsResult.data || [];
+        const rawAgents = agentsResult.data || [];
         const rawClientInfos = clientInfosResult.data || [];
 
-        // Transform raw database data to expected types
-        const clients = rawClients.map(agent => ({
+        // Transform raw database data to expected Client type
+        const clients = rawAgents.map(agent => ({
           id: agent.id,
           firstName: agent.first_name,
           lastName: agent.last_name,
           name: `${agent.first_name} ${agent.last_name}`,
           email: agent.email,
-          companyName: agent.company_name,
+          companyName: agent.company_name || "",
           commissionRate: agent.commission_rate || 0,
           totalEarnings: agent.total_earnings || 0,
           lastPayment: agent.last_payment || new Date().toISOString(),
@@ -115,6 +115,7 @@ const AcceptQuote = () => {
 
         // Step 4: Use mapQuoteData utility to properly convert to Quote type
         const mappedQuote = mapQuoteData(quoteData, clients, clientInfos);
+        console.log('AcceptQuote - Mapped quote:', mappedQuote);
         setQuote(mappedQuote);
 
         // Step 5: Fetch client info if available
