@@ -48,6 +48,25 @@ export const QuoteTable = ({
     );
   };
 
+  // Helper functions to calculate MRC and NRC totals
+  const getMRCTotal = (quote: Quote) => {
+    if (!quote.quoteItems || quote.quoteItems.length === 0) {
+      return 0;
+    }
+    return quote.quoteItems
+      .filter(item => item.charge_type === 'MRC')
+      .reduce((total, item) => total + (Number(item.total_price) || 0), 0);
+  };
+
+  const getNRCTotal = (quote: Quote) => {
+    if (!quote.quoteItems || quote.quoteItems.length === 0) {
+      return 0;
+    }
+    return quote.quoteItems
+      .filter(item => item.charge_type === 'NRC')
+      .reduce((total, item) => total + (Number(item.total_price) || 0), 0);
+  };
+
   return (
     <div className="border rounded-lg">
       <Table>
@@ -67,6 +86,8 @@ export const QuoteTable = ({
           {quotes.map((quote) => {
             const clientInfo = clientInfos.find(ci => ci.id === quote.clientInfoId);
             const salespersonName = agentMapping[quote.clientId] || quote.clientName;
+            const mrcTotal = getMRCTotal(quote);
+            const nrcTotal = getNRCTotal(quote);
             
             return (
               <TableRow key={quote.id} className="hover:bg-gray-50">
@@ -87,10 +108,10 @@ export const QuoteTable = ({
                   </div>
                 </TableCell>
                 <TableCell className="text-right font-mono">
-                  ${quote.amount.toLocaleString()}
+                  ${nrcTotal.toLocaleString()}
                 </TableCell>
                 <TableCell className="text-right font-mono">
-                  $0.00
+                  ${mrcTotal.toLocaleString()}
                 </TableCell>
                 <TableCell>
                   {getStatusBadge(quote.status)}
