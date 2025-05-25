@@ -30,12 +30,54 @@ export const QuoteActions = ({
   console.log('QuoteActions - Rendering for quote:', quote.id, 'Email status:', quote.email_status);
 
   return (
-    <div className="flex items-center gap-2">
+    <div className="flex items-center gap-1">
       <EmailStatusButton 
         quoteId={quote.id} 
         onEmailClick={onEmailClick}
       />
       
+      {/* Direct action buttons for admins */}
+      {isAdmin && (
+        <>
+          {onEditClick && (
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="h-8 w-8 p-0 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+              onClick={() => onEditClick(quote)}
+              title="Edit Quote"
+            >
+              <Edit className="h-4 w-4" />
+            </Button>
+          )}
+          
+          {onCopyQuote && (
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="h-8 w-8 p-0 text-green-600 hover:text-green-700 hover:bg-green-50"
+              onClick={() => onCopyQuote(quote)}
+              title="Copy Quote"
+            >
+              <Copy className="h-4 w-4" />
+            </Button>
+          )}
+          
+          {onDeleteQuote && (
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
+              onClick={() => onDeleteQuote(quote.id)}
+              title="Delete Quote"
+            >
+              <Trash2 className="h-4 w-4" />
+            </Button>
+          )}
+        </>
+      )}
+      
+      {/* Dropdown menu for additional actions */}
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
@@ -47,27 +89,6 @@ export const QuoteActions = ({
             <Eye className="mr-2 h-4 w-4" />
             View Quote
           </DropdownMenuItem>
-          {isAdmin && onEditClick && (
-            <DropdownMenuItem onClick={() => onEditClick(quote)}>
-              <Edit className="mr-2 h-4 w-4" />
-              Edit
-            </DropdownMenuItem>
-          )}
-          {isAdmin && onCopyQuote && (
-            <DropdownMenuItem onClick={() => onCopyQuote(quote)}>
-              <Copy className="mr-2 h-4 w-4" />
-              Copy
-            </DropdownMenuItem>
-          )}
-          {isAdmin && onDeleteQuote && (
-            <DropdownMenuItem 
-              onClick={() => onDeleteQuote(quote.id)}
-              className="text-red-600"
-            >
-              <Trash2 className="mr-2 h-4 w-4" />
-              Delete
-            </DropdownMenuItem>
-          )}
         </DropdownMenuContent>
       </DropdownMenu>
     </div>
