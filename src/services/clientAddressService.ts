@@ -40,6 +40,7 @@ export const clientAddressService = {
       .update({
         address_type: addressData.address_type,
         street_address: addressData.street_address,
+        street_address_2: addressData.street_address_2,
         city: addressData.city,
         state: addressData.state,
         zip_code: addressData.zip_code,

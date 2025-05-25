@@ -92,6 +92,7 @@ export type Database = {
           is_primary: boolean
           state: string
           street_address: string
+          street_address_2: string | null
           updated_at: string
           zip_code: string
         }
@@ -105,6 +106,7 @@ export type Database = {
           is_primary?: boolean
           state: string
           street_address: string
+          street_address_2?: string | null
           updated_at?: string
           zip_code: string
         }
@@ -118,6 +120,7 @@ export type Database = {
           is_primary?: boolean
           state?: string
           street_address?: string
+          street_address_2?: string | null
           updated_at?: string
           zip_code?: string
         }

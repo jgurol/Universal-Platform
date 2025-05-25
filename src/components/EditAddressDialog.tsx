@@ -30,6 +30,7 @@ interface AddressData {
 export const EditAddressDialog = ({ address, open, onOpenChange, onUpdateAddress }: EditAddressDialogProps) => {
   const [addressType, setAddressType] = useState(address.address_type);
   const [streetAddress, setStreetAddress] = useState(address.street_address);
+  const [streetAddress2, setStreetAddress2] = useState(address.street_address_2 || "");
   const [city, setCity] = useState(address.city);
   const [state, setState] = useState(address.state);
   const [zipCode, setZipCode] = useState(address.zip_code);
@@ -42,6 +43,7 @@ export const EditAddressDialog = ({ address, open, onOpenChange, onUpdateAddress
   useEffect(() => {
     setAddressType(address.address_type);
     setStreetAddress(address.street_address);
+    setStreetAddress2(address.street_address_2 || "");
     setCity(address.city);
     setState(address.state);
     setZipCode(address.zip_code);
@@ -88,6 +90,7 @@ export const EditAddressDialog = ({ address, open, onOpenChange, onUpdateAddress
           client_info_id: address.client_info_id,
           address_type: addressType,
           street_address: streetAddress,
+          street_address_2: streetAddress2 || undefined,
           city,
           state,
           zip_code: zipCode,
@@ -177,6 +180,16 @@ export const EditAddressDialog = ({ address, open, onOpenChange, onUpdateAddress
               />
             </div>
           )}
+          
+          <div className="space-y-2">
+            <Label htmlFor="editStreetAddress2">Street Address 2 (Optional)</Label>
+            <Input
+              id="editStreetAddress2"
+              value={streetAddress2}
+              onChange={(e) => setStreetAddress2(e.target.value)}
+              placeholder="Suite, unit, apartment, etc."
+            />
+          </div>
           
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">

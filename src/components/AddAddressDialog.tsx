@@ -30,6 +30,7 @@ interface AddressData {
 export const AddAddressDialog = ({ open, onOpenChange, onAddAddress, clientInfoId }: AddAddressDialogProps) => {
   const [addressType, setAddressType] = useState("billing");
   const [streetAddress, setStreetAddress] = useState("");
+  const [streetAddress2, setStreetAddress2] = useState("");
   const [city, setCity] = useState("");
   const [state, setState] = useState("");
   const [zipCode, setZipCode] = useState("");
@@ -75,6 +76,7 @@ export const AddAddressDialog = ({ open, onOpenChange, onAddAddress, clientInfoI
           client_info_id: clientInfoId,
           address_type: addressType,
           street_address: streetAddress,
+          street_address_2: streetAddress2 || undefined,
           city,
           state,
           zip_code: zipCode,
@@ -94,6 +96,7 @@ export const AddAddressDialog = ({ open, onOpenChange, onAddAddress, clientInfoI
   const resetForm = () => {
     setAddressType("billing");
     setStreetAddress("");
+    setStreetAddress2("");
     setCity("");
     setState("");
     setZipCode("");
@@ -179,6 +182,16 @@ export const AddAddressDialog = ({ open, onOpenChange, onAddAddress, clientInfoI
               />
             </div>
           )}
+          
+          <div className="space-y-2">
+            <Label htmlFor="streetAddress2">Street Address 2 (Optional)</Label>
+            <Input
+              id="streetAddress2"
+              value={streetAddress2}
+              onChange={(e) => setStreetAddress2(e.target.value)}
+              placeholder="Suite, unit, apartment, etc."
+            />
+          </div>
           
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">

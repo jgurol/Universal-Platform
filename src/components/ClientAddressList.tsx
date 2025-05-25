@@ -29,7 +29,9 @@ export const ClientAddressList = ({
   const [deletingAddressId, setDeletingAddressId] = useState<string | null>(null);
 
   const formatAddress = (address: ClientAddress) => {
-    return `${address.street_address}, ${address.city}, ${address.state} ${address.zip_code}${address.country !== 'United States' ? `, ${address.country}` : ''}`;
+    const addressLine1 = address.street_address;
+    const addressLine2 = address.street_address_2 ? `, ${address.street_address_2}` : '';
+    return `${addressLine1}${addressLine2}, ${address.city}, ${address.state} ${address.zip_code}${address.country !== 'United States' ? `, ${address.country}` : ''}`;
   };
 
   const getAddressTypeColor = (type: string) => {

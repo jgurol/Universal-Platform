@@ -4,6 +4,7 @@ export interface ClientAddress {
   client_info_id: string;
   address_type: string;
   street_address: string;
+  street_address_2?: string;
   city: string;
   state: string;
   zip_code: string;
@@ -17,6 +18,7 @@ export interface AddClientAddressData {
   client_info_id: string;
   address_type: string;
   street_address: string;
+  street_address_2?: string;
   city: string;
   state: string;
   zip_code: string;
