@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -80,7 +81,7 @@ export const AddQuoteDialog = ({ open, onOpenChange, onAddQuote, clients, client
     generateNextQuoteNumber();
   }, [open, user]);
   
-  // Handle client selection - auto-select agent based on client's agent_id
+  // Handle client selection - auto-select salesperson based on client's agent_id
   useEffect(() => {
     if (clientInfoId && clientInfoId !== "none") {
       const selectedClient = clientInfos.find(info => info.id === clientInfoId);
@@ -101,30 +102,18 @@ export const AddQuoteDialog = ({ open, onOpenChange, onAddQuote, clients, client
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('Form submitted!');
-    console.log('Current form state:', {
-      clientId,
-      clientInfoId,
-      date,
-      quoteItems: quoteItems.length,
-      totalAmount: calculateTotalAmount()
-    });
     
     const totalAmount = calculateTotalAmount();
     
-    // Fix: Check for clientInfoId instead of clientId, since clientId can be empty if no agent is associated
+    // Fix: Check for clientInfoId instead of clientId, since clientId can be empty if no salesperson is associated
     if (clientInfoId && clientInfoId !== "none" && date) {
-      console.log('Form validation passed');
       const selectedClient = clientId ? clients.find(client => client.id === clientId) : null;
       const selectedClientInfo = clientInfos.find(info => info.id === clientInfoId);
       
       if (selectedClientInfo) {
-        console.log('Selected client info found:', selectedClientInfo.company_name);
-        console.log('Calling onAddQuote with data...');
-        
         onAddQuote({
-          clientId: clientId || "", // Allow empty clientId if no agent is associated
-          clientName: selectedClient?.name || "No Agent Assigned",
+          clientId: clientId || "", // Allow empty clientId if no salesperson is associated
+          clientName: selectedClient?.name || "No Salesperson Assigned",
           companyName: selectedClientInfo.company_name,
           amount: totalAmount,
           date,
@@ -155,26 +144,15 @@ export const AddQuoteDialog = ({ open, onOpenChange, onAddQuote, clients, client
         setCommissionOverride("");
         setQuoteItems([]);
         onOpenChange(false);
-      } else {
-        console.log('Selected client info not found!');
       }
-    } else {
-      console.log('Form validation failed:', { clientInfoId, date });
     }
   };
 
-  const selectedAgent = clientId ? clients.find(c => c.id === clientId) : null;
+  const selectedSalesperson = clientId ? clients.find(c => c.id === clientId) : null;
   const selectedClientInfo = clientInfoId && clientInfoId !== "none" ? clientInfos.find(info => info.id === clientInfoId) : null;
 
   // Check if form is valid for submission
   const isFormValid = clientInfoId && clientInfoId !== "none" && quoteItems.length > 0;
-
-  console.log('Form validation state:', {
-    clientInfoId,
-    clientInfoIdValid: clientInfoId !== "none",
-    quoteItemsLength: quoteItems.length,
-    isFormValid
-  });
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -264,12 +242,12 @@ export const AddQuoteDialog = ({ open, onOpenChange, onAddQuote, clients, client
             </Select>
           </div>
 
-          {/* Agent Display */}
-          {selectedAgent && (
+          {/* Salesperson Display */}
+          {selectedSalesperson && (
             <div className="space-y-2">
-              <Label>Associated Agent</Label>
+              <Label>Associated Salesperson</Label>
               <div className="border rounded-md px-3 py-2 bg-muted text-muted-foreground">
-                {selectedAgent.name} {selectedAgent.companyName && `(${selectedAgent.companyName})`}
+                {selectedSalesperson.name} {selectedSalesperson.companyName && `(${selectedSalesperson.companyName})`}
               </div>
             </div>
           )}

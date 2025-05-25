@@ -54,21 +54,14 @@ export const UpdatePasswordForm: React.FC<UpdatePasswordFormProps> = ({
     },
   });
 
-  // Log the current form state for debugging
+  // Check current user session to verify
   useEffect(() => {
-    console.log("UpdatePasswordForm rendered");
-    console.log("isCheckingSession:", isCheckingSession);
-    console.log("tokenError:", tokenError);
-    console.log("isSubmitting:", isSubmitting);
-    
-    // Check current user session to verify
     supabase.auth.getSession().then(({ data }) => {
-      console.log("Current session data:", data.session);
+      // Session check for debugging purposes only
     });
   }, [isCheckingSession, tokenError, isSubmitting]);
 
   const handleSubmit = async (values: UpdatePasswordFormValues) => {
-    console.log("Password update submitted with:", values.password);
     await onUpdatePassword(values.password);
   };
 

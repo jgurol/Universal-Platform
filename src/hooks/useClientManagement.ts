@@ -18,27 +18,16 @@ export const useClientManagement = (): ClientManagementHook => {
   useEffect(() => {
     const fetchClientInfos = async () => {
       if (!user) {
-        console.log("No user found, setting loading to false");
         setIsLoading(false);
         return;
       }
       
       try {
-        console.log("User ID:", user.id);
-        console.log("User Email:", user.email);
-        console.log("Is Admin:", isAdmin);
-        console.log("Auth context user:", user);
-        
         const data = await clientInfoService.fetchClientInfos();
-        console.log("Setting clientInfos state with:", data?.length || 0, "clients");
-        console.log("About to set isLoading to false - success case");
-        
         setClientInfos(data);
-        setIsLoading(false); // Move this here to ensure it's set immediately after successful data fetch
+        setIsLoading(false);
       } catch (err) {
-        console.error('Error in client info fetch:', err);
-        console.log("About to set isLoading to false - error case");
-        setIsLoading(false); // Also set loading to false on error
+        setIsLoading(false);
         toast({
           title: "Failed to load clients",
           description: err instanceof Error ? err.message : "Failed to load client information",

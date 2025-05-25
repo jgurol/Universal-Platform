@@ -5,33 +5,15 @@ import { AddClientInfoData, UpdateClientInfoData } from "@/types/clientManagemen
 
 export const clientInfoService = {
   async fetchClientInfos(): Promise<ClientInfo[]> {
-    console.log("=== CLIENT FETCH DEBUG ===");
-    console.log("Attempting to fetch client_info records...");
-    console.log("RLS policies will automatically handle filtering based on user role");
-    
     const { data, error } = await supabase
       .from('client_info')
       .select('*')
       .order('company_name', { ascending: true });
     
-    console.log("Raw Supabase response:");
-    console.log("- Data:", data);
-    console.log("- Error:", error);
-    console.log("- Data length:", data?.length || 0);
-    
     if (error) {
       console.error('Error fetching client info:', error);
       throw error;
     }
-    
-    console.log("Successfully fetched client data:", data);
-    console.log("Client details:", data?.map(c => ({
-      id: c.id,
-      company_name: c.company_name,
-      user_id: c.user_id,
-      agent_id: c.agent_id,
-      revio_id: c.revio_id
-    })));
     
     return data || [];
   },
