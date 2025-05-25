@@ -1,4 +1,3 @@
-
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger, DropdownMenuItem } from "@/components/ui/dropdown-menu";
 import { MoreHorizontal, Eye, Edit, Copy, Trash2 } from "lucide-react";
@@ -35,6 +34,17 @@ export const QuoteActions = ({
         quoteId={quote.id} 
         onEmailClick={onEmailClick}
       />
+      
+      {/* View Quote button - always visible */}
+      <Button 
+        variant="ghost" 
+        size="sm" 
+        className="h-8 w-8 p-0 text-gray-600 hover:text-gray-700 hover:bg-gray-50"
+        onClick={() => window.open(`/quote/${quote.id}`, '_blank')}
+        title="View Quote"
+      >
+        <Eye className="h-4 w-4" />
+      </Button>
       
       {/* Direct action buttons for admins */}
       {isAdmin && (
@@ -85,10 +95,7 @@ export const QuoteActions = ({
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
-          <DropdownMenuItem onClick={() => window.open(`/quote/${quote.id}`, '_blank')}>
-            <Eye className="mr-2 h-4 w-4" />
-            View Quote
-          </DropdownMenuItem>
+          {/* Keep dropdown empty for now or add other future actions */}
         </DropdownMenuContent>
       </DropdownMenu>
     </div>
