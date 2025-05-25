@@ -6,9 +6,20 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { Separator } from "@/components/ui/separator";
-import { User, Mail, Shield, Building } from "lucide-react";
+import { User, Mail, Shield, Building, Clock } from "lucide-react";
+import { updateUserTimezone, getAppTimezone } from "@/utils/dateUtils";
+
+const timezones = [
+  { value: 'America/New_York', label: 'Eastern Time (ET)' },
+  { value: 'America/Chicago', label: 'Central Time (CT)' },
+  { value: 'America/Denver', label: 'Mountain Time (MT)' },
+  { value: 'America/Los_Angeles', label: 'Pacific Time (PT)' },
+  { value: 'America/Anchorage', label: 'Alaska Time (AKT)' },
+  { value: 'Pacific/Honolulu', label: 'Hawaii Time (HST)' },
+];
 
 export default function ProfileSettings() {
   const { user, isAdmin, refreshUserProfile } = useAuth();
@@ -17,7 +28,8 @@ export default function ProfileSettings() {
   const [profile, setProfile] = useState({
     full_name: "",
     email: "",
-    role: ""
+    role: "",
+    timezone: "America/Los_Angeles"
   });
   const [associatedCompany, setAssociatedCompany] = useState<string>("");
 
@@ -33,7 +45,7 @@ export default function ProfileSettings() {
     try {
       const { data, error } = await supabase
         .from('profiles')
-        .select('full_name, email, role, associated_agent_id')
+        .select('full_name, email, role, associated_agent_id, timezone')
         .eq('id', user.id)
         .single();
 
@@ -46,7 +58,8 @@ export default function ProfileSettings() {
         setProfile({
           full_name: data.full_name || "",
           email: data.email || user.email || "",
-          role: data.role || ""
+          role: data.role || "",
+          timezone: data.timezone || "America/Los_Angeles"
         });
 
         // Fetch associated agent's company name if user has an associated agent
@@ -92,7 +105,8 @@ export default function ProfileSettings() {
         .from('profiles')
         .update({
           full_name: profile.full_name,
-          email: profile.email
+          email: profile.email,
+          timezone: profile.timezone
         })
         .eq('id', user.id);
 
@@ -104,6 +118,9 @@ export default function ProfileSettings() {
         });
         return;
       }
+
+      // Update timezone cache
+      await updateUserTimezone(profile.timezone);
 
       toast({
         title: "Profile updated",
@@ -173,6 +190,25 @@ export default function ProfileSettings() {
                 />
               </div>
 
+              <div className="space-y-2">
+                <Label htmlFor="timezone">Timezone</Label>
+                <Select 
+                  value={profile.timezone} 
+                  onValueChange={(value) => setProfile({ ...profile, timezone: value })}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select your timezone" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {timezones.map((tz) => (
+                      <SelectItem key={tz.value} value={tz.value}>
+                        {tz.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
               <Button type="submit" disabled={loading}>
                 {loading ? "Updating..." : "Update Profile"}
               </Button>
@@ -210,6 +246,18 @@ export default function ProfileSettings() {
                 isAdmin ? 'bg-blue-100 text-blue-800' : 'bg-green-100 text-green-800'
               }`}>
                 {profile.role || 'Loading...'}
+              </span>
+            </div>
+
+            <Separator />
+
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Clock className="h-4 w-4 text-gray-500" />
+                <span className="text-sm font-medium">Current Timezone:</span>
+              </div>
+              <span className="text-sm text-gray-600">
+                {timezones.find(tz => tz.value === profile.timezone)?.label || profile.timezone}
               </span>
             </div>
 

@@ -2,6 +2,7 @@ import React, { createContext, useState, useEffect, useContext } from 'react';
 import { Session, User } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { initializeTimezone } from '@/utils/dateUtils';
 
 interface AuthContextType {
   session: Session | null;
@@ -75,8 +76,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         
         if (currentSession?.user) {
           // Use setTimeout to avoid deadlocks
-          setTimeout(() => {
-            fetchUserProfile(currentSession.user.id);
+          setTimeout(async () => {
+            await fetchUserProfile(currentSession.user.id);
+            // Initialize timezone cache for the logged-in user
+            await initializeTimezone();
           }, 0);
         } else {
           setIsAdmin(false);
@@ -102,7 +105,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setUser(currentSession?.user ?? null);
           
           if (currentSession?.user) {
-            fetchUserProfile(currentSession.user.id);
+            await fetchUserProfile(currentSession.user.id);
+            // Initialize timezone for existing session
+            await initializeTimezone();
           }
         }
       } catch (error) {

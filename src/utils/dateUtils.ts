@@ -1,7 +1,71 @@
 
-// Utility functions for timezone-aware date handling
-export const getAppTimezone = (): string => {
-  return localStorage.getItem('app_timezone') || 'America/Los_Angeles';
+import { supabase } from "@/integrations/supabase/client";
+
+// Get timezone from user profile in database, with fallback to default
+export const getAppTimezone = async (): Promise<string> => {
+  try {
+    const { data: { user } } = await supabase.auth.getUser();
+    
+    if (!user) {
+      return 'America/Los_Angeles'; // Default fallback
+    }
+
+    const { data: profile, error } = await supabase
+      .from('profiles')
+      .select('timezone')
+      .eq('id', user.id)
+      .single();
+
+    if (error || !profile) {
+      console.log('No profile found or error fetching timezone, using default');
+      return 'America/Los_Angeles';
+    }
+
+    return profile.timezone || 'America/Los_Angeles';
+  } catch (error) {
+    console.error('Error fetching timezone from profile:', error);
+    return 'America/Los_Angeles';
+  }
+};
+
+// Synchronous version that uses a cached value for immediate use
+let cachedTimezone: string | null = null;
+
+export const getAppTimezoneSync = (): string => {
+  return cachedTimezone || 'America/Los_Angeles';
+};
+
+// Initialize and cache the timezone
+export const initializeTimezone = async (): Promise<void> => {
+  cachedTimezone = await getAppTimezone();
+};
+
+// Update user's timezone preference
+export const updateUserTimezone = async (timezone: string): Promise<boolean> => {
+  try {
+    const { data: { user } } = await supabase.auth.getUser();
+    
+    if (!user) {
+      return false;
+    }
+
+    const { error } = await supabase
+      .from('profiles')
+      .update({ timezone })
+      .eq('id', user.id);
+
+    if (error) {
+      console.error('Error updating timezone:', error);
+      return false;
+    }
+
+    // Update cached value
+    cachedTimezone = timezone;
+    return true;
+  } catch (error) {
+    console.error('Error updating user timezone:', error);
+    return false;
+  }
 };
 
 // Format date for input field (YYYY-MM-DD) using the app's configured timezone
@@ -17,7 +81,7 @@ export const formatDateForInput = (dateString: string | undefined): string => {
   }
   
   try {
-    const timezone = getAppTimezone();
+    const timezone = getAppTimezoneSync();
     console.log("[formatDateForInput] Using timezone:", timezone);
     
     // Parse the date and format it in the configured timezone
@@ -51,7 +115,7 @@ export const formatDateForDisplay = (dateString: string | undefined): string => 
   console.log("[formatDateForDisplay] Input dateString:", dateString);
   
   try {
-    const timezone = getAppTimezone();
+    const timezone = getAppTimezoneSync();
     console.log("[formatDateForDisplay] Using timezone:", timezone);
     
     let date: Date;
@@ -99,7 +163,7 @@ export const createDateString = (inputValue: string): string => {
 
 // Get today's date in the configured timezone as YYYY-MM-DD
 export const getTodayInTimezone = (): string => {
-  const timezone = getAppTimezone();
+  const timezone = getAppTimezoneSync();
   const today = new Date();
   
   const formatter = new Intl.DateTimeFormat('en-CA', {
