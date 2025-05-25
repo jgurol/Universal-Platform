@@ -1,3 +1,4 @@
+
 import { useParams, useNavigate } from "react-router-dom";
 import { useState, useEffect, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -11,6 +12,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { CheckCircle, FileText, DollarSign, AlertCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { generateQuotePDF } from "@/utils/pdfUtils";
 
 const AcceptQuote = () => {
   const { quoteId } = useParams<{ quoteId: string }>();
@@ -315,12 +317,66 @@ const AcceptQuote = () => {
         throw quoteError;
       }
 
+      // Generate PDF with signature for email attachment
+      console.log('AcceptQuote - Generating PDF for email attachment');
+      const pdf = await generateQuotePDF(quote, clientInfo);
+      const pdfBlob = pdf.output('blob');
+      
+      // Convert PDF to base64
+      const reader = new FileReader();
+      reader.onload = async function() {
+        const pdfBase64String = (reader.result as string).split(',')[1];
+        
+        try {
+          // Send approval email with signed agreement
+          console.log('AcceptQuote - Sending approval email to client');
+          const { data: emailData, error: emailError } = await supabase.functions.invoke('send-approval-email', {
+            body: {
+              to: clientEmail.trim(),
+              clientName: clientName.trim(),
+              quoteNumber: quote.quoteNumber || `Q-${quote.id.slice(0, 8)}`,
+              companyName: clientInfo?.company_name,
+              pdfBase64: pdfBase64String,
+              signatureData: signatureData
+            }
+          });
+
+          if (emailError) {
+            console.error('AcceptQuote - Error sending approval email:', emailError);
+            // Don't throw error here - acceptance was successful, email is secondary
+            toast({
+              title: "Agreement Accepted",
+              description: "Your agreement has been approved successfully. However, there was an issue sending the confirmation email.",
+              variant: "default"
+            });
+          } else if (emailData?.success) {
+            console.log('AcceptQuote - Approval email sent successfully');
+            toast({
+              title: "Agreement Accepted & Email Sent",
+              description: "Thank you for accepting the agreement. A confirmation email with your signed agreement has been sent to your email address.",
+            });
+          } else {
+            console.error('AcceptQuote - Email service returned failure:', emailData);
+            toast({
+              title: "Agreement Accepted",
+              description: "Your agreement has been approved successfully. However, there was an issue sending the confirmation email.",
+              variant: "default"
+            });
+          }
+        } catch (emailError) {
+          console.error('AcceptQuote - Error calling approval email function:', emailError);
+          // Don't throw error here - acceptance was successful, email is secondary
+          toast({
+            title: "Agreement Accepted",
+            description: "Your agreement has been approved successfully. However, there was an issue sending the confirmation email.",
+            variant: "default"
+          });
+        }
+      };
+      reader.readAsDataURL(pdfBlob);
+
       console.log('AcceptQuote - Quote acceptance completed successfully');
       setIsAccepted(true);
-      toast({
-        title: "Agreement Accepted",
-        description: "Thank you for accepting the agreement. We will be in touch soon!",
-      });
 
     } catch (error) {
       console.error('AcceptQuote - Error accepting quote:', error);
