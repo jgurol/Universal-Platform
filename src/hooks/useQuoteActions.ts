@@ -45,6 +45,14 @@ export const useQuoteActions = (
     return 0;
   };
 
+  // Helper function to clean undefined values
+  const cleanValue = (value: any): any => {
+    if (value && typeof value === 'object' && value._type === 'undefined') {
+      return undefined;
+    }
+    return value;
+  };
+
   // Function to add a new quote to Supabase
   const addQuote = async (newQuote: Omit<Quote, "id">) => {
     if (!user) return;
@@ -185,23 +193,37 @@ export const useQuoteActions = (
         updatedQuote.commissionOverride
       );
 
+      // Clean all potentially undefined values
+      const cleanedQuoteMonth = cleanValue(updatedQuote.quoteMonth);
+      const cleanedQuoteYear = cleanValue(updatedQuote.quoteYear);
+      const cleanedExpiresAt = cleanValue(updatedQuote.expiresAt);
+      const cleanedNotes = cleanValue(updatedQuote.notes);
+      const cleanedCommissionOverride = cleanValue(updatedQuote.commissionOverride);
+
       const quoteUpdateData = {
         client_id: updatedQuote.clientId || null,
         client_info_id: updatedQuote.clientInfoId === "none" ? null : updatedQuote.clientInfoId,
         amount: updatedQuote.amount,
         date: updatedQuote.date,
-        description: updatedQuote.description || "", // Fix: Ensure description is always a string, not null
+        description: updatedQuote.description || "", // Ensure description is always a string
         quote_number: updatedQuote.quoteNumber,
-        quote_month: updatedQuote.quoteMonth,
-        quote_year: updatedQuote.quoteYear,
+        quote_month: cleanedQuoteMonth || null,
+        quote_year: cleanedQuoteYear || null,
         status: updatedQuote.status,
         commission: commission,
-        commission_override: updatedQuote.commissionOverride || null,
-        expires_at: updatedQuote.expiresAt,
-        notes: updatedQuote.notes
+        commission_override: cleanedCommissionOverride || null,
+        expires_at: cleanedExpiresAt || null,
+        notes: cleanedNotes || null
       };
 
       console.log('[updateQuote] Data being updated:', quoteUpdateData);
+      console.log('[updateQuote] Cleaned values:', {
+        quoteMonth: cleanedQuoteMonth,
+        quoteYear: cleanedQuoteYear,
+        expiresAt: cleanedExpiresAt,
+        notes: cleanedNotes,
+        commissionOverride: cleanedCommissionOverride
+      });
 
       const { data, error } = await supabase
         .from('quotes')
@@ -219,6 +241,7 @@ export const useQuoteActions = (
         });
       } else {
         console.log('[updateQuote] Quote successfully updated:', data);
+        console.log('[updateQuote] Updated description in database:', data.description);
         // Refresh quotes to get the updated one
         fetchQuotes();
         
