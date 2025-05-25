@@ -14,13 +14,13 @@ export const addMarkdownTextToPDF = (
   startX: number, 
   startY: number, 
   maxWidth: number, 
-  lineHeight: number = 4
+  lineHeight: number = 3.5 // Reduced from 4
 ): number => {
   let currentY = startY;
   const pageHeight = 297;
   const bottomMargin = 20;
   const topMargin = 20;
-  const paragraphSpacing = 6; // Increased spacing between paragraphs
+  const paragraphSpacing = 3; // Reduced from 6
   
   if (!markdownContent) return currentY;
   
@@ -85,7 +85,7 @@ export const addMarkdownTextToPDF = (
           doc.setFontSize(9);
           doc.setFont('helvetica', 'bold');
           doc.text('Terms & Conditions (continued):', startX, currentY);
-          currentY += 10;
+          currentY += 8; // Reduced from 10
         }
         
         // Set font style
@@ -122,7 +122,7 @@ export const addMarkdownTextToPDF = (
                 doc.setFontSize(9);
                 doc.setFont('helvetica', 'bold');
                 doc.text('Terms & Conditions (continued):', startX, currentY);
-                currentY += 10;
+                currentY += 8; // Reduced from 10
                 
                 // Reset font style after header
                 if (section.bold && section.italic) {
@@ -154,7 +154,7 @@ export const addMarkdownTextToPDF = (
               doc.setFontSize(9);
               doc.setFont('helvetica', 'bold');
               doc.text('Terms & Conditions (continued):', startX, currentY);
-              currentY += 10;
+              currentY += 8; // Reduced from 10
               
               // Reset font style after header
               if (section.bold && section.italic) {
@@ -183,8 +183,8 @@ export const addMarkdownTextToPDF = (
       }
     });
     
-    // Add paragraph break after each paragraph
-    currentY += lineHeight + 4; // Extra spacing for paragraph separation
+    // Add paragraph break after each paragraph - reduced spacing
+    currentY += lineHeight + 2; // Reduced from lineHeight + 4
     console.log(`PDF Generation - Finished paragraph ${paragraphIndex + 1}, current Y:`, currentY);
   });
   
