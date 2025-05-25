@@ -49,26 +49,23 @@ export const generateQuotePDF = async (quote: Quote, clientInfo?: ClientInfo, sa
     }
   }
   
-  // Adjust header positioning based on logo - no extra spacing
-  const headerYStart = 15 + logoYOffset;
-  
-  // Document type in top right
+  // Document type in top right - moved up and made black
   doc.setFontSize(14);
-  doc.setTextColor(128, 128, 128); // Gray color
-  doc.text('Agreement', 160, headerYStart);
+  doc.setTextColor(0, 0, 0); // Black color instead of gray
+  doc.text('Agreement', 160, 20); // Moved up from headerYStart to fixed position
   
-  // Company Information (left side) - Start immediately after logo
-  const companyInfoY = headerYStart;
+  // Company Information (left side) - Start immediately after logo with compact spacing
+  const companyInfoY = 15 + logoYOffset;
   doc.setFontSize(9);
   doc.setTextColor(0, 0, 0); // Black
   doc.setFont('helvetica', 'bold');
   doc.text('California Telecom, Inc.', 20, companyInfoY);
   doc.setFont('helvetica', 'normal');
-  doc.text('14538 Central Ave', 20, companyInfoY + 7);
-  doc.text('Chino, CA 91710', 20, companyInfoY + 14);
-  doc.text('United States', 20, companyInfoY + 21);
-  doc.text('Tel: 213-270-1349', 20, companyInfoY + 28);
-  doc.text('Fax: 213-232-3304', 20, companyInfoY + 35);
+  doc.text('14538 Central Ave', 20, companyInfoY + 5); // Reduced from 7 to 5
+  doc.text('Chino, CA 91710', 20, companyInfoY + 10); // Reduced spacing
+  doc.text('United States', 20, companyInfoY + 15); // Reduced spacing
+  doc.text('Tel: 213-270-1349', 20, companyInfoY + 20); // Reduced spacing
+  doc.text('Fax: 213-232-3304', 20, companyInfoY + 25); // Reduced spacing
   
   // Agreement details box (right side) - Same Y position as company info
   const boxX = 125;
@@ -97,7 +94,7 @@ export const generateQuotePDF = async (quote: Quote, clientInfo?: ClientInfo, sa
   doc.text(salespersonName || 'N/A', boxX + 4, boxY + 38);
   
   // Billing Information and Service Address sections (side by side) - Better positioning
-  let yPos = companyInfoY + 50;
+  let yPos = companyInfoY + 35; // Reduced from 50 to 35 for more compact layout
   doc.setFontSize(11);
   doc.setFont('helvetica', 'bold');
   doc.text('Billing Information', 20, yPos);
