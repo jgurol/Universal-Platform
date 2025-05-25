@@ -1,4 +1,3 @@
-
 import jsPDF from 'jspdf';
 import { Quote, ClientInfo } from '@/pages/Index';
 import { supabase } from '@/integrations/supabase/client';
@@ -65,30 +64,43 @@ export const generateQuotePDF = async (quote: Quote, clientInfo?: ClientInfo, sa
   
   console.log('PDF Generation - Is quote approved?', isApproved);
   
-  // Always try to fetch acceptance details for approved quotes
+  // IMPROVED ACCEPTANCE DETAILS QUERY
   let acceptanceDetails = null;
   if (isApproved) {
     console.log('PDF Generation - Quote is approved, fetching acceptance details...');
     try {
+      // Try multiple queries to find acceptance data
       const { data: acceptance, error } = await supabase
         .from('quote_acceptances')
         .select('*')
         .eq('quote_id', quote.id)
+        .order('created_at', { ascending: false })
+        .limit(1)
         .maybeSingle();
       
       console.log('PDF Generation - Acceptance query result:', { acceptance, error });
       
       if (!error && acceptance) {
         acceptanceDetails = acceptance;
-        console.log('PDF Generation - Acceptance details found:', {
+        console.log('PDF Generation - Found acceptance details:', {
           client_name: acceptance.client_name,
           client_email: acceptance.client_email,
           accepted_at: acceptance.accepted_at,
           ip_address: acceptance.ip_address,
+          user_agent: acceptance.user_agent,
           has_signature: !!acceptance.signature_data
         });
       } else {
-        console.log('PDF Generation - No acceptance details found in database');
+        console.log('PDF Generation - No acceptance details in quote_acceptances table');
+        
+        // Also check if the quote itself has acceptance data
+        const { data: quoteData, error: quoteError } = await supabase
+          .from('quotes')
+          .select('accepted_at, accepted_by, acceptance_status')
+          .eq('id', quote.id)
+          .single();
+          
+        console.log('PDF Generation - Quote acceptance data from quotes table:', { quoteData, quoteError });
       }
     } catch (error) {
       console.error('PDF Generation - Error fetching acceptance details:', error);
@@ -537,14 +549,14 @@ export const generateQuotePDF = async (quote: Quote, clientInfo?: ClientInfo, sa
     yPos += Array.isArray(splitNotes) ? splitNotes.length * 4 : 4;
   }
   
-  // DIGITAL ACCEPTANCE EVIDENCE SECTION - ALWAYS SHOW IF APPROVED
+  // COMPREHENSIVE DIGITAL ACCEPTANCE EVIDENCE SECTION
   if (isApproved) {
-    console.log('PDF Generation - Adding digital acceptance evidence section');
+    console.log('PDF Generation - Adding comprehensive digital acceptance evidence section');
     console.log('PDF Generation - Acceptance details available:', !!acceptanceDetails);
     
     const remainingSpace = 297 - 20 - yPos;
     
-    if (remainingSpace < 120) {
+    if (remainingSpace < 140) {
       doc.addPage();
       yPos = 30;
       console.log('PDF Generation - Added new page for acceptance evidence');
@@ -574,25 +586,25 @@ export const generateQuotePDF = async (quote: Quote, clientInfo?: ClientInfo, sa
     doc.setFontSize(9);
     doc.setFont('helvetica', 'normal');
     
-    // FORCE DISPLAY OF ACCEPTANCE DETAILS
+    // ALWAYS SHOW ACCEPTANCE DETAILS WHEN APPROVED
     if (acceptanceDetails) {
-      console.log('PDF Generation - Displaying FULL acceptance details');
+      console.log('PDF Generation - Displaying COMPLETE acceptance details from database');
       
-      // Client information
+      // Client information with better spacing
       doc.setFont('helvetica', 'bold');
       doc.text('Accepted by:', 25, yPos);
       doc.setFont('helvetica', 'normal');
-      doc.text(acceptanceDetails.client_name || 'Unknown', 70, yPos);
-      yPos += 8;
+      doc.text(acceptanceDetails.client_name || 'Unknown', 85, yPos);
+      yPos += 10;
       
       doc.setFont('helvetica', 'bold');
-      doc.text('Email:', 25, yPos);
+      doc.text('Email Address:', 25, yPos);
       doc.setFont('helvetica', 'normal');
-      doc.text(acceptanceDetails.client_email || 'Unknown', 70, yPos);
-      yPos += 8;
+      doc.text(acceptanceDetails.client_email || 'Unknown', 85, yPos);
+      yPos += 10;
       
       doc.setFont('helvetica', 'bold');
-      doc.text('Date & Time:', 25, yPos);
+      doc.text('Acceptance Date:', 25, yPos);
       doc.setFont('helvetica', 'normal');
       const acceptedDate = acceptanceDetails.accepted_at ? 
         new Date(acceptanceDetails.accepted_at).toLocaleString('en-US', {
@@ -603,24 +615,24 @@ export const generateQuotePDF = async (quote: Quote, clientInfo?: ClientInfo, sa
           minute: '2-digit',
           timeZoneName: 'short'
         }) : 'Unknown';
-      doc.text(acceptedDate, 70, yPos);
-      yPos += 8;
+      doc.text(acceptedDate, 85, yPos);
+      yPos += 10;
       
       doc.setFont('helvetica', 'bold');
       doc.text('IP Address:', 25, yPos);
       doc.setFont('helvetica', 'normal');
-      doc.text(acceptanceDetails.ip_address || 'Not recorded', 70, yPos);
-      yPos += 8;
+      doc.text(acceptanceDetails.ip_address || 'Not recorded', 85, yPos);
+      yPos += 10;
       
       doc.setFont('helvetica', 'bold');
-      doc.text('User Agent:', 25, yPos);
+      doc.text('Browser/Device:', 25, yPos);
       doc.setFont('helvetica', 'normal');
       const userAgent = acceptanceDetails.user_agent || 'Not recorded';
-      const splitUserAgent = doc.splitTextToSize(userAgent, 120);
-      doc.text(splitUserAgent, 70, yPos);
-      yPos += Array.isArray(splitUserAgent) ? splitUserAgent.length * 4 + 4 : 8;
+      const splitUserAgent = doc.splitTextToSize(userAgent, 110);
+      doc.text(splitUserAgent, 85, yPos);
+      yPos += Array.isArray(splitUserAgent) ? splitUserAgent.length * 4 + 6 : 10;
       
-      // Digital signature
+      // Digital signature with enhanced display
       if (acceptanceDetails.signature_data) {
         yPos += 5;
         doc.setFont('helvetica', 'bold');
@@ -628,23 +640,32 @@ export const generateQuotePDF = async (quote: Quote, clientInfo?: ClientInfo, sa
         yPos += 8;
         
         try {
-          // Add signature with border
-          const signatureHeight = 30;
-          const signatureWidth = 100;
+          // Add signature with better formatting
+          const signatureHeight = 35;
+          const signatureWidth = 120;
           
-          // Draw signature border
-          doc.setDrawColor(150, 150, 150);
+          // Draw signature border with label
+          doc.setDrawColor(100, 100, 100);
+          doc.setLineWidth(0.5);
           doc.rect(25, yPos, signatureWidth, signatureHeight);
           
           // Add signature image
-          doc.addImage(acceptanceDetails.signature_data, 'PNG', 25, yPos, signatureWidth, signatureHeight);
+          doc.addImage(acceptanceDetails.signature_data, 'PNG', 26, yPos + 1, signatureWidth - 2, signatureHeight - 2);
+          
+          // Add signature verification text
+          doc.setFontSize(7);
+          doc.setFont('helvetica', 'italic');
+          doc.setTextColor(100, 100, 100);
+          doc.text('Legally binding digital signature captured at time of acceptance', 25, yPos + signatureHeight + 5);
+          
           yPos += signatureHeight + 10;
           
           console.log('PDF Generation - Digital signature added successfully');
         } catch (error) {
           console.error('PDF Generation - Error adding signature:', error);
           doc.setFont('helvetica', 'italic');
-          doc.text('[Digital signature on file - unable to display]', 25, yPos);
+          doc.setTextColor(150, 150, 150);
+          doc.text('[Digital signature on file - unable to display in PDF]', 25, yPos);
           yPos += 8;
         }
       } else {
@@ -653,26 +674,27 @@ export const generateQuotePDF = async (quote: Quote, clientInfo?: ClientInfo, sa
         doc.text('Digital Signature:', 25, yPos);
         yPos += 5;
         doc.setFont('helvetica', 'italic');
+        doc.setTextColor(150, 150, 150);
         doc.text('[No digital signature recorded]', 25, yPos);
-        yPos += 8;
+        yPos += 10;
       }
       
     } else {
-      console.log('PDF Generation - NO acceptance details found, showing BASIC fallback info');
+      console.log('PDF Generation - No detailed acceptance data found, showing basic approved status');
       
-      // Show basic status even without detailed acceptance data
+      // Show basic status when no detailed acceptance data is available
       doc.setFont('helvetica', 'bold');
       doc.text('Status:', 25, yPos);
       doc.setFont('helvetica', 'normal');
-      doc.text('Agreement has been digitally accepted by client', 70, yPos);
-      yPos += 8;
+      doc.text('Agreement has been digitally accepted by client', 85, yPos);
+      yPos += 10;
       
       if ((quote as any).accepted_by) {
         doc.setFont('helvetica', 'bold');
         doc.text('Accepted by:', 25, yPos);
         doc.setFont('helvetica', 'normal');
-        doc.text((quote as any).accepted_by, 70, yPos);
-        yPos += 8;
+        doc.text((quote as any).accepted_by, 85, yPos);
+        yPos += 10;
       }
       
       if ((quote as any).accepted_at) {
@@ -680,27 +702,28 @@ export const generateQuotePDF = async (quote: Quote, clientInfo?: ClientInfo, sa
         doc.text('Date:', 25, yPos);
         doc.setFont('helvetica', 'normal');
         const acceptedDate = new Date((quote as any).accepted_at).toLocaleString();
-        doc.text(acceptedDate, 70, yPos);
-        yPos += 8;
+        doc.text(acceptedDate, 85, yPos);
+        yPos += 10;
       }
       
       doc.setFont('helvetica', 'italic');
+      doc.setTextColor(100, 100, 100);
       doc.text('Detailed acceptance evidence may be available in system records', 25, yPos);
-      yPos += 10;
+      yPos += 12;
     }
     
-    // Legal notice
+    // Legal notice with better formatting
     yPos += 5;
-    doc.setFillColor(250, 250, 250);
-    doc.rect(20, yPos, 175, 15, 'F');
+    doc.setFillColor(248, 250, 252);
+    doc.rect(20, yPos, 175, 20, 'F');
     doc.setDrawColor(200, 200, 200);
-    doc.rect(20, yPos, 175, 15);
+    doc.rect(20, yPos, 175, 20);
     
     doc.setFontSize(8);
     doc.setFont('helvetica', 'italic');
-    doc.setTextColor(100, 100, 100);
-    doc.text('This document contains legally binding digital acceptance evidence.', 25, yPos + 6);
-    doc.text('All acceptance data is stored securely and can be verified upon request.', 25, yPos + 10);
+    doc.setTextColor(80, 80, 80);
+    doc.text('This document contains legally binding digital acceptance evidence.', 25, yPos + 7);
+    doc.text('All acceptance data is stored securely and can be verified upon request.', 25, yPos + 13);
     
     console.log('PDF Generation - Digital acceptance evidence section completed');
   }
