@@ -90,13 +90,15 @@ export const EditQuoteDialog = ({
       if (selectedClient) {
         const { totalAmount } = calculateTotalsByChargeType(quoteItems);
         
-        // Update quote items in database with address information
-        const updatedQuoteItems = quoteItems.map(item => ({
-          ...item,
-          address_id: selectedBillingAddressId || selectedServiceAddressId || undefined
-        }));
+        console.log('[EditQuoteDialog] Saving quote items before updating quote:', quoteItems.map(item => ({
+          id: item.id,
+          name: item.name,
+          description: item.description,
+          address_id: item.address_id
+        })));
         
-        await updateQuoteItems(quote.id, updatedQuoteItems);
+        // Update quote items in database with address information and custom descriptions
+        await updateQuoteItems(quote.id, quoteItems);
 
         console.log('EditQuoteDialog - Updating quote with addresses:', { 
           billing: billingAddress, 

@@ -43,7 +43,12 @@ export const fetchQuoteItems = async (quoteId: string): Promise<QuoteItemData[]>
 
 export const updateQuoteItems = async (quoteId: string, quoteItems: QuoteItemData[]): Promise<void> => {
   try {
-    console.log('[QuoteItemsService] Updating quote items with address assignments:', quoteItems.map(item => ({ id: item.id, address_id: item.address_id })));
+    console.log('[QuoteItemsService] Updating quote items with address assignments and descriptions:', quoteItems.map(item => ({ 
+      id: item.id, 
+      address_id: item.address_id,
+      custom_name: item.name,
+      custom_description: item.description
+    })));
     
     // Delete existing quote items
     await supabase
@@ -97,7 +102,7 @@ export const updateQuoteItems = async (quoteId: string, quoteItems: QuoteItemDat
       if (insertError) {
         console.error('Error inserting quote items:', insertError);
       } else {
-        console.log('[QuoteItemsService] Successfully saved quote items with address assignments');
+        console.log('[QuoteItemsService] Successfully saved quote items with address assignments and descriptions');
       }
     }
   } catch (err) {
