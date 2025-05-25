@@ -1,3 +1,4 @@
+
 import jsPDF from 'jspdf';
 import { Quote, ClientInfo } from '@/pages/Index';
 import { supabase } from '@/integrations/supabase/client';
@@ -54,6 +55,31 @@ export const generateQuotePDF = async (quote: Quote, clientInfo?: ClientInfo, sa
   console.log('PDF Generation - Quote billingAddress:', quote.billingAddress);
   console.log('PDF Generation - ClientInfo object:', clientInfo);
   console.log('PDF Generation - Template ID from quote:', (quote as any).templateId);
+  console.log('PDF Generation - Quote status:', quote.status);
+  console.log('PDF Generation - Quote acceptance status:', (quote as any).acceptanceStatus);
+  
+  // Check if the quote is approved
+  const isApproved = quote.status === 'approved' || (quote as any).acceptanceStatus === 'accepted';
+  console.log('PDF Generation - Is quote approved?', isApproved);
+  
+  // Fetch acceptance details if quote is approved
+  let acceptanceDetails = null;
+  if (isApproved) {
+    try {
+      const { data: acceptance, error } = await supabase
+        .from('quote_acceptances')
+        .select('*')
+        .eq('quote_id', quote.id)
+        .maybeSingle();
+      
+      if (!error && acceptance) {
+        acceptanceDetails = acceptance;
+        console.log('PDF Generation - Acceptance details loaded:', acceptanceDetails);
+      }
+    } catch (error) {
+      console.error('PDF Generation - Error fetching acceptance details:', error);
+    }
+  }
   
   // Load business information from database instead of localStorage
   const businessSettings = await loadSettingsFromDatabase();
@@ -325,25 +351,37 @@ export const generateQuotePDF = async (quote: Quote, clientInfo?: ClientInfo, sa
     }
   }
   
-  // Accept Agreement button (green box) - positioned closer to address sections
+  // Agreement status button/indicator - positioned closer to address sections
   const buttonX = 110; // Aligned with service address column
   const buttonY = 120; // Moved up, closer to address sections
   const buttonWidth = 85; // Made wider to fit under service address
   const buttonHeight = 12;
   
-  // Create clickable link to acceptance page - FIXED URL GENERATION
-  const acceptanceUrl = `${window.location.origin}/accept-quote/${quote.id}`;
-  console.log('PDF Generation - Accept Agreement URL:', acceptanceUrl);
-  
-  doc.setFillColor(76, 175, 80); // Green color
-  doc.rect(buttonX, buttonY, buttonWidth, buttonHeight, 'F');
-  doc.setTextColor(255, 255, 255); // White text
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(10);
-  doc.text('ACCEPT AGREEMENT', buttonX + 12, buttonY + 8);
-  
-  // Add clickable link to the button area
-  doc.link(buttonX, buttonY, buttonWidth, buttonHeight, { url: acceptanceUrl });
+  if (isApproved) {
+    // Show "APPROVED" with green background and checkmark
+    doc.setFillColor(76, 175, 80); // Green color
+    doc.rect(buttonX, buttonY, buttonWidth, buttonHeight, 'F');
+    doc.setTextColor(255, 255, 255); // White text
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(10);
+    
+    // Add checkmark symbol and "APPROVED" text
+    doc.text('✓ APPROVED', buttonX + 20, buttonY + 8);
+  } else {
+    // Create clickable link to acceptance page - FIXED URL GENERATION
+    const acceptanceUrl = `${window.location.origin}/accept-quote/${quote.id}`;
+    console.log('PDF Generation - Accept Agreement URL:', acceptanceUrl);
+    
+    doc.setFillColor(76, 175, 80); // Green color
+    doc.rect(buttonX, buttonY, buttonWidth, buttonHeight, 'F');
+    doc.setTextColor(255, 255, 255); // White text
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(10);
+    doc.text('ACCEPT AGREEMENT', buttonX + 12, buttonY + 8);
+    
+    // Add clickable link to the button area
+    doc.link(buttonX, buttonY, buttonWidth, buttonHeight, { url: acceptanceUrl });
+  }
   
   // Quote Title - positioned after accept button
   yPos = 145; // Moved up for better spacing
@@ -557,6 +595,77 @@ export const generateQuotePDF = async (quote: Quote, clientInfo?: ClientInfo, sa
     doc.setFontSize(8);
     const splitNotes = doc.splitTextToSize(quote.notes, 175);
     doc.text(splitNotes, 20, yPos);
+    yPos += Array.isArray(splitNotes) ? splitNotes.length * 4 : 4;
+  }
+  
+  // Add acceptance evidence section if approved
+  if (isApproved && acceptanceDetails) {
+    const remainingSpace = 297 - 20 - yPos; // Page height - bottom margin - current position
+    
+    if (remainingSpace < 60) {
+      // Not enough space, add new page
+      doc.addPage();
+      yPos = 30;
+    } else {
+      yPos += 15;
+    }
+    
+    // Add separator line
+    doc.setDrawColor(200, 200, 200);
+    doc.line(20, yPos, 195, yPos);
+    yPos += 10;
+    
+    // Acceptance evidence header
+    doc.setFontSize(11);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(0, 0, 0);
+    doc.text('Digital Acceptance Evidence', 20, yPos);
+    yPos += 10;
+    
+    // Acceptance details
+    doc.setFontSize(8);
+    doc.setFont('helvetica', 'normal');
+    
+    // Format acceptance date
+    const acceptedDate = new Date(acceptanceDetails.accepted_at).toLocaleString();
+    
+    doc.text(`Accepted by: ${acceptanceDetails.client_name}`, 20, yPos);
+    yPos += 5;
+    
+    doc.text(`Email: ${acceptanceDetails.client_email}`, 20, yPos);
+    yPos += 5;
+    
+    doc.text(`Date: ${acceptedDate}`, 20, yPos);
+    yPos += 5;
+    
+    doc.text(`IP Address: ${acceptanceDetails.ip_address}`, 20, yPos);
+    yPos += 10;
+    
+    // Add signature if available
+    if (acceptanceDetails.signature_data) {
+      doc.setFont('helvetica', 'bold');
+      doc.text('Digital Signature:', 20, yPos);
+      yPos += 5;
+      
+      try {
+        // Add the signature image
+        const signatureHeight = 20;
+        const signatureWidth = 60;
+        doc.addImage(acceptanceDetails.signature_data, 'PNG', 20, yPos, signatureWidth, signatureHeight);
+        yPos += signatureHeight + 5;
+      } catch (error) {
+        console.error('Error adding signature to PDF:', error);
+        doc.setFont('helvetica', 'normal');
+        doc.text('[Digital signature on file]', 20, yPos);
+        yPos += 5;
+      }
+    }
+    
+    // Add verification note
+    doc.setFontSize(7);
+    doc.setFont('helvetica', 'italic');
+    doc.setTextColor(100, 100, 100);
+    doc.text('This document contains legally binding digital acceptance evidence.', 20, yPos);
   }
   
   return doc;
