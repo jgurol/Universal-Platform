@@ -65,12 +65,26 @@ export const addClientInfo = (doc: jsPDF, context: PDFGenerationContext): number
     console.log('PDF clientInfo.ts - Formatted billing address result:', formattedBilling);
     
     if (formattedBilling) {
-      console.log('PDF clientInfo.ts - Adding billing street at Y position:', yPos + 7, 'Text:', formattedBilling.street);
-      doc.text(formattedBilling.street, 20, yPos + 7);
+      console.log('PDF clientInfo.ts - About to add billing street. Doc object:', typeof doc);
+      console.log('PDF clientInfo.ts - Doc.text function:', typeof doc.text);
+      console.log('PDF clientInfo.ts - Billing street text:', formattedBilling.street);
+      console.log('PDF clientInfo.ts - Billing street Y position:', yPos + 7);
+      
+      try {
+        doc.text(formattedBilling.street, 20, yPos + 7);
+        console.log('PDF clientInfo.ts - Successfully added billing street');
+      } catch (error) {
+        console.error('PDF clientInfo.ts - Error adding billing street:', error);
+      }
       
       if (formattedBilling.cityStateZip) {
-        console.log('PDF clientInfo.ts - Adding billing cityStateZip at Y position:', yPos + 14, 'Text:', formattedBilling.cityStateZip);
-        doc.text(formattedBilling.cityStateZip, 20, yPos + 14);
+        console.log('PDF clientInfo.ts - About to add billing cityStateZip:', formattedBilling.cityStateZip);
+        try {
+          doc.text(formattedBilling.cityStateZip, 20, yPos + 14);
+          console.log('PDF clientInfo.ts - Successfully added billing cityStateZip');
+        } catch (error) {
+          console.error('PDF clientInfo.ts - Error adding billing cityStateZip:', error);
+        }
       } else {
         console.log('PDF clientInfo.ts - No cityStateZip for billing address');
       }
@@ -140,12 +154,25 @@ export const addClientInfo = (doc: jsPDF, context: PDFGenerationContext): number
       const serviceStreetY = rightColYPos + 7 + rightYOffset;
       const serviceCityY = rightColYPos + 14 + rightYOffset;
       
-      console.log('PDF clientInfo.ts - Adding service street at Y position:', serviceStreetY, 'Text:', formattedService.street);
-      doc.text(formattedService.street, 110, serviceStreetY);
+      console.log('PDF clientInfo.ts - About to add service street at Y position:', serviceStreetY);
+      console.log('PDF clientInfo.ts - Service street text:', formattedService.street);
+      
+      try {
+        doc.text(formattedService.street, 110, serviceStreetY);
+        console.log('PDF clientInfo.ts - Successfully added service street');
+      } catch (error) {
+        console.error('PDF clientInfo.ts - Error adding service street:', error);
+      }
       
       if (formattedService.cityStateZip) {
-        console.log('PDF clientInfo.ts - Adding service cityStateZip at Y position:', serviceCityY, 'Text:', formattedService.cityStateZip);
-        doc.text(formattedService.cityStateZip, 110, serviceCityY);
+        console.log('PDF clientInfo.ts - About to add service cityStateZip at Y position:', serviceCityY);
+        console.log('PDF clientInfo.ts - Service cityStateZip text:', formattedService.cityStateZip);
+        try {
+          doc.text(formattedService.cityStateZip, 110, serviceCityY);
+          console.log('PDF clientInfo.ts - Successfully added service cityStateZip');
+        } catch (error) {
+          console.error('PDF clientInfo.ts - Error adding service cityStateZip:', error);
+        }
       } else {
         console.log('PDF clientInfo.ts - No cityStateZip for service address');
       }
