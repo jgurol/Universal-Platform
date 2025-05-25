@@ -342,7 +342,7 @@ export type Database = {
       quotes: {
         Row: {
           amount: number
-          client_id: string
+          client_id: string | null
           client_info_id: string | null
           commission: number | null
           commission_override: number | null
@@ -361,7 +361,7 @@ export type Database = {
         }
         Insert: {
           amount: number
-          client_id: string
+          client_id?: string | null
           client_info_id?: string | null
           commission?: number | null
           commission_override?: number | null
@@ -380,7 +380,7 @@ export type Database = {
         }
         Update: {
           amount?: number
-          client_id?: string
+          client_id?: string | null
           client_info_id?: string | null
           commission?: number | null
           commission_override?: number | null

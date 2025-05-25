@@ -107,7 +107,7 @@ export const EditQuoteDialog = ({
                 <SelectValue placeholder="Select a client company" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">No client selected</SelectItem>
+                <SelectItem value="none">No client selected</SelectItem>
                 {clientInfos.map((clientInfo) => (
                   <SelectItem key={clientInfo.id} value={clientInfo.id}>
                     {clientInfo.company_name}
