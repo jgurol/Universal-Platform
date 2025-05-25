@@ -42,8 +42,8 @@ const handler = async (req: Request): Promise<Response> => {
     // Create tracking pixel URL
     const trackingPixelUrl = `${Deno.env.get("SUPABASE_URL")}/functions/v1/track-email-open?quote=${quoteId}`;
     
-    // Create acceptance URL - use the project URL directly
-    const acceptanceUrl = `https://tsvvpssyzthwbkygrlgw.supabase.co/accept-quote/${quoteId}`;
+    // Create acceptance URL - use the Lovable application URL
+    const acceptanceUrl = `https://lovable.app/accept-quote/${quoteId}`;
 
     // Send email with PDF attachment, tracking pixel, and acceptance button
     const emailResponse = await resend.emails.send({
