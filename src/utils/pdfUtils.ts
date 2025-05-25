@@ -1,3 +1,4 @@
+
 import jsPDF from 'jspdf';
 import { Quote, ClientInfo } from '@/pages/Index';
 
@@ -15,7 +16,7 @@ export const generateQuotePDF = (quote: Quote, clientInfo?: ClientInfo, salesper
   doc.setTextColor(128, 128, 128); // Gray color
   doc.text('Agreement', 160, 25);
   
-  // Company Information (left side)
+  // Company Information (left side) - Better aligned
   doc.setFontSize(9);
   doc.setTextColor(0, 0, 0); // Black
   doc.setFont('helvetica', 'bold');
@@ -24,85 +25,89 @@ export const generateQuotePDF = (quote: Quote, clientInfo?: ClientInfo, salesper
   doc.text('14538 Central Ave', 20, 47);
   doc.text('Chino, CA 91710', 20, 54);
   doc.text('United States', 20, 61);
-  doc.text('Tel: 213-270-1349', 20, 72);
-  doc.text('Fax: 213-232-3304', 20, 79);
+  doc.text('Tel: 213-270-1349', 20, 68);
+  doc.text('Fax: 213-232-3304', 20, 75);
   
-  // Agreement details box (right side)
-  const boxX = 130;
+  // Agreement details box (right side) - Fixed positioning
+  const boxX = 125;
   const boxY = 40;
-  const boxWidth = 65;
-  const boxHeight = 45;
+  const boxWidth = 70;
+  const boxHeight = 40;
   
   // Draw box with gray background
-  doc.setFillColor(240, 240, 240);
+  doc.setFillColor(245, 245, 245);
   doc.rect(boxX, boxY, boxWidth, boxHeight, 'F');
   doc.setDrawColor(200, 200, 200);
   doc.rect(boxX, boxY, boxWidth, boxHeight);
   
-  // Agreement details inside box
+  // Agreement details inside box - Better aligned
   doc.setFontSize(9);
   doc.setFont('helvetica', 'bold');
-  doc.text('Agreement', boxX + 3, boxY + 8);
-  doc.text('Date:', boxX + 3, boxY + 18);
-  doc.text('Expires', boxX + 3, boxY + 28);
-  doc.text('Account', boxX + 3, boxY + 38);
-  doc.text('Manager', boxX + 3, boxY + 44);
+  doc.text('Agreement #:', boxX + 4, boxY + 8);
+  doc.text('Date:', boxX + 4, boxY + 16);
+  doc.text('Expires:', boxX + 4, boxY + 24);
+  doc.text('Account Manager:', boxX + 4, boxY + 32);
   
   doc.setFont('helvetica', 'normal');
-  doc.text(quote.quoteNumber || `Q-${quote.id.slice(0, 8)}`, boxX + 35, boxY + 8);
-  doc.text(new Date(quote.date).toLocaleDateString(), boxX + 20, boxY + 18);
-  doc.text(quote.expiresAt ? new Date(quote.expiresAt).toLocaleDateString() : 'N/A', boxX + 20, boxY + 28);
-  doc.text(salespersonName || 'N/A', boxX + 20, boxY + 44);
+  doc.text(quote.quoteNumber || `Q-${quote.id.slice(0, 8)}`, boxX + 30, boxY + 8);
+  doc.text(new Date(quote.date).toLocaleDateString(), boxX + 18, boxY + 16);
+  doc.text(quote.expiresAt ? new Date(quote.expiresAt).toLocaleDateString() : 'N/A', boxX + 22, boxY + 24);
+  doc.text(salespersonName || 'N/A', boxX + 4, boxY + 38);
   
-  // Billing Information and Service Address sections (side by side)
-  let yPos = 95;
-  doc.setFontSize(10);
+  // Billing Information and Service Address sections (side by side) - Better positioning
+  let yPos = 90;
+  doc.setFontSize(11);
   doc.setFont('helvetica', 'bold');
   doc.text('Billing Information', 20, yPos);
   doc.text('Service Address', 110, yPos);
+  
+  // Draw separator lines under headers
+  doc.setDrawColor(200, 200, 200);
+  doc.line(20, yPos + 2, 85, yPos + 2);
+  doc.line(110, yPos + 2, 175, yPos + 2);
   
   yPos += 8;
   doc.setFontSize(9);
   doc.setFont('helvetica', 'normal');
   
   if (clientInfo) {
-    // Billing info (left column)
+    // Billing info (left column) - Aligned properly
     doc.text(clientInfo.company_name, 20, yPos);
     if (clientInfo.contact_name) {
       doc.text(clientInfo.contact_name, 20, yPos + 7);
     }
     if (clientInfo.address) {
-      const addressLines = doc.splitTextToSize(clientInfo.address, 80);
-      doc.text(addressLines.slice(0, 3), 20, yPos + 14); // Limit to 3 lines
+      const addressLines = doc.splitTextToSize(clientInfo.address, 75);
+      doc.text(addressLines.slice(0, 2), 20, yPos + 14);
     }
     if (clientInfo.phone) {
-      doc.text(`Tel: ${clientInfo.phone}`, 20, yPos + 35);
+      doc.text(`Tel: ${clientInfo.phone}`, 20, yPos + 28);
     }
     if (clientInfo.email) {
-      doc.text(`Email: ${clientInfo.email}`, 20, yPos + 42);
+      doc.text(`Email: ${clientInfo.email}`, 20, yPos + 35);
     }
     
-    // Service address (right column) - same as billing for now
+    // Service address (right column) - Aligned with left column
     doc.text(clientInfo.company_name, 110, yPos);
     if (clientInfo.contact_name) {
       doc.text(clientInfo.contact_name, 110, yPos + 7);
     }
     if (clientInfo.address) {
-      const addressLines = doc.splitTextToSize(clientInfo.address, 80);
-      doc.text(addressLines.slice(0, 3), 110, yPos + 14);
+      const addressLines = doc.splitTextToSize(clientInfo.address, 75);
+      doc.text(addressLines.slice(0, 2), 110, yPos + 14);
     }
     if (clientInfo.phone) {
-      doc.text(`Tel: ${clientInfo.phone}`, 110, yPos + 35);
+      doc.text(`Tel: ${clientInfo.phone}`, 110, yPos + 28);
     }
     if (clientInfo.email) {
-      doc.text(`Email: ${clientInfo.email}`, 110, yPos + 42);
+      doc.text(`Email: ${clientInfo.email}`, 110, yPos + 35);
     }
   }
   
-  // Accept Agreement button (green box)
-  const buttonX = 110;
-  const buttonY = yPos + 50;
-  const buttonWidth = 80;
+  // Accept Agreement button (green box) - Better positioned
+  const buttonX = 125;
+  const buttonY = yPos + 45;
+  const buttonWidth = 70;
   const buttonHeight = 12;
   
   doc.setFillColor(76, 175, 80); // Green color
@@ -110,17 +115,17 @@ export const generateQuotePDF = (quote: Quote, clientInfo?: ClientInfo, salesper
   doc.setTextColor(255, 255, 255); // White text
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(10);
-  doc.text('ACCEPT AGREEMENT', buttonX + 12, buttonY + 8);
+  doc.text('ACCEPT AGREEMENT', buttonX + 10, buttonY + 8);
   
-  // Quote Title
+  // Quote Title - Properly spaced
   yPos = 155;
   doc.setTextColor(0, 0, 0);
   doc.setFontSize(14);
   doc.setFont('helvetica', 'bold');
-  const quoteTitle = quote.description || clientInfo?.company_name + ' - Service Agreement';
+  const quoteTitle = quote.description || (clientInfo?.company_name ? `${clientInfo.company_name} - Service Agreement` : 'Service Agreement');
   doc.text(quoteTitle, 20, yPos);
   
-  // Items Section - Monthly Fees
+  // Items Section - Monthly Fees with proper table structure
   yPos += 15;
   
   if (quote.quoteItems && quote.quoteItems.length > 0) {
@@ -132,84 +137,86 @@ export const generateQuotePDF = (quote: Quote, clientInfo?: ClientInfo, salesper
       doc.setFontSize(12);
       doc.setFont('helvetica', 'bold');
       doc.text('Monthly Fees', 20, yPos);
-      yPos += 10;
+      yPos += 12;
+      
+      // Table structure with proper column alignment
+      const colX = {
+        description: 20,
+        qty: 130,
+        price: 155,
+        total: 175
+      };
       
       // Table headers with background
       doc.setFillColor(240, 240, 240);
-      doc.rect(20, yPos - 5, 170, 8, 'F');
+      doc.rect(colX.description, yPos - 8, 175, 10, 'F');
       doc.setDrawColor(200, 200, 200);
-      doc.rect(20, yPos - 5, 170, 8);
+      doc.rect(colX.description, yPos - 8, 175, 10);
       
       doc.setFontSize(9);
       doc.setFont('helvetica', 'bold');
-      doc.text('Description', 22, yPos);
-      doc.text('Qty', 130, yPos);
-      doc.text('Price', 150, yPos);
-      doc.text('Total', 175, yPos);
+      doc.text('Description', colX.description + 2, yPos - 2);
+      doc.text('Qty', colX.qty + 2, yPos - 2);
+      doc.text('Price', colX.price + 2, yPos - 2);
+      doc.text('Total', colX.total + 2, yPos - 2);
       
-      yPos += 8;
+      yPos += 5;
       
-      // MRC Items with detailed descriptions
+      // MRC Items with aligned columns
       doc.setFont('helvetica', 'normal');
       mrcItems.forEach((item, index) => {
         const itemName = item.item?.name || 'Monthly Service';
         
-        // Main item row
-        doc.text(itemName, 22, yPos);
-        doc.text(item.quantity.toString(), 130, yPos);
-        doc.text(`$${Number(item.unit_price).toFixed(2)}`, 150, yPos);
-        doc.text(`$${Number(item.total_price).toFixed(2)}`, 175, yPos);
-        yPos += 6;
-        
-        // Add service details if available
-        if (item.item?.description) {
-          doc.setFontSize(8);
-          doc.setTextColor(100, 100, 100);
-          const descLines = doc.splitTextToSize(item.item.description, 100);
-          doc.text(descLines.slice(0, 2), 25, yPos); // Limit to 2 lines
-          yPos += descLines.slice(0, 2).length * 4;
-          doc.setFontSize(9);
-          doc.setTextColor(0, 0, 0);
+        // Alternate row background
+        if (index % 2 === 0) {
+          doc.setFillColor(250, 250, 250);
+          doc.rect(colX.description, yPos - 4, 175, 8, 'F');
         }
         
-        yPos += 2; // Small spacing between items
+        // Main item row with proper column alignment
+        doc.setTextColor(0, 0, 0);
+        doc.text(itemName.substring(0, 35), colX.description + 2, yPos);
+        doc.text(item.quantity.toString(), colX.qty + 2, yPos);
+        doc.text(`$${Number(item.unit_price).toFixed(2)}`, colX.price + 2, yPos);
+        doc.text(`$${Number(item.total_price).toFixed(2)}`, colX.total + 2, yPos);
+        yPos += 8;
       });
       
-      // Total line
-      yPos += 5;
+      // Total line with proper alignment
+      yPos += 2;
       doc.setDrawColor(0, 0, 0);
-      doc.line(20, yPos, 190, yPos);
+      doc.line(colX.description, yPos, 195, yPos);
       yPos += 8;
       
       const mrcTotal = mrcItems.reduce((total, item) => total + (Number(item.total_price) || 0), 0);
       doc.setFont('helvetica', 'bold');
-      doc.text('Total Monthly', 130, yPos);
-      doc.text(`$${mrcTotal.toFixed(2)} USD`, 150, yPos);
+      doc.text('Total Monthly:', colX.price - 20, yPos);
+      doc.text(`$${mrcTotal.toFixed(2)} USD`, colX.total + 2, yPos);
     }
     
-    // One-Time Fees (if any, but keep compact)
+    // One-Time Fees (compact format if space allows)
     if (nrcItems.length > 0 && yPos < 250) {
-      yPos += 15;
+      yPos += 10;
       doc.setFontSize(10);
       doc.setFont('helvetica', 'bold');
-      doc.text('One-Time Fees:', 20, yPos);
+      doc.text('One-Time Setup Fees:', 20, yPos);
       
       const nrcTotal = nrcItems.reduce((total, item) => total + (Number(item.total_price) || 0), 0);
-      doc.text(`$${nrcTotal.toFixed(2)} USD`, 150, yPos);
+      doc.text(`$${nrcTotal.toFixed(2)} USD`, 175, yPos);
     }
   }
   
-  // Notes section (if space allows)
+  // Notes section (if space allows) - Properly positioned
   if (quote.notes && yPos < 260) {
-    yPos += 10;
+    yPos += 12;
     doc.setFontSize(9);
     doc.setFont('helvetica', 'bold');
     doc.text('Additional Notes:', 20, yPos);
     yPos += 6;
     
     doc.setFont('helvetica', 'normal');
-    const splitNotes = doc.splitTextToSize(quote.notes, 170);
-    doc.text(splitNotes.slice(0, 2), 20, yPos); // Limit notes to 2 lines
+    const splitNotes = doc.splitTextToSize(quote.notes, 175);
+    doc.text(splitNotes.slice(0, 2), 20, yPos);
   }
   
   return doc;
