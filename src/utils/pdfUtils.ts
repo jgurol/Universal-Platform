@@ -1,4 +1,3 @@
-
 import jsPDF from 'jspdf';
 import { Quote, ClientInfo } from '@/pages/Index';
 import { supabase } from '@/integrations/supabase/client';
@@ -10,10 +9,15 @@ const addFormattedTextToPDF = (doc: jsPDF, htmlContent: string, startX: number, 
   const bottomMargin = 20;
   const topMargin = 20;
   
-  // Split content by paragraphs (using <p> tags or double line breaks)
-  const paragraphs = htmlContent
-    .split(/<\/p>|<br\s*\/?>\s*<br\s*\/?>|\n\n/)
-    .map(p => p.replace(/<\/?p[^>]*>/g, '').trim())
+  // Clean HTML content and split by paragraphs
+  const cleanContent = htmlContent
+    .replace(/<br\s*\/?>/gi, '\n')
+    .replace(/<\/p>/gi, '\n\n')
+    .replace(/<p[^>]*>/gi, '');
+  
+  const paragraphs = cleanContent
+    .split(/\n\n+/)
+    .map(p => p.trim())
     .filter(p => p.length > 0);
   
   paragraphs.forEach((paragraph, paragraphIndex) => {
@@ -65,61 +69,98 @@ const addFormattedTextToPDF = (doc: jsPDF, htmlContent: string, startX: number, 
   return currentY;
 };
 
-// Helper function to parse inline formatting (bold, italic)
+// Helper function to parse inline formatting (bold, italic) - completely rewritten
 const parseInlineFormatting = (text: string) => {
   const sections = [];
-  let currentText = text;
-  
-  // Remove HTML tags but preserve their formatting information
-  const formatRegex = /<(\/?)([bi]|strong|em)[^>]*>/gi;
-  let lastIndex = 0;
+  let currentIndex = 0;
   let isBold = false;
   let isItalic = false;
   
-  const matches = [...currentText.matchAll(formatRegex)];
+  // Find all HTML tags and their positions
+  const tagRegex = /<\/?(?:b|strong|i|em|br)\s*\/?>/gi;
+  const matches = [];
+  let match;
   
-  matches.forEach(match => {
-    const beforeTag = currentText.substring(lastIndex, match.index);
-    
-    // Add text before the tag if it exists
-    if (beforeTag.trim()) {
-      sections.push({
-        text: beforeTag.replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>'),
-        bold: isBold,
-        italic: isItalic
-      });
-    }
-    
-    // Update formatting state based on the tag
-    const isClosing = match[1] === '/';
-    const tagName = match[2].toLowerCase();
-    
-    if (tagName === 'b' || tagName === 'strong') {
-      isBold = !isClosing;
-    } else if (tagName === 'i' || tagName === 'em') {
-      isItalic = !isClosing;
-    }
-    
-    lastIndex = match.index + match[0].length;
-  });
-  
-  // Add remaining text after the last tag
-  const remainingText = currentText.substring(lastIndex);
-  if (remainingText.trim()) {
-    sections.push({
-      text: remainingText.replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>'),
-      bold: isBold,
-      italic: isItalic
+  while ((match = tagRegex.exec(text)) !== null) {
+    matches.push({
+      index: match.index,
+      tag: match[0],
+      length: match[0].length
     });
   }
   
-  // If no formatting tags were found, return the whole text as normal
+  // Process text between tags
+  for (let i = 0; i <= matches.length; i++) {
+    const start = i === 0 ? 0 : matches[i - 1].index + matches[i - 1].length;
+    const end = i === matches.length ? text.length : matches[i].index;
+    
+    // Extract text content between tags
+    const textContent = text.substring(start, end);
+    
+    if (textContent.trim()) {
+      // Clean up the text content
+      const cleanText = textContent
+        .replace(/&nbsp;/g, ' ')
+        .replace(/&amp;/g, '&')
+        .replace(/&lt;/g, '<')
+        .replace(/&gt;/g, '>')
+        .trim();
+      
+      if (cleanText) {
+        sections.push({
+          text: cleanText,
+          bold: isBold,
+          italic: isItalic
+        });
+      }
+    }
+    
+    // Process the tag at current position to update formatting state
+    if (i < matches.length) {
+      const currentTag = matches[i].tag.toLowerCase();
+      
+      if (currentTag === '<br>' || currentTag === '<br/>') {
+        // Add line break as text
+        sections.push({
+          text: '\n',
+          bold: false,
+          italic: false
+        });
+      } else if (currentTag.includes('/')) {
+        // Closing tag
+        if (currentTag.includes('b') || currentTag.includes('strong')) {
+          isBold = false;
+        } else if (currentTag.includes('i') || currentTag.includes('em')) {
+          isItalic = false;
+        }
+      } else {
+        // Opening tag
+        if (currentTag.includes('b') || currentTag.includes('strong')) {
+          isBold = true;
+        } else if (currentTag.includes('i') || currentTag.includes('em')) {
+          isItalic = true;
+        }
+      }
+    }
+  }
+  
+  // If no sections were created (no HTML formatting), return the whole text as normal
   if (sections.length === 0) {
-    sections.push({
-      text: currentText.replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>'),
-      bold: false,
-      italic: false
-    });
+    const cleanText = text
+      .replace(/<[^>]*>/g, '') // Remove any remaining HTML tags
+      .replace(/&nbsp;/g, ' ')
+      .replace(/&amp;/g, '&')
+      .replace(/&lt;/g, '<')
+      .replace(/&gt;/g, '>')
+      .trim();
+    
+    if (cleanText) {
+      sections.push({
+        text: cleanText,
+        bold: false,
+        italic: false
+      });
+    }
   }
   
   return sections;
