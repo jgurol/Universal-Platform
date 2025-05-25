@@ -9,12 +9,10 @@ const addFormattedTextToPDF = (doc: jsPDF, htmlContent: string, startX: number, 
   const bottomMargin = 20;
   const topMargin = 20;
   
-  // Clean HTML content and split by paragraphs
-  const cleanContent = htmlContent
-    .replace(/<br\s*\/?>/gi, '\n')
-    .replace(/<\/p>/gi, '\n\n')
-    .replace(/<p[^>]*>/gi, '');
+  // Clean and parse the HTML content
+  const cleanContent = cleanHtmlContent(htmlContent);
   
+  // Split by paragraphs and process each one
   const paragraphs = cleanContent
     .split(/\n\n+/)
     .map(p => p.trim())
@@ -54,6 +52,12 @@ const addFormattedTextToPDF = (doc: jsPDF, htmlContent: string, startX: number, 
         doc.setFont('helvetica', 'normal');
       }
       
+      // Handle line breaks
+      if (section.text === '\n') {
+        currentY += lineHeight;
+        return;
+      }
+      
       // Split text to fit within the specified width
       const splitText = doc.splitTextToSize(section.text, maxWidth);
       
@@ -69,91 +73,115 @@ const addFormattedTextToPDF = (doc: jsPDF, htmlContent: string, startX: number, 
   return currentY;
 };
 
-// Helper function to parse inline formatting (bold, italic) - completely rewritten
+// Helper function to completely clean HTML content
+const cleanHtmlContent = (htmlContent: string): string => {
+  if (!htmlContent) return '';
+  
+  // First, let's handle common HTML entities
+  let cleaned = htmlContent
+    .replace(/&nbsp;/g, ' ')
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'");
+  
+  // Remove all HTML attributes and complex tags but keep basic formatting tags
+  cleaned = cleaned
+    .replace(/<([^>]+)>/g, (match, tag) => {
+      // Extract just the tag name (first word)
+      const tagName = tag.split(/\s+/)[0].toLowerCase();
+      
+      // Keep only basic formatting tags
+      if (['b', 'strong', 'i', 'em', 'br', '/b', '/strong', '/i', '/em'].includes(tagName)) {
+        return `<${tagName}>`;
+      }
+      
+      // Convert paragraph tags to double line breaks
+      if (tagName === 'p') return '\n\n';
+      if (tagName === '/p') return '\n\n';
+      
+      // Remove everything else
+      return '';
+    });
+  
+  // Clean up multiple consecutive whitespace/newlines
+  cleaned = cleaned
+    .replace(/\s+/g, ' ') // Multiple spaces to single space
+    .replace(/\n\s*\n/g, '\n\n') // Multiple newlines to double newline
+    .trim();
+  
+  return cleaned;
+};
+
+// Simplified inline formatting parser
 const parseInlineFormatting = (text: string) => {
   const sections = [];
-  let currentIndex = 0;
+  let currentText = '';
   let isBold = false;
   let isItalic = false;
   
-  // Find all HTML tags and their positions
-  const tagRegex = /<\/?(?:b|strong|i|em|br)\s*\/?>/gi;
-  const matches = [];
-  let match;
-  
-  while ((match = tagRegex.exec(text)) !== null) {
-    matches.push({
-      index: match.index,
-      tag: match[0],
-      length: match[0].length
-    });
-  }
-  
-  // Process text between tags
-  for (let i = 0; i <= matches.length; i++) {
-    const start = i === 0 ? 0 : matches[i - 1].index + matches[i - 1].length;
-    const end = i === matches.length ? text.length : matches[i].index;
-    
-    // Extract text content between tags
-    const textContent = text.substring(start, end);
-    
-    if (textContent.trim()) {
-      // Clean up the text content
-      const cleanText = textContent
-        .replace(/&nbsp;/g, ' ')
-        .replace(/&amp;/g, '&')
-        .replace(/&lt;/g, '<')
-        .replace(/&gt;/g, '>')
-        .trim();
-      
-      if (cleanText) {
+  // Simple state machine to parse basic HTML tags
+  let i = 0;
+  while (i < text.length) {
+    if (text[i] === '<') {
+      // Found start of tag, save current text first
+      if (currentText) {
         sections.push({
-          text: cleanText,
+          text: currentText,
           bold: isBold,
           italic: isItalic
         });
+        currentText = '';
       }
-    }
-    
-    // Process the tag at current position to update formatting state
-    if (i < matches.length) {
-      const currentTag = matches[i].tag.toLowerCase();
       
-      if (currentTag === '<br>' || currentTag === '<br/>') {
-        // Add line break as text
+      // Find end of tag
+      const tagEnd = text.indexOf('>', i);
+      if (tagEnd === -1) {
+        // No closing bracket found, treat as regular text
+        currentText += text[i];
+        i++;
+        continue;
+      }
+      
+      const tag = text.substring(i + 1, tagEnd).toLowerCase();
+      
+      // Handle different tags
+      if (tag === 'b' || tag === 'strong') {
+        isBold = true;
+      } else if (tag === '/b' || tag === '/strong') {
+        isBold = false;
+      } else if (tag === 'i' || tag === 'em') {
+        isItalic = true;
+      } else if (tag === '/i' || tag === '/em') {
+        isItalic = false;
+      } else if (tag === 'br') {
         sections.push({
           text: '\n',
           bold: false,
           italic: false
         });
-      } else if (currentTag.includes('/')) {
-        // Closing tag
-        if (currentTag.includes('b') || currentTag.includes('strong')) {
-          isBold = false;
-        } else if (currentTag.includes('i') || currentTag.includes('em')) {
-          isItalic = false;
-        }
-      } else {
-        // Opening tag
-        if (currentTag.includes('b') || currentTag.includes('strong')) {
-          isBold = true;
-        } else if (currentTag.includes('i') || currentTag.includes('em')) {
-          isItalic = true;
-        }
       }
+      
+      i = tagEnd + 1;
+    } else {
+      currentText += text[i];
+      i++;
     }
   }
   
-  // If no sections were created (no HTML formatting), return the whole text as normal
+  // Add any remaining text
+  if (currentText) {
+    sections.push({
+      text: currentText,
+      bold: isBold,
+      italic: isItalic
+    });
+  }
+  
+  // If no sections were created, return the whole text as normal
   if (sections.length === 0) {
-    const cleanText = text
-      .replace(/<[^>]*>/g, '') // Remove any remaining HTML tags
-      .replace(/&nbsp;/g, ' ')
-      .replace(/&amp;/g, '&')
-      .replace(/&lt;/g, '<')
-      .replace(/&gt;/g, '>')
-      .trim();
-    
+    const cleanText = text.replace(/<[^>]*>/g, '').trim();
     if (cleanText) {
       sections.push({
         text: cleanText,
@@ -552,6 +580,7 @@ export const generateQuotePDF = async (quote: Quote, clientInfo?: ClientInfo, sa
       
       if (!error && template) {
         templateContent = template.content;
+        console.log('PDF Generation - Raw template content:', templateContent);
       }
     } catch (error) {
       console.error('Error fetching template for PDF:', error);
@@ -568,6 +597,8 @@ export const generateQuotePDF = async (quote: Quote, clientInfo?: ClientInfo, sa
     doc.setTextColor(0, 0, 0);
     doc.text('Terms & Conditions:', 20, yPos);
     yPos += 8;
+    
+    console.log('PDF Generation - Processing template content for formatting');
     
     // Use the new formatted text function
     const finalY = addFormattedTextToPDF(doc, templateContent, 20, yPos, 175);
