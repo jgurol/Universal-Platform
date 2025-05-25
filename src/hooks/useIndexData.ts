@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
@@ -108,27 +109,48 @@ export const useIndexData = () => {
         return;
       }
 
-      console.info('[fetchQuotes] Fetched quotes:', quotesData?.length || 0);
+      console.info('[fetchQuotes] Raw quotesData:', quotesData);
 
       if (quotesData) {
         const mappedQuotes = quotesData.map(quote => {
-          console.info('[fetchQuotes] Processing quote:', quote.id, 'with items:', quote.quote_items?.length || 0);
+          console.info('[fetchQuotes] ===========================================');
+          console.info('[fetchQuotes] Processing quote:', quote.id);
+          console.info('[fetchQuotes] Raw quote_items:', quote.quote_items);
+          
+          // Log each quote item in detail
+          quote.quote_items?.forEach((item, index) => {
+            console.info(`[fetchQuotes] Item ${index}:`, {
+              id: item.id,
+              charge_type: item.charge_type,
+              total_price: item.total_price,
+              quantity: item.quantity,
+              unit_price: item.unit_price
+            });
+          });
           
           // Calculate totals from quote items by charge type
-          const nrcTotal = quote.quote_items
-            ?.filter(item => {
-              console.info('[fetchQuotes] Item charge_type:', item.charge_type, 'total_price:', item.total_price);
-              return item.charge_type === 'NRC';
-            })
-            .reduce((total, item) => total + (item.total_price || 0), 0) || 0;
+          const nrcItems = quote.quote_items?.filter(item => {
+            const isMRC = item.charge_type === 'NRC';
+            console.info('[fetchQuotes] Item', item.id, 'charge_type:', item.charge_type, 'is NRC:', isMRC, 'total_price:', item.total_price);
+            return isMRC;
+          }) || [];
           
-          const mrcTotal = quote.quote_items
-            ?.filter(item => item.charge_type === 'MRC')
-            .reduce((total, item) => total + (item.total_price || 0), 0) || 0;
+          const mrcItems = quote.quote_items?.filter(item => {
+            const isMRC = item.charge_type === 'MRC';
+            console.info('[fetchQuotes] Item', item.id, 'charge_type:', item.charge_type, 'is MRC:', isMRC, 'total_price:', item.total_price);
+            return isMRC;
+          }) || [];
+          
+          console.info('[fetchQuotes] NRC Items:', nrcItems);
+          console.info('[fetchQuotes] MRC Items:', mrcItems);
+          
+          const nrcTotal = nrcItems.reduce((total, item) => total + (item.total_price || 0), 0);
+          const mrcTotal = mrcItems.reduce((total, item) => total + (item.total_price || 0), 0);
           
           const totalAmount = nrcTotal + mrcTotal;
 
-          console.info('[fetchQuotes] Quote', quote.id, '- NRC:', nrcTotal, 'MRC:', mrcTotal, 'Total:', totalAmount);
+          console.info('[fetchQuotes] Quote', quote.id, '- NRC Total:', nrcTotal, 'MRC Total:', mrcTotal, 'Grand Total:', totalAmount);
+          console.info('[fetchQuotes] ===========================================');
 
           return {
             id: quote.id,
@@ -154,6 +176,7 @@ export const useIndexData = () => {
         
         setQuotes(mappedQuotes);
         console.info('[fetchQuotes] Final mapped quotes count:', mappedQuotes.length);
+        console.info('[fetchQuotes] Final mapped quotes:', mappedQuotes);
       }
     } catch (err) {
       console.error('Error in fetchQuotes:', err);

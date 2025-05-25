@@ -46,20 +46,53 @@ export const QuoteCard = ({
 
   // Calculate MRC and NRC totals from quote items using the loaded data
   const getMRCTotal = () => {
-    if (!quote.quoteItems || quote.quoteItems.length === 0) return 0;
-    const mrcTotal = quote.quoteItems
-      .filter(item => item.charge_type === 'MRC')
-      .reduce((total, item) => total + (item.total_price || 0), 0);
-    console.info('[QuoteCard] MRC Total for quote', quote.id, ':', mrcTotal);
+    console.info('[QuoteCard] Getting MRC total for quote', quote.id);
+    console.info('[QuoteCard] Quote items:', quote.quoteItems);
+    
+    if (!quote.quoteItems || quote.quoteItems.length === 0) {
+      console.info('[QuoteCard] No quote items found for quote', quote.id);
+      return 0;
+    }
+    
+    const mrcItems = quote.quoteItems.filter(item => {
+      console.info('[QuoteCard] Checking item:', item.id, 'charge_type:', item.charge_type, 'total_price:', item.total_price);
+      return item.charge_type === 'MRC';
+    });
+    
+    console.info('[QuoteCard] MRC Items found:', mrcItems);
+    
+    const mrcTotal = mrcItems.reduce((total, item) => {
+      const itemTotal = item.total_price || 0;
+      console.info('[QuoteCard] Adding MRC item total:', itemTotal);
+      return total + itemTotal;
+    }, 0);
+    
+    console.info('[QuoteCard] Final MRC Total for quote', quote.id, ':', mrcTotal);
     return mrcTotal;
   };
 
   const getNRCTotal = () => {
-    if (!quote.quoteItems || quote.quoteItems.length === 0) return 0;
-    const nrcTotal = quote.quoteItems
-      .filter(item => item.charge_type === 'NRC')
-      .reduce((total, item) => total + (item.total_price || 0), 0);
-    console.info('[QuoteCard] NRC Total for quote', quote.id, ':', nrcTotal);
+    console.info('[QuoteCard] Getting NRC total for quote', quote.id);
+    
+    if (!quote.quoteItems || quote.quoteItems.length === 0) {
+      console.info('[QuoteCard] No quote items found for quote', quote.id);
+      return 0;
+    }
+    
+    const nrcItems = quote.quoteItems.filter(item => {
+      console.info('[QuoteCard] Checking item:', item.id, 'charge_type:', item.charge_type, 'total_price:', item.total_price);
+      return item.charge_type === 'NRC';
+    });
+    
+    console.info('[QuoteCard] NRC Items found:', nrcItems);
+    
+    const nrcTotal = nrcItems.reduce((total, item) => {
+      const itemTotal = item.total_price || 0;
+      console.info('[QuoteCard] Adding NRC item total:', itemTotal);
+      return total + itemTotal;
+    }, 0);
+    
+    console.info('[QuoteCard] Final NRC Total for quote', quote.id, ':', nrcTotal);
     return nrcTotal;
   };
 
@@ -67,7 +100,7 @@ export const QuoteCard = ({
   const nrcTotal = getNRCTotal();
   const totalAmount = mrcTotal + nrcTotal;
 
-  console.info('[QuoteCard] Quote', quote.id, 'items:', quote.quoteItems?.length || 0, 'MRC:', mrcTotal, 'NRC:', nrcTotal, 'Total:', totalAmount);
+  console.info('[QuoteCard] FINAL CALCULATION - Quote', quote.id, 'items:', quote.quoteItems?.length || 0, 'MRC:', mrcTotal, 'NRC:', nrcTotal, 'Total:', totalAmount);
 
   return (
     <div className="flex items-center justify-between p-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors duration-200">
