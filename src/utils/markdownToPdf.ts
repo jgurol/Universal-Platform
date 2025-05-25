@@ -14,38 +14,46 @@ export const addMarkdownTextToPDF = (
   startX: number, 
   startY: number, 
   maxWidth: number, 
-  lineHeight: number = 5
+  lineHeight: number = 4
 ): number => {
   let currentY = startY;
   const pageHeight = 297;
   const bottomMargin = 20;
   const topMargin = 20;
-  const paragraphSpacing = 6; // Increased paragraph spacing
+  const paragraphSpacing = 4;
   
   if (!markdownContent) return currentY;
   
   console.log('PDF Generation - Processing markdown content:', markdownContent);
+  console.log('PDF Generation - Content length:', markdownContent.length);
   
-  // Clean up the content first - remove any HTML remnants
-  const cleanContent = markdownContent
-    .replace(/<[^>]*>/g, '') // Remove any HTML tags
+  // Clean up the content thoroughly
+  let cleanContent = markdownContent
+    .replace(/<[^>]*>/g, '') // Remove HTML tags
     .replace(/&nbsp;/g, ' ') // Replace HTML spaces
     .replace(/&amp;/g, '&') // Replace HTML entities
     .replace(/&lt;/g, '<')
     .replace(/&gt;/g, '>')
     .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/&apos;/g, "'")
     .trim();
   
-  // Split content into paragraphs (double newlines or single newlines for now)
+  console.log('PDF Generation - Cleaned content length:', cleanContent.length);
+  console.log('PDF Generation - First 200 chars:', cleanContent.substring(0, 200));
+  
+  // Split content into paragraphs - handle various paragraph separators
   const paragraphs = cleanContent
-    .split(/\n\s*\n/) // Split on double newlines with optional whitespace
-    .map(p => p.replace(/\n/g, ' ').trim()) // Convert single newlines to spaces and trim
+    .split(/\n\s*\n|\r\n\s*\r\n/) // Split on double newlines
+    .map(p => p.replace(/\n/g, ' ').replace(/\r/g, ' ').trim()) // Convert single newlines to spaces
     .filter(p => p.length > 0);
   
-  console.log('PDF Generation - Cleaned paragraphs found:', paragraphs.length);
-  console.log('PDF Generation - Paragraphs:', paragraphs);
+  console.log('PDF Generation - Number of paragraphs found:', paragraphs.length);
+  console.log('PDF Generation - Paragraphs:', paragraphs.map((p, i) => `${i + 1}: ${p.substring(0, 100)}...`));
   
   paragraphs.forEach((paragraph, paragraphIndex) => {
+    console.log(`PDF Generation - Processing paragraph ${paragraphIndex + 1}:`, paragraph.substring(0, 100));
+    
     // Add spacing between paragraphs (except first one)
     if (paragraphIndex > 0) {
       currentY += paragraphSpacing;
@@ -53,10 +61,16 @@ export const addMarkdownTextToPDF = (
     
     // Parse the paragraph for inline formatting
     const sections = parseMarkdownInline(paragraph);
+    console.log(`PDF Generation - Paragraph ${paragraphIndex + 1} sections:`, sections.length);
     
-    sections.forEach(section => {
+    let isFirstSectionInParagraph = true;
+    
+    sections.forEach((section, sectionIndex) => {
+      console.log(`PDF Generation - Processing section ${sectionIndex + 1}:`, section.text.substring(0, 50));
+      
       // Check if we need a new page
       if (currentY > pageHeight - bottomMargin) {
+        console.log('PDF Generation - Adding new page at Y:', currentY);
         doc.addPage();
         currentY = topMargin;
         
@@ -68,7 +82,7 @@ export const addMarkdownTextToPDF = (
       }
       
       // Set font style
-      doc.setFontSize(9); // Slightly larger font for better readability
+      doc.setFontSize(9);
       if (section.bold && section.italic) {
         doc.setFont('helvetica', 'bolditalic');
       } else if (section.bold) {
@@ -82,29 +96,85 @@ export const addMarkdownTextToPDF = (
       if (section.text.trim()) {
         // Split text to fit within the specified width
         const splitText = doc.splitTextToSize(section.text, maxWidth);
+        console.log(`PDF Generation - Split text into ${Array.isArray(splitText) ? splitText.length : 1} lines`);
         
         // Add each line of the split text
         if (Array.isArray(splitText)) {
           splitText.forEach((line, lineIndex) => {
-            if (lineIndex > 0) {
+            if (lineIndex > 0 || !isFirstSectionInParagraph) {
               currentY += lineHeight;
             }
+            
+            // Check for page break within a section
+            if (currentY > pageHeight - bottomMargin) {
+              console.log('PDF Generation - Adding new page within section at Y:', currentY);
+              doc.addPage();
+              currentY = topMargin;
+              
+              // Add header on new page
+              doc.setFontSize(9);
+              doc.setFont('helvetica', 'bold');
+              doc.text('Terms & Conditions (continued):', startX, currentY);
+              currentY += 10;
+              
+              // Reset font style after header
+              if (section.bold && section.italic) {
+                doc.setFont('helvetica', 'bolditalic');
+              } else if (section.bold) {
+                doc.setFont('helvetica', 'bold');
+              } else if (section.italic) {
+                doc.setFont('helvetica', 'italic');
+              } else {
+                doc.setFont('helvetica', 'normal');
+              }
+            }
+            
             doc.text(line, startX, currentY);
+            console.log(`PDF Generation - Added line at Y ${currentY}:`, line.substring(0, 30));
           });
-          // Move to next line position for next section
-          if (splitText.length > 1) {
-            currentY += lineHeight * (splitText.length - 1);
-          }
         } else {
+          if (!isFirstSectionInParagraph) {
+            currentY += lineHeight;
+          }
+          
+          // Check for page break
+          if (currentY > pageHeight - bottomMargin) {
+            console.log('PDF Generation - Adding new page for single line at Y:', currentY);
+            doc.addPage();
+            currentY = topMargin;
+            
+            // Add header on new page
+            doc.setFontSize(9);
+            doc.setFont('helvetica', 'bold');
+            doc.text('Terms & Conditions (continued):', startX, currentY);
+            currentY += 10;
+            
+            // Reset font style after header
+            if (section.bold && section.italic) {
+              doc.setFont('helvetica', 'bolditalic');
+            } else if (section.bold) {
+              doc.setFont('helvetica', 'bold');
+            } else if (section.italic) {
+              doc.setFont('helvetica', 'italic');
+            } else {
+              doc.setFont('helvetica', 'normal');
+            }
+          }
+          
           doc.text(splitText, startX, currentY);
+          console.log(`PDF Generation - Added single line at Y ${currentY}:`, splitText.substring(0, 30));
         }
+        
+        isFirstSectionInParagraph = false;
       }
     });
     
-    // Move to next line after each section group
+    // Move to next line after each paragraph
     currentY += lineHeight;
+    console.log(`PDF Generation - Finished paragraph ${paragraphIndex + 1}, current Y:`, currentY);
   });
   
+  console.log('PDF Generation - Final Y position:', currentY);
   return currentY;
 };
 
@@ -112,6 +182,8 @@ export const addMarkdownTextToPDF = (
 const parseMarkdownInline = (text: string): TextSection[] => {
   const sections: TextSection[] = [];
   let currentIndex = 0;
+  
+  console.log('Parsing inline markdown for text:', text.substring(0, 100));
   
   while (currentIndex < text.length) {
     // Look for **bold** (must come before *italic* check)
@@ -124,6 +196,7 @@ const parseMarkdownInline = (text: string): TextSection[] => {
           bold: true,
           italic: false
         });
+        console.log('Found bold text:', boldText.substring(0, 30));
       }
       currentIndex += boldMatch[0].length;
       continue;
@@ -139,6 +212,7 @@ const parseMarkdownInline = (text: string): TextSection[] => {
           bold: false,
           italic: true
         });
+        console.log('Found italic text:', italicText.substring(0, 30));
       }
       currentIndex += italicMatch[0].length;
       continue;
@@ -163,6 +237,7 @@ const parseMarkdownInline = (text: string): TextSection[] => {
         bold: false,
         italic: false
       });
+      console.log('Found regular text:', regularText.substring(0, 30));
     }
     
     currentIndex = nextMarkerIndex;
@@ -175,7 +250,9 @@ const parseMarkdownInline = (text: string): TextSection[] => {
       bold: false,
       italic: false
     });
+    console.log('No formatting found, added as regular text');
   }
   
+  console.log('Total sections created:', sections.length);
   return sections;
 };
