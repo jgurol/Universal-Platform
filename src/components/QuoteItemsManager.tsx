@@ -8,25 +8,18 @@ import { Switch } from "@/components/ui/switch";
 import { Trash2, Plus } from "lucide-react";
 import { Item } from "@/types/items";
 import { useItems } from "@/hooks/useItems";
-
-interface QuoteItemData {
-  id: string;
-  item_id: string;
-  quantity: number;
-  unit_price: number;
-  cost_override?: number;
-  total_price: number;
-  charge_type: 'NRC' | 'MRC';
-  item?: Item;
-}
+import { useClientAddresses } from "@/hooks/useClientAddresses";
+import { QuoteItemData } from "@/types/quoteItems";
 
 interface QuoteItemsManagerProps {
   items: QuoteItemData[];
   onItemsChange: (items: QuoteItemData[]) => void;
+  clientInfoId?: string;
 }
 
-export const QuoteItemsManager = ({ items, onItemsChange }: QuoteItemsManagerProps) => {
+export const QuoteItemsManager = ({ items, onItemsChange, clientInfoId }: QuoteItemsManagerProps) => {
   const { items: availableItems, isLoading } = useItems();
+  const { addresses } = useClientAddresses(clientInfoId || null);
   const [selectedItemId, setSelectedItemId] = useState("");
 
   const addItem = () => {
@@ -43,7 +36,9 @@ export const QuoteItemsManager = ({ items, onItemsChange }: QuoteItemsManagerPro
       cost_override: selectedItem.cost,
       total_price: selectedItem.price,
       charge_type: (selectedItem.charge_type as 'NRC' | 'MRC') || 'NRC',
-      item: selectedItem
+      address_id: addresses.length > 0 ? addresses[0].id : undefined,
+      item: selectedItem,
+      address: addresses.length > 0 ? addresses[0] : undefined
     };
 
     onItemsChange([...items, newItem]);
@@ -54,6 +49,13 @@ export const QuoteItemsManager = ({ items, onItemsChange }: QuoteItemsManagerPro
     const updatedItems = items.map(item => {
       if (item.id === itemId) {
         const updatedItem = { ...item, [field]: value };
+        
+        // If updating address_id, also update the address object
+        if (field === 'address_id') {
+          const selectedAddress = addresses.find(addr => addr.id === value);
+          updatedItem.address = selectedAddress;
+        }
+        
         // Recalculate total price when quantity or unit price changes
         if (field === 'quantity' || field === 'unit_price') {
           updatedItem.total_price = updatedItem.quantity * updatedItem.unit_price;
@@ -71,6 +73,11 @@ export const QuoteItemsManager = ({ items, onItemsChange }: QuoteItemsManagerPro
 
   const getTotalAmount = () => {
     return items.reduce((total, item) => total + item.total_price, 0);
+  };
+
+  const formatAddressShort = (address: any) => {
+    if (!address) return 'No address';
+    return `${address.address_type} - ${address.city}, ${address.state}`;
   };
 
   return (
@@ -100,20 +107,27 @@ export const QuoteItemsManager = ({ items, onItemsChange }: QuoteItemsManagerPro
         <Button 
           type="button" 
           onClick={addItem} 
-          disabled={!selectedItemId}
+          disabled={!selectedItemId || !clientInfoId}
           className="bg-blue-600 hover:bg-blue-700"
         >
           <Plus className="w-4 h-4" />
         </Button>
       </div>
 
+      {!clientInfoId && (
+        <div className="text-sm text-amber-600 bg-amber-50 p-2 rounded">
+          Please select a client first to add items with locations.
+        </div>
+      )}
+
       {items.length > 0 && (
         <div className="space-y-3">
           <Label>Quote Items</Label>
           
           {/* Column Headers */}
-          <div className="grid grid-cols-7 gap-2 items-center p-2 border-b bg-gray-100 rounded-t-lg font-medium text-sm">
+          <div className="grid grid-cols-8 gap-2 items-center p-2 border-b bg-gray-100 rounded-t-lg font-medium text-sm">
             <div>Item</div>
+            <div>Location</div>
             <div>Qty</div>
             <div>Sell Price</div>
             <div>Cost</div>
@@ -124,9 +138,30 @@ export const QuoteItemsManager = ({ items, onItemsChange }: QuoteItemsManagerPro
           
           <div className="border rounded-lg space-y-3 max-h-60 overflow-y-auto">
             {items.map((quoteItem) => (
-              <div key={quoteItem.id} className="grid grid-cols-7 gap-2 items-center p-2 border rounded bg-gray-50">
+              <div key={quoteItem.id} className="grid grid-cols-8 gap-2 items-center p-2 border rounded bg-gray-50">
                 <div className="text-sm font-medium">
                   {quoteItem.item?.name || 'Unknown Item'}
+                </div>
+                <div>
+                  <Select 
+                    value={quoteItem.address_id || ""} 
+                    onValueChange={(value) => updateItem(quoteItem.id, 'address_id', value)}
+                  >
+                    <SelectTrigger className="text-xs h-8">
+                      <SelectValue placeholder="Select location" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-white border border-gray-200 shadow-lg z-50">
+                      {addresses.length === 0 ? (
+                        <SelectItem value="no-addresses" disabled>No addresses available</SelectItem>
+                      ) : (
+                        addresses.map((address) => (
+                          <SelectItem key={address.id} value={address.id}>
+                            {formatAddressShort(address)}
+                          </SelectItem>
+                        ))
+                      )}
+                    </SelectContent>
+                  </Select>
                 </div>
                 <div>
                   <Input

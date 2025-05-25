@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -11,17 +10,7 @@ import { getTodayInTimezone } from "@/utils/dateUtils";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
 import { QuoteItemsManager } from "@/components/QuoteItemsManager";
-
-interface QuoteItemData {
-  id: string;
-  item_id: string;
-  quantity: number;
-  unit_price: number;
-  cost_override?: number;
-  total_price: number;
-  charge_type: 'NRC' | 'MRC';
-  item?: any;
-}
+import { QuoteItemData } from "@/types/quoteItems";
 
 interface AddQuoteDialogProps {
   open: boolean;
@@ -207,6 +196,7 @@ export const AddQuoteDialog = ({ open, onOpenChange, onAddQuote, clients, client
           <QuoteItemsManager 
             items={quoteItems}
             onItemsChange={setQuoteItems}
+            clientInfoId={clientInfoId !== "none" ? clientInfoId : undefined}
           />
 
           <div className="grid grid-cols-2 gap-4">
