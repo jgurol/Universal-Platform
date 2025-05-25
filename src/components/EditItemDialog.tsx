@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch";
 import { Item } from "@/types/items";
 import { useCategories } from "@/hooks/useCategories";
+import { useVendors } from "@/hooks/useVendors";
 
 interface EditItemDialogProps {
   open: boolean;
@@ -24,8 +25,10 @@ export const EditItemDialog = ({ open, onOpenChange, onUpdateItem, item }: EditI
   const [cost, setCost] = useState("");
   const [chargeType, setChargeType] = useState("MRC");
   const [categoryId, setCategoryId] = useState("");
+  const [vendorId, setVendorId] = useState("");
   const [sku, setSku] = useState("");
   const { categories } = useCategories();
+  const { vendors } = useVendors();
 
   useEffect(() => {
     if (item) {
@@ -35,6 +38,7 @@ export const EditItemDialog = ({ open, onOpenChange, onUpdateItem, item }: EditI
       setCost(item.cost.toString());
       setChargeType(item.charge_type || "MRC");
       setCategoryId(item.category_id || "");
+      setVendorId(item.vendor_id || "");
       setSku(item.sku || "");
     }
   }, [item]);
@@ -49,6 +53,7 @@ export const EditItemDialog = ({ open, onOpenChange, onUpdateItem, item }: EditI
         cost: parseFloat(cost) || 0,
         charge_type: chargeType,
         category_id: categoryId || undefined,
+        vendor_id: vendorId || undefined,
         sku: sku || undefined,
       });
       
@@ -163,6 +168,22 @@ export const EditItemDialog = ({ open, onOpenChange, onUpdateItem, item }: EditI
                 </SelectContent>
               </Select>
             </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="edit-vendor">Vendor</Label>
+            <Select value={vendorId} onValueChange={setVendorId}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select vendor" />
+              </SelectTrigger>
+              <SelectContent>
+                {vendors.map((vendor) => (
+                  <SelectItem key={vendor.id} value={vendor.id}>
+                    {vendor.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
           
           <div className="flex justify-end space-x-2 mt-6">

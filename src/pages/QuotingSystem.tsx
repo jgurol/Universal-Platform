@@ -4,6 +4,7 @@ import { Header } from "@/components/Header";
 import { RecentQuotes } from "@/components/RecentQuotes";
 import { ItemsManagement } from "@/components/ItemsManagement";
 import { CategoriesManagement } from "@/components/CategoriesManagement";
+import { VendorsManagement } from "@/components/VendorsManagement";
 import { useIndexData } from "@/hooks/useIndexData";
 import { useQuoteActions } from "@/hooks/useQuoteActions";
 import { useClientActions } from "@/hooks/useClientActions";
@@ -46,10 +47,11 @@ const QuotingSystem = () => {
 
         {/* Tabs for different sections */}
         <Tabs defaultValue="quotes" className="w-full">
-          <TabsList className="grid w-full grid-cols-3">
+          <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="quotes">Quotes</TabsTrigger>
             <TabsTrigger value="items">Items & Products</TabsTrigger>
             <TabsTrigger value="categories">Categories</TabsTrigger>
+            <TabsTrigger value="vendors">Vendors</TabsTrigger>
           </TabsList>
           
           <TabsContent value="quotes" className="mt-6">
@@ -70,6 +72,10 @@ const QuotingSystem = () => {
           
           <TabsContent value="categories" className="mt-6">
             <CategoriesManagement />
+          </TabsContent>
+          
+          <TabsContent value="vendors" className="mt-6">
+            <VendorsManagement />
           </TabsContent>
         </Tabs>
       </div>

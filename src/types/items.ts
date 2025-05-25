@@ -8,6 +8,7 @@ export interface Item {
   cost: number;
   charge_type?: string; // 'NRC' or 'MRC'
   category_id?: string;
+  vendor_id?: string;
   sku?: string;
   is_active: boolean;
   created_at: string;

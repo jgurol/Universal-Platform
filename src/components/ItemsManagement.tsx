@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Plus, Package, Edit, Trash2 } from "lucide-react";
 import { useItems } from "@/hooks/useItems";
 import { useCategories } from "@/hooks/useCategories";
+import { useVendors } from "@/hooks/useVendors";
 import { AddItemDialog } from "@/components/AddItemDialog";
 import { EditItemDialog } from "@/components/EditItemDialog";
 import { Badge } from "@/components/ui/badge";
@@ -16,11 +17,18 @@ export const ItemsManagement = () => {
   const [selectedItem, setSelectedItem] = useState<Item | null>(null);
   const { items, isLoading, addItem, updateItem } = useItems();
   const { categories } = useCategories();
+  const { vendors } = useVendors();
 
   const getCategoryName = (categoryId?: string) => {
     if (!categoryId) return null;
     const category = categories.find(cat => cat.id === categoryId);
     return category?.name;
+  };
+
+  const getVendorName = (vendorId?: string) => {
+    if (!vendorId) return null;
+    const vendor = vendors.find(v => v.id === vendorId);
+    return vendor?.name;
   };
 
   const handleEditItem = (item: Item) => {
@@ -103,9 +111,14 @@ export const ItemsManagement = () => {
                     {item.description && (
                       <p className="text-sm text-gray-600 mb-1">{item.description}</p>
                     )}
-                    {getCategoryName(item.category_id) && (
-                      <p className="text-xs text-gray-500">Category: {getCategoryName(item.category_id)}</p>
-                    )}
+                    <div className="flex items-center gap-4 text-xs text-gray-500">
+                      {getCategoryName(item.category_id) && (
+                        <span>Category: {getCategoryName(item.category_id)}</span>
+                      )}
+                      {getVendorName(item.vendor_id) && (
+                        <span>Vendor: {getVendorName(item.vendor_id)}</span>
+                      )}
+                    </div>
                   </div>
                   <div className="flex items-center gap-2">
                     <Button variant="ghost" size="sm" onClick={() => handleEditItem(item)}>

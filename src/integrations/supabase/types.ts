@@ -151,6 +151,7 @@ export type Database = {
           sku: string | null
           updated_at: string
           user_id: string
+          vendor_id: string | null
         }
         Insert: {
           category_id?: string | null
@@ -165,6 +166,7 @@ export type Database = {
           sku?: string | null
           updated_at?: string
           user_id: string
+          vendor_id?: string | null
         }
         Update: {
           category_id?: string | null
@@ -179,6 +181,7 @@ export type Database = {
           sku?: string | null
           updated_at?: string
           user_id?: string
+          vendor_id?: string | null
         }
         Relationships: [
           {
@@ -186,6 +189,13 @@ export type Database = {
             columns: ["category_id"]
             isOneToOne: false
             referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "items_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendors"
             referencedColumns: ["id"]
           },
         ]
@@ -353,6 +363,51 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      vendors: {
+        Row: {
+          address: string | null
+          contact_name: string | null
+          created_at: string
+          description: string | null
+          email: string | null
+          id: string
+          is_active: boolean
+          name: string
+          phone: string | null
+          updated_at: string
+          user_id: string
+          website: string | null
+        }
+        Insert: {
+          address?: string | null
+          contact_name?: string | null
+          created_at?: string
+          description?: string | null
+          email?: string | null
+          id?: string
+          is_active?: boolean
+          name: string
+          phone?: string | null
+          updated_at?: string
+          user_id: string
+          website?: string | null
+        }
+        Update: {
+          address?: string | null
+          contact_name?: string | null
+          created_at?: string
+          description?: string | null
+          email?: string | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          phone?: string | null
+          updated_at?: string
+          user_id?: string
+          website?: string | null
+        }
+        Relationships: []
       }
     }
     Views: {
