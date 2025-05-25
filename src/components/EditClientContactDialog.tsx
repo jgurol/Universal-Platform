@@ -102,7 +102,7 @@ export const EditClientContactDialog = ({
             <Checkbox
               id="edit-isPrimary"
               checked={isPrimary}
-              onCheckedChange={setIsPrimary}
+              onCheckedChange={(checked) => setIsPrimary(checked === true)}
             />
             <Label htmlFor="edit-isPrimary">Primary Contact</Label>
           </div>
