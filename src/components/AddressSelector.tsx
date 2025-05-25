@@ -25,6 +25,11 @@ export const AddressSelector = ({
   const [addressMode, setAddressMode] = useState<'existing' | 'custom'>('existing');
   const [customAddress, setCustomAddress] = useState('');
 
+  // Move formatAddress function to the top before it's used
+  const formatAddress = (address: ClientAddress) => {
+    return `${address.street_address}, ${address.city}, ${address.state} ${address.zip_code}`;
+  };
+
   // Find the primary/billing address on load and format it properly
   useEffect(() => {
     if (addresses.length > 0 && !selectedAddressId) {
@@ -65,10 +70,6 @@ export const AddressSelector = ({
   if (!clientInfoId) {
     return null;
   }
-
-  const formatAddress = (address: ClientAddress) => {
-    return `${address.street_address}, ${address.city}, ${address.state} ${address.zip_code}`;
-  };
 
   return (
     <div className="space-y-3">
