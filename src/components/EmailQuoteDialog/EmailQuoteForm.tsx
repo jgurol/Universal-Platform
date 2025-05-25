@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Quote, ClientInfo } from "@/pages/Index";
@@ -148,6 +147,13 @@ ${salespersonName || 'Sales Team'}`);
           if (error) {
             console.error('Supabase function error:', error);
             onEmailStatusChange('error');
+            
+            // Update database with error status
+            await supabase
+              .from('quotes')
+              .update({ email_status: 'error' })
+              .eq('id', quote.id);
+            
             toast({
               title: "Failed to send email",
               description: error.message || "There was an error sending the quote. Please try again.",
@@ -158,6 +164,13 @@ ${salespersonName || 'Sales Team'}`);
 
           if (data?.success === true) {
             onEmailStatusChange('success');
+            
+            // Update database with success status
+            await supabase
+              .from('quotes')
+              .update({ email_status: 'success' })
+              .eq('id', quote.id);
+            
             toast({
               title: "Email sent successfully",
               description: `Quote has been sent to ${recipientEmail}${ccEmails.length > 0 ? ` and ${ccEmails.length} CC recipient(s)` : ''}`,
@@ -168,6 +181,13 @@ ${salespersonName || 'Sales Team'}`);
             }, 3000);
           } else {
             onEmailStatusChange('error');
+            
+            // Update database with error status
+            await supabase
+              .from('quotes')
+              .update({ email_status: 'error' })
+              .eq('id', quote.id);
+            
             toast({
               title: "Failed to send email",
               description: data?.error || "There was an error sending the quote. Please try again.",
@@ -177,6 +197,13 @@ ${salespersonName || 'Sales Team'}`);
         } catch (emailError) {
           console.error('Error calling email function:', emailError);
           onEmailStatusChange('error');
+          
+          // Update database with error status
+          await supabase
+            .from('quotes')
+            .update({ email_status: 'error' })
+            .eq('id', quote.id);
+          
           toast({
             title: "Failed to send email",
             description: "There was an error sending the quote. Please try again.",
@@ -191,6 +218,13 @@ ${salespersonName || 'Sales Team'}`);
     } catch (error) {
       console.error('Error generating PDF:', error);
       onEmailStatusChange('error');
+      
+      // Update database with error status
+      await supabase
+        .from('quotes')
+        .update({ email_status: 'error' })
+        .eq('id', quote.id);
+      
       toast({
         title: "Failed to generate PDF",
         description: "There was an error generating the quote PDF. Please try again.",
