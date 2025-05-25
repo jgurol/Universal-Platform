@@ -66,7 +66,7 @@ export const useQuoteActions = (
         client_info_id: newQuote.clientInfoId === "none" ? null : newQuote.clientInfoId,
         amount: newQuote.amount,
         date: newQuote.date,
-        description: newQuote.description || null, // Ensure we handle empty strings properly
+        description: newQuote.description || "", // Fix: Ensure description is always a string, not null
         quote_number: newQuote.quoteNumber,
         quote_month: newQuote.quoteMonth,
         quote_year: newQuote.quoteYear,
@@ -165,7 +165,7 @@ export const useQuoteActions = (
         client_info_id: updatedQuote.clientInfoId === "none" ? null : updatedQuote.clientInfoId,
         amount: updatedQuote.amount,
         date: updatedQuote.date,
-        description: updatedQuote.description || null, // Ensure we handle empty strings properly
+        description: updatedQuote.description || "", // Fix: Ensure description is always a string, not null
         quote_number: updatedQuote.quoteNumber,
         quote_month: updatedQuote.quoteMonth,
         quote_year: updatedQuote.quoteYear,
