@@ -116,32 +116,24 @@ export const QuoteTableRow = ({
   };
 
   const handleEmailSuccess = () => {
-    console.log('Email success - setting status to success');
+    console.log('Email success - setting status to success permanently');
     setEmailStatus('success');
     toast({
       title: "Email sent!",
       description: "Quote email has been sent successfully",
     });
-    // Reset status after 5 seconds (increased from 3)
-    setTimeout(() => {
-      console.log('Resetting email status to idle');
-      setEmailStatus('idle');
-    }, 5000);
+    // Status now persists permanently - no setTimeout to reset
   };
 
   const handleEmailError = () => {
-    console.log('Email error - setting status to error');
+    console.log('Email error - setting status to error permanently');
     setEmailStatus('error');
     toast({
       title: "Email failed",
       description: "Failed to send quote email",
       variant: "destructive"
     });
-    // Reset status after 5 seconds (increased from 3)
-    setTimeout(() => {
-      console.log('Resetting email status to idle');
-      setEmailStatus('idle');
-    }, 5000);
+    // Status now persists permanently - no setTimeout to reset
   };
 
   const getEmailIcon = () => {
