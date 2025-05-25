@@ -246,14 +246,68 @@ export const EditQuoteDialog = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[900px] max-h-[90vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-[1400px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Edit Quote</DialogTitle>
-          <DialogDescription>
-            Update the quote details and items. A new version number will be assigned.
-          </DialogDescription>
+          <div className="flex justify-between items-start">
+            <div>
+              <DialogTitle>Edit Quote</DialogTitle>
+              <DialogDescription>
+                Update the quote details and items. A new version number will be assigned.
+              </DialogDescription>
+            </div>
+            
+            {/* Quote Details - Top Right */}
+            <div className="grid grid-cols-1 gap-3 min-w-[280px]">
+              <div className="space-y-2">
+                <Label htmlFor="quoteNumber" className="text-sm">Quote Number (New Version)</Label>
+                <Input
+                  id="quoteNumber"
+                  value={quoteNumber}
+                  onChange={(e) => setQuoteNumber(e.target.value)}
+                  placeholder="Auto-generated version number"
+                  className="h-8 bg-muted"
+                  readOnly
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="date" className="text-sm">Quote Date</Label>
+                <Input
+                  id="date"
+                  type="date"
+                  value={date}
+                  onChange={(e) => setDate(e.target.value)}
+                  required
+                  className="h-8"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="expiresAt" className="text-sm">Expiration Date</Label>
+                <Input
+                  id="expiresAt"
+                  type="date"
+                  value={expiresAt}
+                  onChange={(e) => setExpiresAt(e.target.value)}
+                  className="h-8"
+                />
+              </div>
+            </div>
+          </div>
         </DialogHeader>
+        
         <form onSubmit={handleSubmit} className="space-y-4">
+          {/* Quote Name */}
+          <div className="space-y-2">
+            <Label htmlFor="description">Quote Name</Label>
+            <Input
+              id="description"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              placeholder="Enter quote name"
+            />
+          </div>
+
           {/* Client Selection */}
           <div className="space-y-2">
             <Label htmlFor="clientInfo">Client Company</Label>
@@ -282,40 +336,11 @@ export const EditQuoteDialog = ({
             </div>
           )}
 
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="date">Quote Date</Label>
-              <Input
-                id="date"
-                type="date"
-                value={date}
-                onChange={(e) => setDate(e.target.value)}
-                required
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="quoteNumber">Quote Number (New Version)</Label>
-              <Input
-                id="quoteNumber"
-                value={quoteNumber}
-                onChange={(e) => setQuoteNumber(e.target.value)}
-                placeholder="Auto-generated version number"
-                className="bg-muted"
-                readOnly
-              />
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="description">Description</Label>
-            <Input
-              id="description"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              placeholder="Enter quote description"
-            />
-          </div>
+          <QuoteItemsManager
+            items={quoteItems}
+            onItemsChange={setQuoteItems}
+            clientInfoId={clientInfoId !== "none" ? clientInfoId : undefined}
+          />
 
           <div className="space-y-2">
             <Label htmlFor="status">Status</Label>
@@ -329,25 +354,6 @@ export const EditQuoteDialog = ({
                 <SelectItem value="rejected">Rejected</SelectItem>
               </SelectContent>
             </Select>
-          </div>
-
-          {/* Quote Items Section */}
-          <div className="border-t pt-4">
-            <QuoteItemsManager
-              items={quoteItems}
-              onItemsChange={setQuoteItems}
-              clientInfoId={clientInfoId !== "none" ? clientInfoId : undefined}
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="expiresAt">Expiration Date</Label>
-            <Input
-              id="expiresAt"
-              type="date"
-              value={expiresAt}
-              onChange={(e) => setExpiresAt(e.target.value)}
-            />
           </div>
 
           <div className="space-y-2">
