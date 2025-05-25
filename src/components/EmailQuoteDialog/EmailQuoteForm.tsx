@@ -1,9 +1,6 @@
 
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -17,7 +14,7 @@ import { EmailStatusIndicator } from "./EmailStatusIndicator";
 interface EmailQuoteFormProps {
   quote: Quote;
   clientInfo?: ClientInfo;
-  salespersonName: string;
+  salespersonName?: string;
   onClose: () => void;
 }
 
@@ -197,7 +194,7 @@ ${salespersonName}`;
 
   return (
     <div className="space-y-6">
-      <EmailStatusIndicator status={emailStatus} />
+      <EmailStatusIndicator emailStatus={emailStatus} />
       
       <Card>
         <CardHeader>
@@ -205,13 +202,11 @@ ${salespersonName}`;
         </CardHeader>
         <CardContent className="space-y-4">
           <EmailContactSelector
-            clientInfo={clientInfo}
             selectedEmail={to}
             onEmailChange={setTo}
           />
 
           <CCContactSelector
-            clientInfo={clientInfo}
             selectedEmails={cc}
             onEmailsChange={setCc}
           />
@@ -221,6 +216,8 @@ ${salespersonName}`;
             message={message}
             onSubjectChange={setSubject}
             onMessageChange={setMessage}
+            quoteNumber={quote.quoteNumber}
+            quoteId={quote.id}
           />
 
           <div className="flex justify-end gap-2 pt-4">
