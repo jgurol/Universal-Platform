@@ -33,6 +33,11 @@ export const SignatureDialog = ({
   const [signerName, setSignerName] = useState(clientInfo?.contact_name || "");
   const [signerTitle, setSignerTitle] = useState("");
 
+  // Add null safety check for quote
+  if (!quote) {
+    return null;
+  }
+
   const clearSignature = () => {
     sigCanvas.current?.clear();
   };

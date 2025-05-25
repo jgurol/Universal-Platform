@@ -104,7 +104,6 @@ export const RecentQuotes = ({
         onAddQuote={onAddQuote}
         clients={clients}
         clientInfos={clientInfos}
-        associatedAgentId={associatedAgentId}
       />
 
       {editingQuote && (
@@ -125,13 +124,15 @@ export const RecentQuotes = ({
         onCancel={() => setDeletingQuoteId(null)}
       />
 
-      <SignatureDialog
-        open={isSignatureDialogOpen}
-        onOpenChange={setIsSignatureDialogOpen}
-        quote={currentQuote!}
-        clientInfo={currentClientInfo}
-        onSignatureComplete={handleSignatureComplete}
-      />
+      {currentQuote && (
+        <SignatureDialog
+          open={isSignatureDialogOpen}
+          onOpenChange={setIsSignatureDialogOpen}
+          quote={currentQuote}
+          clientInfo={currentClientInfo}
+          onSignatureComplete={handleSignatureComplete}
+        />
+      )}
     </div>
   );
 };
