@@ -50,8 +50,16 @@ export const useQuoteActions = (
     if (!user) return;
     
     try {
+      console.log('[addQuote] Starting quote creation process');
       console.log('[addQuote] Received quote data:', newQuote);
-      console.log('[addQuote] Description value:', newQuote.description);
+      console.log('[addQuote] Description value (detailed):', {
+        value: newQuote.description,
+        type: typeof newQuote.description,
+        length: newQuote.description?.length,
+        isEmpty: !newQuote.description,
+        isNull: newQuote.description === null,
+        isUndefined: newQuote.description === undefined
+      });
       
       // Calculate commission using override hierarchy
       const commission = await calculateCommission(
@@ -61,12 +69,20 @@ export const useQuoteActions = (
         newQuote.commissionOverride
       );
 
+      // Ensure description is always a string
+      const cleanDescription = newQuote.description || "";
+      console.log('[addQuote] Clean description value:', {
+        original: newQuote.description,
+        cleaned: cleanDescription,
+        willInsert: cleanDescription
+      });
+
       const quoteDataToInsert = {
         client_id: newQuote.clientId || null,
         client_info_id: newQuote.clientInfoId === "none" ? null : newQuote.clientInfoId,
         amount: newQuote.amount,
         date: newQuote.date,
-        description: newQuote.description || "", // Fix: Ensure description is always a string, not null
+        description: cleanDescription, // Use the cleaned description
         quote_number: newQuote.quoteNumber,
         quote_month: newQuote.quoteMonth,
         quote_year: newQuote.quoteYear,
@@ -78,7 +94,8 @@ export const useQuoteActions = (
         user_id: user.id
       };
 
-      console.log('[addQuote] Data being inserted:', quoteDataToInsert);
+      console.log('[addQuote] Final data being inserted into database:', quoteDataToInsert);
+      console.log('[addQuote] Description in final data:', quoteDataToInsert.description);
 
       const { data: quoteData, error: quoteError } = await supabase
         .from('quotes')
@@ -86,8 +103,16 @@ export const useQuoteActions = (
         .select('*')
         .single();
 
+      console.log('[addQuote] Database response - data:', quoteData);
+      console.log('[addQuote] Database response - error:', quoteError);
+
       if (quoteError) {
-        console.error('Error adding quote:', quoteError);
+        console.error('[addQuote] Database error details:', {
+          message: quoteError.message,
+          details: quoteError.details,
+          hint: quoteError.hint,
+          code: quoteError.code
+        });
         toast({
           title: "Failed to add quote",
           description: quoteError.message,
@@ -96,35 +121,35 @@ export const useQuoteActions = (
         return;
       }
 
-      console.log('[addQuote] Quote successfully inserted:', quoteData);
-
-      // Add quote items if any exist - now including charge_type and address_id
-      if (newQuote.quoteItems && newQuote.quoteItems.length > 0 && quoteData) {
-        const quoteItemsToInsert = newQuote.quoteItems.map(item => ({
-          quote_id: quoteData.id,
-          item_id: item.item_id,
-          quantity: item.quantity,
-          unit_price: item.unit_price,
-          total_price: item.total_price,
-          charge_type: item.charge_type, // Fix: Include charge_type in database insert
-          address_id: item.address_id || null // Fix: Include address_id in database insert
-        }));
-
-        const { error: itemsError } = await supabase
-          .from('quote_items')
-          .insert(quoteItemsToInsert);
-
-        if (itemsError) {
-          console.error('Error adding quote items:', itemsError);
-          toast({
-            title: "Quote added but items failed",
-            description: "The quote was created but some items couldn't be added.",
-            variant: "destructive"
-          });
-        }
-      }
-
       if (quoteData) {
+        console.log('[addQuote] Quote successfully inserted with description:', quoteData.description);
+        
+        // Add quote items if any exist - now including charge_type and address_id
+        if (newQuote.quoteItems && newQuote.quoteItems.length > 0) {
+          const quoteItemsToInsert = newQuote.quoteItems.map(item => ({
+            quote_id: quoteData.id,
+            item_id: item.item_id,
+            quantity: item.quantity,
+            unit_price: item.unit_price,
+            total_price: item.total_price,
+            charge_type: item.charge_type,
+            address_id: item.address_id || null
+          }));
+
+          const { error: itemsError } = await supabase
+            .from('quote_items')
+            .insert(quoteItemsToInsert);
+
+          if (itemsError) {
+            console.error('Error adding quote items:', itemsError);
+            toast({
+              title: "Quote added but items failed",
+              description: "The quote was created but some items couldn't be added.",
+              variant: "destructive"
+            });
+          }
+        }
+
         // Refresh quotes to get the new one
         fetchQuotes();
         
@@ -135,7 +160,7 @@ export const useQuoteActions = (
         });
       }
     } catch (err) {
-      console.error('Error in add quote operation:', err);
+      console.error('[addQuote] Unexpected error in add quote operation:', err);
       toast({
         title: "Error",
         description: "Failed to add quote",
