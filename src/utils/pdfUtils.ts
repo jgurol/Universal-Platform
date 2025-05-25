@@ -79,18 +79,23 @@ export const generateQuotePDF = (quote: Quote, clientInfo?: ClientInfo, salesper
   const formatAddress = (addressString: string) => {
     if (!addressString) return null;
     
+    console.log('Formatting address:', addressString);
+    
     // Split by comma and clean up
     const parts = addressString.split(',').map(part => part.trim());
+    console.log('Address parts:', parts);
     
     if (parts.length >= 3) {
-      // Standard format: "Street (including suite), City, State Zip"
-      // Keep the first part as the complete street address (including suite)
-      const street = parts[0];
+      // For addresses like "123 Main St Suite 100, Los Angeles, CA 90210"
+      // Keep everything before the first comma as the street address (including suite)
+      const streetAddress = parts[0]; // This includes suite numbers
       const city = parts[1];
-      const stateZip = parts.slice(2).join(' ');
+      const stateZip = parts.slice(2).join(', '); // Join remaining parts with commas
+      
+      console.log('Parsed address:', { streetAddress, city, stateZip });
       
       return {
-        street,
+        street: streetAddress,
         cityStateZip: `${city}, ${stateZip}`
       };
     } else if (parts.length === 2) {
