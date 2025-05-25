@@ -45,20 +45,37 @@ ${salespersonName || 'Sales Team'}`);
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
 
-  const { contacts } = useClientContacts(clientInfo?.id || null);
+  // Get contacts for the client
+  const { contacts, isLoading: contactsLoading } = useClientContacts(clientInfo?.id || null);
+
+  console.log('EmailQuoteDialog - Client Info:', clientInfo);
+  console.log('EmailQuoteDialog - Contacts:', contacts);
+  console.log('EmailQuoteDialog - Contacts Loading:', contactsLoading);
 
   // Set primary contact as default recipient when dialog opens
   useEffect(() => {
     if (open && contacts.length > 0) {
+      console.log('EmailQuoteDialog - Setting up recipient from contacts:', contacts);
       const primaryContact = contacts.find(contact => contact.is_primary);
       if (primaryContact?.email) {
+        console.log('EmailQuoteDialog - Found primary contact:', primaryContact);
         setSelectedRecipientContact(primaryContact.id);
         setRecipientEmail(primaryContact.email);
-      } else if (clientInfo?.email) {
-        setRecipientEmail(clientInfo.email);
-        setCustomRecipientEmail(clientInfo.email);
+      } else {
+        // If no primary contact with email, use first contact with email
+        const firstContactWithEmail = contacts.find(contact => contact.email);
+        if (firstContactWithEmail) {
+          console.log('EmailQuoteDialog - Using first contact with email:', firstContactWithEmail);
+          setSelectedRecipientContact(firstContactWithEmail.id);
+          setRecipientEmail(firstContactWithEmail.email);
+        } else if (clientInfo?.email) {
+          console.log('EmailQuoteDialog - Using client info email:', clientInfo.email);
+          setRecipientEmail(clientInfo.email);
+          setCustomRecipientEmail(clientInfo.email);
+        }
       }
     } else if (open && clientInfo?.email) {
+      console.log('EmailQuoteDialog - No contacts, using client info email:', clientInfo.email);
       setRecipientEmail(clientInfo.email);
       setCustomRecipientEmail(clientInfo.email);
     }
@@ -189,19 +206,23 @@ ${salespersonName || 'Sales Team'}`);
           {/* Recipient Selection */}
           <div className="space-y-2">
             <Label htmlFor="recipientSelect">Send To *</Label>
-            <Select value={selectedRecipientContact} onValueChange={setSelectedRecipientContact}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select recipient" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="custom">Custom Email</SelectItem>
-                {availableContacts.map((contact) => (
-                  <SelectItem key={contact.id} value={contact.id}>
-                    {contact.name} ({contact.email}) {contact.is_primary && '- Primary'}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            {contactsLoading ? (
+              <div className="text-sm text-gray-500">Loading contacts...</div>
+            ) : (
+              <Select value={selectedRecipientContact} onValueChange={setSelectedRecipientContact}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select recipient" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="custom">Custom Email</SelectItem>
+                  {availableContacts.map((contact) => (
+                    <SelectItem key={contact.id} value={contact.id}>
+                      {contact.name} ({contact.email}) {contact.is_primary && '- Primary'}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
           </div>
 
           {/* Custom Email Input (shown when "Custom Email" is selected) */}
@@ -234,7 +255,7 @@ ${salespersonName || 'Sales Team'}`);
                         onCheckedChange={(checked) => handleCcContactToggle(contact.id, checked === true)}
                       />
                       <Label htmlFor={`cc-${contact.id}`} className="text-sm">
-                        {contact.name} ({contact.email})
+                        {contact.name} ({contact.email}) {contact.is_primary && '- Primary'}
                       </Label>
                     </div>
                   ))}
