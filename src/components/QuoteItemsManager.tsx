@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -73,6 +72,18 @@ export const QuoteItemsManager = ({ items, onItemsChange, clientInfoId }: QuoteI
 
   const getTotalAmount = () => {
     return items.reduce((total, item) => total + item.total_price, 0);
+  };
+
+  const getMRCTotal = () => {
+    return items
+      .filter(item => item.charge_type === 'MRC')
+      .reduce((total, item) => total + item.total_price, 0);
+  };
+
+  const getNRCTotal = () => {
+    return items
+      .filter(item => item.charge_type === 'NRC')
+      .reduce((total, item) => total + item.total_price, 0);
   };
 
   const formatAddressShort = (address: any) => {
@@ -242,9 +253,20 @@ export const QuoteItemsManager = ({ items, onItemsChange, clientInfoId }: QuoteI
             ))}
           </div>
           
-          <div className="flex justify-between items-center pt-2 border-t">
-            <span className="font-medium">Total Amount:</span>
-            <span className="font-bold text-lg">${getTotalAmount().toFixed(2)}</span>
+          {/* Updated totals section with separate MRC and NRC totals */}
+          <div className="space-y-2 pt-2 border-t">
+            <div className="flex justify-between items-center">
+              <span className="font-medium">NRC Total:</span>
+              <span className="font-bold text-lg">${getNRCTotal().toFixed(2)}</span>
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="font-medium">MRC Total:</span>
+              <span className="font-bold text-lg">${getMRCTotal().toFixed(2)}</span>
+            </div>
+            <div className="flex justify-between items-center pt-2 border-t">
+              <span className="font-bold">Total Amount:</span>
+              <span className="font-bold text-xl">${getTotalAmount().toFixed(2)}</span>
+            </div>
           </div>
         </div>
       )}
