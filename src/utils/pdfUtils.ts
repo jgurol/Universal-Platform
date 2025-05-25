@@ -1,3 +1,4 @@
+
 import jsPDF from 'jspdf';
 import { Quote, ClientInfo } from '@/pages/Index';
 
@@ -350,28 +351,28 @@ export const generateQuotePDF = (quote: Quote, clientInfo?: ClientInfo, salesper
       doc.setFontSize(9);
       doc.setFont('helvetica', 'bold');
       
-      // Right-align the total label and amount
+      // Better spacing for total monthly - position label further left
       const totalLabelText = 'Total Monthly:';
       const totalAmountText = `$${mrcTotal.toFixed(2)} USD`;
-      const totalLabelWidth = doc.getTextWidth(totalLabelText);
       const totalAmountWidth = doc.getTextWidth(totalAmountText);
       
-      doc.text(totalLabelText, colX.total - 20, yPos);
+      // Position label at a fixed position and amount aligned with the total column
+      doc.text(totalLabelText, colX.price - 10, yPos);
       doc.text(totalAmountText, colX.total + 15 - totalAmountWidth, yPos);
     }
     
-    // One-Time Fees (compact format if space allows)
+    // One-Time Fees - aligned with the same columns as Total Monthly
     if (nrcItems.length > 0 && yPos < 250) {
       yPos += 10;
-      doc.setFontSize(10);
+      doc.setFontSize(9);
       doc.setFont('helvetica', 'bold');
       
       const nrcTotal = nrcItems.reduce((total, item) => total + (Number(item.total_price) || 0), 0);
       const nrcTotalText = `$${nrcTotal.toFixed(2)} USD`;
       const nrcTotalWidth = doc.getTextWidth(nrcTotalText);
       
-      doc.text('One-Time Setup Fees:', 20, yPos);
-      // Align with the total column from the table above
+      // Align with the same positions as Total Monthly
+      doc.text('One-Time Setup Fees:', colX.price - 10, yPos);
       doc.text(nrcTotalText, colX.total + 15 - nrcTotalWidth, yPos);
     }
   }
