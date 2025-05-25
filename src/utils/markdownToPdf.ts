@@ -20,7 +20,7 @@ export const addMarkdownTextToPDF = (
   const pageHeight = 297;
   const bottomMargin = 20;
   const topMargin = 20;
-  const paragraphSpacing = 4;
+  const paragraphSpacing = 6; // Increased spacing between paragraphs
   
   if (!markdownContent) return currentY;
   
@@ -169,8 +169,8 @@ export const addMarkdownTextToPDF = (
       }
     });
     
-    // Move to next line after each paragraph
-    currentY += lineHeight;
+    // Move to next line after each paragraph and add extra spacing
+    currentY += lineHeight + 2; // Extra spacing for paragraph separation
     console.log(`PDF Generation - Finished paragraph ${paragraphIndex + 1}, current Y:`, currentY);
   });
   
