@@ -401,6 +401,7 @@ export type Database = {
           quote_year: string | null
           service_address: string | null
           status: string | null
+          template_id: string | null
           updated_at: string | null
           user_id: string
         }
@@ -422,6 +423,7 @@ export type Database = {
           quote_year?: string | null
           service_address?: string | null
           status?: string | null
+          template_id?: string | null
           updated_at?: string | null
           user_id: string
         }
@@ -443,6 +445,7 @@ export type Database = {
           quote_year?: string | null
           service_address?: string | null
           status?: string | null
+          template_id?: string | null
           updated_at?: string | null
           user_id?: string
         }
@@ -459,6 +462,13 @@ export type Database = {
             columns: ["client_info_id"]
             isOneToOne: false
             referencedRelation: "client_info"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quotes_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "quote_templates"
             referencedColumns: ["id"]
           },
         ]
