@@ -3,6 +3,48 @@ import { Quote, ClientInfo } from '@/pages/Index';
 import { supabase } from '@/integrations/supabase/client';
 import { addMarkdownTextToPDF } from './markdownToPdf';
 
+// Helper function to load settings from database
+const loadSettingsFromDatabase = async () => {
+  try {
+    const { data, error } = await supabase
+      .from('system_settings')
+      .select('setting_key, setting_value');
+
+    if (error) {
+      console.error('Error loading settings for PDF:', error);
+      return null;
+    }
+
+    if (data) {
+      const settingsMap = data.reduce((acc, setting) => {
+        acc[setting.setting_key] = setting.setting_value;
+        return acc;
+      }, {} as Record<string, string>);
+
+      return {
+        companyName: settingsMap.company_name || 'California Telecom, Inc.',
+        businessAddress: settingsMap.business_address || '14538 Central Ave, Chino, CA 91710, United States',
+        businessPhone: settingsMap.business_phone || '213-270-1349',
+        businessFax: settingsMap.business_fax || '',
+        showCompanyNameOnPDF: settingsMap.show_company_name_on_pdf !== 'false',
+        logoUrl: settingsMap.company_logo_url || ''
+      };
+    }
+  } catch (error) {
+    console.error('Error loading settings for PDF:', error);
+  }
+  
+  // Fallback to default values
+  return {
+    companyName: 'California Telecom, Inc.',
+    businessAddress: '14538 Central Ave, Chino, CA 91710, United States',
+    businessPhone: '213-270-1349',
+    businessFax: '',
+    showCompanyNameOnPDF: true,
+    logoUrl: ''
+  };
+};
+
 export const generateQuotePDF = async (quote: Quote, clientInfo?: ClientInfo, salespersonName?: string) => {
   const doc = new jsPDF();
   
@@ -12,24 +54,19 @@ export const generateQuotePDF = async (quote: Quote, clientInfo?: ClientInfo, sa
   console.log('PDF Generation - Quote billingAddress:', quote.billingAddress);
   console.log('PDF Generation - ClientInfo object:', clientInfo);
   
-  // Load business information from localStorage
-  const companyName = localStorage.getItem('company_name') || 'California Telecom, Inc.';
-  const businessAddress = localStorage.getItem('business_address') || '14538 Central Ave, Chino, CA 91710, United States';
-  const businessPhone = localStorage.getItem('business_phone') || '213-270-1349';
-  const businessFax = localStorage.getItem('business_fax') || '213-232-3304';
-  const showCompanyNameOnPDF = localStorage.getItem('show_company_name_on_pdf') !== 'false';
+  // Load business information from database instead of localStorage
+  const businessSettings = await loadSettingsFromDatabase();
   
   // Parse business address
-  const addressParts = businessAddress.split(',').map(part => part.trim());
+  const addressParts = businessSettings.businessAddress.split(',').map(part => part.trim());
   const streetAddress = addressParts[0] || '';
   const city = addressParts[1] || '';
   const stateZip = addressParts.slice(2).join(', ') || '';
   
   // Load and add company logo if available
-  const logoUrl = localStorage.getItem('company_logo_url');
   let logoYOffset = 0;
   
-  if (logoUrl) {
+  if (businessSettings.logoUrl) {
     try {
       // Create an image element to load the logo
       const img = new Image();
@@ -48,10 +85,10 @@ export const generateQuotePDF = async (quote: Quote, clientInfo?: ClientInfo, sa
         }
         
         // Add logo to top-left corner
-        doc.addImage(logoUrl, 'JPEG', 20, 15, logoWidth, logoHeight);
+        doc.addImage(businessSettings.logoUrl, 'JPEG', 20, 15, logoWidth, logoHeight);
         logoYOffset = logoHeight;
       };
-      img.src = logoUrl;
+      img.src = businessSettings.logoUrl;
       
       // Wait a moment for the image to load
       await new Promise(resolve => setTimeout(resolve, 100));
@@ -75,9 +112,9 @@ export const generateQuotePDF = async (quote: Quote, clientInfo?: ClientInfo, sa
   let currentY = companyInfoY;
   
   // Only show company name if setting is enabled
-  if (showCompanyNameOnPDF) {
+  if (businessSettings.showCompanyNameOnPDF) {
     doc.setFont('helvetica', 'bold');
-    doc.text(companyName, 20, currentY);
+    doc.text(businessSettings.companyName, 20, currentY);
     currentY += 3;
   }
   
@@ -90,11 +127,12 @@ export const generateQuotePDF = async (quote: Quote, clientInfo?: ClientInfo, sa
     currentY += 3;
   }
   
-  doc.text(`Tel: ${businessPhone}`, 20, currentY);
+  doc.text(`Tel: ${businessSettings.businessPhone}`, 20, currentY);
   currentY += 3;
   
-  if (businessFax) {
-    doc.text(`Fax: ${businessFax}`, 20, currentY);
+  // Only show fax if it exists and is not empty
+  if (businessSettings.businessFax && businessSettings.businessFax.trim() !== '') {
+    doc.text(`Fax: ${businessSettings.businessFax}`, 20, currentY);
   }
   
   // Agreement details box (right side) - moved higher
