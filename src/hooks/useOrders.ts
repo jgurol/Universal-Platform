@@ -44,29 +44,7 @@ export const useOrders = () => {
     try {
       console.log('Attempting to delete order:', orderId, 'for user:', user.id);
       
-      // First, let's check if the order exists and belongs to the user
-      const { data: orderCheck, error: checkError } = await supabase
-        .from('orders')
-        .select('id, user_id')
-        .eq('id', orderId)
-        .single();
-
-      if (checkError) {
-        console.error('Error checking order:', checkError);
-        throw new Error(`Order check failed: ${checkError.message}`);
-      }
-
-      if (!orderCheck) {
-        throw new Error('Order not found');
-      }
-
-      if (orderCheck.user_id !== user.id) {
-        throw new Error('Not authorized to delete this order');
-      }
-
-      console.log('Order exists and belongs to user, proceeding with deletion');
-
-      // Now delete the order
+      // Delete the order directly
       const { error } = await supabase
         .from('orders')
         .delete()
@@ -79,25 +57,12 @@ export const useOrders = () => {
       }
 
       console.log('Order deleted successfully from database:', orderId);
-
-      // Verify deletion by checking if order still exists
-      const { data: verifyDelete } = await supabase
-        .from('orders')
-        .select('id')
-        .eq('id', orderId)
-        .single();
-
-      if (verifyDelete) {
-        console.error('Order still exists after deletion attempt!');
-        throw new Error('Order deletion failed - order still exists in database');
-      }
-
-      console.log('Deletion verified - order no longer exists in database');
       
-      // Update local state immediately
+      // Update local state immediately - remove the order from the list
       setOrders(prevOrders => {
         const updatedOrders = prevOrders.filter(order => order.id !== orderId);
-        console.log('Updated orders after deletion:', updatedOrders);
+        console.log('Updated local orders state, removed order:', orderId);
+        console.log('New orders count:', updatedOrders.length);
         return updatedOrders;
       });
       
