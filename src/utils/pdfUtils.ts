@@ -1,3 +1,4 @@
+
 import jsPDF from 'jspdf';
 import { Quote, ClientInfo } from '@/pages/Index';
 import { supabase } from '@/integrations/supabase/client';
@@ -331,12 +332,18 @@ export const generateQuotePDF = async (quote: Quote, clientInfo?: ClientInfo, sa
   const buttonWidth = 85; // Made wider to fit under service address
   const buttonHeight = 12;
   
+  // Create clickable link to acceptance page
+  const acceptanceUrl = `${window.location.origin}/accept-quote/${quote.id}`;
+  
   doc.setFillColor(76, 175, 80); // Green color
   doc.rect(buttonX, buttonY, buttonWidth, buttonHeight, 'F');
   doc.setTextColor(255, 255, 255); // White text
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(10);
   doc.text('ACCEPT AGREEMENT', buttonX + 12, buttonY + 8);
+  
+  // Add clickable link to the button area
+  doc.link(buttonX, buttonY, buttonWidth, buttonHeight, { url: acceptanceUrl });
   
   // Quote Title - positioned after accept button
   yPos = 145; // Moved up for better spacing

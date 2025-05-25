@@ -338,6 +338,50 @@ export type Database = {
           },
         ]
       }
+      quote_acceptances: {
+        Row: {
+          accepted_at: string
+          client_email: string
+          client_name: string
+          created_at: string
+          id: string
+          ip_address: unknown | null
+          quote_id: string
+          signature_data: string
+          user_agent: string | null
+        }
+        Insert: {
+          accepted_at?: string
+          client_email: string
+          client_name: string
+          created_at?: string
+          id?: string
+          ip_address?: unknown | null
+          quote_id: string
+          signature_data: string
+          user_agent?: string | null
+        }
+        Update: {
+          accepted_at?: string
+          client_email?: string
+          client_name?: string
+          created_at?: string
+          id?: string
+          ip_address?: unknown | null
+          quote_id?: string
+          signature_data?: string
+          user_agent?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quote_acceptances_quote_id_fkey"
+            columns: ["quote_id"]
+            isOneToOne: false
+            referencedRelation: "quotes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       quote_items: {
         Row: {
           address_id: string | null
@@ -431,6 +475,9 @@ export type Database = {
       }
       quotes: {
         Row: {
+          acceptance_status: string | null
+          accepted_at: string | null
+          accepted_by: string | null
           amount: number
           billing_address: string | null
           client_id: string | null
@@ -458,6 +505,9 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          acceptance_status?: string | null
+          accepted_at?: string | null
+          accepted_by?: string | null
           amount: number
           billing_address?: string | null
           client_id?: string | null
@@ -485,6 +535,9 @@ export type Database = {
           user_id: string
         }
         Update: {
+          acceptance_status?: string | null
+          accepted_at?: string | null
+          accepted_by?: string | null
           amount?: number
           billing_address?: string | null
           client_id?: string | null

@@ -1,3 +1,4 @@
+
 import { IndexPageLayout } from "@/components/IndexPageLayout";
 import { useIndexData } from "@/hooks/useIndexData";
 import { useQuoteActions } from "@/hooks/useQuoteActions";
@@ -39,6 +40,9 @@ export interface Quote {
   billingAddress?: string;
   serviceAddress?: string;
   templateId?: string;
+  acceptanceStatus?: 'pending' | 'accepted' | 'declined';
+  acceptedAt?: string;
+  acceptedBy?: string;
 }
 
 // Define the Transaction type for backward compatibility - maps to Quote
