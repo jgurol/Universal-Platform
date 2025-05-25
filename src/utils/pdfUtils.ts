@@ -77,8 +77,12 @@ export const generateQuotePDF = (quote: Quote, clientInfo?: ClientInfo, salesper
       doc.text(clientInfo.contact_name, 20, yPos + 7);
     }
     
-    // Use custom billing address if provided, otherwise fall back to client info address
+    // Use custom billing address from quote if provided, otherwise fall back to client info address
     const billingAddress = quote.billingAddress || clientInfo.address;
+    console.log('PDF Generation - Quote billing address:', quote.billingAddress);
+    console.log('PDF Generation - Client info address:', clientInfo.address);
+    console.log('PDF Generation - Final billing address used:', billingAddress);
+    
     if (billingAddress) {
       const addressLines = doc.splitTextToSize(billingAddress, 75);
       doc.text(addressLines.slice(0, 2), 20, yPos + 14);
