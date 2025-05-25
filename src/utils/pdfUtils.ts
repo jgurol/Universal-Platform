@@ -1,4 +1,3 @@
-
 import jsPDF from 'jspdf';
 import { Quote, ClientInfo } from '@/pages/Index';
 
@@ -315,8 +314,8 @@ export const generateQuotePDF = (quote: Quote, clientInfo?: ClientInfo, salesper
         doc.setFont('helvetica', 'normal');
         doc.text(itemName.substring(0, 35), colX.description + 2, yPos);
         
-        // Address line (smaller font, black color, slightly indented)
-        doc.setFontSize(6);
+        // Address line (larger font, black color, slightly indented)
+        doc.setFontSize(7);
         doc.setTextColor(0, 0, 0); // Black color for address
         doc.text(`Location: ${addressText}`, colX.description + 4, yPos + 7);
         
