@@ -152,7 +152,7 @@ export const AddQuoteDialog = ({ open, onOpenChange, onAddQuote, clients, client
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[1200px] max-h-[90vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-[1400px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <div className="flex justify-between items-start">
             <div>
@@ -204,6 +204,17 @@ export const AddQuoteDialog = ({ open, onOpenChange, onAddQuote, clients, client
         </DialogHeader>
         
         <form onSubmit={handleSubmit} className="space-y-4">
+          {/* Quote Name - Moved to top */}
+          <div className="space-y-2">
+            <Label htmlFor="description">Quote Name</Label>
+            <Input
+              id="description"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              placeholder="Enter quote name"
+            />
+          </div>
+
           {/* Client Selection */}
           <div className="space-y-2">
             <Label htmlFor="clientInfo">Client Company (Required)</Label>
@@ -255,16 +266,6 @@ export const AddQuoteDialog = ({ open, onOpenChange, onAddQuote, clients, client
               placeholder="Calculated from items"
               readOnly
               className="bg-gray-100"
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="description">Description</Label>
-            <Input
-              id="description"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              placeholder="Enter quote description"
             />
           </div>
 
