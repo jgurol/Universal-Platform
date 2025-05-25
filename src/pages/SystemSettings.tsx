@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { Separator } from "@/components/ui/separator";
-import { Settings, Shield, AlertTriangle, Clock, FileText, Plus, Edit, Trash2 } from "lucide-react";
+import { Settings, Shield, AlertTriangle, Clock, FileText, Plus, Edit, Trash2, Upload, X } from "lucide-react";
 import { Navigate } from "react-router-dom";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -24,6 +24,8 @@ export default function SystemSettings() {
   const [templates, setTemplates] = useState<QuoteTemplate[]>([]);
   const [editingTemplate, setEditingTemplate] = useState<QuoteTemplate | null>(null);
   const [newTemplate, setNewTemplate] = useState({ name: "", content: "" });
+  const [logoFile, setLogoFile] = useState<File | null>(null);
+  const [logoUrl, setLogoUrl] = useState<string>("");
   const [settings, setSettings] = useState({
     defaultCommissionRate: "15",
     companyName: "California Telecom",
@@ -49,6 +51,12 @@ export default function SystemSettings() {
     if (savedTimezone) {
       setSettings(prev => ({ ...prev, timezone: savedTimezone }));
     }
+    
+    const savedLogoUrl = localStorage.getItem('company_logo_url');
+    if (savedLogoUrl) {
+      setLogoUrl(savedLogoUrl);
+    }
+    
     fetchTemplates();
   }, []);
 
@@ -73,6 +81,45 @@ export default function SystemSettings() {
         variant: "destructive",
       });
     }
+  };
+
+  const handleLogoUpload = async () => {
+    if (!logoFile) return;
+
+    setLoading(true);
+    try {
+      // Convert to base64 for localStorage
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const base64String = e.target?.result as string;
+        localStorage.setItem('company_logo_url', base64String);
+        setLogoUrl(base64String);
+        toast({
+          title: "Logo uploaded",
+          description: "Company logo has been saved successfully",
+        });
+        setLogoFile(null);
+      };
+      reader.readAsDataURL(logoFile);
+    } catch (error: any) {
+      toast({
+        title: "Error uploading logo",
+        description: error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleRemoveLogo = () => {
+    localStorage.removeItem('company_logo_url');
+    setLogoUrl("");
+    setLogoFile(null);
+    toast({
+      title: "Logo removed",
+      description: "Company logo has been removed",
+    });
   };
 
   const handleAddTemplate = async () => {
@@ -257,59 +304,110 @@ export default function SystemSettings() {
         </TabsList>
 
         <TabsContent value="general">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Settings className="h-5 w-5" />
-                General Settings
-              </CardTitle>
-              <CardDescription>
-                Configure basic system-wide settings
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <form onSubmit={handleUpdateSettings} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="companyName">Company Name</Label>
-                  <Input
-                    id="companyName"
-                    value={settings.companyName}
-                    onChange={(e) => setSettings({ ...settings, companyName: e.target.value })}
-                    placeholder="Enter company name"
-                  />
-                </div>
+          <div className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Settings className="h-5 w-5" />
+                  General Settings
+                </CardTitle>
+                <CardDescription>
+                  Configure basic system-wide settings
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <form onSubmit={handleUpdateSettings} className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="companyName">Company Name</Label>
+                    <Input
+                      id="companyName"
+                      value={settings.companyName}
+                      onChange={(e) => setSettings({ ...settings, companyName: e.target.value })}
+                      placeholder="Enter company name"
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="supportEmail">Support Email</Label>
+                    <Input
+                      id="supportEmail"
+                      type="email"
+                      value={settings.supportEmail}
+                      onChange={(e) => setSettings({ ...settings, supportEmail: e.target.value })}
+                      placeholder="Enter support email address"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="defaultCommissionRate">Default Commission Rate (%)</Label>
+                    <Input
+                      id="defaultCommissionRate"
+                      type="number"
+                      min="0"
+                      max="100"
+                      step="0.1"
+                      value={settings.defaultCommissionRate}
+                      onChange={(e) => setSettings({ ...settings, defaultCommissionRate: e.target.value })}
+                      placeholder="Enter default commission rate"
+                    />
+                  </div>
+
+                  <Button type="submit" disabled={loading}>
+                    {loading ? "Updating..." : "Update Settings"}
+                  </Button>
+                </form>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Upload className="h-5 w-5" />
+                  Company Logo
+                </CardTitle>
+                <CardDescription>
+                  Upload a company logo to be displayed on quote PDFs
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {logoUrl ? (
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-4">
+                      <img src={logoUrl} alt="Company Logo" className="h-16 w-auto object-contain border rounded" />
+                      <div className="flex flex-col gap-2">
+                        <p className="text-sm text-gray-600">Current logo</p>
+                        <Button variant="outline" size="sm" onClick={handleRemoveLogo}>
+                          <X className="h-4 w-4 mr-2" />
+                          Remove Logo
+                        </Button>
+                      </div>
+                    </div>
+                    <Separator />
+                  </div>
+                ) : null}
                 
-                <div className="space-y-2">
-                  <Label htmlFor="supportEmail">Support Email</Label>
+                <div className="space-y-3">
+                  <Label htmlFor="logoUpload">Upload New Logo</Label>
                   <Input
-                    id="supportEmail"
-                    type="email"
-                    value={settings.supportEmail}
-                    onChange={(e) => setSettings({ ...settings, supportEmail: e.target.value })}
-                    placeholder="Enter support email address"
+                    id="logoUpload"
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => setLogoFile(e.target.files?.[0] || null)}
+                    className="file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
                   />
+                  <p className="text-xs text-gray-500">
+                    Recommended: PNG or JPG format, max 2MB. Logo will be displayed in the top-left corner of quote PDFs.
+                  </p>
+                  {logoFile && (
+                    <Button onClick={handleLogoUpload} disabled={loading}>
+                      <Upload className="h-4 w-4 mr-2" />
+                      {loading ? "Uploading..." : "Upload Logo"}
+                    </Button>
+                  )}
                 </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="defaultCommissionRate">Default Commission Rate (%)</Label>
-                  <Input
-                    id="defaultCommissionRate"
-                    type="number"
-                    min="0"
-                    max="100"
-                    step="0.1"
-                    value={settings.defaultCommissionRate}
-                    onChange={(e) => setSettings({ ...settings, defaultCommissionRate: e.target.value })}
-                    placeholder="Enter default commission rate"
-                  />
-                </div>
-
-                <Button type="submit" disabled={loading}>
-                  {loading ? "Updating..." : "Update Settings"}
-                </Button>
-              </form>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+          </div>
         </TabsContent>
 
         <TabsContent value="datetime">

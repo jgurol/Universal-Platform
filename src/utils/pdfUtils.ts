@@ -13,32 +13,73 @@ export const generateQuotePDF = async (quote: Quote, clientInfo?: ClientInfo, sa
   console.log('PDF Generation - Quote billingAddress:', quote.billingAddress);
   console.log('PDF Generation - ClientInfo object:', clientInfo);
   
-  // Company Header with branding
+  // Load and add company logo if available
+  const logoUrl = localStorage.getItem('company_logo_url');
+  let logoYOffset = 0;
+  
+  if (logoUrl) {
+    try {
+      // Create an image element to load the logo
+      const img = new Image();
+      img.onload = function() {
+        // Calculate dimensions to fit logo in top-left corner
+        const maxWidth = 60;
+        const maxHeight = 30;
+        const aspectRatio = img.width / img.height;
+        
+        let logoWidth = maxWidth;
+        let logoHeight = maxWidth / aspectRatio;
+        
+        if (logoHeight > maxHeight) {
+          logoHeight = maxHeight;
+          logoWidth = maxHeight * aspectRatio;
+        }
+        
+        // Add logo to top-left corner
+        doc.addImage(logoUrl, 'JPEG', 20, 15, logoWidth, logoHeight);
+        logoYOffset = logoHeight + 5;
+      };
+      img.src = logoUrl;
+      
+      // Wait a moment for the image to load
+      await new Promise(resolve => setTimeout(resolve, 100));
+      logoYOffset = 35; // Assume standard logo height for layout
+    } catch (error) {
+      console.error('Error loading logo:', error);
+      logoYOffset = 0;
+    }
+  }
+  
+  // Adjust header positioning based on logo
+  const headerYStart = Math.max(25, 15 + logoYOffset);
+  
+  // Company Header with branding - positioned to the right of logo
   doc.setFontSize(20);
   doc.setFont('helvetica', 'bold');
   doc.setTextColor(0, 32, 96); // Dark blue color
-  doc.text('CALIFORNIA | TELECOM', 20, 25);
+  doc.text('CALIFORNIA | TELECOM', logoUrl ? 90 : 20, headerYStart);
   
   // Document type in top right
   doc.setFontSize(14);
   doc.setTextColor(128, 128, 128); // Gray color
-  doc.text('Agreement', 160, 25);
+  doc.text('Agreement', 160, headerYStart);
   
   // Company Information (left side) - Better aligned
+  const companyInfoY = headerYStart + 15;
   doc.setFontSize(9);
   doc.setTextColor(0, 0, 0); // Black
   doc.setFont('helvetica', 'bold');
-  doc.text('California Telecom, Inc.', 20, 40);
+  doc.text('California Telecom, Inc.', 20, companyInfoY);
   doc.setFont('helvetica', 'normal');
-  doc.text('14538 Central Ave', 20, 47);
-  doc.text('Chino, CA 91710', 20, 54);
-  doc.text('United States', 20, 61);
-  doc.text('Tel: 213-270-1349', 20, 68);
-  doc.text('Fax: 213-232-3304', 20, 75);
+  doc.text('14538 Central Ave', 20, companyInfoY + 7);
+  doc.text('Chino, CA 91710', 20, companyInfoY + 14);
+  doc.text('United States', 20, companyInfoY + 21);
+  doc.text('Tel: 213-270-1349', 20, companyInfoY + 28);
+  doc.text('Fax: 213-232-3304', 20, companyInfoY + 35);
   
   // Agreement details box (right side) - Fixed positioning
   const boxX = 125;
-  const boxY = 40;
+  const boxY = companyInfoY;
   const boxWidth = 70;
   const boxHeight = 40;
   
@@ -63,7 +104,7 @@ export const generateQuotePDF = async (quote: Quote, clientInfo?: ClientInfo, sa
   doc.text(salespersonName || 'N/A', boxX + 4, boxY + 38);
   
   // Billing Information and Service Address sections (side by side) - Better positioning
-  let yPos = 90;
+  let yPos = companyInfoY + 50;
   doc.setFontSize(11);
   doc.setFont('helvetica', 'bold');
   doc.text('Billing Information', 20, yPos);
