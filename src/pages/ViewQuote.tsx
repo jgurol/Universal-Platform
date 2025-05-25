@@ -36,18 +36,51 @@ const ViewQuote = () => {
           return;
         }
 
-        setQuote(quoteData as Quote);
+        // Map the raw database data to the Quote interface
+        const mappedQuote: Quote = {
+          id: quoteData.id,
+          clientId: quoteData.client_id || "",
+          clientName: "Unknown Client", // Will be updated if client info is found
+          companyName: "Unknown Company", // Will be updated if client info is found
+          amount: Number(quoteData.amount) || 0,
+          date: quoteData.date,
+          description: quoteData.description || "",
+          quoteNumber: quoteData.quote_number,
+          quoteMonth: quoteData.quote_month,
+          quoteYear: quoteData.quote_year,
+          status: quoteData.status || "pending",
+          commission: Number(quoteData.commission) || 0,
+          clientInfoId: quoteData.client_info_id,
+          commissionOverride: quoteData.commission_override ? Number(quoteData.commission_override) : undefined,
+          expiresAt: quoteData.expires_at,
+          notes: quoteData.notes,
+          billingAddress: quoteData.billing_address,
+          serviceAddress: quoteData.service_address,
+          templateId: quoteData.template_id,
+          acceptanceStatus: quoteData.acceptance_status as 'pending' | 'accepted' | 'declined',
+          acceptedAt: quoteData.accepted_at,
+          acceptedBy: quoteData.accepted_by,
+          email_status: quoteData.email_status as 'idle' | 'success' | 'error'
+        };
+
+        setQuote(mappedQuote);
 
         // Fetch client info if available
         if (quoteData.client_info_id) {
           const { data: clientData } = await supabase
-            .from('client_infos')
+            .from('client_info')
             .select('*')
             .eq('id', quoteData.client_info_id)
             .single();
 
           if (clientData) {
             setClientInfo(clientData as ClientInfo);
+            // Update quote with client info
+            setQuote(prev => prev ? {
+              ...prev,
+              clientName: clientData.contact_name || clientData.company_name || "Unknown Client",
+              companyName: clientData.company_name || "Unknown Company"
+            } : null);
           }
         }
       } catch (err) {
@@ -106,7 +139,7 @@ const ViewQuote = () => {
           </Button>
           
           <h1 className="text-3xl font-bold text-gray-900 mb-2">
-            Quote {quote.quote_number || `Q-${quote.id.slice(0, 8)}`}
+            Quote {quote.quoteNumber || `Q-${quote.id.slice(0, 8)}`}
           </h1>
           <p className="text-gray-600">Quote details and information</p>
         </div>
@@ -119,12 +152,12 @@ const ViewQuote = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="text-sm font-medium text-gray-500">Client</label>
-                <p className="text-lg">{quote.client_name}</p>
+                <p className="text-lg">{quote.clientName}</p>
               </div>
               
               <div>
                 <label className="text-sm font-medium text-gray-500">Company</label>
-                <p className="text-lg">{clientInfo?.company_name || quote.company_name || 'N/A'}</p>
+                <p className="text-lg">{quote.companyName || 'N/A'}</p>
               </div>
               
               <div>
