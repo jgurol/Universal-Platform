@@ -1,3 +1,4 @@
+
 import jsPDF from 'jspdf';
 import { Quote, ClientInfo } from '@/pages/Index';
 import { supabase } from '@/integrations/supabase/client';
@@ -11,6 +12,18 @@ export const generateQuotePDF = async (quote: Quote, clientInfo?: ClientInfo, sa
   console.log('PDF Generation - Quote serviceAddress:', quote.serviceAddress);
   console.log('PDF Generation - Quote billingAddress:', quote.billingAddress);
   console.log('PDF Generation - ClientInfo object:', clientInfo);
+  
+  // Load business information from localStorage
+  const companyName = localStorage.getItem('company_name') || 'California Telecom, Inc.';
+  const businessAddress = localStorage.getItem('business_address') || '14538 Central Ave, Chino, CA 91710, United States';
+  const businessPhone = localStorage.getItem('business_phone') || '213-270-1349';
+  const businessFax = localStorage.getItem('business_fax') || '213-232-3304';
+  
+  // Parse business address
+  const addressParts = businessAddress.split(',').map(part => part.trim());
+  const streetAddress = addressParts[0] || '';
+  const city = addressParts[1] || '';
+  const stateZip = addressParts.slice(2).join(', ') || '';
   
   // Load and add company logo if available
   const logoUrl = localStorage.getItem('company_logo_url');
@@ -49,27 +62,30 @@ export const generateQuotePDF = async (quote: Quote, clientInfo?: ClientInfo, sa
     }
   }
   
-  // Document type in top right - aligned with logo top
+  // Document type in top right - black color
   doc.setFontSize(14);
   doc.setTextColor(0, 0, 0);
-  doc.text('Agreement', 160, 20); // Aligned with logo top
+  doc.text('Agreement', 160, 18); // Moved up slightly
   
-  // Company Information (left side) - positioned right below logo
-  const companyInfoY = 50; // Fixed position below logo area
+  // Company Information (left side) - positioned right below logo with tighter spacing
+  const companyInfoY = 40; // Moved up from 50
   doc.setFontSize(9);
   doc.setTextColor(0, 0, 0);
   doc.setFont('helvetica', 'bold');
-  doc.text('California Telecom, Inc.', 20, companyInfoY);
+  doc.text(companyName, 20, companyInfoY);
   doc.setFont('helvetica', 'normal');
-  doc.text('14538 Central Ave', 20, companyInfoY + 4);
-  doc.text('Chino, CA 91710', 20, companyInfoY + 8);
-  doc.text('United States', 20, companyInfoY + 12);
-  doc.text('Tel: 213-270-1349', 20, companyInfoY + 16);
-  doc.text('Fax: 213-232-3304', 20, companyInfoY + 20);
+  doc.text(streetAddress, 20, companyInfoY + 3); // Reduced spacing from 4 to 3
+  if (city) {
+    doc.text(city + (stateZip ? ', ' + stateZip : ''), 20, companyInfoY + 6); // Reduced spacing
+  }
+  doc.text(`Tel: ${businessPhone}`, 20, companyInfoY + 9); // Reduced spacing
+  if (businessFax) {
+    doc.text(`Fax: ${businessFax}`, 20, companyInfoY + 12); // Reduced spacing
+  }
   
-  // Agreement details box (right side) - aligned with logo
+  // Agreement details box (right side) - moved higher
   const boxX = 125;
-  const boxY = 15; // Aligned with logo and Agreement text
+  const boxY = 12; // Moved up from 15
   const boxWidth = 70;
   const boxHeight = 40;
   
@@ -93,8 +109,8 @@ export const generateQuotePDF = async (quote: Quote, clientInfo?: ClientInfo, sa
   doc.text(quote.expiresAt ? new Date(quote.expiresAt).toLocaleDateString() : 'N/A', boxX + 22, boxY + 24);
   doc.text(salespersonName || 'N/A', boxX + 4, boxY + 38);
   
-  // Billing Information and Service Address sections - better aligned
-  let yPos = 85; // Fixed position for better alignment
+  // Billing Information and Service Address sections - moved up and better aligned
+  let yPos = 70; // Moved up from 85
   doc.setFontSize(11);
   doc.setFont('helvetica', 'bold');
   doc.text('Billing Information', 20, yPos);
@@ -198,7 +214,7 @@ export const generateQuotePDF = async (quote: Quote, clientInfo?: ClientInfo, sa
     }
     
     // Service address (right column) - reset yPos for right column
-    const rightColYPos = 93; // Same starting position as left column
+    const rightColYPos = 78; // Aligned with billing info
     doc.setFont('helvetica', 'bold');
     doc.text(clientInfo.company_name, 110, rightColYPos);
     doc.setFont('helvetica', 'normal');
@@ -256,9 +272,9 @@ export const generateQuotePDF = async (quote: Quote, clientInfo?: ClientInfo, sa
     }
   }
   
-  // Accept Agreement button (green box) - positioned right after service address
+  // Accept Agreement button (green box) - positioned closer to address sections
   const buttonX = 110; // Aligned with service address column
-  const buttonY = 140; // Fixed position for better alignment
+  const buttonY = 120; // Moved up, closer to address sections
   const buttonWidth = 85; // Made wider to fit under service address
   const buttonHeight = 12;
   
@@ -270,7 +286,7 @@ export const generateQuotePDF = async (quote: Quote, clientInfo?: ClientInfo, sa
   doc.text('ACCEPT AGREEMENT', buttonX + 12, buttonY + 8);
   
   // Quote Title - positioned after accept button
-  yPos = 165; // Fixed position for consistency
+  yPos = 145; // Moved up for better spacing
   doc.setTextColor(0, 0, 0);
   doc.setFontSize(14);
   doc.setFont('helvetica', 'bold');

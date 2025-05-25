@@ -30,7 +30,10 @@ export default function SystemSettings() {
     defaultCommissionRate: "15",
     companyName: "California Telecom",
     supportEmail: "support@californiatelecom.com",
-    timezone: "America/Los_Angeles"
+    timezone: "America/Los_Angeles",
+    businessAddress: "14538 Central Ave, Chino, CA 91710, United States",
+    businessPhone: "213-270-1349",
+    businessFax: "213-232-3304"
   });
 
   // Common timezones for the select dropdown
@@ -55,6 +58,24 @@ export default function SystemSettings() {
     const savedLogoUrl = localStorage.getItem('company_logo_url');
     if (savedLogoUrl) {
       setLogoUrl(savedLogoUrl);
+    }
+
+    // Load business settings from localStorage
+    const savedCompanyName = localStorage.getItem('company_name');
+    const savedBusinessAddress = localStorage.getItem('business_address');
+    const savedBusinessPhone = localStorage.getItem('business_phone');
+    const savedBusinessFax = localStorage.getItem('business_fax');
+    const savedSupportEmail = localStorage.getItem('support_email');
+
+    if (savedCompanyName || savedBusinessAddress || savedBusinessPhone || savedBusinessFax || savedSupportEmail) {
+      setSettings(prev => ({
+        ...prev,
+        companyName: savedCompanyName || prev.companyName,
+        businessAddress: savedBusinessAddress || prev.businessAddress,
+        businessPhone: savedBusinessPhone || prev.businessPhone,
+        businessFax: savedBusinessFax || prev.businessFax,
+        supportEmail: savedSupportEmail || prev.supportEmail
+      }));
     }
     
     fetchTemplates();
@@ -260,8 +281,13 @@ export default function SystemSettings() {
     setLoading(true);
 
     try {
-      // Save timezone to localStorage for now
+      // Save all settings to localStorage
       localStorage.setItem('app_timezone', settings.timezone);
+      localStorage.setItem('company_name', settings.companyName);
+      localStorage.setItem('business_address', settings.businessAddress);
+      localStorage.setItem('business_phone', settings.businessPhone);
+      localStorage.setItem('business_fax', settings.businessFax);
+      localStorage.setItem('support_email', settings.supportEmail);
       
       toast({
         title: "Settings updated",
@@ -325,6 +351,38 @@ export default function SystemSettings() {
                       onChange={(e) => setSettings({ ...settings, companyName: e.target.value })}
                       placeholder="Enter company name"
                     />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="businessAddress">Business Address</Label>
+                    <Input
+                      id="businessAddress"
+                      value={settings.businessAddress}
+                      onChange={(e) => setSettings({ ...settings, businessAddress: e.target.value })}
+                      placeholder="Enter complete business address"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="businessPhone">Business Phone</Label>
+                      <Input
+                        id="businessPhone"
+                        value={settings.businessPhone}
+                        onChange={(e) => setSettings({ ...settings, businessPhone: e.target.value })}
+                        placeholder="Enter business phone number"
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="businessFax">Business Fax</Label>
+                      <Input
+                        id="businessFax"
+                        value={settings.businessFax}
+                        onChange={(e) => setSettings({ ...settings, businessFax: e.target.value })}
+                        placeholder="Enter business fax number"
+                      />
+                    </div>
                   </div>
                   
                   <div className="space-y-2">
