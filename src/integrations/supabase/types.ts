@@ -355,6 +355,7 @@ export type Database = {
       quotes: {
         Row: {
           amount: number
+          billing_address: string | null
           client_id: string | null
           client_info_id: string | null
           commission: number | null
@@ -368,12 +369,14 @@ export type Database = {
           quote_month: string | null
           quote_number: string | null
           quote_year: string | null
+          service_address: string | null
           status: string | null
           updated_at: string | null
           user_id: string
         }
         Insert: {
           amount: number
+          billing_address?: string | null
           client_id?: string | null
           client_info_id?: string | null
           commission?: number | null
@@ -387,12 +390,14 @@ export type Database = {
           quote_month?: string | null
           quote_number?: string | null
           quote_year?: string | null
+          service_address?: string | null
           status?: string | null
           updated_at?: string | null
           user_id: string
         }
         Update: {
           amount?: number
+          billing_address?: string | null
           client_id?: string | null
           client_info_id?: string | null
           commission?: number | null
@@ -406,6 +411,7 @@ export type Database = {
           quote_month?: string | null
           quote_number?: string | null
           quote_year?: string | null
+          service_address?: string | null
           status?: string | null
           updated_at?: string | null
           user_id?: string

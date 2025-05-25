@@ -36,6 +36,9 @@ export const AddQuoteDialog = ({ open, onOpenChange, onAddQuote, clients, client
   const [quoteItems, setQuoteItems] = useState<QuoteItemData[]>([]);
   const [selectedAddressId, setSelectedAddressId] = useState<string | null>(null);
   const [billingAddress, setBillingAddress] = useState<string>("");
+  const [selectedBillingAddressId, setSelectedBillingAddressId] = useState<string | null>(null);
+  const [serviceAddress, setServiceAddress] = useState<string>("");
+  const [selectedServiceAddressId, setSelectedServiceAddressId] = useState<string | null>(null);
   const { user } = useAuth();
   
   // Function to calculate expiration date (+60 days from quote date)
@@ -124,6 +127,18 @@ export const AddQuoteDialog = ({ open, onOpenChange, onAddQuote, clients, client
     setBillingAddress(customAddr || "");
   };
 
+  const handleBillingAddressChange = (addressId: string | null, customAddr?: string) => {
+    console.log('AddQuoteDialog - Billing address changed:', { addressId, customAddr });
+    setSelectedBillingAddressId(addressId);
+    setBillingAddress(customAddr || "");
+  };
+
+  const handleServiceAddressChange = (addressId: string | null, customAddr?: string) => {
+    console.log('AddQuoteDialog - Service address changed:', { addressId, customAddr });
+    setSelectedServiceAddressId(addressId);
+    setServiceAddress(customAddr || "");
+  };
+
   const calculateTotalAmount = () => {
     return quoteItems.reduce((total, item) => total + item.total_price, 0);
   };
@@ -131,8 +146,10 @@ export const AddQuoteDialog = ({ open, onOpenChange, onAddQuote, clients, client
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    console.log('[AddQuoteDialog] Form submitted with description:', description);
-    console.log('[AddQuoteDialog] Billing address:', billingAddress);
+    console.log('[AddQuoteDialog] Form submitted with addresses:', { 
+      billing: billingAddress, 
+      service: serviceAddress 
+    });
     
     const totalAmount = calculateTotalAmount();
     
@@ -160,9 +177,10 @@ export const AddQuoteDialog = ({ open, onOpenChange, onAddQuote, clients, client
           notes: notes || undefined,
           quoteItems: quoteItems.map(item => ({
             ...item,
-            address_id: selectedAddressId || undefined
+            address_id: selectedBillingAddressId || selectedServiceAddressId || undefined
           })),
-          billingAddress: billingAddress || undefined
+          billingAddress: billingAddress || undefined,
+          serviceAddress: serviceAddress || undefined
         };
         
         console.log('[AddQuoteDialog] Calling onAddQuote with data:', quoteData);
@@ -182,8 +200,10 @@ export const AddQuoteDialog = ({ open, onOpenChange, onAddQuote, clients, client
         setNotes("");
         setCommissionOverride("");
         setQuoteItems([]);
-        setSelectedAddressId(null);
+        setSelectedBillingAddressId(null);
         setBillingAddress("");
+        setSelectedServiceAddressId(null);
+        setServiceAddress("");
         onOpenChange(false);
       }
     }
@@ -285,12 +305,20 @@ export const AddQuoteDialog = ({ open, onOpenChange, onAddQuote, clients, client
             </Select>
           </div>
 
-          {/* Address Selection */}
+          {/* Billing Address Selection */}
           <AddressSelector
             clientInfoId={clientInfoId !== "none" ? clientInfoId : null}
-            selectedAddressId={selectedAddressId || undefined}
-            onAddressChange={handleAddressChange}
+            selectedAddressId={selectedBillingAddressId || undefined}
+            onAddressChange={handleBillingAddressChange}
             label="Billing Address"
+          />
+
+          {/* Service Address Selection */}
+          <AddressSelector
+            clientInfoId={clientInfoId !== "none" ? clientInfoId : null}
+            selectedAddressId={selectedServiceAddressId || undefined}
+            onAddressChange={handleServiceAddressChange}
+            label="Service Address"
           />
 
           {/* Salesperson Display */}

@@ -52,21 +52,33 @@ export const EditQuoteDialog = ({
   } = useQuoteForm(quote, open);
 
   const { quoteItems, setQuoteItems } = useQuoteItems(quote, open);
-  const [selectedAddressId, setSelectedAddressId] = useState<string | null>(null);
+  const [selectedBillingAddressId, setSelectedBillingAddressId] = useState<string | null>(null);
   const [billingAddress, setBillingAddress] = useState<string>("");
+  const [selectedServiceAddressId, setSelectedServiceAddressId] = useState<string | null>(null);
+  const [serviceAddress, setServiceAddress] = useState<string>("");
 
-  // Initialize billing address from quote
+  // Initialize addresses from quote
   useEffect(() => {
     if (quote && open) {
       setBillingAddress(quote.billingAddress || "");
-      console.log('EditQuoteDialog - Initialized billing address:', quote.billingAddress);
+      setServiceAddress(quote.serviceAddress || "");
+      console.log('EditQuoteDialog - Initialized addresses:', { 
+        billing: quote.billingAddress, 
+        service: quote.serviceAddress 
+      });
     }
   }, [quote, open]);
 
-  const handleAddressChange = (addressId: string | null, customAddr?: string) => {
-    console.log('EditQuoteDialog - Address changed:', { addressId, customAddr });
-    setSelectedAddressId(addressId);
+  const handleBillingAddressChange = (addressId: string | null, customAddr?: string) => {
+    console.log('EditQuoteDialog - Billing address changed:', { addressId, customAddr });
+    setSelectedBillingAddressId(addressId);
     setBillingAddress(customAddr || "");
+  };
+
+  const handleServiceAddressChange = (addressId: string | null, customAddr?: string) => {
+    console.log('EditQuoteDialog - Service address changed:', { addressId, customAddr });
+    setSelectedServiceAddressId(addressId);
+    setServiceAddress(customAddr || "");
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -81,12 +93,15 @@ export const EditQuoteDialog = ({
         // Update quote items in database with address information
         const updatedQuoteItems = quoteItems.map(item => ({
           ...item,
-          address_id: selectedAddressId || undefined
+          address_id: selectedBillingAddressId || selectedServiceAddressId || undefined
         }));
         
         await updateQuoteItems(quote.id, updatedQuoteItems);
 
-        console.log('EditQuoteDialog - Updating quote with billing address:', billingAddress);
+        console.log('EditQuoteDialog - Updating quote with addresses:', { 
+          billing: billingAddress, 
+          service: serviceAddress 
+        });
 
         onUpdateQuote({
           ...quote,
@@ -103,7 +118,8 @@ export const EditQuoteDialog = ({
           commissionOverride: commissionOverride ? parseFloat(commissionOverride) : undefined,
           expiresAt: expiresAt || undefined,
           notes: notes || undefined,
-          billingAddress: billingAddress || undefined
+          billingAddress: billingAddress || undefined,
+          serviceAddress: serviceAddress || undefined
         });
         
         onOpenChange(false);
@@ -168,12 +184,20 @@ export const EditQuoteDialog = ({
             </Select>
           </div>
 
-          {/* Address Selection */}
+          {/* Billing Address Selection */}
           <AddressSelector
             clientInfoId={clientInfoId !== "none" ? clientInfoId : null}
-            selectedAddressId={selectedAddressId || undefined}
-            onAddressChange={handleAddressChange}
+            selectedAddressId={selectedBillingAddressId || undefined}
+            onAddressChange={handleBillingAddressChange}
             label="Billing Address"
+          />
+
+          {/* Service Address Selection */}
+          <AddressSelector
+            clientInfoId={clientInfoId !== "none" ? clientInfoId : null}
+            selectedAddressId={selectedServiceAddressId || undefined}
+            onAddressChange={handleServiceAddressChange}
+            label="Service Address"
           />
 
           {/* Salesperson Display */}

@@ -95,13 +95,19 @@ export const generateQuotePDF = (quote: Quote, clientInfo?: ClientInfo, salesper
       doc.text(`Email: ${clientInfo.email}`, 20, yPos + 35);
     }
     
-    // Service address (right column) - Use same billing address for now
+    // Service address (right column) - Use custom service address if available
     doc.text(clientInfo.company_name, 110, yPos);
     if (clientInfo.contact_name) {
       doc.text(clientInfo.contact_name, 110, yPos + 7);
     }
-    if (billingAddress) {
-      const addressLines = doc.splitTextToSize(billingAddress, 75);
+    
+    // Use custom service address from quote if provided, otherwise fall back to billing address
+    const serviceAddress = quote.serviceAddress || quote.billingAddress || clientInfo.address;
+    console.log('PDF Generation - Quote service address:', quote.serviceAddress);
+    console.log('PDF Generation - Final service address used:', serviceAddress);
+    
+    if (serviceAddress) {
+      const addressLines = doc.splitTextToSize(serviceAddress, 75);
       doc.text(addressLines.slice(0, 2), 110, yPos + 14);
     }
     if (clientInfo.phone) {
