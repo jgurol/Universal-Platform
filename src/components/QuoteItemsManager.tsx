@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
 import { Trash2, Plus } from "lucide-react";
 import { Item } from "@/types/items";
 import { useItems } from "@/hooks/useItems";
@@ -15,6 +16,7 @@ interface QuoteItemData {
   unit_price: number;
   cost_override?: number;
   total_price: number;
+  charge_type: 'NRC' | 'MRC';
   item?: Item;
 }
 
@@ -40,6 +42,7 @@ export const QuoteItemsManager = ({ items, onItemsChange }: QuoteItemsManagerPro
       unit_price: selectedItem.price,
       cost_override: selectedItem.cost,
       total_price: selectedItem.price,
+      charge_type: (selectedItem.charge_type as 'NRC' | 'MRC') || 'NRC',
       item: selectedItem
     };
 
@@ -47,7 +50,7 @@ export const QuoteItemsManager = ({ items, onItemsChange }: QuoteItemsManagerPro
     setSelectedItemId("");
   };
 
-  const updateItem = (itemId: string, field: keyof QuoteItemData, value: number) => {
+  const updateItem = (itemId: string, field: keyof QuoteItemData, value: number | string) => {
     const updatedItems = items.map(item => {
       if (item.id === itemId) {
         const updatedItem = { ...item, [field]: value };
@@ -107,9 +110,21 @@ export const QuoteItemsManager = ({ items, onItemsChange }: QuoteItemsManagerPro
       {items.length > 0 && (
         <div className="space-y-3">
           <Label>Quote Items</Label>
-          <div className="border rounded-lg p-3 space-y-3 max-h-60 overflow-y-auto">
+          
+          {/* Column Headers */}
+          <div className="grid grid-cols-7 gap-2 items-center p-2 border-b bg-gray-100 rounded-t-lg font-medium text-sm">
+            <div>Item</div>
+            <div>Qty</div>
+            <div>Sell Price</div>
+            <div>Cost</div>
+            <div>Total</div>
+            <div>Type</div>
+            <div>Action</div>
+          </div>
+          
+          <div className="border rounded-lg space-y-3 max-h-60 overflow-y-auto">
             {items.map((quoteItem) => (
-              <div key={quoteItem.id} className="grid grid-cols-6 gap-2 items-center p-2 border rounded bg-gray-50">
+              <div key={quoteItem.id} className="grid grid-cols-7 gap-2 items-center p-2 border rounded bg-gray-50">
                 <div className="text-sm font-medium">
                   {quoteItem.item?.name || 'Unknown Item'}
                 </div>
@@ -147,6 +162,15 @@ export const QuoteItemsManager = ({ items, onItemsChange }: QuoteItemsManagerPro
                 </div>
                 <div className="text-sm font-medium">
                   ${quoteItem.total_price.toFixed(2)}
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Switch
+                    checked={quoteItem.charge_type === 'MRC'}
+                    onCheckedChange={(checked) => updateItem(quoteItem.id, 'charge_type', checked ? 'MRC' : 'NRC')}
+                  />
+                  <span className="text-xs font-medium">
+                    {quoteItem.charge_type}
+                  </span>
                 </div>
                 <Button
                   type="button"
