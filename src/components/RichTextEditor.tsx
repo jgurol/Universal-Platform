@@ -66,6 +66,9 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
     updateToolbarState();
   };
 
+  // Check if editor is empty to show placeholder
+  const showPlaceholder = !value || value.trim() === '' || value === '<br>';
+
   return (
     <div className={cn("border rounded-md", className)}>
       {/* Toolbar */}
@@ -97,28 +100,29 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
       </div>
 
       {/* Editor */}
-      <div
-        ref={editorRef}
-        contentEditable
-        onInput={handleInput}
-        onKeyUp={handleKeyUp}
-        onMouseUp={handleMouseUp}
-        className={cn(
-          "p-3 min-h-[150px] focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 rounded-b-md",
-          `min-h-[${rows * 24}px]`
+      <div className="relative">
+        {showPlaceholder && (
+          <div 
+            className="absolute top-3 left-3 text-gray-400 pointer-events-none select-none"
+            style={{ minHeight: `${rows * 24}px` }}
+          >
+            {placeholder}
+          </div>
         )}
-        style={{ minHeight: `${rows * 24}px` }}
-        data-placeholder={placeholder}
-        suppressContentEditableWarning={true}
-      />
-
-      <style jsx>{`
-        [contenteditable]:empty:before {
-          content: attr(data-placeholder);
-          color: #9ca3af;
-          pointer-events: none;
-        }
-      `}</style>
+        <div
+          ref={editorRef}
+          contentEditable
+          onInput={handleInput}
+          onKeyUp={handleKeyUp}
+          onMouseUp={handleMouseUp}
+          className={cn(
+            "p-3 min-h-[150px] focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 rounded-b-md",
+            showPlaceholder && "text-transparent"
+          )}
+          style={{ minHeight: `${rows * 24}px` }}
+          suppressContentEditableWarning={true}
+        />
+      </div>
     </div>
   );
 };
