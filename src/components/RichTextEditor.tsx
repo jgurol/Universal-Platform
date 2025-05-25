@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Bold, Italic } from 'lucide-react';
@@ -30,54 +29,77 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
     return text
       .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>') // **bold** to <strong>
       .replace(/\*(.*?)\*/g, '<em>$1</em>') // *italic* to <em>
-      .replace(/\n\n/g, '</p><p>') // Double newlines to paragraph breaks
-      .replace(/\n/g, '<br>') // Single newlines to line breaks
-      .replace(/^(.*)$/, '<p>$1</p>'); // Wrap in paragraph tags
+      .replace(/\n/g, '<br>') // Convert all newlines to br tags
+      .replace(/^(.*)$/, '<div>$1</div>'); // Wrap in div instead of p tags
   };
 
-  // Convert HTML back to markdown - preserve all line breaks
+  // Convert HTML back to markdown - simplified and more reliable
   const htmlToMarkdown = (html: string): string => {
     if (!html) return '';
     
     console.log('RichTextEditor - Converting HTML to markdown:', html.substring(0, 200));
     
-    let markdown = html
-      // Handle contenteditable div structures
-      .replace(/<div><br><\/div>/gi, '\n') // Empty div with br
-      .replace(/<div><\/div>/gi, '\n') // Empty divs
-      .replace(/<div[^>]*>/gi, '\n') // Div starts become newlines
-      .replace(/<\/div>/gi, '') // Remove div endings
-      // Handle paragraphs
-      .replace(/<p[^>]*>/gi, '') // Remove paragraph opening tags
-      .replace(/<\/p>/gi, '\n\n') // Convert paragraph closes to double newlines
-      // Handle line breaks
-      .replace(/<br\s*\/?>/gi, '\n') // Convert all br tags to actual newlines
-      // Convert formatting
-      .replace(/<strong[^>]*>(.*?)<\/strong>/gi, '**$1**')
-      .replace(/<b[^>]*>(.*?)<\/b>/gi, '**$1**')
-      .replace(/<em[^>]*>(.*?)<\/em>/gi, '*$1*')
-      .replace(/<i[^>]*>(.*?)<\/i>/gi, '*$1*')
-      // Remove any remaining HTML tags
-      .replace(/<[^>]*>/g, '')
-      // Clean up excessive newlines but preserve intentional ones
+    // Create a temporary div to handle HTML parsing
+    const tempDiv = document.createElement('div');
+    tempDiv.innerHTML = html;
+    
+    // Get the text content and manually reconstruct with formatting
+    let result = '';
+    
+    const processNode = (node: Node): string => {
+      if (node.nodeType === Node.TEXT_NODE) {
+        return node.textContent || '';
+      }
+      
+      if (node.nodeType === Node.ELEMENT_NODE) {
+        const element = node as Element;
+        const tagName = element.tagName.toLowerCase();
+        
+        let content = '';
+        for (const child of element.childNodes) {
+          content += processNode(child);
+        }
+        
+        switch (tagName) {
+          case 'strong':
+          case 'b':
+            return `**${content}**`;
+          case 'em':
+          case 'i':
+            return `*${content}*`;
+          case 'br':
+            return '\n';
+          case 'div':
+            // Add newline after div unless it's the last one
+            const nextSibling = element.nextElementSibling;
+            return content + (nextSibling ? '\n' : '');
+          case 'p':
+            return content + '\n\n';
+          default:
+            return content;
+        }
+      }
+      
+      return '';
+    };
+    
+    result = processNode(tempDiv);
+    
+    // Clean up excessive newlines but preserve intentional ones
+    result = result
       .replace(/\n{3,}/g, '\n\n') // Max 2 consecutive newlines
       .replace(/^\n+/, '') // Remove leading newlines
       .replace(/\n+$/, ''); // Remove trailing newlines
     
-    // Decode HTML entities
-    const div = document.createElement('div');
-    div.innerHTML = markdown;
-    const decodedMarkdown = div.textContent || div.innerText || markdown;
+    console.log('RichTextEditor - Converted markdown:', result.substring(0, 200));
+    console.log('RichTextEditor - Newline count:', (result.match(/\n/g) || []).length);
     
-    console.log('RichTextEditor - Converted markdown:', decodedMarkdown.substring(0, 200));
-    console.log('RichTextEditor - Newline count:', (decodedMarkdown.match(/\n/g) || []).length);
-    
-    return decodedMarkdown;
+    return result;
   };
 
   // Initialize the editor content
   useEffect(() => {
-    if (editorRef.current) {
+    if (editorRef.current && value !== undefined) {
       const htmlContent = markdownToHtml(value);
       if (editorRef.current.innerHTML !== htmlContent) {
         editorRef.current.innerHTML = htmlContent;
@@ -93,23 +115,33 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
       
       // Only call onChange if the content actually changed
       if (markdownContent !== value) {
+        console.log('RichTextEditor - Content changed, updating value:', markdownContent.substring(0, 100));
         onChange(markdownContent);
       }
     }
   };
 
-  // Handle Enter key to ensure proper line breaks
+  // Handle Enter key with a more reliable approach
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter') {
       e.preventDefault();
       
-      if (e.shiftKey) {
-        // Shift+Enter should create a single line break
-        document.execCommand('insertHTML', false, '<br>');
-      } else {
-        // Regular Enter should create a line break (we'll let the conversion handle paragraph logic)
-        document.execCommand('insertHTML', false, '<br>');
-      }
+      // Get current selection
+      const selection = window.getSelection();
+      if (!selection || selection.rangeCount === 0) return;
+      
+      const range = selection.getRangeAt(0);
+      
+      // Insert a line break
+      const br = document.createElement('br');
+      range.deleteContents();
+      range.insertNode(br);
+      
+      // Move cursor after the br
+      range.setStartAfter(br);
+      range.setEndAfter(br);
+      selection.removeAllRanges();
+      selection.addRange(range);
       
       // Trigger input handler to update the markdown
       setTimeout(() => handleInput(), 0);
