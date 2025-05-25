@@ -1,4 +1,3 @@
-
 import { useParams, useNavigate } from "react-router-dom";
 import { useState, useEffect, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -40,20 +39,22 @@ const AcceptQuote = () => {
 
       try {
         // Check if quote is already accepted
-        const { data: acceptance } = await supabase
+        const { data: acceptance, error: acceptanceError } = await supabase
           .from('quote_acceptances')
           .select('*')
           .eq('quote_id', quoteId)
-          .single();
+          .maybeSingle();
 
-        if (acceptance) {
+        if (acceptanceError) {
+          console.error('AcceptQuote - Error checking acceptance:', acceptanceError);
+        } else if (acceptance) {
           console.log('AcceptQuote - Quote already accepted:', acceptance);
           setIsAccepted(true);
           setIsLoading(false);
           return;
         }
 
-        // Fetch quote with items
+        // Fetch quote with items - use maybeSingle instead of single
         const { data: quoteData, error: quoteError } = await supabase
           .from('quotes')
           .select(`
@@ -65,7 +66,7 @@ const AcceptQuote = () => {
             )
           `)
           .eq('id', quoteId)
-          .single();
+          .maybeSingle();
 
         if (quoteError) {
           console.error('AcceptQuote - Error fetching quote:', quoteError);
@@ -74,44 +75,46 @@ const AcceptQuote = () => {
           return;
         }
 
-        console.log('AcceptQuote - Quote data loaded:', quoteData);
-
-        if (quoteData) {
-          setQuote(quoteData as any);
-
-          // Fetch client info if available
-          if (quoteData.client_info_id) {
-            const { data: clientData, error: clientError } = await supabase
-              .from('client_info')
-              .select('*')
-              .eq('id', quoteData.client_info_id)
-              .single();
-
-            if (clientError) {
-              console.error('AcceptQuote - Error fetching client info:', clientError);
-            } else if (clientData) {
-              console.log('AcceptQuote - Client info loaded:', clientData);
-              setClientInfo(clientData);
-              setClientName(clientData.contact_name || "");
-              setClientEmail(clientData.email || "");
-            }
-          }
-
-          // Fetch template content if available
-          if (quoteData.template_id) {
-            const { data: templateData, error: templateError } = await supabase
-              .from('quote_templates')
-              .select('content')
-              .eq('id', quoteData.template_id)
-              .single();
-
-            if (!templateError && templateData) {
-              console.log('AcceptQuote - Template content loaded');
-              setTemplateContent(templateData.content);
-            }
-          }
-        } else {
+        if (!quoteData) {
+          console.log('AcceptQuote - No quote found with ID:', quoteId);
           setError("Quote not found");
+          setIsLoading(false);
+          return;
+        }
+
+        console.log('AcceptQuote - Quote data loaded:', quoteData);
+        setQuote(quoteData as any);
+
+        // Fetch client info if available
+        if (quoteData.client_info_id) {
+          const { data: clientData, error: clientError } = await supabase
+            .from('client_info')
+            .select('*')
+            .eq('id', quoteData.client_info_id)
+            .maybeSingle();
+
+          if (clientError) {
+            console.error('AcceptQuote - Error fetching client info:', clientError);
+          } else if (clientData) {
+            console.log('AcceptQuote - Client info loaded:', clientData);
+            setClientInfo(clientData);
+            setClientName(clientData.contact_name || "");
+            setClientEmail(clientData.email || "");
+          }
+        }
+
+        // Fetch template content if available
+        if (quoteData.template_id) {
+          const { data: templateData, error: templateError } = await supabase
+            .from('quote_templates')
+            .select('content')
+            .eq('id', quoteData.template_id)
+            .maybeSingle();
+
+          if (!templateError && templateData) {
+            console.log('AcceptQuote - Template content loaded');
+            setTemplateContent(templateData.content);
+          }
         }
       } catch (error) {
         console.error('AcceptQuote - Error in fetchQuoteData:', error);
