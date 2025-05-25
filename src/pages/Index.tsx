@@ -1,4 +1,3 @@
-
 import { IndexPageLayout } from "@/components/IndexPageLayout";
 import { useIndexData } from "@/hooks/useIndexData";
 import { useQuoteActions } from "@/hooks/useQuoteActions";
@@ -106,11 +105,6 @@ const Index = () => {
 
   const { addClient } = useClientActions(clients, setClients, fetchClients);
 
-  // Create a wrapper function that matches the expected signature
-  const handleUpdateQuote = (quote: Quote) => {
-    updateQuote(quote.id, quote);
-  };
-
   return (
     <IndexPageLayout
       clients={clients}
@@ -119,7 +113,7 @@ const Index = () => {
       associatedAgentId={associatedAgentId}
       onAddClient={addClient}
       onAddQuote={addQuote}
-      onUpdateQuote={handleUpdateQuote}
+      onUpdateQuote={updateQuote}
       onDeleteQuote={deleteQuote}
       onFetchClients={fetchClients}
     />

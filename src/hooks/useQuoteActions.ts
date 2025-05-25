@@ -26,17 +26,14 @@ export const useQuoteActions = (
     }
   };
 
-  const updateQuote = async (id: string, updatedQuoteData: Partial<Quote>) => {
+  const updateQuote = async (updatedQuote: Quote) => {
     if (!user) return;
     
-    // Create a full quote object by merging the updated data
-    const fullQuote = { id, ...updatedQuoteData } as Quote;
-    
-    const result = await updateQuoteInDatabase(fullQuote, clients, user.id, toast);
+    const result = await updateQuoteInDatabase(updatedQuote, clients, user.id, toast);
     
     if (result) {
       fetchQuotes();
-      const client = clients.find(c => c.id === fullQuote.clientId);
+      const client = clients.find(c => c.id === updatedQuote.clientId);
       toast({
         title: "Quote updated",
         description: `Quote for ${client?.name || "client"} has been updated successfully.`,

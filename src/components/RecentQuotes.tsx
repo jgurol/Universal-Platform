@@ -1,138 +1,199 @@
 
-import React, { useState } from "react";
+import { useState, useEffect } from "react";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { Quote, Client, ClientInfo } from "@/pages/Index";
-import { QuoteCard } from "@/components/QuoteCard";
 import { AddQuoteDialog } from "@/components/AddQuoteDialog";
 import { EditQuoteDialog } from "@/components/EditQuoteDialog";
-import { ApprovalWarningDialog } from "@/components/ApprovalWarningDialog";
-import { SignatureDialog } from "@/components/SignatureDialog";
-import { useSignatureWorkflow } from "@/hooks/useSignatureWorkflow";
-import { Button } from "@/components/ui/button";
-import { Plus } from "lucide-react";
+import { QuoteHeader } from "@/components/QuoteHeader";
+import { QuoteTable } from "@/components/QuoteTable";
+import { QuoteEmptyState } from "@/components/QuoteEmptyState";
+import { useAuth } from "@/context/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
 
 interface RecentQuotesProps {
   quotes: Quote[];
   clients: Client[];
   clientInfos: ClientInfo[];
-  onAddQuote: (quote: Omit<Quote, "id">) => Promise<void>;
-  onUpdateQuote: (id: string, quote: Partial<Quote>) => Promise<void>;
-  onDeleteQuote: (id: string) => Promise<void>;
-  associatedAgentId: string | null;
+  onAddQuote: (quote: Omit<Quote, "id">) => void;
+  onUpdateQuote: (quote: Quote) => void;
+  onDeleteQuote?: (quoteId: string) => void;
+  associatedAgentId?: string | null;
 }
 
-export const RecentQuotes = ({
-  quotes,
-  clients,
+export const RecentQuotes = ({ 
+  quotes, 
+  clients, 
   clientInfos,
-  onAddQuote,
+  onAddQuote, 
   onUpdateQuote,
   onDeleteQuote,
-  associatedAgentId,
+  associatedAgentId
 }: RecentQuotesProps) => {
-  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
-  const [editingQuote, setEditingQuote] = useState<Quote | null>(null);
-  const [deletingQuoteId, setDeletingQuoteId] = useState<string | null>(null);
+  const [isAddQuoteOpen, setIsAddQuoteOpen] = useState(false);
+  const [isEditQuoteOpen, setIsEditQuoteOpen] = useState(false);
+  const [currentQuote, setCurrentQuote] = useState<Quote | null>(null);
+  const [searchTerm, setSearchTerm] = useState("");
+  const { isAdmin, user } = useAuth();
 
-  const {
-    isSignatureDialogOpen,
-    setIsSignatureDialogOpen,
-    currentQuote,
-    currentClientInfo,
-    initiateSignature,
-    handleSignatureComplete
-  } = useSignatureWorkflow();
+  // Function to handle editing a quote - only for admins
+  const handleEditClick = (quote: Quote) => {
+    if (!isAdmin) return;
+    setCurrentQuote(quote);
+    setIsEditQuoteOpen(true);
+  };
 
-  const handleEdit = (id: string) => {
-    const quote = quotes.find(q => q.id === id);
-    if (quote) {
-      setEditingQuote(quote);
+  // Function to generate next quote number
+  const generateNextQuoteNumber = async (): Promise<string> => {
+    if (!user) return "3500";
+    
+    try {
+      const { data, error } = await supabase
+        .from('quotes')
+        .select('quote_number')
+        .eq('user_id', user.id)
+        .not('quote_number', 'is', null)
+        .order('created_at', { ascending: false })
+        .limit(1);
+
+      if (error) {
+        console.error('Error fetching last quote number:', error);
+        return "3500";
+      }
+
+      let nextNumber = 3500; // Start from 3500 instead of 1
+      if (data && data.length > 0 && data[0].quote_number) {
+        const lastNumber = parseInt(data[0].quote_number);
+        if (!isNaN(lastNumber)) {
+          nextNumber = Math.max(lastNumber + 1, 3500); // Ensure we never go below 3500
+        }
+      }
+      
+      return nextNumber.toString();
+    } catch (err) {
+      console.error('Error generating quote number:', err);
+      return "3500";
     }
   };
 
-  const handleDelete = (id: string) => {
-    setDeletingQuoteId(id);
+  // Function to handle copying a quote - only for admins
+  const handleCopyQuote = async (quote: Quote) => {
+    if (!isAdmin) return;
+    
+    // Generate proper quote number
+    const newQuoteNumber = await generateNextQuoteNumber();
+    
+    // Create a new quote based on the existing one
+    const newQuote: Omit<Quote, "id"> = {
+      clientId: quote.clientId,
+      clientName: quote.clientName,
+      companyName: quote.companyName,
+      amount: quote.amount,
+      date: new Date().toISOString().split('T')[0], // Set to today's date
+      description: `Copy of ${quote.description || 'Quote'}`,
+      status: 'pending', // Reset status to pending
+      clientInfoId: quote.clientInfoId,
+      clientCompanyName: quote.clientCompanyName,
+      commissionOverride: quote.commissionOverride,
+      notes: quote.notes,
+      quoteItems: quote.quoteItems || [],
+      quoteNumber: newQuoteNumber, // Use properly generated quote number
+      quoteMonth: quote.quoteMonth,
+      quoteYear: quote.quoteYear,
+      expiresAt: quote.expiresAt
+    };
+    
+    onAddQuote(newQuote);
   };
 
-  const confirmDelete = async () => {
-    if (deletingQuoteId) {
-      await onDeleteQuote(deletingQuoteId);
-      setDeletingQuoteId(null);
-    }
-  };
-
-  const handleUpdateQuote = async (updatedQuote: Quote) => {
-    await onUpdateQuote(updatedQuote.id, updatedQuote);
-  };
+  // Function to filter quotes based on search term
+  const filteredQuotes = quotes.filter(quote => {
+    if (!searchTerm) return true;
+    
+    const searchLower = searchTerm.toLowerCase();
+    
+    // Search in quote basic fields
+    const matchesBasicFields = 
+      quote.clientName?.toLowerCase().includes(searchLower) ||
+      quote.description?.toLowerCase().includes(searchLower) ||
+      quote.quoteNumber?.toLowerCase().includes(searchLower) ||
+      quote.clientCompanyName?.toLowerCase().includes(searchLower) ||
+      quote.notes?.toLowerCase().includes(searchLower);
+    
+    // Search in quote items
+    const matchesQuoteItems = quote.quoteItems?.some(item => 
+      item.name?.toLowerCase().includes(searchLower) ||
+      item.description?.toLowerCase().includes(searchLower) ||
+      item.item?.name?.toLowerCase().includes(searchLower) ||
+      item.item?.description?.toLowerCase().includes(searchLower) ||
+      item.item?.sku?.toLowerCase().includes(searchLower)
+    );
+    
+    return matchesBasicFields || matchesQuoteItems;
+  });
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold text-gray-900">Recent Quotes</h2>
-        <Button
-          onClick={() => setIsAddDialogOpen(true)}
-          className="bg-blue-600 hover:bg-blue-700"
-        >
-          <Plus className="h-4 w-4 mr-2" />
-          Add Quote
-        </Button>
-      </div>
-
-      {quotes.length === 0 ? (
-        <div className="text-center py-12">
-          <p className="text-gray-500 text-lg">No quotes found</p>
-          <p className="text-gray-400">Create your first quote to get started</p>
-        </div>
-      ) : (
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {quotes.map((quote) => (
-            <QuoteCard
-              key={quote.id}
-              quote={quote}
-              clients={clients}
+    <>
+      <Card className="bg-white shadow-lg border-0">
+        <CardHeader>
+          <QuoteHeader
+            quoteCount={filteredQuotes?.length || 0}
+            onAddQuote={() => setIsAddQuoteOpen(true)}
+            searchTerm={searchTerm}
+            onSearchChange={setSearchTerm}
+          />
+        </CardHeader>
+        <CardContent className="p-0">
+          {!filteredQuotes || filteredQuotes.length === 0 ? (
+            <div className="p-6">
+              {searchTerm ? (
+                <div className="text-center py-8">
+                  <p className="text-gray-500">No quotes found matching "{searchTerm}"</p>
+                  <Button 
+                    variant="outline" 
+                    onClick={() => setSearchTerm("")}
+                    className="mt-2"
+                  >
+                    Clear search
+                  </Button>
+                </div>
+              ) : (
+                <QuoteEmptyState associatedAgentId={associatedAgentId} />
+              )}
+            </div>
+          ) : (
+            <QuoteTable
+              quotes={filteredQuotes}
               clientInfos={clientInfos}
-              onEdit={handleEdit}
-              onDelete={handleDelete}
-              onInitiateSignature={initiateSignature}
+              onEditClick={isAdmin ? handleEditClick : undefined}
+              onDeleteQuote={onDeleteQuote}
+              onUpdateQuote={onUpdateQuote}
+              onCopyQuote={isAdmin ? handleCopyQuote : undefined}
             />
-          ))}
-        </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {isAdmin && (
+        <>
+          <AddQuoteDialog
+            open={isAddQuoteOpen}
+            onOpenChange={setIsAddQuoteOpen}
+            onAddQuote={onAddQuote}
+            clients={clients}
+            clientInfos={clientInfos}
+          />
+
+          <EditQuoteDialog
+            quote={currentQuote}
+            open={isEditQuoteOpen}
+            onOpenChange={setIsEditQuoteOpen}
+            onUpdateQuote={onUpdateQuote}
+            clients={clients}
+            clientInfos={clientInfos}
+          />
+        </>
       )}
-
-      <AddQuoteDialog
-        open={isAddDialogOpen}
-        onOpenChange={setIsAddDialogOpen}
-        onAddQuote={onAddQuote}
-        clients={clients}
-        clientInfos={clientInfos}
-      />
-
-      {editingQuote && (
-        <EditQuoteDialog
-          open={!!editingQuote}
-          onOpenChange={(open) => !open && setEditingQuote(null)}
-          quote={editingQuote}
-          onUpdateQuote={handleUpdateQuote}
-          clients={clients}
-          clientInfos={clientInfos}
-        />
-      )}
-
-      <ApprovalWarningDialog
-        open={!!deletingQuoteId}
-        onOpenChange={(open) => !open && setDeletingQuoteId(null)}
-        onConfirm={confirmDelete}
-        onCancel={() => setDeletingQuoteId(null)}
-      />
-
-      {currentQuote && (
-        <SignatureDialog
-          open={isSignatureDialogOpen}
-          onOpenChange={setIsSignatureDialogOpen}
-          quote={currentQuote}
-          clientInfo={currentClientInfo}
-          onSignatureComplete={handleSignatureComplete}
-        />
-      )}
-    </div>
+    </>
   );
 };
