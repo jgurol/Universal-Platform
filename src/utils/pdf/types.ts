@@ -19,7 +19,7 @@ export interface AcceptanceDetails {
   client_name?: string;
   client_email?: string;
   accepted_at?: string;
-  ip_address?: string;
+  ip_address?: string | null;
   user_agent?: string;
   signature_data?: string;
 }

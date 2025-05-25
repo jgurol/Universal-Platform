@@ -1,4 +1,3 @@
-
 import jsPDF from 'jspdf';
 import { supabase } from '@/integrations/supabase/client';
 import { PDFGenerationContext, AcceptanceDetails } from './types';
@@ -22,11 +21,22 @@ export const fetchAcceptanceDetails = async (quoteId: string): Promise<Acceptanc
         client_name: acceptance.client_name,
         client_email: acceptance.client_email,
         accepted_at: acceptance.accepted_at,
-        ip_address: acceptance.ip_address,
+        ip_address: acceptance.ip_address ? String(acceptance.ip_address) : null,
         user_agent: acceptance.user_agent,
         has_signature: !!acceptance.signature_data
       });
-      return acceptance;
+      
+      // Properly type cast the acceptance data
+      const acceptanceDetails: AcceptanceDetails = {
+        client_name: acceptance.client_name,
+        client_email: acceptance.client_email,
+        accepted_at: acceptance.accepted_at,
+        ip_address: acceptance.ip_address ? String(acceptance.ip_address) : null,
+        user_agent: acceptance.user_agent,
+        signature_data: acceptance.signature_data
+      };
+      
+      return acceptanceDetails;
     } else {
       console.log('PDF Generation - No acceptance details in quote_acceptances table');
       
