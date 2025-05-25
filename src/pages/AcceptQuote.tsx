@@ -37,41 +37,10 @@ const AcceptQuote = () => {
       }
 
       console.log('AcceptQuote - Starting to load quote with ID:', quoteId);
-      console.log('AcceptQuote - Quote ID type:', typeof quoteId);
-      console.log('AcceptQuote - Quote ID length:', quoteId.length);
 
       try {
-        // First, let's check if the quote exists at all
-        console.log('AcceptQuote - Checking if quote exists...');
-        const { data: basicQuote, error: basicError } = await supabase
-          .from('quotes')
-          .select('id, description, status, acceptance_status')
-          .eq('id', quoteId)
-          .maybeSingle();
-
-        if (basicError) {
-          console.error('AcceptQuote - Error in basic quote check:', basicError);
-          setError(`Database error: ${basicError.message}`);
-          setIsLoading(false);
-          return;
-        }
-
-        if (!basicQuote) {
-          console.error('AcceptQuote - No quote found with ID:', quoteId);
-          // Let's also check all quotes to see what IDs exist
-          const { data: allQuotes } = await supabase
-            .from('quotes')
-            .select('id, description')
-            .limit(10);
-          console.log('AcceptQuote - Available quote IDs:', allQuotes?.map(q => q.id));
-          setError("Quote not found - please check the quote ID");
-          setIsLoading(false);
-          return;
-        }
-
-        console.log('AcceptQuote - Basic quote found:', basicQuote);
-
-        // Check if quote is already accepted
+        // Step 1: Check if quote is already accepted
+        console.log('AcceptQuote - Checking for existing acceptance...');
         const { data: acceptance, error: acceptanceError } = await supabase
           .from('quote_acceptances')
           .select('*')
@@ -87,45 +56,62 @@ const AcceptQuote = () => {
           return;
         }
 
-        // Now fetch the full quote with items
-        console.log('AcceptQuote - Fetching full quote data...');
-        const { data: quoteData, error: quoteError } = await supabase
+        // Step 2: Fetch basic quote data first
+        console.log('AcceptQuote - Fetching basic quote data...');
+        const { data: basicQuote, error: basicError } = await supabase
           .from('quotes')
-          .select(`
-            *,
-            quote_items (
-              *,
-              item:items(*),
-              address:client_addresses(*)
-            )
-          `)
+          .select('*')
           .eq('id', quoteId)
           .maybeSingle();
 
-        if (quoteError) {
-          console.error('AcceptQuote - Error fetching full quote:', quoteError);
-          setError(`Failed to load quote details: ${quoteError.message}`);
+        if (basicError) {
+          console.error('AcceptQuote - Error fetching basic quote:', basicError);
+          setError(`Database error: ${basicError.message}`);
           setIsLoading(false);
           return;
         }
 
-        if (!quoteData) {
-          console.error('AcceptQuote - Quote data is null after successful basic check');
-          setError("Quote data could not be loaded");
+        if (!basicQuote) {
+          console.error('AcceptQuote - No quote found with ID:', quoteId);
+          setError("Quote not found - please check the quote ID");
           setIsLoading(false);
           return;
         }
 
-        console.log('AcceptQuote - Full quote data loaded successfully:', quoteData);
-        setQuote(quoteData as any);
+        console.log('AcceptQuote - Basic quote found:', basicQuote);
 
-        // Fetch client info if available
-        if (quoteData.client_info_id) {
-          console.log('AcceptQuote - Fetching client info for ID:', quoteData.client_info_id);
+        // Step 3: Fetch quote items separately
+        console.log('AcceptQuote - Fetching quote items...');
+        const { data: quoteItems, error: itemsError } = await supabase
+          .from('quote_items')
+          .select(`
+            *,
+            item:items(*),
+            address:client_addresses(*)
+          `)
+          .eq('quote_id', quoteId);
+
+        if (itemsError) {
+          console.error('AcceptQuote - Error fetching quote items:', itemsError);
+        }
+
+        console.log('AcceptQuote - Quote items loaded:', quoteItems);
+
+        // Combine quote with items
+        const fullQuote = {
+          ...basicQuote,
+          quoteItems: quoteItems || []
+        } as Quote;
+
+        setQuote(fullQuote);
+
+        // Step 4: Fetch client info if available
+        if (basicQuote.client_info_id) {
+          console.log('AcceptQuote - Fetching client info for ID:', basicQuote.client_info_id);
           const { data: clientData, error: clientError } = await supabase
             .from('client_info')
             .select('*')
-            .eq('id', quoteData.client_info_id)
+            .eq('id', basicQuote.client_info_id)
             .maybeSingle();
 
           if (clientError) {
@@ -138,13 +124,13 @@ const AcceptQuote = () => {
           }
         }
 
-        // Fetch template content if available
-        if (quoteData.template_id) {
-          console.log('AcceptQuote - Fetching template for ID:', quoteData.template_id);
+        // Step 5: Fetch template content if available
+        if (basicQuote.template_id) {
+          console.log('AcceptQuote - Fetching template for ID:', basicQuote.template_id);
           const { data: templateData, error: templateError } = await supabase
             .from('quote_templates')
             .select('content')
-            .eq('id', quoteData.template_id)
+            .eq('id', basicQuote.template_id)
             .maybeSingle();
 
           if (!templateError && templateData) {
