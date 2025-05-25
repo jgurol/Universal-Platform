@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -44,6 +43,7 @@ Thank you for your business.
 Best regards,
 ${salespersonName || 'Sales Team'}`);
   const [isLoading, setIsLoading] = useState(false);
+  const [emailStatus, setEmailStatus] = useState<'idle' | 'success' | 'error'>('idle');
   const { toast } = useToast();
 
   // Get contacts for the client
@@ -128,6 +128,7 @@ ${salespersonName || 'Sales Team'}`);
     }
 
     setIsLoading(true);
+    setEmailStatus('idle');
     try {
       // Generate PDF
       const pdf = await generateQuotePDF(quote, clientInfo, salespersonName);
@@ -156,17 +157,22 @@ ${salespersonName || 'Sales Team'}`);
           }
 
           if (data?.success) {
+            setEmailStatus('success');
             toast({
               title: "Email sent successfully",
               description: `Quote has been sent to ${recipientEmail}${ccEmails.length > 0 ? ` and ${ccEmails.length} CC recipient(s)` : ''}`,
             });
             
-            onOpenChange(false);
+            // Keep dialog open for a moment to show the green icon
+            setTimeout(() => {
+              onOpenChange(false);
+            }, 1500);
           } else {
             throw new Error(data?.error || 'Failed to send email');
           }
         } catch (emailError) {
           console.error('Error calling email function:', emailError);
+          setEmailStatus('error');
           toast({
             title: "Failed to send email",
             description: "There was an error sending the quote. Please try again.",
@@ -180,6 +186,7 @@ ${salespersonName || 'Sales Team'}`);
       
     } catch (error) {
       console.error('Error generating PDF:', error);
+      setEmailStatus('error');
       toast({
         title: "Failed to generate PDF",
         description: "There was an error generating the quote PDF. Please try again.",
@@ -195,6 +202,7 @@ ${salespersonName || 'Sales Team'}`);
     setSelectedRecipientContact("custom");
     setSelectedCcContacts([]);
     setCustomRecipientEmail("");
+    setEmailStatus('idle');
     setSubject(`Quote #${quote.quoteNumber || quote.id.slice(0, 8)} - ${quote.description || 'Service Agreement'}`);
     setMessage(`Dear ${clientInfo?.contact_name || 'Valued Customer'},
 
@@ -204,6 +212,12 @@ Thank you for your business.
 
 Best regards,
 ${salespersonName || 'Sales Team'}`);
+  };
+
+  const getMailIconColor = () => {
+    if (emailStatus === 'success') return 'text-green-600';
+    if (emailStatus === 'error') return 'text-red-600';
+    return 'text-gray-600';
   };
 
   const availableContacts = contacts.filter(contact => contact.email);
@@ -216,7 +230,7 @@ ${salespersonName || 'Sales Team'}`);
       <DialogContent className="sm:max-w-[700px]">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <Mail className="w-5 h-5" />
+            <Mail className={`w-5 h-5 ${getMailIconColor()}`} />
             Email Quote to Customer
           </DialogTitle>
           <DialogDescription>
@@ -352,7 +366,7 @@ ${salespersonName || 'Sales Team'}`);
             disabled={isLoading || !recipientEmail}
             className="bg-blue-600 hover:bg-blue-700"
           >
-            <Mail className="w-4 h-4 mr-2" />
+            <Mail className={`w-4 h-4 mr-2 ${getMailIconColor()}`} />
             {isLoading ? "Sending..." : "Send Email"}
           </Button>
         </div>
