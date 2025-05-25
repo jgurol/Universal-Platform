@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -7,9 +7,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { Quote, Client, ClientInfo } from "@/pages/Index";
 import { QuoteItemsManager } from "@/components/QuoteItemsManager";
-import { QuoteItemData } from "@/types/quoteItems";
-import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/context/AuthContext";
+import { QuoteDetailsSection } from "@/components/QuoteDetailsSection";
+import { useQuoteForm } from "@/hooks/useQuoteForm";
+import { useQuoteItems } from "@/hooks/useQuoteItems";
+import { updateQuoteItems, calculateTotalsByChargeType } from "@/services/quoteItemsService";
 
 interface EditQuoteDialogProps {
   quote: Quote | null;
@@ -28,151 +29,28 @@ export const EditQuoteDialog = ({
   clients, 
   clientInfos 
 }: EditQuoteDialogProps) => {
-  const [clientId, setClientId] = useState("");
-  const [clientInfoId, setClientInfoId] = useState("");
-  const [date, setDate] = useState("");
-  const [description, setDescription] = useState("");
-  const [quoteNumber, setQuoteNumber] = useState("");
-  const [quoteMonth, setQuoteMonth] = useState("");
-  const [quoteYear, setQuoteYear] = useState("");
-  const [status, setStatus] = useState("pending");
-  const [expiresAt, setExpiresAt] = useState("");
-  const [notes, setNotes] = useState("");
-  const [commissionOverride, setCommissionOverride] = useState("");
-  const [quoteItems, setQuoteItems] = useState<QuoteItemData[]>([]);
-  const { user } = useAuth();
+  const {
+    clientId,
+    setClientId,
+    clientInfoId,
+    setClientInfoId,
+    date,
+    setDate,
+    description,
+    setDescription,
+    quoteNumber,
+    setQuoteNumber,
+    status,
+    setStatus,
+    expiresAt,
+    setExpiresAt,
+    notes,
+    setNotes,
+    commissionOverride,
+    setCommissionOverride
+  } = useQuoteForm(quote, open);
 
-  // Generate next version number when quote changes
-  useEffect(() => {
-    const generateNextVersionNumber = async () => {
-      if (quote && user && open) {
-        try {
-          // Get the base quote number (without decimal version)
-          const baseQuoteNumber = quote.quoteNumber?.split('.')[0];
-          
-          if (!baseQuoteNumber) return;
-          
-          // Find the highest version number for this base quote number
-          const { data, error } = await supabase
-            .from('quotes')
-            .select('quote_number')
-            .eq('user_id', user.id)
-            .not('quote_number', 'is', null)
-            .like('quote_number', `${baseQuoteNumber}.%`)
-            .order('created_at', { ascending: false });
-
-          if (error) {
-            console.error('Error fetching quote versions:', error);
-            setQuoteNumber(`${baseQuoteNumber}.1`);
-            return;
-          }
-
-          let nextVersion = 1;
-          if (data && data.length > 0) {
-            // Find the highest version number
-            const versions = data
-              .map(q => q.quote_number)
-              .filter(qn => qn && qn.includes('.'))
-              .map(qn => {
-                const versionPart = qn.split('.')[1];
-                return versionPart ? parseInt(versionPart) : 0;
-              })
-              .filter(v => !isNaN(v));
-            
-            if (versions.length > 0) {
-              nextVersion = Math.max(...versions) + 1;
-            }
-          }
-          
-          setQuoteNumber(`${baseQuoteNumber}.${nextVersion}`);
-        } catch (err) {
-          console.error('Error generating version number:', err);
-          const baseQuoteNumber = quote.quoteNumber?.split('.')[0] || "3500";
-          setQuoteNumber(`${baseQuoteNumber}.1`);
-        }
-      }
-    };
-
-    generateNextVersionNumber();
-  }, [quote, user, open]);
-
-  // Fetch quote items when quote changes
-  useEffect(() => {
-    if (quote && open) {
-      fetchQuoteItems();
-    }
-  }, [quote, open]);
-
-  const fetchQuoteItems = async () => {
-    if (!quote) return;
-    
-    try {
-      const { data: items, error } = await supabase
-        .from('quote_items')
-        .select(`
-          *,
-          item:items(*),
-          address:client_addresses(*)
-        `)
-        .eq('quote_id', quote.id);
-
-      if (error) {
-        console.error('Error fetching quote items:', error);
-        return;
-      }
-
-      if (items) {
-        // Transform database items to QuoteItemData format
-        const transformedItems: QuoteItemData[] = items.map(item => ({
-          id: item.id,
-          item_id: item.item_id,
-          quantity: item.quantity,
-          unit_price: item.unit_price,
-          total_price: item.total_price,
-          charge_type: (item.charge_type as 'NRC' | 'MRC') || 'NRC',
-          address_id: item.address_id,
-          name: item.item?.name || '',
-          description: item.item?.description || '',
-          item: item.item,
-          address: item.address
-        }));
-        
-        setQuoteItems(transformedItems);
-      }
-    } catch (err) {
-      console.error('Exception fetching quote items:', err);
-    }
-  };
-
-  // Update form when quote changes
-  useEffect(() => {
-    if (quote) {
-      setClientId(quote.clientId);
-      setClientInfoId(quote.clientInfoId || "");
-      setDate(quote.date);
-      setDescription(quote.description || "");
-      // Don't set the quote number here - let the version generation handle it
-      setQuoteMonth(quote.quoteMonth || "");
-      setQuoteYear(quote.quoteYear || "");
-      setStatus(quote.status || "pending");
-      setExpiresAt(quote.expiresAt || "");
-      setNotes(quote.notes || "");
-      setCommissionOverride(quote.commissionOverride?.toString() || "");
-    }
-  }, [quote]);
-
-  // Calculate total amount from quote items by charge type
-  const calculateTotalsByChargeType = (items: QuoteItemData[]) => {
-    const nrcTotal = items
-      .filter(item => item.charge_type === 'NRC')
-      .reduce((total, item) => total + item.total_price, 0);
-    
-    const mrcTotal = items
-      .filter(item => item.charge_type === 'MRC')
-      .reduce((total, item) => total + item.total_price, 0);
-    
-    return { nrcTotal, mrcTotal, totalAmount: nrcTotal + mrcTotal };
-  };
+  const { quoteItems, setQuoteItems } = useQuoteItems(quote, open);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -183,67 +61,8 @@ export const EditQuoteDialog = ({
       if (selectedClient) {
         const { totalAmount } = calculateTotalsByChargeType(quoteItems);
         
-        // Update quote items in database - now properly saving custom descriptions and names
-        try {
-          console.log('[EditQuoteDialog] Updating quote items with custom descriptions');
-          
-          // Delete existing quote items
-          await supabase
-            .from('quote_items')
-            .delete()
-            .eq('quote_id', quote.id);
-
-          // Insert updated quote items with all fields including custom descriptions
-          if (quoteItems.length > 0) {
-            // First, update the items table with any custom names/descriptions
-            for (const quoteItem of quoteItems) {
-              if (quoteItem.name !== quoteItem.item?.name || quoteItem.description !== quoteItem.item?.description) {
-                console.log(`[EditQuoteDialog] Updating item ${quoteItem.item_id} with custom name/description:`, {
-                  originalName: quoteItem.item?.name,
-                  customName: quoteItem.name,
-                  originalDescription: quoteItem.item?.description,
-                  customDescription: quoteItem.description
-                });
-                
-                // Update the item in the items table with custom values
-                const { error: itemUpdateError } = await supabase
-                  .from('items')
-                  .update({
-                    name: quoteItem.name,
-                    description: quoteItem.description
-                  })
-                  .eq('id', quoteItem.item_id);
-
-                if (itemUpdateError) {
-                  console.error('Error updating item with custom description:', itemUpdateError);
-                }
-              }
-            }
-
-            // Then insert the quote items
-            const itemsToInsert = quoteItems.map(item => ({
-              quote_id: quote.id,
-              item_id: item.item_id,
-              quantity: item.quantity,
-              unit_price: item.unit_price,
-              total_price: item.total_price,
-              charge_type: item.charge_type,
-              address_id: item.address_id || null
-            }));
-
-            const { error: insertError } = await supabase
-              .from('quote_items')
-              .insert(itemsToInsert);
-
-            if (insertError) {
-              console.error('Error inserting quote items:', insertError);
-            } else {
-              console.log('[EditQuoteDialog] Successfully saved quote items with custom descriptions');
-            }
-          }
-        } catch (err) {
-          console.error('Error updating quote items:', err);
-        }
+        // Update quote items in database
+        await updateQuoteItems(quote.id, quoteItems);
 
         onUpdateQuote({
           ...quote,
@@ -254,8 +73,6 @@ export const EditQuoteDialog = ({
           date,
           description: description || "",
           quoteNumber: quoteNumber || undefined,
-          quoteMonth: quoteMonth || undefined,
-          quoteYear: quoteYear || undefined,
           status,
           clientInfoId: clientInfoId !== "none" ? clientInfoId : undefined,
           clientCompanyName: selectedClientInfo?.company_name,
@@ -285,43 +102,14 @@ export const EditQuoteDialog = ({
               </DialogDescription>
             </div>
             
-            {/* Quote Details - Top Right */}
-            <div className="grid grid-cols-1 gap-3 min-w-[280px]">
-              <div className="space-y-2">
-                <Label htmlFor="quoteNumber" className="text-sm">Quote Number (New Version)</Label>
-                <Input
-                  id="quoteNumber"
-                  value={quoteNumber}
-                  onChange={(e) => setQuoteNumber(e.target.value)}
-                  placeholder="Auto-generated version number"
-                  className="h-8 bg-muted"
-                  readOnly
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="date" className="text-sm">Quote Date</Label>
-                <Input
-                  id="date"
-                  type="date"
-                  value={date}
-                  onChange={(e) => setDate(e.target.value)}
-                  required
-                  className="h-8"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="expiresAt" className="text-sm">Expiration Date</Label>
-                <Input
-                  id="expiresAt"
-                  type="date"
-                  value={expiresAt}
-                  onChange={(e) => setExpiresAt(e.target.value)}
-                  className="h-8"
-                />
-              </div>
-            </div>
+            <QuoteDetailsSection
+              quoteNumber={quoteNumber}
+              onQuoteNumberChange={setQuoteNumber}
+              date={date}
+              onDateChange={setDate}
+              expiresAt={expiresAt}
+              onExpiresAtChange={setExpiresAt}
+            />
           </div>
         </DialogHeader>
         
