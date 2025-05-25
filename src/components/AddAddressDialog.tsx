@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -9,12 +10,21 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertCircle } from "lucide-react";
 import { AddClientAddressData } from "@/types/clientAddress";
 import { validateAddress, formatValidationErrors } from "@/utils/addressValidation";
+import { AddressAutocomplete } from "@/components/AddressAutocomplete";
 
 interface AddAddressDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onAddAddress: (address: AddClientAddressData) => Promise<void>;
   clientInfoId: string;
+}
+
+interface AddressData {
+  street_address: string;
+  city: string;
+  state: string;
+  zip_code: string;
+  country: string;
 }
 
 export const AddAddressDialog = ({ open, onOpenChange, onAddAddress, clientInfoId }: AddAddressDialogProps) => {
@@ -27,6 +37,16 @@ export const AddAddressDialog = ({ open, onOpenChange, onAddAddress, clientInfoI
   const [isPrimary, setIsPrimary] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [validationErrors, setValidationErrors] = useState<string | null>(null);
+  const [useAutocomplete, setUseAutocomplete] = useState(true);
+
+  const handleAddressSelect = (addressData: AddressData) => {
+    setStreetAddress(addressData.street_address);
+    setCity(addressData.city);
+    setState(addressData.state);
+    setZipCode(addressData.zip_code);
+    setCountry(addressData.country);
+    setValidationErrors(null);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -80,6 +100,7 @@ export const AddAddressDialog = ({ open, onOpenChange, onAddAddress, clientInfoI
     setCountry("United States");
     setIsPrimary(false);
     setValidationErrors(null);
+    setUseAutocomplete(true);
   };
 
   return (
@@ -120,17 +141,44 @@ export const AddAddressDialog = ({ open, onOpenChange, onAddAddress, clientInfoI
               </SelectContent>
             </Select>
           </div>
-          
-          <div className="space-y-2">
-            <Label htmlFor="streetAddress" className="required">Street Address</Label>
-            <Input
-              id="streetAddress"
-              value={streetAddress}
-              onChange={(e) => setStreetAddress(e.target.value)}
-              placeholder="Enter street address"
+
+          <div className="flex items-center gap-2 mb-2">
+            <Button
+              type="button"
+              variant={useAutocomplete ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setUseAutocomplete(true)}
+            >
+              Address Lookup
+            </Button>
+            <Button
+              type="button"
+              variant={!useAutocomplete ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setUseAutocomplete(false)}
+            >
+              Manual Entry
+            </Button>
+          </div>
+
+          {useAutocomplete ? (
+            <AddressAutocomplete
+              onAddressSelect={handleAddressSelect}
+              label="Street Address"
               required
             />
-          </div>
+          ) : (
+            <div className="space-y-2">
+              <Label htmlFor="streetAddress" className="required">Street Address</Label>
+              <Input
+                id="streetAddress"
+                value={streetAddress}
+                onChange={(e) => setStreetAddress(e.target.value)}
+                placeholder="Enter street address"
+                required
+              />
+            </div>
+          )}
           
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">

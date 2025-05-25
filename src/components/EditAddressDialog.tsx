@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -9,12 +10,21 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertCircle } from "lucide-react";
 import { ClientAddress, UpdateClientAddressData } from "@/types/clientAddress";
 import { validateAddress, formatValidationErrors } from "@/utils/addressValidation";
+import { AddressAutocomplete } from "@/components/AddressAutocomplete";
 
 interface EditAddressDialogProps {
   address: ClientAddress;
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onUpdateAddress: (address: UpdateClientAddressData) => Promise<void>;
+}
+
+interface AddressData {
+  street_address: string;
+  city: string;
+  state: string;
+  zip_code: string;
+  country: string;
 }
 
 export const EditAddressDialog = ({ address, open, onOpenChange, onUpdateAddress }: EditAddressDialogProps) => {
@@ -27,6 +37,7 @@ export const EditAddressDialog = ({ address, open, onOpenChange, onUpdateAddress
   const [isPrimary, setIsPrimary] = useState(address.is_primary);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [validationErrors, setValidationErrors] = useState<string | null>(null);
+  const [useAutocomplete, setUseAutocomplete] = useState(false);
 
   useEffect(() => {
     setAddressType(address.address_type);
@@ -37,7 +48,17 @@ export const EditAddressDialog = ({ address, open, onOpenChange, onUpdateAddress
     setCountry(address.country);
     setIsPrimary(address.is_primary);
     setValidationErrors(null);
+    setUseAutocomplete(false);
   }, [address]);
+
+  const handleAddressSelect = (addressData: AddressData) => {
+    setStreetAddress(addressData.street_address);
+    setCity(addressData.city);
+    setState(addressData.state);
+    setZipCode(addressData.zip_code);
+    setCountry(addressData.country);
+    setValidationErrors(null);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -117,17 +138,45 @@ export const EditAddressDialog = ({ address, open, onOpenChange, onUpdateAddress
               </SelectContent>
             </Select>
           </div>
-          
-          <div className="space-y-2">
-            <Label htmlFor="editStreetAddress" className="required">Street Address</Label>
-            <Input
-              id="editStreetAddress"
-              value={streetAddress}
-              onChange={(e) => setStreetAddress(e.target.value)}
-              placeholder="Enter street address"
+
+          <div className="flex items-center gap-2 mb-2">
+            <Button
+              type="button"
+              variant={useAutocomplete ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setUseAutocomplete(true)}
+            >
+              Address Lookup
+            </Button>
+            <Button
+              type="button"
+              variant={!useAutocomplete ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setUseAutocomplete(false)}
+            >
+              Manual Entry
+            </Button>
+          </div>
+
+          {useAutocomplete ? (
+            <AddressAutocomplete
+              onAddressSelect={handleAddressSelect}
+              initialValue={`${streetAddress}, ${city}, ${state} ${zipCode}`}
+              label="Street Address"
               required
             />
-          </div>
+          ) : (
+            <div className="space-y-2">
+              <Label htmlFor="editStreetAddress" className="required">Street Address</Label>
+              <Input
+                id="editStreetAddress"
+                value={streetAddress}
+                onChange={(e) => setStreetAddress(e.target.value)}
+                placeholder="Enter street address"
+                required
+              />
+            </div>
+          )}
           
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
