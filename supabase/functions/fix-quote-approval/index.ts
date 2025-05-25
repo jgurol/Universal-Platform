@@ -17,6 +17,38 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+const generateOrderNumber = async (): Promise<string> => {
+  // Get the highest existing order number
+  const { data: lastOrder, error } = await supabase
+    .from('orders')
+    .select('order_number')
+    .order('order_number', { ascending: false })
+    .limit(1);
+
+  if (error) {
+    console.error('Error fetching last order number:', error);
+    // If we can't get the last order, start from 15000
+    return '15000';
+  }
+
+  if (!lastOrder || lastOrder.length === 0) {
+    // No orders exist yet, start from 15000
+    return '15000';
+  }
+
+  const lastOrderNumber = lastOrder[0].order_number;
+  
+  // Extract the numeric part and increment
+  const numericPart = parseInt(lastOrderNumber);
+  if (isNaN(numericPart)) {
+    // If the last order number isn't numeric, start from 15000
+    return '15000';
+  }
+
+  const nextNumber = numericPart + 1;
+  return nextNumber.toString();
+};
+
 const handler = async (req: Request): Promise<Response> => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -65,23 +97,15 @@ const handler = async (req: Request): Promise<Response> => {
 
     console.log(`Creating single order for quote ${quoteId}`);
 
-    // Generate unique order number
-    const now = new Date();
-    const year = now.getFullYear();
-    const dayOfYear = Math.floor((now - new Date(year, 0, 0)) / (1000 * 60 * 60 * 24));
-    const hour = now.getHours();
-    const minute = now.getMinutes();
-    const second = now.getSeconds();
-    const millisecond = now.getMilliseconds();
-    
-    const orderNumber = `ORD-${year}-${dayOfYear.toString().padStart(3, '0')}-${hour.toString().padStart(2, '0')}${minute.toString().padStart(2, '0')}${second.toString().padStart(2, '0')}${millisecond.toString().padStart(3, '0')}`;
+    // Generate sequential order number
+    const orderNumber = await generateOrderNumber();
 
     // Ensure user_id is properly set
     if (!quote.user_id) {
       throw new Error('Quote user_id is missing - cannot create order');
     }
 
-    console.log(`Creating order for quote ${quoteId} with user_id: ${quote.user_id}`);
+    console.log(`Creating order for quote ${quoteId} with user_id: ${quote.user_id} and order number: ${orderNumber}`);
 
     // Create single order for the entire quote
     const orderData = {
