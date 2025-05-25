@@ -1,6 +1,7 @@
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Trash2, MapPin } from "lucide-react";
@@ -27,11 +28,14 @@ export const QuoteItemRow = ({ quoteItem, addresses, onUpdateItem, onRemoveItem 
         <div className="text-sm font-medium">
           {quoteItem.item?.name || 'Unknown Item'}
         </div>
-        {quoteItem.item?.description && (
-          <div className="text-xs text-gray-600">
-            {quoteItem.item.description}
-          </div>
-        )}
+        <div className="space-y-1">
+          <Textarea
+            value={quoteItem.description || quoteItem.item?.description || ''}
+            onChange={(e) => onUpdateItem(quoteItem.id, 'description', e.target.value)}
+            placeholder="Item description"
+            className="text-xs min-h-[60px] resize-none"
+          />
+        </div>
         <div className="flex items-center gap-1 text-xs text-gray-500">
           <MapPin className="w-3 h-3" />
           <Select 

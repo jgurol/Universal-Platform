@@ -34,6 +34,7 @@ export const QuoteItemsManager = ({ items, onItemsChange, clientInfoId }: QuoteI
       total_price: selectedItem.price,
       charge_type: (selectedItem.charge_type as 'NRC' | 'MRC') || 'NRC',
       address_id: addresses.length > 0 ? addresses[0].id : undefined,
+      description: selectedItem.description || '', // Initialize with item description
       item: selectedItem,
       address: addresses.length > 0 ? addresses[0] : undefined
     };
