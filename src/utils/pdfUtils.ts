@@ -1,4 +1,3 @@
-
 import jsPDF from 'jspdf';
 import { Quote, ClientInfo } from '@/pages/Index';
 import { supabase } from '@/integrations/supabase/client';
@@ -52,12 +51,6 @@ export const generateQuotePDF = async (quote: Quote, clientInfo?: ClientInfo, sa
   
   // Adjust header positioning based on logo
   const headerYStart = Math.max(25, 15 + logoYOffset);
-  
-  // Company Header with branding - positioned to the right of logo
-  doc.setFontSize(20);
-  doc.setFont('helvetica', 'bold');
-  doc.setTextColor(0, 32, 96); // Dark blue color
-  doc.text('CALIFORNIA | TELECOM', logoUrl ? 90 : 20, headerYStart);
   
   // Document type in top right
   doc.setFontSize(14);
