@@ -27,6 +27,20 @@ export const EmailQuoteForm = ({ quote, clientInfo, salespersonName, onClose }: 
   const [message, setMessage] = useState("");
   const [emailStatus, setEmailStatus] = useState<'idle' | 'success' | 'error'>('idle');
 
+  // Mock contacts data - in a real app, this would come from the database
+  const contacts = [
+    {
+      id: "1",
+      name: clientInfo?.contact_name || "Primary Contact",
+      email: clientInfo?.email || "",
+      is_primary: true
+    }
+  ].filter(contact => contact.email);
+
+  const [selectedRecipientContact, setSelectedRecipientContact] = useState("");
+  const [customRecipientEmail, setCustomRecipientEmail] = useState("");
+  const [selectedCcContacts, setSelectedCcContacts] = useState<string[]>([]);
+
   // Load email status when component mounts
   useEffect(() => {
     const loadEmailStatus = async () => {
@@ -79,6 +93,11 @@ export const EmailQuoteForm = ({ quote, clientInfo, salespersonName, onClose }: 
     // Set default recipient
     if (clientInfo?.email) {
       setTo(clientInfo.email);
+      if (contacts.length > 0) {
+        setSelectedRecipientContact(contacts[0].id);
+      }
+    } else {
+      setSelectedRecipientContact("custom");
     }
 
     // Set default subject
@@ -96,7 +115,51 @@ Best regards,
 ${salespersonName}`;
 
     setMessage(defaultMessage);
-  }, [clientInfo, quote, salespersonName]);
+  }, [clientInfo, quote, salespersonName, contacts]);
+
+  const handleRecipientContactChange = (value: string) => {
+    setSelectedRecipientContact(value);
+    if (value === "custom") {
+      setTo(customRecipientEmail);
+    } else {
+      const contact = contacts.find(c => c.id === value);
+      if (contact) {
+        setTo(contact.email);
+      }
+    }
+  };
+
+  const handleCustomRecipientEmailChange = (value: string) => {
+    setCustomRecipientEmail(value);
+    if (selectedRecipientContact === "custom") {
+      setTo(value);
+    }
+  };
+
+  const handleCcContactToggle = (contactId: string, checked: boolean) => {
+    const newSelectedCcContacts = checked 
+      ? [...selectedCcContacts, contactId]
+      : selectedCcContacts.filter(id => id !== contactId);
+    
+    setSelectedCcContacts(newSelectedCcContacts);
+    
+    // Update cc emails based on selected contacts
+    const ccEmails = newSelectedCcContacts
+      .map(id => contacts.find(c => c.id === id)?.email)
+      .filter(Boolean) as string[];
+    setCc(ccEmails);
+  };
+
+  const handleRemoveCcEmail = (email: string) => {
+    const updatedCc = cc.filter(e => e !== email);
+    setCc(updatedCc);
+    
+    // Also remove from selected contacts if it matches
+    const contact = contacts.find(c => c.email === email);
+    if (contact) {
+      setSelectedCcContacts(prev => prev.filter(id => id !== contact.id));
+    }
+  };
 
   const handleSendEmail = async () => {
     if (!to || !subject || !message) {
@@ -202,13 +265,21 @@ ${salespersonName}`;
         </CardHeader>
         <CardContent className="space-y-4">
           <EmailContactSelector
-            selectedEmail={to}
-            onEmailChange={setTo}
+            contacts={contacts}
+            contactsLoading={false}
+            selectedRecipientContact={selectedRecipientContact}
+            onRecipientContactChange={handleRecipientContactChange}
+            customRecipientEmail={customRecipientEmail}
+            onCustomRecipientEmailChange={handleCustomRecipientEmailChange}
           />
 
           <CCContactSelector
-            selectedEmails={cc}
-            onEmailsChange={setCc}
+            contacts={contacts}
+            selectedRecipientContact={selectedRecipientContact}
+            selectedCcContacts={selectedCcContacts}
+            onCcContactToggle={handleCcContactToggle}
+            ccEmails={cc}
+            onRemoveCcEmail={handleRemoveCcEmail}
           />
 
           <EmailFormFields
