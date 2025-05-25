@@ -18,9 +18,10 @@ export const QuoteStatusBadge = ({ quoteId, status, onStatusUpdate }: QuoteStatu
 
   const handleStatusChange = async (newStatus: string) => {
     try {
-      // If changing to pending, we need to clear acceptance data
+      console.log(`Changing quote ${quoteId} status to ${newStatus}`);
+
       if (newStatus === 'pending') {
-        // Delete any acceptance records
+        // If changing to pending, we need to clear acceptance data
         const { error: acceptanceError } = await supabase
           .from('quote_acceptances')
           .delete()
@@ -50,6 +51,59 @@ export const QuoteStatusBadge = ({ quoteId, status, onStatusUpdate }: QuoteStatu
           });
           return;
         }
+
+        toast({
+          title: "Status updated",
+          description: `Quote status changed to ${newStatus}`,
+        });
+
+      } else if (newStatus === 'approved') {
+        // For approval, first update the quote status
+        const { error: quoteUpdateError } = await supabase
+          .from('quotes')
+          .update({ status: newStatus })
+          .eq('id', quoteId);
+
+        if (quoteUpdateError) {
+          console.error('Error updating quote status:', quoteUpdateError);
+          toast({
+            title: "Failed to update status",
+            description: quoteUpdateError.message,
+            variant: "destructive"
+          });
+          return;
+        }
+
+        // Then handle order creation
+        try {
+          const { data: orderResult, error: orderError } = await supabase.functions
+            .invoke('fix-quote-approval', {
+              body: { quoteId: quoteId }
+            });
+
+          if (orderError) {
+            console.error('Error in order creation:', orderError);
+            toast({
+              title: "Status updated with warning",
+              description: "Quote approved but there was an issue with order creation. Please check the orders manually.",
+              variant: "default"
+            });
+          } else {
+            console.log('Order creation result:', orderResult);
+            const ordersCount = orderResult?.ordersCount || 0;
+            toast({
+              title: "Quote approved",
+              description: `Quote approved successfully. ${ordersCount} order(s) processed.`,
+            });
+          }
+        } catch (orderErr) {
+          console.error('Order creation failed:', orderErr);
+          toast({
+            title: "Quote approved",
+            description: "Quote approved successfully. Orders may already exist or will be created separately.",
+          });
+        }
+
       } else {
         // For other status changes, just update the status
         const { error } = await supabase
@@ -66,16 +120,17 @@ export const QuoteStatusBadge = ({ quoteId, status, onStatusUpdate }: QuoteStatu
           });
           return;
         }
+
+        toast({
+          title: "Status updated",
+          description: `Quote status changed to ${newStatus}`,
+        });
       }
 
       if (onStatusUpdate) {
         onStatusUpdate(newStatus);
       }
 
-      toast({
-        title: "Status updated",
-        description: `Quote status changed to ${newStatus}${newStatus === 'pending' ? ' and digital signature evidence removed' : ''}`,
-      });
     } catch (err) {
       console.error('Error updating quote status:', err);
       toast({
