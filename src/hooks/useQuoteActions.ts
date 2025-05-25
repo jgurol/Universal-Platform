@@ -50,6 +50,9 @@ export const useQuoteActions = (
     if (!user) return;
     
     try {
+      console.log('[addQuote] Received quote data:', newQuote);
+      console.log('[addQuote] Description value:', newQuote.description);
+      
       // Calculate commission using override hierarchy
       const commission = await calculateCommission(
         newQuote.amount,
@@ -58,24 +61,28 @@ export const useQuoteActions = (
         newQuote.commissionOverride
       );
 
+      const quoteDataToInsert = {
+        client_id: newQuote.clientId || null,
+        client_info_id: newQuote.clientInfoId === "none" ? null : newQuote.clientInfoId,
+        amount: newQuote.amount,
+        date: newQuote.date,
+        description: newQuote.description || null, // Ensure we handle empty strings properly
+        quote_number: newQuote.quoteNumber,
+        quote_month: newQuote.quoteMonth,
+        quote_year: newQuote.quoteYear,
+        status: newQuote.status || 'pending',
+        commission: commission,
+        commission_override: newQuote.commissionOverride || null,
+        expires_at: newQuote.expiresAt,
+        notes: newQuote.notes,
+        user_id: user.id
+      };
+
+      console.log('[addQuote] Data being inserted:', quoteDataToInsert);
+
       const { data: quoteData, error: quoteError } = await supabase
         .from('quotes')
-        .insert({
-          client_id: newQuote.clientId || null, // Fix: Use null instead of empty string
-          client_info_id: newQuote.clientInfoId === "none" ? null : newQuote.clientInfoId,
-          amount: newQuote.amount,
-          date: newQuote.date,
-          description: newQuote.description,
-          quote_number: newQuote.quoteNumber,
-          quote_month: newQuote.quoteMonth,
-          quote_year: newQuote.quoteYear,
-          status: newQuote.status || 'pending',
-          commission: commission,
-          commission_override: newQuote.commissionOverride || null,
-          expires_at: newQuote.expiresAt,
-          notes: newQuote.notes,
-          user_id: user.id
-        })
+        .insert(quoteDataToInsert)
         .select('*')
         .single();
 
@@ -88,6 +95,8 @@ export const useQuoteActions = (
         });
         return;
       }
+
+      console.log('[addQuote] Quote successfully inserted:', quoteData);
 
       // Add quote items if any exist - now including charge_type and address_id
       if (newQuote.quoteItems && newQuote.quoteItems.length > 0 && quoteData) {
@@ -140,6 +149,9 @@ export const useQuoteActions = (
     if (!user) return;
     
     try {
+      console.log('[updateQuote] Received quote data:', updatedQuote);
+      console.log('[updateQuote] Description value:', updatedQuote.description);
+      
       // Calculate commission using override hierarchy
       const commission = await calculateCommission(
         updatedQuote.amount,
@@ -148,23 +160,27 @@ export const useQuoteActions = (
         updatedQuote.commissionOverride
       );
 
+      const quoteUpdateData = {
+        client_id: updatedQuote.clientId || null,
+        client_info_id: updatedQuote.clientInfoId === "none" ? null : updatedQuote.clientInfoId,
+        amount: updatedQuote.amount,
+        date: updatedQuote.date,
+        description: updatedQuote.description || null, // Ensure we handle empty strings properly
+        quote_number: updatedQuote.quoteNumber,
+        quote_month: updatedQuote.quoteMonth,
+        quote_year: updatedQuote.quoteYear,
+        status: updatedQuote.status,
+        commission: commission,
+        commission_override: updatedQuote.commissionOverride || null,
+        expires_at: updatedQuote.expiresAt,
+        notes: updatedQuote.notes
+      };
+
+      console.log('[updateQuote] Data being updated:', quoteUpdateData);
+
       const { data, error } = await supabase
         .from('quotes')
-        .update({
-          client_id: updatedQuote.clientId || null, // Fix: Use null instead of empty string
-          client_info_id: updatedQuote.clientInfoId === "none" ? null : updatedQuote.clientInfoId,
-          amount: updatedQuote.amount,
-          date: updatedQuote.date,
-          description: updatedQuote.description,
-          quote_number: updatedQuote.quoteNumber,
-          quote_month: updatedQuote.quoteMonth,
-          quote_year: updatedQuote.quoteYear,
-          status: updatedQuote.status,
-          commission: commission,
-          commission_override: updatedQuote.commissionOverride || null,
-          expires_at: updatedQuote.expiresAt,
-          notes: updatedQuote.notes
-        })
+        .update(quoteUpdateData)
         .eq('id', updatedQuote.id)
         .select('*')
         .single();
@@ -177,6 +193,7 @@ export const useQuoteActions = (
           variant: "destructive"
         });
       } else {
+        console.log('[updateQuote] Quote successfully updated:', data);
         // Refresh quotes to get the updated one
         fetchQuotes();
         

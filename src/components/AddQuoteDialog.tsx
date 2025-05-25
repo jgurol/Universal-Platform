@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -122,6 +123,8 @@ export const AddQuoteDialog = ({ open, onOpenChange, onAddQuote, clients, client
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
+    console.log('[AddQuoteDialog] Form submitted with description:', description);
+    
     const totalAmount = calculateTotalAmount();
     
     // Fix: Check for clientInfoId instead of clientId, since clientId can be empty if no salesperson is associated
@@ -130,13 +133,13 @@ export const AddQuoteDialog = ({ open, onOpenChange, onAddQuote, clients, client
       const selectedClientInfo = clientInfos.find(info => info.id === clientInfoId);
       
       if (selectedClientInfo) {
-        onAddQuote({
+        const quoteData = {
           clientId: clientId || "", // Allow empty clientId if no salesperson is associated
           clientName: selectedClient?.name || "No Salesperson Assigned",
           companyName: selectedClientInfo.company_name,
           amount: totalAmount,
           date,
-          description: description || "",
+          description: description, // Keep the description as-is, don't default to empty string
           quoteNumber: quoteNumber || undefined,
           quoteMonth: quoteMonth || undefined,
           quoteYear: quoteYear || undefined,
@@ -147,7 +150,10 @@ export const AddQuoteDialog = ({ open, onOpenChange, onAddQuote, clients, client
           expiresAt: expiresAt || undefined,
           notes: notes || undefined,
           quoteItems: quoteItems
-        });
+        };
+        
+        console.log('[AddQuoteDialog] Calling onAddQuote with data:', quoteData);
+        onAddQuote(quoteData);
         
         // Reset form
         setClientId("");
@@ -233,7 +239,10 @@ export const AddQuoteDialog = ({ open, onOpenChange, onAddQuote, clients, client
             <Input
               id="description"
               value={description}
-              onChange={(e) => setDescription(e.target.value)}
+              onChange={(e) => {
+                console.log('[AddQuoteDialog] Description changed to:', e.target.value);
+                setDescription(e.target.value);
+              }}
               placeholder="Enter quote name"
             />
           </div>
