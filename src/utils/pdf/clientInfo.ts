@@ -8,6 +8,12 @@ export const addClientInfo = (doc: jsPDF, context: PDFGenerationContext): number
   
   if (!clientInfo) return 70;
   
+  console.log('PDF Generation - Client Info Debug:', {
+    billingAddress: quote.billingAddress,
+    serviceAddress: quote.serviceAddress,
+    clientAddress: clientInfo.address
+  });
+  
   // Billing Information and Service Address sections
   let yPos = 70;
   doc.setFontSize(11);
@@ -33,7 +39,9 @@ export const addClientInfo = (doc: jsPDF, context: PDFGenerationContext): number
     yPos += 7;
   }
   
+  // Determine billing address - prioritize quote.billingAddress
   const billingAddress = quote.billingAddress || clientInfo.address;
+  console.log('PDF Generation - Using billing address:', billingAddress);
   
   if (billingAddress) {
     const formattedBilling = formatAddress(billingAddress);
@@ -64,15 +72,21 @@ export const addClientInfo = (doc: jsPDF, context: PDFGenerationContext): number
     rightYOffset = 7;
   }
   
+  // Determine service address - prioritize quote.serviceAddress, fallback to billing, then client address
   let finalServiceAddress = null;
   
   if (quote.serviceAddress && quote.serviceAddress.trim() !== '') {
     finalServiceAddress = quote.serviceAddress;
+    console.log('PDF Generation - Using quote service address:', finalServiceAddress);
   } else if (quote.billingAddress && quote.billingAddress.trim() !== '') {
     finalServiceAddress = quote.billingAddress;
+    console.log('PDF Generation - Using billing address as service address:', finalServiceAddress);
   } else if (clientInfo.address && clientInfo.address.trim() !== '') {
     finalServiceAddress = clientInfo.address;
+    console.log('PDF Generation - Using client address as service address:', finalServiceAddress);
   }
+  
+  console.log('PDF Generation - Final service address:', finalServiceAddress);
   
   if (finalServiceAddress) {
     const formattedService = formatAddress(finalServiceAddress);
@@ -82,6 +96,13 @@ export const addClientInfo = (doc: jsPDF, context: PDFGenerationContext): number
         doc.text(formattedService.cityStateZip, 110, rightColYPos + 14 + rightYOffset);
       }
     }
+  } else {
+    console.log('PDF Generation - No service address found, showing fallback message');
+    doc.setFont('helvetica', 'italic');
+    doc.setTextColor(150, 150, 150);
+    doc.text('No service address specified', 110, rightColYPos + 7 + rightYOffset);
+    doc.setTextColor(0, 0, 0);
+    doc.setFont('helvetica', 'normal');
   }
   
   if (clientInfo.phone) {

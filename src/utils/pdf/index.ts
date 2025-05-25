@@ -14,9 +14,10 @@ export const generateQuotePDF = async (quote: Quote, clientInfo?: ClientInfo, sa
   // Enhanced debugging for approval status
   console.log('PDF Generation - Starting PDF generation for quote:', quote.id);
   console.log('PDF Generation - Quote status:', quote.status);
-  console.log('PDF Generation - Quote acceptance status:', (quote as any).acceptanceStatus);
-  console.log('PDF Generation - Quote accepted_at:', (quote as any).accepted_at);
-  console.log('PDF Generation - Quote accepted_by:', (quote as any).acceptedBy);
+  console.log('PDF Generation - Quote addresses:', {
+    billingAddress: quote.billingAddress,
+    serviceAddress: quote.serviceAddress
+  });
   
   // More comprehensive approval check
   const isApproved = quote.status === 'approved' || 
@@ -40,6 +41,11 @@ export const generateQuotePDF = async (quote: Quote, clientInfo?: ClientInfo, sa
     acceptanceDetails: acceptanceDetails || undefined,
     isApproved
   };
+  
+  console.log('PDF Generation - Context created with addresses:', {
+    billingAddress: context.quote.billingAddress,
+    serviceAddress: context.quote.serviceAddress
+  });
   
   // Setup document
   const { doc } = await setupDocument(context);
