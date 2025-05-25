@@ -62,7 +62,7 @@ export const EditQuoteDialog = ({
   const [selectedServiceAddressId, setSelectedServiceAddressId] = useState<string | null>(null);
   const [serviceAddress, setServiceAddress] = useState<string>("");
 
-  const [selectedTemplateId, setSelectedTemplateId] = useState<string>("");
+  const [selectedTemplateId, setSelectedTemplateId] = useState<string>("none");
   const [templates, setTemplates] = useState<QuoteTemplate[]>([]);
   const { user } = useAuth();
 
@@ -103,7 +103,7 @@ export const EditQuoteDialog = ({
   // Initialize template selection from quote
   useEffect(() => {
     if (quote && open) {
-      setSelectedTemplateId((quote as any).templateId || "");
+      setSelectedTemplateId((quote as any).templateId || "none");
     }
   }, [quote, open]);
 
@@ -164,7 +164,7 @@ export const EditQuoteDialog = ({
           notes: notes || undefined,
           billingAddress: billingAddress || undefined,
           serviceAddress: serviceAddress || undefined,
-          templateId: selectedTemplateId || undefined
+          templateId: selectedTemplateId !== "none" ? selectedTemplateId : undefined
         } as Quote);
         
         onOpenChange(false);
@@ -307,7 +307,7 @@ export const EditQuoteDialog = ({
                 <SelectValue placeholder="Select a template to include" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">No template</SelectItem>
+                <SelectItem value="none">No template</SelectItem>
                 {templates.map((template) => (
                   <SelectItem key={template.id} value={template.id}>
                     {template.name} {template.is_default && "(Default)"}

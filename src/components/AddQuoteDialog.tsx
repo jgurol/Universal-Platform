@@ -42,7 +42,7 @@ export const AddQuoteDialog = ({ open, onOpenChange, onAddQuote, clients, client
   const [selectedBillingAddressId, setSelectedBillingAddressId] = useState<string | null>(null);
   const [serviceAddress, setServiceAddress] = useState<string>("");
   const [selectedServiceAddressId, setSelectedServiceAddressId] = useState<string | null>(null);
-  const [selectedTemplateId, setSelectedTemplateId] = useState<string>("");
+  const [selectedTemplateId, setSelectedTemplateId] = useState<string>("none");
   const [templates, setTemplates] = useState<QuoteTemplate[]>([]);
   const { user } = useAuth();
   
@@ -215,14 +215,14 @@ export const AddQuoteDialog = ({ open, onOpenChange, onAddQuote, clients, client
           })),
           billingAddress: billingAddress || undefined,
           serviceAddress: serviceAddress || undefined,
-          templateId: selectedTemplateId || undefined
+          templateId: selectedTemplateId !== "none" ? selectedTemplateId : undefined
         };
         
         console.log('[AddQuoteDialog] Calling onAddQuote with data:', quoteData);
         onAddQuote(quoteData);
         
         // Reset form
-        setSelectedTemplateId("");
+        setSelectedTemplateId("none");
         setClientId("");
         setClientInfoId("");
         const todayDate = getTodayInTimezone();
@@ -394,7 +394,7 @@ export const AddQuoteDialog = ({ open, onOpenChange, onAddQuote, clients, client
                 <SelectValue placeholder="Select a template to include" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">No template</SelectItem>
+                <SelectItem value="none">No template</SelectItem>
                 {templates.map((template) => (
                   <SelectItem key={template.id} value={template.id}>
                     {template.name} {template.is_default && "(Default)"}
