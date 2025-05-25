@@ -53,10 +53,11 @@ export const generateQuotePDF = (quote: Quote, clientInfo?: ClientInfo, salesper
     doc.text(splitDescription, 20, 195);
   }
   
+  // Initialize yPosition for quote items section
+  let yPosition = quote.description ? 220 : 200;
+  
   // Quote items if available
   if (quote.quoteItems && quote.quoteItems.length > 0) {
-    let yPosition = quote.description ? 220 : 200;
-    
     doc.setFontSize(14);
     doc.text('Items:', 20, yPosition);
     yPosition += 15;
@@ -116,20 +117,20 @@ export const generateQuotePDF = (quote: Quote, clientInfo?: ClientInfo, salesper
   
   // Notes
   if (quote.notes) {
-    let yPosition = quote.quoteItems && quote.quoteItems.length > 0 ? yPosition + 20 : 240;
+    let notesYPosition = quote.quoteItems && quote.quoteItems.length > 0 ? yPosition + 20 : 240;
     
-    if (yPosition > 250) {
+    if (notesYPosition > 250) {
       doc.addPage();
-      yPosition = 30;
+      notesYPosition = 30;
     }
     
     doc.setFontSize(14);
-    doc.text('Notes:', 20, yPosition);
+    doc.text('Notes:', 20, notesYPosition);
     doc.setFontSize(12);
-    yPosition += 15;
+    notesYPosition += 15;
     
     const splitNotes = doc.splitTextToSize(quote.notes, 170);
-    doc.text(splitNotes, 20, yPosition);
+    doc.text(splitNotes, 20, notesYPosition);
   }
   
   return doc;
