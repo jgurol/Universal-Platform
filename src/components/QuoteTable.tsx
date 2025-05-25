@@ -3,25 +3,31 @@ import { Quote, ClientInfo } from "@/pages/Index";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Pencil, Trash2 } from "lucide-react";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { Pencil, Trash2, ChevronDown } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { useAgentMapping } from "@/hooks/useAgentMapping";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 
 interface QuoteTableProps {
   quotes: Quote[];
   clientInfos: ClientInfo[];
   onEditClick?: (quote: Quote) => void;
   onDeleteQuote?: (quoteId: string) => void;
+  onUpdateQuote?: (quote: Quote) => void;
 }
 
 export const QuoteTable = ({
   quotes,
   clientInfos,
   onEditClick,
-  onDeleteQuote
+  onDeleteQuote,
+  onUpdateQuote
 }: QuoteTableProps) => {
   const { isAdmin } = useAuth();
   const { agentMapping } = useAgentMapping();
+  const { toast } = useToast();
 
   const handleDeleteQuote = (quoteId: string) => {
     if (onDeleteQuote) {
@@ -29,8 +35,47 @@ export const QuoteTable = ({
     }
   };
 
-  const getStatusBadge = (status?: string) => {
-    if (!status) return null;
+  const handleStatusChange = async (quote: Quote, newStatus: string) => {
+    try {
+      const { error } = await supabase
+        .from('quotes')
+        .update({ status: newStatus })
+        .eq('id', quote.id);
+
+      if (error) {
+        console.error('Error updating quote status:', error);
+        toast({
+          title: "Failed to update status",
+          description: error.message,
+          variant: "destructive"
+        });
+        return;
+      }
+
+      // Update the quote locally if onUpdateQuote is provided
+      if (onUpdateQuote) {
+        onUpdateQuote({
+          ...quote,
+          status: newStatus
+        });
+      }
+
+      toast({
+        title: "Status updated",
+        description: `Quote status changed to ${newStatus}`,
+      });
+    } catch (err) {
+      console.error('Error updating quote status:', err);
+      toast({
+        title: "Error",
+        description: "Failed to update quote status",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const getStatusBadge = (quote: Quote) => {
+    const status = quote.status || 'pending';
     
     const statusColors = {
       approved: 'bg-green-50 text-green-700 border-green-200',
@@ -38,10 +83,50 @@ export const QuoteTable = ({
       rejected: 'bg-red-50 text-red-700 border-red-200'
     };
 
+    const badgeClass = statusColors[status as keyof typeof statusColors] || 'bg-gray-50 text-gray-700 border-gray-200';
+
+    if (isAdmin) {
+      return (
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" className="h-auto p-0 hover:bg-transparent">
+              <Badge 
+                variant="outline" 
+                className={`text-xs cursor-pointer hover:opacity-80 flex items-center gap-1 ${badgeClass}`}
+              >
+                {status.charAt(0).toUpperCase() + status.slice(1)}
+                <ChevronDown className="w-3 h-3" />
+              </Badge>
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="bg-white border shadow-md">
+            <DropdownMenuItem 
+              onClick={() => handleStatusChange(quote, 'pending')}
+              className="cursor-pointer hover:bg-gray-50"
+            >
+              Pending
+            </DropdownMenuItem>
+            <DropdownMenuItem 
+              onClick={() => handleStatusChange(quote, 'approved')}
+              className="cursor-pointer hover:bg-gray-50"
+            >
+              Approved
+            </DropdownMenuItem>
+            <DropdownMenuItem 
+              onClick={() => handleStatusChange(quote, 'rejected')}
+              className="cursor-pointer hover:bg-gray-50"
+            >
+              Rejected
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      );
+    }
+
     return (
       <Badge 
         variant="outline" 
-        className={`text-xs ${statusColors[status as keyof typeof statusColors] || 'bg-gray-50 text-gray-700 border-gray-200'}`}
+        className={`text-xs ${badgeClass}`}
       >
         {status.charAt(0).toUpperCase() + status.slice(1)}
       </Badge>
@@ -114,7 +199,7 @@ export const QuoteTable = ({
                   ${mrcTotal.toLocaleString()}
                 </TableCell>
                 <TableCell>
-                  {getStatusBadge(quote.status)}
+                  {getStatusBadge(quote)}
                 </TableCell>
                 {isAdmin && (
                   <TableCell className="text-center">

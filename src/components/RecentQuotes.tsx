@@ -60,6 +60,7 @@ export const RecentQuotes = ({
               clientInfos={clientInfos}
               onEditClick={isAdmin ? handleEditClick : undefined}
               onDeleteQuote={onDeleteQuote}
+              onUpdateQuote={onUpdateQuote}
             />
           )}
         </CardContent>
