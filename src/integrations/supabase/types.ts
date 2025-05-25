@@ -81,6 +81,100 @@ export type Database = {
         }
         Relationships: []
       }
+      circuit_milestones: {
+        Row: {
+          circuit_tracking_id: string
+          completed_date: string | null
+          created_at: string
+          id: string
+          milestone_description: string | null
+          milestone_name: string
+          notes: string | null
+          status: string
+          target_date: string | null
+          updated_at: string
+        }
+        Insert: {
+          circuit_tracking_id: string
+          completed_date?: string | null
+          created_at?: string
+          id?: string
+          milestone_description?: string | null
+          milestone_name: string
+          notes?: string | null
+          status?: string
+          target_date?: string | null
+          updated_at?: string
+        }
+        Update: {
+          circuit_tracking_id?: string
+          completed_date?: string | null
+          created_at?: string
+          id?: string
+          milestone_description?: string | null
+          milestone_name?: string
+          notes?: string | null
+          status?: string
+          target_date?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "circuit_milestones_circuit_tracking_id_fkey"
+            columns: ["circuit_tracking_id"]
+            isOneToOne: false
+            referencedRelation: "circuit_tracking"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      circuit_tracking: {
+        Row: {
+          actual_completion_date: string | null
+          circuit_type: string
+          created_at: string
+          estimated_completion_date: string | null
+          id: string
+          notes: string | null
+          order_id: string
+          progress_percentage: number | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          actual_completion_date?: string | null
+          circuit_type: string
+          created_at?: string
+          estimated_completion_date?: string | null
+          id?: string
+          notes?: string | null
+          order_id: string
+          progress_percentage?: number | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          actual_completion_date?: string | null
+          circuit_type?: string
+          created_at?: string
+          estimated_completion_date?: string | null
+          id?: string
+          notes?: string | null
+          order_id?: string
+          progress_percentage?: number | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "circuit_tracking_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: true
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       client_addresses: {
         Row: {
           address_type: string
@@ -290,6 +384,68 @@ export type Database = {
             columns: ["vendor_id"]
             isOneToOne: false
             referencedRelation: "vendors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      orders: {
+        Row: {
+          amount: number
+          billing_address: string | null
+          client_id: string | null
+          client_info_id: string | null
+          commission: number | null
+          commission_override: number | null
+          created_at: string
+          id: string
+          notes: string | null
+          order_number: string
+          quote_id: string
+          service_address: string | null
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          amount?: number
+          billing_address?: string | null
+          client_id?: string | null
+          client_info_id?: string | null
+          commission?: number | null
+          commission_override?: number | null
+          created_at?: string
+          id?: string
+          notes?: string | null
+          order_number: string
+          quote_id: string
+          service_address?: string | null
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          billing_address?: string | null
+          client_id?: string | null
+          client_info_id?: string | null
+          commission?: number | null
+          commission_override?: number | null
+          created_at?: string
+          id?: string
+          notes?: string | null
+          order_number?: string
+          quote_id?: string
+          service_address?: string | null
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "orders_quote_id_fkey"
+            columns: ["quote_id"]
+            isOneToOne: true
+            referencedRelation: "quotes"
             referencedColumns: ["id"]
           },
         ]
