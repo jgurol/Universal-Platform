@@ -1,10 +1,12 @@
 
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-import { Trash2, MapPin } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Trash2, MapPin, FileText } from "lucide-react";
 import { QuoteItemData } from "@/types/quoteItems";
 import { ClientAddress } from "@/types/clientAddress";
 
@@ -16,9 +18,22 @@ interface QuoteItemRowProps {
 }
 
 export const QuoteItemRow = ({ quoteItem, addresses, onUpdateItem, onRemoveItem }: QuoteItemRowProps) => {
+  const [isDescriptionOpen, setIsDescriptionOpen] = useState(false);
+  const [tempDescription, setTempDescription] = useState(quoteItem.description || quoteItem.item?.description || '');
+
   const formatAddressShort = (address: any) => {
     if (!address) return 'No address';
     return `${address.address_type} - ${address.city}, ${address.state}`;
+  };
+
+  const handleDescriptionSave = () => {
+    onUpdateItem(quoteItem.id, 'description', tempDescription);
+    setIsDescriptionOpen(false);
+  };
+
+  const handleDescriptionCancel = () => {
+    setTempDescription(quoteItem.description || quoteItem.item?.description || '');
+    setIsDescriptionOpen(false);
   };
 
   return (
@@ -32,12 +47,43 @@ export const QuoteItemRow = ({ quoteItem, addresses, onUpdateItem, onRemoveItem 
           className="text-sm font-medium h-8"
         />
         <div className="space-y-1">
-          <Textarea
-            value={quoteItem.description || quoteItem.item?.description || ''}
-            onChange={(e) => onUpdateItem(quoteItem.id, 'description', e.target.value)}
-            placeholder="Item description"
-            className="text-xs min-h-[60px] resize-none"
-          />
+          <Dialog open={isDescriptionOpen} onOpenChange={setIsDescriptionOpen}>
+            <DialogTrigger asChild>
+              <Button
+                variant="outline"
+                size="sm"
+                className="w-full h-8 justify-start text-xs text-gray-600"
+              >
+                <FileText className="w-3 h-3 mr-1" />
+                {quoteItem.description || quoteItem.item?.description ? 
+                  `${(quoteItem.description || quoteItem.item?.description || '').substring(0, 20)}...` : 
+                  'Add description'
+                }
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-[500px]">
+              <DialogHeader>
+                <DialogTitle>Edit Item Description</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4">
+                <Textarea
+                  value={tempDescription}
+                  onChange={(e) => setTempDescription(e.target.value)}
+                  placeholder="Enter item description"
+                  rows={6}
+                  className="resize-none"
+                />
+                <div className="flex justify-end space-x-2">
+                  <Button variant="outline" onClick={handleDescriptionCancel}>
+                    Cancel
+                  </Button>
+                  <Button onClick={handleDescriptionSave}>
+                    Save
+                  </Button>
+                </div>
+              </div>
+            </DialogContent>
+          </Dialog>
         </div>
         <div className="flex items-center gap-1 text-xs text-gray-500">
           <MapPin className="w-3 h-3" />

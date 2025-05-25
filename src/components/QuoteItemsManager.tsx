@@ -94,7 +94,7 @@ export const QuoteItemsManager = ({ items, onItemsChange, clientInfoId }: QuoteI
             <div>Type</div>
           </div>
           
-          <div className="border rounded-lg space-y-3 max-h-60 overflow-y-auto">
+          <div className="border rounded-lg space-y-3 max-h-96 overflow-y-auto">
             {items.map((quoteItem) => (
               <QuoteItemRow
                 key={quoteItem.id}
