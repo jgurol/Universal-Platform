@@ -25,9 +25,12 @@ export const QuoteItemRow = ({ quoteItem, addresses, onUpdateItem, onRemoveItem 
     <div className="grid grid-cols-6 gap-2 items-start p-3 border rounded bg-gray-50">
       {/* Item & Location Column */}
       <div className="col-span-2 space-y-2">
-        <div className="text-sm font-medium">
-          {quoteItem.item?.name || 'Unknown Item'}
-        </div>
+        <Input
+          value={quoteItem.name || quoteItem.item?.name || ''}
+          onChange={(e) => onUpdateItem(quoteItem.id, 'name', e.target.value)}
+          placeholder="Item name"
+          className="text-sm font-medium h-8"
+        />
         <div className="space-y-1">
           <Textarea
             value={quoteItem.description || quoteItem.item?.description || ''}

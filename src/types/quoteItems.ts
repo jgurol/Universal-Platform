@@ -11,6 +11,7 @@ export interface QuoteItemData {
   total_price: number;
   charge_type: 'NRC' | 'MRC';
   address_id?: string;
+  name?: string; // Editable name for this quote item
   description?: string; // Editable description for this quote item
   item?: Item;
   address?: ClientAddress;
