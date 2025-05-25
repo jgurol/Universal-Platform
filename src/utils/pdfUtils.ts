@@ -1,4 +1,3 @@
-
 import jsPDF from 'jspdf';
 import { Quote, ClientInfo } from '@/pages/Index';
 import { supabase } from '@/integrations/supabase/client';
@@ -9,7 +8,7 @@ const addFormattedTextToPDF = (doc: jsPDF, htmlContent: string, startX: number, 
   const pageHeight = 297;
   const bottomMargin = 20;
   const topMargin = 20;
-  const paragraphSpacing = lineHeight * 1.2; // Consistent paragraph spacing
+  const paragraphSpacing = lineHeight * 1.5; // Slightly more spacing between paragraphs
   
   // Clean and parse the HTML content
   const cleanContent = cleanHtmlContent(htmlContent);
@@ -21,13 +20,15 @@ const addFormattedTextToPDF = (doc: jsPDF, htmlContent: string, startX: number, 
     .filter(p => p.length > 0);
   
   paragraphs.forEach((paragraph, paragraphIndex) => {
-    // Add consistent spacing between paragraphs (except for the first one)
+    // Add consistent spacing between paragraphs
     if (paragraphIndex > 0) {
       currentY += paragraphSpacing;
     }
     
     // Parse inline formatting within the paragraph
     const formattedSections = parseInlineFormatting(paragraph);
+    
+    let sectionYStart = currentY;
     
     formattedSections.forEach(section => {
       // Check if we need a new page
@@ -40,6 +41,7 @@ const addFormattedTextToPDF = (doc: jsPDF, htmlContent: string, startX: number, 
         doc.setFont('helvetica', 'bold');
         doc.text('Terms & Conditions (continued):', startX, currentY);
         currentY += 8;
+        sectionYStart = currentY;
       }
       
       // Set font style based on formatting
@@ -96,24 +98,22 @@ const cleanHtmlContent = (htmlContent: string): string => {
         return `<${tagName}>`;
       }
       
-      // Convert paragraph tags to double line breaks for consistent spacing
-      if (tagName === 'p') return '\n\n';
-      if (tagName === '/p') return '';
-      
-      // Convert div tags to paragraph breaks
-      if (tagName === 'div') return '\n\n';
-      if (tagName === '/div') return '';
+      // Convert paragraph and div tags to consistent double line breaks
+      if (tagName === 'p' || tagName === 'div') return '\n\n';
+      if (tagName === '/p' || tagName === '/div') return '';
       
       // Remove everything else
       return '';
     });
   
-  // Clean up spacing more aggressively
+  // More aggressive cleaning for consistent spacing
   cleaned = cleaned
     .replace(/\s+/g, ' ') // Multiple spaces to single space
     .replace(/\n\s+/g, '\n') // Remove spaces after newlines
     .replace(/\s+\n/g, '\n') // Remove spaces before newlines
     .replace(/\n{3,}/g, '\n\n') // Limit to maximum double newlines
+    .replace(/^\n+/, '') // Remove leading newlines
+    .replace(/\n+$/, '') // Remove trailing newlines
     .trim();
   
   return cleaned;
