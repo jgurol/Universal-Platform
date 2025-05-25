@@ -1,4 +1,3 @@
-
 import jsPDF from 'jspdf';
 import { Quote, ClientInfo } from '@/pages/Index';
 import { supabase } from '@/integrations/supabase/client';
@@ -333,8 +332,7 @@ export const generateQuotePDF = async (quote: Quote, clientInfo?: ClientInfo, sa
   const buttonHeight = 12;
   
   // Create clickable link to acceptance page - FIXED URL GENERATION
-  const currentHost = window.location.origin;
-  const acceptanceUrl = `${currentHost}/accept-quote/${quote.id}`;
+  const acceptanceUrl = `${window.location.origin}/accept-quote/${quote.id}`;
   console.log('PDF Generation - Accept Agreement URL:', acceptanceUrl);
   
   doc.setFillColor(76, 175, 80); // Green color
