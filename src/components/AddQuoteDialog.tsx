@@ -35,7 +35,7 @@ export const AddQuoteDialog = ({ open, onOpenChange, onAddQuote, clients, client
   const [commissionOverride, setCommissionOverride] = useState("");
   const [quoteItems, setQuoteItems] = useState<QuoteItemData[]>([]);
   const [selectedAddressId, setSelectedAddressId] = useState<string | null>(null);
-  const [customAddress, setCustomAddress] = useState<string>("");
+  const [billingAddress, setBillingAddress] = useState<string>("");
   const { user } = useAuth();
   
   // Function to calculate expiration date (+60 days from quote date)
@@ -119,8 +119,9 @@ export const AddQuoteDialog = ({ open, onOpenChange, onAddQuote, clients, client
   }, [clientInfoId, clientInfos]);
 
   const handleAddressChange = (addressId: string | null, customAddr?: string) => {
+    console.log('AddQuoteDialog - Address changed:', { addressId, customAddr });
     setSelectedAddressId(addressId);
-    setCustomAddress(customAddr || "");
+    setBillingAddress(customAddr || "");
   };
 
   const calculateTotalAmount = () => {
@@ -131,6 +132,7 @@ export const AddQuoteDialog = ({ open, onOpenChange, onAddQuote, clients, client
     e.preventDefault();
     
     console.log('[AddQuoteDialog] Form submitted with description:', description);
+    console.log('[AddQuoteDialog] Billing address:', billingAddress);
     
     const totalAmount = calculateTotalAmount();
     
@@ -160,7 +162,7 @@ export const AddQuoteDialog = ({ open, onOpenChange, onAddQuote, clients, client
             ...item,
             address_id: selectedAddressId || undefined
           })),
-          billingAddress: customAddress || undefined
+          billingAddress: billingAddress || undefined
         };
         
         console.log('[AddQuoteDialog] Calling onAddQuote with data:', quoteData);
@@ -181,7 +183,7 @@ export const AddQuoteDialog = ({ open, onOpenChange, onAddQuote, clients, client
         setCommissionOverride("");
         setQuoteItems([]);
         setSelectedAddressId(null);
-        setCustomAddress("");
+        setBillingAddress("");
         onOpenChange(false);
       }
     }

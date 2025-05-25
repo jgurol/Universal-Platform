@@ -25,11 +25,13 @@ export const AddressSelector = ({
   const [addressMode, setAddressMode] = useState<'existing' | 'custom'>('existing');
   const [customAddress, setCustomAddress] = useState('');
 
-  // Find the primary/billing address on load
+  // Find the primary/billing address on load and format it properly
   useEffect(() => {
     if (addresses.length > 0 && !selectedAddressId) {
       const primaryAddress = addresses.find(addr => addr.is_primary) || addresses[0];
-      onAddressChange(primaryAddress.id);
+      const formattedAddress = formatAddress(primaryAddress);
+      console.log('Setting primary address:', formattedAddress);
+      onAddressChange(primaryAddress.id, formattedAddress);
     }
   }, [addresses, selectedAddressId, onAddressChange]);
 
@@ -38,7 +40,8 @@ export const AddressSelector = ({
     if (mode === 'existing') {
       const primaryAddress = addresses.find(addr => addr.is_primary) || addresses[0];
       if (primaryAddress) {
-        onAddressChange(primaryAddress.id);
+        const formattedAddress = formatAddress(primaryAddress);
+        onAddressChange(primaryAddress.id, formattedAddress);
       }
     } else {
       onAddressChange(null, customAddress);
@@ -46,7 +49,12 @@ export const AddressSelector = ({
   };
 
   const handleExistingAddressChange = (addressId: string) => {
-    onAddressChange(addressId);
+    const selectedAddress = addresses.find(addr => addr.id === addressId);
+    if (selectedAddress) {
+      const formattedAddress = formatAddress(selectedAddress);
+      console.log('Selected existing address:', formattedAddress);
+      onAddressChange(addressId, formattedAddress);
+    }
   };
 
   const handleCustomAddressChange = (value: string) => {

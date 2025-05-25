@@ -1,4 +1,3 @@
-
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -54,18 +53,20 @@ export const EditQuoteDialog = ({
 
   const { quoteItems, setQuoteItems } = useQuoteItems(quote, open);
   const [selectedAddressId, setSelectedAddressId] = useState<string | null>(null);
-  const [customAddress, setCustomAddress] = useState<string>("");
+  const [billingAddress, setBillingAddress] = useState<string>("");
 
   // Initialize billing address from quote
   useEffect(() => {
     if (quote && open) {
-      setCustomAddress(quote.billingAddress || "");
+      setBillingAddress(quote.billingAddress || "");
+      console.log('EditQuoteDialog - Initialized billing address:', quote.billingAddress);
     }
   }, [quote, open]);
 
   const handleAddressChange = (addressId: string | null, customAddr?: string) => {
+    console.log('EditQuoteDialog - Address changed:', { addressId, customAddr });
     setSelectedAddressId(addressId);
-    setCustomAddress(customAddr || "");
+    setBillingAddress(customAddr || "");
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -85,6 +86,8 @@ export const EditQuoteDialog = ({
         
         await updateQuoteItems(quote.id, updatedQuoteItems);
 
+        console.log('EditQuoteDialog - Updating quote with billing address:', billingAddress);
+
         onUpdateQuote({
           ...quote,
           clientId,
@@ -100,7 +103,7 @@ export const EditQuoteDialog = ({
           commissionOverride: commissionOverride ? parseFloat(commissionOverride) : undefined,
           expiresAt: expiresAt || undefined,
           notes: notes || undefined,
-          billingAddress: customAddress || undefined
+          billingAddress: billingAddress || undefined
         });
         
         onOpenChange(false);
