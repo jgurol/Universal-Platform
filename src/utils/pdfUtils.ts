@@ -1,3 +1,4 @@
+
 import jsPDF from 'jspdf';
 import { Quote, ClientInfo } from '@/pages/Index';
 
@@ -94,30 +95,38 @@ export const generateQuotePDF = (quote: Quote, clientInfo?: ClientInfo, salesper
       doc.text(`Email: ${clientInfo.email}`, 20, yPos + 35);
     }
     
-    // Service address (right column) - Fixed logic to properly use service address
+    // Service address (right column) - Fixed to use service address properly
     doc.text(clientInfo.company_name, 110, yPos);
     if (clientInfo.contact_name) {
       doc.text(clientInfo.contact_name, 110, yPos + 7);
     }
     
-    // Use service address from quote if provided, otherwise fall back to billing address, then client info address
-    let serviceAddress = null;
+    // Determine which address to use for service address
+    let finalServiceAddress = null;
+    console.log('PDF Generation - Determining service address...');
+    console.log('PDF Generation - quote.serviceAddress:', quote.serviceAddress);
+    console.log('PDF Generation - quote.billingAddress:', quote.billingAddress);
+    console.log('PDF Generation - clientInfo.address:', clientInfo.address);
+    
+    // Priority: serviceAddress > billingAddress > clientInfo.address
     if (quote.serviceAddress && quote.serviceAddress.trim() !== '') {
-      serviceAddress = quote.serviceAddress;
+      finalServiceAddress = quote.serviceAddress;
+      console.log('PDF Generation - Using quote service address');
     } else if (quote.billingAddress && quote.billingAddress.trim() !== '') {
-      serviceAddress = quote.billingAddress;
-    } else {
-      serviceAddress = clientInfo.address;
+      finalServiceAddress = quote.billingAddress;
+      console.log('PDF Generation - Using quote billing address as fallback');
+    } else if (clientInfo.address && clientInfo.address.trim() !== '') {
+      finalServiceAddress = clientInfo.address;
+      console.log('PDF Generation - Using client info address as fallback');
     }
     
-    console.log('PDF Generation - Quote service address:', quote.serviceAddress);
-    console.log('PDF Generation - Quote billing address fallback:', quote.billingAddress);
-    console.log('PDF Generation - Final service address used:', serviceAddress);
+    console.log('PDF Generation - Final service address used:', finalServiceAddress);
     
-    if (serviceAddress) {
-      const addressLines = doc.splitTextToSize(serviceAddress, 75);
-      doc.text(addressLines.slice(0, 2), 110, yPos + 14);
+    if (finalServiceAddress) {
+      const serviceAddressLines = doc.splitTextToSize(finalServiceAddress, 75);
+      doc.text(serviceAddressLines.slice(0, 2), 110, yPos + 14);
     }
+    
     if (clientInfo.phone) {
       doc.text(`Tel: ${clientInfo.phone}`, 110, yPos + 28);
     }
