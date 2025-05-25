@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -9,6 +10,7 @@ import { Quote, Client, ClientInfo } from "@/pages/Index";
 import { QuoteItemsManager } from "@/components/QuoteItemsManager";
 import { QuoteItemData } from "@/types/quoteItems";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/context/AuthContext";
 
 interface EditQuoteDialogProps {
   quote: Quote | null;
@@ -39,6 +41,61 @@ export const EditQuoteDialog = ({
   const [notes, setNotes] = useState("");
   const [commissionOverride, setCommissionOverride] = useState("");
   const [quoteItems, setQuoteItems] = useState<QuoteItemData[]>([]);
+  const { user } = useAuth();
+
+  // Generate next version number when quote changes
+  useEffect(() => {
+    const generateNextVersionNumber = async () => {
+      if (quote && user && open) {
+        try {
+          // Get the base quote number (without decimal version)
+          const baseQuoteNumber = quote.quoteNumber?.split('.')[0];
+          
+          if (!baseQuoteNumber) return;
+          
+          // Find the highest version number for this base quote number
+          const { data, error } = await supabase
+            .from('quotes')
+            .select('quote_number')
+            .eq('user_id', user.id)
+            .not('quote_number', 'is', null)
+            .like('quote_number', `${baseQuoteNumber}.%`)
+            .order('created_at', { ascending: false });
+
+          if (error) {
+            console.error('Error fetching quote versions:', error);
+            setQuoteNumber(`${baseQuoteNumber}.1`);
+            return;
+          }
+
+          let nextVersion = 1;
+          if (data && data.length > 0) {
+            // Find the highest version number
+            const versions = data
+              .map(q => q.quote_number)
+              .filter(qn => qn && qn.includes('.'))
+              .map(qn => {
+                const versionPart = qn.split('.')[1];
+                return versionPart ? parseInt(versionPart) : 0;
+              })
+              .filter(v => !isNaN(v));
+            
+            if (versions.length > 0) {
+              nextVersion = Math.max(...versions) + 1;
+            }
+          }
+          
+          setQuoteNumber(`${baseQuoteNumber}.${nextVersion}`);
+        } catch (err) {
+          console.error('Error generating version number:', err);
+          const baseQuoteNumber = quote.quoteNumber?.split('.')[0] || "3500";
+          setQuoteNumber(`${baseQuoteNumber}.1`);
+        }
+      }
+    };
+
+    generateNextVersionNumber();
+  }, [quote, user, open]);
 
   // Fetch quote items when quote changes
   useEffect(() => {
@@ -95,7 +152,7 @@ export const EditQuoteDialog = ({
       setClientInfoId(quote.clientInfoId || "");
       setDate(quote.date);
       setDescription(quote.description || "");
-      setQuoteNumber(quote.quoteNumber || "");
+      // Don't set the quote number here - let the version generation handle it
       setQuoteMonth(quote.quoteMonth || "");
       setQuoteYear(quote.quoteYear || "");
       setStatus(quote.status || "pending");
@@ -193,7 +250,7 @@ export const EditQuoteDialog = ({
         <DialogHeader>
           <DialogTitle>Edit Quote</DialogTitle>
           <DialogDescription>
-            Update the quote details and items.
+            Update the quote details and items. A new version number will be assigned.
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -225,15 +282,29 @@ export const EditQuoteDialog = ({
             </div>
           )}
 
-          <div className="space-y-2">
-            <Label htmlFor="date">Quote Date</Label>
-            <Input
-              id="date"
-              type="date"
-              value={date}
-              onChange={(e) => setDate(e.target.value)}
-              required
-            />
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="date">Quote Date</Label>
+              <Input
+                id="date"
+                type="date"
+                value={date}
+                onChange={(e) => setDate(e.target.value)}
+                required
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="quoteNumber">Quote Number (New Version)</Label>
+              <Input
+                id="quoteNumber"
+                value={quoteNumber}
+                onChange={(e) => setQuoteNumber(e.target.value)}
+                placeholder="Auto-generated version number"
+                className="bg-muted"
+                readOnly
+              />
+            </div>
           </div>
 
           <div className="space-y-2">
@@ -246,30 +317,18 @@ export const EditQuoteDialog = ({
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="quoteNumber">Quote Number</Label>
-              <Input
-                id="quoteNumber"
-                value={quoteNumber}
-                onChange={(e) => setQuoteNumber(e.target.value)}
-                placeholder="Enter quote number"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="status">Status</Label>
-              <Select value={status} onValueChange={setStatus}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="pending">Pending</SelectItem>
-                  <SelectItem value="approved">Approved</SelectItem>
-                  <SelectItem value="rejected">Rejected</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+          <div className="space-y-2">
+            <Label htmlFor="status">Status</Label>
+            <Select value={status} onValueChange={setStatus}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="pending">Pending</SelectItem>
+                <SelectItem value="approved">Approved</SelectItem>
+                <SelectItem value="rejected">Rejected</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
 
           {/* Quote Items Section */}
