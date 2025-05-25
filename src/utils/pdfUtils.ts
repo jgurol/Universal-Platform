@@ -75,11 +75,47 @@ export const generateQuotePDF = (quote: Quote, clientInfo?: ClientInfo, salesper
   doc.setFontSize(9);
   doc.setFont('helvetica', 'normal');
   
+  // Helper function to format address into proper structure
+  const formatAddress = (addressString: string) => {
+    if (!addressString) return null;
+    
+    // Split by comma and clean up
+    const parts = addressString.split(',').map(part => part.trim());
+    
+    if (parts.length >= 3) {
+      // Standard format: "Street, City, State Zip"
+      const street = parts[0];
+      const city = parts[1];
+      const stateZip = parts.slice(2).join(' ');
+      
+      return {
+        street,
+        cityStateZip: `${city}, ${stateZip}`
+      };
+    } else if (parts.length === 2) {
+      // Fallback: "Street, City State"
+      return {
+        street: parts[0],
+        cityStateZip: parts[1]
+      };
+    } else {
+      // Single line address
+      return {
+        street: addressString,
+        cityStateZip: ''
+      };
+    }
+  };
+  
   if (clientInfo) {
     // Billing info (left column) - Use custom billing address if available
+    doc.setFont('helvetica', 'bold');
     doc.text(clientInfo.company_name, 20, yPos);
+    doc.setFont('helvetica', 'normal');
+    
     if (clientInfo.contact_name) {
       doc.text(clientInfo.contact_name, 20, yPos + 7);
+      yPos += 7;
     }
     
     // Use custom billing address from quote if provided, otherwise fall back to client info address
@@ -87,8 +123,13 @@ export const generateQuotePDF = (quote: Quote, clientInfo?: ClientInfo, salesper
     console.log('PDF Generation - Final billing address used:', billingAddress);
     
     if (billingAddress) {
-      const addressLines = doc.splitTextToSize(billingAddress, 75);
-      doc.text(addressLines.slice(0, 2), 20, yPos + 14);
+      const formattedBilling = formatAddress(billingAddress);
+      if (formattedBilling) {
+        doc.text(formattedBilling.street, 20, yPos + 7);
+        if (formattedBilling.cityStateZip) {
+          doc.text(formattedBilling.cityStateZip, 20, yPos + 14);
+        }
+      }
     }
     
     if (clientInfo.phone) {
@@ -99,7 +140,10 @@ export const generateQuotePDF = (quote: Quote, clientInfo?: ClientInfo, salesper
     }
     
     // Service address (right column) - Let's debug this more thoroughly
+    doc.setFont('helvetica', 'bold');
     doc.text(clientInfo.company_name, 110, yPos);
+    doc.setFont('helvetica', 'normal');
+    
     if (clientInfo.contact_name) {
       doc.text(clientInfo.contact_name, 110, yPos + 7);
     }
@@ -134,8 +178,13 @@ export const generateQuotePDF = (quote: Quote, clientInfo?: ClientInfo, salesper
     console.log('PDF Generation - Final service address to display:', finalServiceAddress);
     
     if (finalServiceAddress) {
-      const serviceAddressLines = doc.splitTextToSize(finalServiceAddress, 75);
-      doc.text(serviceAddressLines.slice(0, 2), 110, yPos + 14);
+      const formattedService = formatAddress(finalServiceAddress);
+      if (formattedService) {
+        doc.text(formattedService.street, 110, yPos + 7);
+        if (formattedService.cityStateZip) {
+          doc.text(formattedService.cityStateZip, 110, yPos + 14);
+        }
+      }
     }
     
     if (clientInfo.phone) {
