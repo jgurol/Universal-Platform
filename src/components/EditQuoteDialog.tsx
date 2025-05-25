@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -184,16 +183,44 @@ export const EditQuoteDialog = ({
       if (selectedClient) {
         const { totalAmount } = calculateTotalsByChargeType(quoteItems);
         
-        // Update quote items in database with all fields including charge_type and address_id
+        // Update quote items in database - now properly saving custom descriptions and names
         try {
+          console.log('[EditQuoteDialog] Updating quote items with custom descriptions');
+          
           // Delete existing quote items
           await supabase
             .from('quote_items')
             .delete()
             .eq('quote_id', quote.id);
 
-          // Insert updated quote items with all necessary fields including charge_type and address_id
+          // Insert updated quote items with all fields including custom descriptions
           if (quoteItems.length > 0) {
+            // First, update the items table with any custom names/descriptions
+            for (const quoteItem of quoteItems) {
+              if (quoteItem.name !== quoteItem.item?.name || quoteItem.description !== quoteItem.item?.description) {
+                console.log(`[EditQuoteDialog] Updating item ${quoteItem.item_id} with custom name/description:`, {
+                  originalName: quoteItem.item?.name,
+                  customName: quoteItem.name,
+                  originalDescription: quoteItem.item?.description,
+                  customDescription: quoteItem.description
+                });
+                
+                // Update the item in the items table with custom values
+                const { error: itemUpdateError } = await supabase
+                  .from('items')
+                  .update({
+                    name: quoteItem.name,
+                    description: quoteItem.description
+                  })
+                  .eq('id', quoteItem.item_id);
+
+                if (itemUpdateError) {
+                  console.error('Error updating item with custom description:', itemUpdateError);
+                }
+              }
+            }
+
+            // Then insert the quote items
             const itemsToInsert = quoteItems.map(item => ({
               quote_id: quote.id,
               item_id: item.item_id,
@@ -201,7 +228,7 @@ export const EditQuoteDialog = ({
               unit_price: item.unit_price,
               total_price: item.total_price,
               charge_type: item.charge_type,
-              address_id: item.address_id || null // Now properly saving the address_id
+              address_id: item.address_id || null
             }));
 
             const { error: insertError } = await supabase
@@ -210,6 +237,8 @@ export const EditQuoteDialog = ({
 
             if (insertError) {
               console.error('Error inserting quote items:', insertError);
+            } else {
+              console.log('[EditQuoteDialog] Successfully saved quote items with custom descriptions');
             }
           }
         } catch (err) {
