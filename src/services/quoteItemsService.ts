@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { QuoteItemData } from "@/types/quoteItems";
 
@@ -57,7 +56,7 @@ export const updateQuoteItems = async (quoteId: string, quoteItems: QuoteItemDat
       .eq('quote_id', quoteId);
 
     if (quoteItems.length > 0) {
-      // First, update the items table with any custom names/descriptions
+      // Only update items table if there are actual changes to name/description
       for (const quoteItem of quoteItems) {
         if (quoteItem.name !== quoteItem.item?.name || quoteItem.description !== quoteItem.item?.description) {
           console.log(`[QuoteItemsService] Updating item ${quoteItem.item_id} with custom name/description:`, {
@@ -81,7 +80,7 @@ export const updateQuoteItems = async (quoteId: string, quoteItems: QuoteItemDat
         }
       }
 
-      // Then insert the quote items with proper address_id handling
+      // Insert the quote items with proper address_id handling
       const itemsToInsert = quoteItems.map(item => {
         console.log(`[QuoteItemsService] Inserting item ${item.id} with address_id: ${item.address_id}`);
         return {
@@ -101,12 +100,14 @@ export const updateQuoteItems = async (quoteId: string, quoteItems: QuoteItemDat
 
       if (insertError) {
         console.error('Error inserting quote items:', insertError);
+        throw insertError;
       } else {
         console.log('[QuoteItemsService] Successfully saved quote items with address assignments and descriptions');
       }
     }
   } catch (err) {
     console.error('Error updating quote items:', err);
+    throw err;
   }
 };
 
