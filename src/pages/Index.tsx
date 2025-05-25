@@ -36,6 +36,7 @@ export interface Quote {
   expiresAt?: string;
   notes?: string;
   quoteItems?: any[];
+  billingAddress?: string;
 }
 
 // Define the Transaction type for backward compatibility - maps to Quote

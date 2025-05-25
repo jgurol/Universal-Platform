@@ -71,15 +71,19 @@ export const generateQuotePDF = (quote: Quote, clientInfo?: ClientInfo, salesper
   doc.setFont('helvetica', 'normal');
   
   if (clientInfo) {
-    // Billing info (left column) - Aligned properly
+    // Billing info (left column) - Use custom billing address if available
     doc.text(clientInfo.company_name, 20, yPos);
     if (clientInfo.contact_name) {
       doc.text(clientInfo.contact_name, 20, yPos + 7);
     }
-    if (clientInfo.address) {
-      const addressLines = doc.splitTextToSize(clientInfo.address, 75);
+    
+    // Use custom billing address if provided, otherwise fall back to client info address
+    const billingAddress = quote.billingAddress || clientInfo.address;
+    if (billingAddress) {
+      const addressLines = doc.splitTextToSize(billingAddress, 75);
       doc.text(addressLines.slice(0, 2), 20, yPos + 14);
     }
+    
     if (clientInfo.phone) {
       doc.text(`Tel: ${clientInfo.phone}`, 20, yPos + 28);
     }
@@ -87,13 +91,13 @@ export const generateQuotePDF = (quote: Quote, clientInfo?: ClientInfo, salesper
       doc.text(`Email: ${clientInfo.email}`, 20, yPos + 35);
     }
     
-    // Service address (right column) - Aligned with left column
+    // Service address (right column) - Use same billing address for now
     doc.text(clientInfo.company_name, 110, yPos);
     if (clientInfo.contact_name) {
       doc.text(clientInfo.contact_name, 110, yPos + 7);
     }
-    if (clientInfo.address) {
-      const addressLines = doc.splitTextToSize(clientInfo.address, 75);
+    if (billingAddress) {
+      const addressLines = doc.splitTextToSize(billingAddress, 75);
       doc.text(addressLines.slice(0, 2), 110, yPos + 14);
     }
     if (clientInfo.phone) {
