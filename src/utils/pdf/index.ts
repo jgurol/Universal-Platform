@@ -14,10 +14,14 @@ export const generateQuotePDF = async (quote: Quote, clientInfo?: ClientInfo, sa
   // Enhanced debugging for approval status
   console.log('PDF Generation - Starting PDF generation for quote:', quote.id);
   console.log('PDF Generation - Quote status:', quote.status);
-  console.log('PDF Generation - Quote addresses:', {
+  console.log('PDF Generation - Quote addresses DEBUG:', {
     billingAddress: quote.billingAddress,
-    serviceAddress: quote.serviceAddress
+    serviceAddress: quote.serviceAddress,
+    quoteObject: quote
   });
+  
+  // Log the entire quote object to see what's actually there
+  console.log('PDF Generation - Full quote object:', JSON.stringify(quote, null, 2));
   
   // More comprehensive approval check
   const isApproved = quote.status === 'approved' || 
@@ -44,7 +48,8 @@ export const generateQuotePDF = async (quote: Quote, clientInfo?: ClientInfo, sa
   
   console.log('PDF Generation - Context created with addresses:', {
     billingAddress: context.quote.billingAddress,
-    serviceAddress: context.quote.serviceAddress
+    serviceAddress: context.quote.serviceAddress,
+    contextQuote: context.quote
   });
   
   // Setup document
