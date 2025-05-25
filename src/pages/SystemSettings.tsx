@@ -130,7 +130,14 @@ export default function SystemSettings() {
   };
 
   const handleLogoUpload = async () => {
-    if (!logoFile) return;
+    if (!logoFile) {
+      toast({
+        title: "No file selected",
+        description: "Please select a logo file to upload",
+        variant: "destructive",
+      });
+      return;
+    }
 
     setLoading(true);
     try {
@@ -146,6 +153,8 @@ export default function SystemSettings() {
             setting_key: 'company_logo_url',
             setting_value: base64String,
             updated_at: new Date().toISOString()
+          }, {
+            onConflict: 'setting_key'
           });
 
         if (error) throw error;
@@ -156,7 +165,18 @@ export default function SystemSettings() {
           description: "Company logo has been saved successfully",
         });
         setLogoFile(null);
+        setLoading(false);
       };
+      
+      reader.onerror = () => {
+        toast({
+          title: "Error reading file",
+          description: "Failed to read the selected file",
+          variant: "destructive",
+        });
+        setLoading(false);
+      };
+      
       reader.readAsDataURL(logoFile);
     } catch (error: any) {
       toast({
@@ -164,7 +184,6 @@ export default function SystemSettings() {
         description: error.message,
         variant: "destructive",
       });
-    } finally {
       setLoading(false);
     }
   };
@@ -177,6 +196,8 @@ export default function SystemSettings() {
           setting_key: 'company_logo_url',
           setting_value: '',
           updated_at: new Date().toISOString()
+        }, {
+          onConflict: 'setting_key'
         });
 
       if (error) throw error;
@@ -545,12 +566,10 @@ export default function SystemSettings() {
                   <p className="text-xs text-gray-500">
                     Recommended: PNG or JPG format, max 2MB. Logo will be displayed in the top-left corner of quote PDFs.
                   </p>
-                  {logoFile && (
-                    <Button onClick={handleLogoUpload} disabled={loading}>
-                      <Upload className="h-4 w-4 mr-2" />
-                      {loading ? "Uploading..." : "Upload Logo"}
-                    </Button>
-                  )}
+                  <Button onClick={handleLogoUpload} disabled={loading || !logoFile}>
+                    <Upload className="h-4 w-4 mr-2" />
+                    {loading ? "Uploading..." : "Upload Logo"}
+                  </Button>
                 </div>
               </CardContent>
             </Card>
