@@ -1,6 +1,7 @@
 
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { Resend } from "npm:resend@2.0.0";
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.49.8'
 
 const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
 
@@ -26,33 +27,53 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
-    const { to, cc, subject, message, pdfBase64, fileName, quoteId }: SendQuoteEmailRequest = await req.json();
+    const { 
+      to, 
+      cc, 
+      subject, 
+      message, 
+      pdfBase64, 
+      fileName, 
+      quoteId 
+    }: SendQuoteEmailRequest = await req.json();
 
     console.log('Sending email to:', to);
     console.log('CC recipients:', cc);
     console.log('Subject:', subject);
     console.log('Quote ID for tracking:', quoteId);
 
-    // Prepare email recipients
-    const recipients = [to];
-    if (cc && cc.length > 0) {
-      recipients.push(...cc);
-    }
+    // Create Supabase client for database operations
+    const supabase = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+    );
 
-    // Create tracking pixel URL
-    const trackingPixelUrl = `${Deno.env.get("SUPABASE_URL")}/functions/v1/track-email-open?quote=${quoteId}`;
-
-    // Send email with PDF attachment and tracking pixel
+    // Send email with PDF attachment
     const emailResponse = await resend.emails.send({
-      from: "Quotes <onboarding@resend.dev>", // You can customize this
-      to: recipients,
+      from: "Quotes <onboarding@resend.dev>",
+      to: [to],
+      cc: cc,
       subject: subject,
       html: `
-        <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
-          ${message.split('\n').map(line => `<p>${line}</p>`).join('')}
+        <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto;">
+          <div style="background-color: #f8f9fa; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
+            <h1 style="color: #007bff; margin: 0 0 10px 0;">Quote Request</h1>
+            <p style="margin: 0; font-size: 16px;">Please find your requested quote attached.</p>
+          </div>
           
-          <!-- Tracking pixel -->
-          <img src="${trackingPixelUrl}" width="1" height="1" style="display: block; width: 1px; height: 1px;" alt="" />
+          <div style="background-color: white; padding: 20px; border: 1px solid #e9ecef; border-radius: 8px;">
+            <div style="white-space: pre-wrap; font-family: Arial, sans-serif;">${message}</div>
+            
+            <div style="margin-top: 30px; padding: 15px; background-color: #f8f9fa; border-radius: 5px;">
+              <p style="margin: 0; color: #6c757d; font-size: 14px;">
+                <strong>Quote PDF attached:</strong> ${fileName}
+              </p>
+            </div>
+          </div>
+          
+          <div style="text-align: center; margin-top: 20px; padding: 10px; color: #6c757d; font-size: 12px;">
+            <p>This email was sent from our quoting system. Please contact us if you have any questions.</p>
+          </div>
         </div>
       `,
       attachments: [
@@ -80,6 +101,26 @@ const handler = async (req: Request): Promise<Response> => {
       });
     }
 
+    // Email sent successfully - now create tracking record
+    const { error: trackingError } = await supabase
+      .from('email_tracking')
+      .insert({
+        quote_id: quoteId,
+        email_id: emailResponse.data?.id,
+        recipient_email: to,
+        cc_emails: cc || [],
+        subject: subject,
+        sent_at: new Date().toISOString(),
+        status: 'sent'
+      });
+
+    if (trackingError) {
+      console.error('Error creating email tracking record:', trackingError);
+      // Don't fail the email send if tracking fails, just log it
+    } else {
+      console.log('Email tracking record created successfully');
+    }
+
     // Email sent successfully
     return new Response(JSON.stringify({ 
       success: true, 
@@ -92,7 +133,7 @@ const handler = async (req: Request): Promise<Response> => {
       },
     });
   } catch (error: any) {
-    console.error("Error sending quote email:", error);
+    console.error("Error sending email:", error);
     return new Response(
       JSON.stringify({ 
         success: false, 
