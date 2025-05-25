@@ -1,207 +1,8 @@
+
 import jsPDF from 'jspdf';
 import { Quote, ClientInfo } from '@/pages/Index';
 import { supabase } from '@/integrations/supabase/client';
-
-// Helper function to parse HTML and apply formatting to PDF
-const addFormattedTextToPDF = (doc: jsPDF, htmlContent: string, startX: number, startY: number, maxWidth: number, lineHeight: number = 4) => {
-  let currentY = startY;
-  const pageHeight = 297;
-  const bottomMargin = 20;
-  const topMargin = 20;
-  const paragraphSpacing = 2; // Two units spacing between paragraphs
-  
-  // Clean and parse the HTML content
-  const cleanContent = cleanHtmlContent(htmlContent);
-  
-  // Split content into paragraphs with more consistent logic
-  const paragraphs = cleanContent
-    .split(/\n\n+/) // Split on double newlines
-    .map(p => p.trim())
-    .filter(p => p.length > 0);
-  
-  console.log('PDF Generation - Paragraphs detected:', paragraphs.length);
-  console.log('PDF Generation - Paragraph content:', paragraphs);
-  
-  paragraphs.forEach((paragraph, paragraphIndex) => {
-    // Add consistent spacing between ALL paragraphs except the first
-    if (paragraphIndex > 0) {
-      currentY += paragraphSpacing;
-      console.log(`PDF Generation - Adding paragraph spacing: ${paragraphSpacing} after paragraph ${paragraphIndex - 1}`);
-    }
-    
-    // Parse inline formatting within the paragraph
-    const formattedSections = parseInlineFormatting(paragraph);
-    
-    formattedSections.forEach(section => {
-      // Check if we need a new page
-      if (currentY > pageHeight - bottomMargin) {
-        doc.addPage();
-        currentY = topMargin;
-        
-        // Add header on new page
-        doc.setFontSize(9);
-        doc.setFont('helvetica', 'bold');
-        doc.text('Terms & Conditions (continued):', startX, currentY);
-        currentY += 8;
-      }
-      
-      // Set font style based on formatting
-      doc.setFontSize(8);
-      if (section.bold && section.italic) {
-        doc.setFont('helvetica', 'bolditalic');
-      } else if (section.bold) {
-        doc.setFont('helvetica', 'bold');
-      } else if (section.italic) {
-        doc.setFont('helvetica', 'italic');
-      } else {
-        doc.setFont('helvetica', 'normal');
-      }
-      
-      // Handle line breaks within sections
-      if (section.text === '\n') {
-        currentY += lineHeight;
-        return;
-      }
-      
-      // Split text to fit within the specified width
-      const splitText = doc.splitTextToSize(section.text, maxWidth);
-      
-      // Add the text to the PDF
-      doc.text(splitText, startX, currentY);
-      currentY += splitText.length * lineHeight;
-    });
-  });
-  
-  return currentY;
-};
-
-// Helper function to completely clean HTML content with more consistent handling
-const cleanHtmlContent = (htmlContent: string): string => {
-  if (!htmlContent) return '';
-  
-  console.log('PDF Generation - Original HTML content:', htmlContent);
-  
-  // First, let's handle common HTML entities
-  let cleaned = htmlContent
-    .replace(/&nbsp;/g, ' ')
-    .replace(/&amp;/g, '&')
-    .replace(/&lt;/g, '<')
-    .replace(/&gt;/g, '>')
-    .replace(/&quot;/g, '"')
-    .replace(/&#39;/g, "'");
-  
-  // More aggressive HTML tag cleaning - normalize all paragraph-like tags to consistent breaks
-  cleaned = cleaned
-    .replace(/<\/?(p|div|article|section)[^>]*>/gi, '\n\n') // All paragraph-like tags to double newlines
-    .replace(/<br\s*\/?>/gi, '\n') // Line breaks to single newlines
-    .replace(/<([^>]+)>/g, (match, tag) => {
-      // Extract just the tag name (first word)
-      const tagName = tag.split(/\s+/)[0].toLowerCase().replace('/', '');
-      
-      // Keep only basic formatting tags
-      if (['b', 'strong', 'i', 'em'].includes(tagName)) {
-        return match.includes('/') ? `</${tagName}>` : `<${tagName}>`;
-      }
-      
-      // Remove everything else
-      return '';
-    });
-  
-  // Normalize whitespace and newlines very aggressively
-  cleaned = cleaned
-    .replace(/[ \t]+/g, ' ') // Multiple spaces/tabs to single space
-    .replace(/\n[ \t]+/g, '\n') // Remove spaces after newlines
-    .replace(/[ \t]+\n/g, '\n') // Remove spaces before newlines
-    .replace(/\n{3,}/g, '\n\n') // Multiple newlines to exactly double newlines
-    .replace(/^\n+/, '') // Remove leading newlines
-    .replace(/\n+$/, '') // Remove trailing newlines
-    .trim();
-  
-  console.log('PDF Generation - Cleaned content:', cleaned);
-  console.log('PDF Generation - Number of paragraph breaks found:', (cleaned.match(/\n\n/g) || []).length);
-  
-  return cleaned;
-};
-
-// Simplified inline formatting parser
-const parseInlineFormatting = (text: string) => {
-  const sections = [];
-  let currentText = '';
-  let isBold = false;
-  let isItalic = false;
-  
-  // Simple state machine to parse basic HTML tags
-  let i = 0;
-  while (i < text.length) {
-    if (text[i] === '<') {
-      // Found start of tag, save current text first
-      if (currentText) {
-        sections.push({
-          text: currentText,
-          bold: isBold,
-          italic: isItalic
-        });
-        currentText = '';
-      }
-      
-      // Find end of tag
-      const tagEnd = text.indexOf('>', i);
-      if (tagEnd === -1) {
-        // No closing bracket found, treat as regular text
-        currentText += text[i];
-        i++;
-        continue;
-      }
-      
-      const tag = text.substring(i + 1, tagEnd).toLowerCase();
-      
-      // Handle different tags
-      if (tag === 'b' || tag === 'strong') {
-        isBold = true;
-      } else if (tag === '/b' || tag === '/strong') {
-        isBold = false;
-      } else if (tag === 'i' || tag === 'em') {
-        isItalic = true;
-      } else if (tag === '/i' || tag === '/em') {
-        isItalic = false;
-      } else if (tag === 'br') {
-        sections.push({
-          text: '\n',
-          bold: false,
-          italic: false
-        });
-      }
-      
-      i = tagEnd + 1;
-    } else {
-      currentText += text[i];
-      i++;
-    }
-  }
-  
-  // Add any remaining text
-  if (currentText) {
-    sections.push({
-      text: currentText,
-      bold: isBold,
-      italic: isItalic
-    });
-  }
-  
-  // If no sections were created, return the whole text as normal
-  if (sections.length === 0) {
-    const cleanText = text.replace(/<[^>]*>/g, '').trim();
-    if (cleanText) {
-      sections.push({
-        text: cleanText,
-        bold: false,
-        italic: false
-      });
-    }
-  }
-  
-  return sections;
-};
+import { addMarkdownTextToPDF } from './markdownToPdf';
 
 export const generateQuotePDF = async (quote: Quote, clientInfo?: ClientInfo, salespersonName?: string) => {
   const doc = new jsPDF();
@@ -596,7 +397,7 @@ export const generateQuotePDF = async (quote: Quote, clientInfo?: ClientInfo, sa
     }
   }
   
-  // Template content section (Terms & Conditions) with proper rich text formatting
+  // Template content section (Terms & Conditions) with markdown formatting
   if (templateContent) {
     yPos += 15;
     
@@ -607,10 +408,10 @@ export const generateQuotePDF = async (quote: Quote, clientInfo?: ClientInfo, sa
     doc.text('Terms & Conditions:', 20, yPos);
     yPos += 8;
     
-    console.log('PDF Generation - Processing template content for formatting');
+    console.log('PDF Generation - Processing template content as markdown');
     
-    // Use the new formatted text function
-    const finalY = addFormattedTextToPDF(doc, templateContent, 20, yPos, 175);
+    // Use the new markdown parser
+    const finalY = addMarkdownTextToPDF(doc, templateContent, 20, yPos, 175);
     yPos = finalY;
   }
   
