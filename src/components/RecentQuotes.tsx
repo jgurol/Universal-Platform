@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Quote, Client, ClientInfo } from "@/pages/Index";
@@ -32,6 +31,7 @@ export const RecentQuotes = ({
   const [isAddQuoteOpen, setIsAddQuoteOpen] = useState(false);
   const [isEditQuoteOpen, setIsEditQuoteOpen] = useState(false);
   const [currentQuote, setCurrentQuote] = useState<Quote | null>(null);
+  const [searchTerm, setSearchTerm] = useState("");
   const { isAdmin, user } = useAuth();
 
   // Function to handle editing a quote - only for admins
@@ -104,23 +104,64 @@ export const RecentQuotes = ({
     onAddQuote(newQuote);
   };
 
+  // Function to filter quotes based on search term
+  const filteredQuotes = quotes.filter(quote => {
+    if (!searchTerm) return true;
+    
+    const searchLower = searchTerm.toLowerCase();
+    
+    // Search in quote basic fields
+    const matchesBasicFields = 
+      quote.clientName?.toLowerCase().includes(searchLower) ||
+      quote.description?.toLowerCase().includes(searchLower) ||
+      quote.quoteNumber?.toLowerCase().includes(searchLower) ||
+      quote.clientCompanyName?.toLowerCase().includes(searchLower) ||
+      quote.notes?.toLowerCase().includes(searchLower);
+    
+    // Search in quote items
+    const matchesQuoteItems = quote.quoteItems?.some(item => 
+      item.name?.toLowerCase().includes(searchLower) ||
+      item.description?.toLowerCase().includes(searchLower) ||
+      item.item?.name?.toLowerCase().includes(searchLower) ||
+      item.item?.description?.toLowerCase().includes(searchLower) ||
+      item.item?.sku?.toLowerCase().includes(searchLower)
+    );
+    
+    return matchesBasicFields || matchesQuoteItems;
+  });
+
   return (
     <>
       <Card className="bg-white shadow-lg border-0">
         <CardHeader>
           <QuoteHeader
-            quoteCount={quotes?.length || 0}
+            quoteCount={filteredQuotes?.length || 0}
             onAddQuote={() => setIsAddQuoteOpen(true)}
+            searchTerm={searchTerm}
+            onSearchChange={setSearchTerm}
           />
         </CardHeader>
         <CardContent className="p-0">
-          {!quotes || quotes.length === 0 ? (
+          {!filteredQuotes || filteredQuotes.length === 0 ? (
             <div className="p-6">
-              <QuoteEmptyState associatedAgentId={associatedAgentId} />
+              {searchTerm ? (
+                <div className="text-center py-8">
+                  <p className="text-gray-500">No quotes found matching "{searchTerm}"</p>
+                  <Button 
+                    variant="outline" 
+                    onClick={() => setSearchTerm("")}
+                    className="mt-2"
+                  >
+                    Clear search
+                  </Button>
+                </div>
+              ) : (
+                <QuoteEmptyState associatedAgentId={associatedAgentId} />
+              )}
             </div>
           ) : (
             <QuoteTable
-              quotes={quotes}
+              quotes={filteredQuotes}
               clientInfos={clientInfos}
               onEditClick={isAdmin ? handleEditClick : undefined}
               onDeleteQuote={onDeleteQuote}
