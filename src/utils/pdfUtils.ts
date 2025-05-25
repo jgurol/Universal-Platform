@@ -332,8 +332,10 @@ export const generateQuotePDF = async (quote: Quote, clientInfo?: ClientInfo, sa
   const buttonWidth = 85; // Made wider to fit under service address
   const buttonHeight = 12;
   
-  // Create clickable link to acceptance page
-  const acceptanceUrl = `${window.location.origin}/accept-quote/${quote.id}`;
+  // Create clickable link to acceptance page - FIXED URL GENERATION
+  const currentHost = window.location.origin;
+  const acceptanceUrl = `${currentHost}/accept-quote/${quote.id}`;
+  console.log('PDF Generation - Accept Agreement URL:', acceptanceUrl);
   
   doc.setFillColor(76, 175, 80); // Green color
   doc.rect(buttonX, buttonY, buttonWidth, buttonHeight, 'F');

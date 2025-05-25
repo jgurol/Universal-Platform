@@ -1,5 +1,5 @@
 
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { useState, useEffect, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Quote, ClientInfo } from "@/pages/Index";
@@ -9,11 +9,12 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
-import { CheckCircle, FileText, DollarSign } from "lucide-react";
+import { CheckCircle, FileText, DollarSign, AlertCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 const AcceptQuote = () => {
   const { quoteId } = useParams<{ quoteId: string }>();
+  const navigate = useNavigate();
   const [quote, setQuote] = useState<Quote | null>(null);
   const [clientInfo, setClientInfo] = useState<ClientInfo | null>(null);
   const [templateContent, setTemplateContent] = useState<string>("");
@@ -23,12 +24,19 @@ const AcceptQuote = () => {
   const [clientName, setClientName] = useState("");
   const [clientEmail, setClientEmail] = useState("");
   const [isDrawing, setIsDrawing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const { toast } = useToast();
 
   useEffect(() => {
     const fetchQuoteData = async () => {
-      if (!quoteId) return;
+      if (!quoteId) {
+        setError("No quote ID provided");
+        setIsLoading(false);
+        return;
+      }
+
+      console.log('AcceptQuote - Loading quote with ID:', quoteId);
 
       try {
         // Check if quote is already accepted
@@ -39,6 +47,7 @@ const AcceptQuote = () => {
           .single();
 
         if (acceptance) {
+          console.log('AcceptQuote - Quote already accepted:', acceptance);
           setIsAccepted(true);
           setIsLoading(false);
           return;
@@ -58,7 +67,14 @@ const AcceptQuote = () => {
           .eq('id', quoteId)
           .single();
 
-        if (quoteError) throw quoteError;
+        if (quoteError) {
+          console.error('AcceptQuote - Error fetching quote:', quoteError);
+          setError(`Failed to load quote: ${quoteError.message}`);
+          setIsLoading(false);
+          return;
+        }
+
+        console.log('AcceptQuote - Quote data loaded:', quoteData);
 
         if (quoteData) {
           setQuote(quoteData as any);
@@ -71,9 +87,10 @@ const AcceptQuote = () => {
               .eq('id', quoteData.client_info_id)
               .single();
 
-            if (clientError) throw clientError;
-            
-            if (clientData) {
+            if (clientError) {
+              console.error('AcceptQuote - Error fetching client info:', clientError);
+            } else if (clientData) {
+              console.log('AcceptQuote - Client info loaded:', clientData);
               setClientInfo(clientData);
               setClientName(clientData.contact_name || "");
               setClientEmail(clientData.email || "");
@@ -89,24 +106,23 @@ const AcceptQuote = () => {
               .single();
 
             if (!templateError && templateData) {
+              console.log('AcceptQuote - Template content loaded');
               setTemplateContent(templateData.content);
             }
           }
+        } else {
+          setError("Quote not found");
         }
       } catch (error) {
-        console.error('Error fetching quote:', error);
-        toast({
-          title: "Error",
-          description: "Failed to load quote information.",
-          variant: "destructive"
-        });
+        console.error('AcceptQuote - Error in fetchQuoteData:', error);
+        setError(`Failed to load quote information: ${error}`);
       } finally {
         setIsLoading(false);
       }
     };
 
     fetchQuoteData();
-  }, [quoteId, toast]);
+  }, [quoteId]);
 
   const startDrawing = (e: React.MouseEvent<HTMLCanvasElement>) => {
     setIsDrawing(true);
@@ -184,6 +200,8 @@ const AcceptQuote = () => {
       // Get signature as base64
       const signatureData = canvas.toDataURL();
 
+      console.log('AcceptQuote - Submitting acceptance for quote:', quote.id);
+
       // Save acceptance to database
       const { error: acceptanceError } = await supabase
         .from('quote_acceptances')
@@ -196,7 +214,10 @@ const AcceptQuote = () => {
           user_agent: navigator.userAgent
         });
 
-      if (acceptanceError) throw acceptanceError;
+      if (acceptanceError) {
+        console.error('AcceptQuote - Error saving acceptance:', acceptanceError);
+        throw acceptanceError;
+      }
 
       // Update quote status
       const { error: quoteError } = await supabase
@@ -208,8 +229,12 @@ const AcceptQuote = () => {
         })
         .eq('id', quote.id);
 
-      if (quoteError) throw quoteError;
+      if (quoteError) {
+        console.error('AcceptQuote - Error updating quote status:', quoteError);
+        throw quoteError;
+      }
 
+      console.log('AcceptQuote - Quote acceptance completed successfully');
       setIsAccepted(true);
       toast({
         title: "Agreement Accepted",
@@ -217,7 +242,7 @@ const AcceptQuote = () => {
       });
 
     } catch (error) {
-      console.error('Error accepting quote:', error);
+      console.error('AcceptQuote - Error accepting quote:', error);
       toast({
         title: "Error",
         description: "Failed to accept agreement. Please try again.",
@@ -235,6 +260,23 @@ const AcceptQuote = () => {
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
           <p className="text-gray-600">Loading agreement...</p>
         </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <Card className="max-w-md mx-auto">
+          <CardContent className="pt-6 text-center">
+            <AlertCircle className="w-16 h-16 text-red-400 mx-auto mb-4" />
+            <h1 className="text-2xl font-bold text-gray-900 mb-2">Error</h1>
+            <p className="text-gray-600 mb-4">{error}</p>
+            <Button onClick={() => navigate('/')} variant="outline">
+              Return Home
+            </Button>
+          </CardContent>
+        </Card>
       </div>
     );
   }
@@ -265,6 +307,9 @@ const AcceptQuote = () => {
             <p className="text-gray-600">
               The requested quote could not be found or may have expired.
             </p>
+            <Button onClick={() => navigate('/')} variant="outline" className="mt-4">
+              Return Home
+            </Button>
           </CardContent>
         </Card>
       </div>
