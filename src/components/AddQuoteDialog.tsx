@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -23,7 +24,6 @@ interface AddQuoteDialogProps {
 export const AddQuoteDialog = ({ open, onOpenChange, onAddQuote, clients, clientInfos }: AddQuoteDialogProps) => {
   const [clientId, setClientId] = useState("");
   const [clientInfoId, setClientInfoId] = useState("");
-  const [amount, setAmount] = useState("");
   const [date, setDate] = useState("");
   const [description, setDescription] = useState("");
   const [quoteNumber, setQuoteNumber] = useState("");
@@ -96,15 +96,15 @@ export const AddQuoteDialog = ({ open, onOpenChange, onAddQuote, clients, client
     }
   }, [clientInfoId, clientInfos]);
 
-  // Update amount when quote items change
-  useEffect(() => {
-    const totalAmount = quoteItems.reduce((total, item) => total + item.total_price, 0);
-    setAmount(totalAmount.toString());
-  }, [quoteItems]);
+  const calculateTotalAmount = () => {
+    return quoteItems.reduce((total, item) => total + item.total_price, 0);
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (clientId && amount && date) {
+    const totalAmount = calculateTotalAmount();
+    
+    if (clientId && date) {
       const selectedClient = clients.find(client => client.id === clientId);
       const selectedClientInfo = clientInfoId && clientInfoId !== "none" ? clientInfos.find(info => info.id === clientInfoId) : null;
       
@@ -113,7 +113,7 @@ export const AddQuoteDialog = ({ open, onOpenChange, onAddQuote, clients, client
           clientId,
           clientName: selectedClient.name,
           companyName: selectedClient.companyName || selectedClient.name,
-          amount: parseFloat(amount),
+          amount: totalAmount,
           date,
           description: description || "",
           quoteNumber: quoteNumber || undefined,
@@ -131,7 +131,6 @@ export const AddQuoteDialog = ({ open, onOpenChange, onAddQuote, clients, client
         // Reset form
         setClientId("");
         setClientInfoId("");
-        setAmount("");
         setDate(getTodayInTimezone());
         setDescription("");
         setQuoteNumber("");
@@ -253,21 +252,6 @@ export const AddQuoteDialog = ({ open, onOpenChange, onAddQuote, clients, client
             onItemsChange={setQuoteItems}
             clientInfoId={clientInfoId !== "none" ? clientInfoId : undefined}
           />
-
-          <div className="space-y-2">
-            <Label htmlFor="amount">Total Amount ($)</Label>
-            <Input
-              id="amount"
-              type="number"
-              step="0.01"
-              min="0"
-              value={amount}
-              onChange={(e) => setAmount(e.target.value)}
-              placeholder="Calculated from items"
-              readOnly
-              className="bg-gray-100"
-            />
-          </div>
 
           <div className="space-y-2">
             <Label htmlFor="status">Status</Label>

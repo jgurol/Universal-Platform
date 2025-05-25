@@ -27,7 +27,6 @@ export const EditQuoteDialog = ({
 }: EditQuoteDialogProps) => {
   const [clientId, setClientId] = useState("");
   const [clientInfoId, setClientInfoId] = useState("");
-  const [amount, setAmount] = useState("");
   const [date, setDate] = useState("");
   const [description, setDescription] = useState("");
   const [quoteNumber, setQuoteNumber] = useState("");
@@ -43,7 +42,6 @@ export const EditQuoteDialog = ({
     if (quote) {
       setClientId(quote.clientId);
       setClientInfoId(quote.clientInfoId || "");
-      setAmount(quote.amount.toString());
       setDate(quote.date);
       setDescription(quote.description || "");
       setQuoteNumber(quote.quoteNumber || "");
@@ -58,7 +56,7 @@ export const EditQuoteDialog = ({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (quote && clientId && amount && date) {
+    if (quote && clientId && date) {
       const selectedClient = clients.find(client => client.id === clientId);
       const selectedClientInfo = clientInfoId && clientInfoId !== "none" ? clientInfos.find(info => info.id === clientInfoId) : null;
       
@@ -68,7 +66,7 @@ export const EditQuoteDialog = ({
           clientId,
           clientName: selectedClient.name,
           companyName: selectedClient.companyName || selectedClient.name,
-          amount: parseFloat(amount),
+          amount: quote.amount, // Keep existing amount since it's calculated from items
           date,
           description: description || "",
           quoteNumber: quoteNumber || undefined,
@@ -129,30 +127,15 @@ export const EditQuoteDialog = ({
             </div>
           )}
 
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="amount">Amount ($)</Label>
-              <Input
-                id="amount"
-                type="number"
-                step="0.01"
-                min="0"
-                value={amount}
-                onChange={(e) => setAmount(e.target.value)}
-                required
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="date">Quote Date</Label>
-              <Input
-                id="date"
-                type="date"
-                value={date}
-                onChange={(e) => setDate(e.target.value)}
-                required
-              />
-            </div>
+          <div className="space-y-2">
+            <Label htmlFor="date">Quote Date</Label>
+            <Input
+              id="date"
+              type="date"
+              value={date}
+              onChange={(e) => setDate(e.target.value)}
+              required
+            />
           </div>
 
           <div className="space-y-2">
