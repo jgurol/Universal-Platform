@@ -95,8 +95,23 @@ const AcceptQuote = () => {
           supabase.from('client_info').select('*')
         ]);
 
-        const clients = clientsResult.data || [];
-        const clientInfos = clientInfosResult.data || [];
+        const rawClients = clientsResult.data || [];
+        const rawClientInfos = clientInfosResult.data || [];
+
+        // Transform raw database data to expected types
+        const clients = rawClients.map(agent => ({
+          id: agent.id,
+          firstName: agent.first_name,
+          lastName: agent.last_name,
+          name: `${agent.first_name} ${agent.last_name}`,
+          email: agent.email,
+          companyName: agent.company_name,
+          commissionRate: agent.commission_rate || 0,
+          totalEarnings: agent.total_earnings || 0,
+          lastPayment: agent.last_payment || new Date().toISOString(),
+        }));
+
+        const clientInfos = rawClientInfos; // ClientInfo type already matches the database structure
 
         // Step 4: Use mapQuoteData utility to properly convert to Quote type
         const mappedQuote = mapQuoteData(quoteData, clients, clientInfos);
