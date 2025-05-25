@@ -13,11 +13,13 @@ export const EmailStatusButton = ({ quoteId, onEmailClick }: EmailStatusButtonPr
   const [emailStatus, setEmailStatus] = useState<'idle' | 'success' | 'error'>('idle');
   const [emailOpened, setEmailOpened] = useState(false);
   const [emailOpenCount, setEmailOpenCount] = useState(0);
+  const [isLoading, setIsLoading] = useState(true);
 
   // Load email status from database when component mounts or quoteId changes
   useEffect(() => {
     const loadEmailStatus = async () => {
       try {
+        setIsLoading(true);
         const { data, error } = await supabase
           .from('quotes')
           .select('email_status, email_opened, email_open_count')
@@ -31,17 +33,25 @@ export const EmailStatusButton = ({ quoteId, onEmailClick }: EmailStatusButtonPr
           }
           setEmailOpened(data.email_opened || false);
           setEmailOpenCount(data.email_open_count || 0);
+        } else {
+          console.warn('EmailStatusButton - No data or error for quote:', quoteId, error);
         }
       } catch (err) {
         console.error('Error loading email status:', err);
+      } finally {
+        setIsLoading(false);
       }
     };
 
-    loadEmailStatus();
+    if (quoteId) {
+      loadEmailStatus();
+    }
   }, [quoteId]);
 
   // Set up real-time subscription to listen for quote updates
   useEffect(() => {
+    if (!quoteId) return;
+
     const channel = supabase
       .channel(`quote-email-status-${quoteId}`)
       .on(
@@ -74,12 +84,14 @@ export const EmailStatusButton = ({ quoteId, onEmailClick }: EmailStatusButtonPr
   }, [quoteId]);
 
   const getEmailIcon = () => {
+    if (isLoading) return <Mail className="w-4 h-4 animate-pulse" />;
     if (emailStatus === 'success') return <CheckCircle className="w-4 h-4 text-green-600" />;
     if (emailStatus === 'error') return <XCircle className="w-4 h-4 text-red-600" />;
     return <Mail className="w-4 h-4" />;
   };
 
   const getEmailButtonClass = () => {
+    if (isLoading) return 'text-gray-400 hover:text-gray-500';
     if (emailStatus === 'success') return 'text-green-600 hover:text-green-700 bg-green-50 border-green-200';
     if (emailStatus === 'error') return 'text-red-600 hover:text-red-700 bg-red-50 border-red-200';
     return 'text-gray-500 hover:text-blue-600';
@@ -97,6 +109,13 @@ export const EmailStatusButton = ({ quoteId, onEmailClick }: EmailStatusButtonPr
     return null;
   };
 
+  const getButtonTitle = () => {
+    if (isLoading) return 'Loading email status...';
+    if (emailStatus === 'success') return 'Email sent successfully!';
+    if (emailStatus === 'error') return 'Email failed to send';
+    return 'Email Quote';
+  };
+
   return (
     <div className="relative">
       <Button 
@@ -104,7 +123,8 @@ export const EmailStatusButton = ({ quoteId, onEmailClick }: EmailStatusButtonPr
         size="sm" 
         className={`h-8 w-8 p-0 transition-all duration-500 border ${getEmailButtonClass()}`}
         onClick={onEmailClick}
-        title={emailStatus === 'success' ? 'Email sent successfully!' : emailStatus === 'error' ? 'Email failed to send' : 'Email Quote'}
+        title={getButtonTitle()}
+        disabled={isLoading}
       >
         {getEmailIcon()}
       </Button>
