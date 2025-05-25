@@ -55,8 +55,24 @@ const handler = async (req: Request): Promise<Response> => {
       ],
     });
 
-    console.log("Email sent successfully:", emailResponse);
+    console.log("Resend API response:", emailResponse);
 
+    // Check if Resend returned an error
+    if (emailResponse.error) {
+      console.error("Resend API error:", emailResponse.error);
+      return new Response(JSON.stringify({ 
+        success: false, 
+        error: emailResponse.error.message || "Failed to send email via Resend"
+      }), {
+        status: 400,
+        headers: {
+          "Content-Type": "application/json",
+          ...corsHeaders,
+        },
+      });
+    }
+
+    // Email sent successfully
     return new Response(JSON.stringify({ 
       success: true, 
       messageId: emailResponse.data?.id 

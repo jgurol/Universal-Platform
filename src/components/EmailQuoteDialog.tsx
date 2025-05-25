@@ -157,13 +157,26 @@ ${salespersonName || 'Sales Team'}`);
             }
           });
 
+          console.log('Resend response data:', data);
+          console.log('Resend response error:', error);
+
           if (error) {
-            throw error;
+            console.error('Supabase function error:', error);
+            setEmailStatus('error');
+            onEmailError?.();
+            toast({
+              title: "Failed to send email",
+              description: error.message || "There was an error sending the quote. Please try again.",
+              variant: "destructive"
+            });
+            return;
           }
 
-          if (data?.success) {
+          // Check if the response indicates success or failure
+          if (data?.success === true) {
+            console.log('Email sent successfully via Resend');
             setEmailStatus('success');
-            onEmailSuccess?.(); // Call parent callback
+            onEmailSuccess?.();
             toast({
               title: "Email sent successfully",
               description: `Quote has been sent to ${recipientEmail}${ccEmails.length > 0 ? ` and ${ccEmails.length} CC recipient(s)` : ''}`,
@@ -174,12 +187,19 @@ ${salespersonName || 'Sales Team'}`);
               onOpenChange(false);
             }, 3000);
           } else {
-            throw new Error(data?.error || 'Failed to send email');
+            console.error('Email sending failed:', data?.error);
+            setEmailStatus('error');
+            onEmailError?.();
+            toast({
+              title: "Failed to send email",
+              description: data?.error || "There was an error sending the quote. Please try again.",
+              variant: "destructive"
+            });
           }
         } catch (emailError) {
           console.error('Error calling email function:', emailError);
           setEmailStatus('error');
-          onEmailError?.(); // Call parent callback
+          onEmailError?.();
           toast({
             title: "Failed to send email",
             description: "There was an error sending the quote. Please try again.",
@@ -194,7 +214,7 @@ ${salespersonName || 'Sales Team'}`);
     } catch (error) {
       console.error('Error generating PDF:', error);
       setEmailStatus('error');
-      onEmailError?.(); // Call parent callback
+      onEmailError?.();
       toast({
         title: "Failed to generate PDF",
         description: "There was an error generating the quote PDF. Please try again.",
