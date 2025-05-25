@@ -1,3 +1,4 @@
+
 import jsPDF from 'jspdf';
 import { Quote, ClientInfo } from '@/pages/Index';
 import { supabase } from '@/integrations/supabase/client';
@@ -241,8 +242,10 @@ export const generateQuotePDF = async (quote: Quote, clientInfo?: ClientInfo, sa
   const quoteTitle = quote.description || (clientInfo?.company_name ? `${clientInfo.company_name} - Service Agreement` : 'Service Agreement');
   doc.text(quoteTitle, 20, yPos);
   
-  // Items Section - Monthly Fees with description and address layout
-  yPos += 15;
+  // Items Section - More compact to save space
+  yPos += 12;
+  
+  let itemsSectionHeight = 0;
   
   if (quote.quoteItems && quote.quoteItems.length > 0) {
     const mrcItems = quote.quoteItems.filter(item => item.charge_type === 'MRC');
@@ -251,9 +254,9 @@ export const generateQuotePDF = async (quote: Quote, clientInfo?: ClientInfo, sa
     // Define table structure with properly aligned columns for both MRC and NRC sections
     const colX = {
       description: 20,
-      qty: 150,        // Moved further right for better alignment
-      price: 165,      // Aligned with Qty column
-      total: 180       // Aligned with Price column
+      qty: 150,
+      price: 165,
+      total: 180
     };
     
     // Monthly Fees Section
@@ -261,80 +264,74 @@ export const generateQuotePDF = async (quote: Quote, clientInfo?: ClientInfo, sa
       doc.setFontSize(12);
       doc.setFont('helvetica', 'bold');
       doc.text('Monthly Fees', 20, yPos);
-      yPos += 12;
+      yPos += 10;
       
       // Table headers with background
       doc.setFillColor(240, 240, 240);
-      doc.rect(colX.description, yPos - 8, 175, 10, 'F');
+      doc.rect(colX.description, yPos - 6, 175, 8, 'F');
       doc.setDrawColor(200, 200, 200);
-      doc.rect(colX.description, yPos - 8, 175, 10);
+      doc.rect(colX.description, yPos - 6, 175, 8);
       
       doc.setFontSize(8);
       doc.setFont('helvetica', 'bold');
-      doc.text('Description', colX.description + 2, yPos - 2);
-      doc.text('Qty', colX.qty + 2, yPos - 2);
-      doc.text('Price', colX.price + 2, yPos - 2);
-      doc.text('Total', colX.total + 2, yPos - 2);
+      doc.text('Description', colX.description + 2, yPos - 1);
+      doc.text('Qty', colX.qty + 2, yPos - 1);
+      doc.text('Price', colX.price + 2, yPos - 1);
+      doc.text('Total', colX.total + 2, yPos - 1);
       
-      yPos += 5;
+      yPos += 4;
       
-      // MRC Items with description and address on separate lines
+      // MRC Items with more compact layout
       doc.setFont('helvetica', 'normal');
       mrcItems.forEach((item, index) => {
         const itemName = item.item?.name || item.name || 'Monthly Service';
         
-        // Get address from the item
+        // Get address from the item - more compact
         let addressText = '';
         if (item.address) {
-          // Format the full address from the client_addresses table
           addressText = `${item.address.street_address}, ${item.address.city}, ${item.address.state} ${item.address.zip_code}`;
-          console.log('PDF Generation - Using item.address:', addressText);
         } else {
-          // Fallback to quote addresses or "Service location not specified"
           addressText = quote.serviceAddress || quote.billingAddress || 'Service location not specified';
-          console.log('PDF Generation - Using fallback address:', addressText);
         }
         
         // Truncate address if too long
-        if (addressText.length > 45) {
-          addressText = addressText.substring(0, 42) + '...';
+        if (addressText.length > 40) {
+          addressText = addressText.substring(0, 37) + '...';
         }
         
-        // Calculate row height (taller for description + address)
-        const rowHeight = 14;
+        // More compact row height
+        const rowHeight = 10;
         
         // Alternate row background
         if (index % 2 === 0) {
           doc.setFillColor(250, 250, 250);
-          doc.rect(colX.description, yPos - 4, 175, rowHeight, 'F');
+          doc.rect(colX.description, yPos - 3, 175, rowHeight, 'F');
         }
         
-        // Main item row - description line
+        // Main item row - description line (smaller font)
         doc.setTextColor(0, 0, 0);
-        doc.setFontSize(8);
+        doc.setFontSize(7);
         doc.setFont('helvetica', 'normal');
         doc.text(itemName.substring(0, 35), colX.description + 2, yPos);
         
-        // Address line (larger font, black color, slightly indented)
-        doc.setFontSize(7);
-        doc.setTextColor(0, 0, 0); // Black color for address
-        doc.text(`Location: ${addressText}`, colX.description + 4, yPos + 7);
+        // Address line (smaller font)
+        doc.setFontSize(6);
+        doc.setTextColor(80, 80, 80);
+        doc.text(`Loc: ${addressText}`, colX.description + 4, yPos + 5);
         
-        // Reset color and font for other columns - right-aligned for numbers
+        // Reset color and font for other columns
         doc.setTextColor(0, 0, 0);
-        doc.setFontSize(8);
+        doc.setFontSize(7);
         
         // Right-align the quantity, price, and total
         const qtyText = item.quantity.toString();
         const priceText = `$${Number(item.unit_price).toFixed(2)}`;
         const totalText = `$${Number(item.total_price).toFixed(2)}`;
         
-        // Calculate text width for right alignment - align within the column width
         const qtyWidth = doc.getTextWidth(qtyText);
         const priceWidth = doc.getTextWidth(priceText);
         const totalWidth = doc.getTextWidth(totalText);
         
-        // Right-align within each column's space (12 units wide for each column)
         doc.text(qtyText, colX.qty + 12 - qtyWidth, yPos);
         doc.text(priceText, colX.price + 12 - priceWidth, yPos);
         doc.text(totalText, colX.total + 12 - totalWidth, yPos);
@@ -342,39 +339,40 @@ export const generateQuotePDF = async (quote: Quote, clientInfo?: ClientInfo, sa
         yPos += rowHeight;
       });
       
-      // Total line with proper alignment
+      // Total line
       yPos += 2;
       doc.setDrawColor(0, 0, 0);
       doc.line(colX.description, yPos, 195, yPos);
-      yPos += 8;
+      yPos += 6;
       
       const mrcTotal = mrcItems.reduce((total, item) => total + (Number(item.total_price) || 0), 0);
-      doc.setFontSize(9);
+      doc.setFontSize(8);
       doc.setFont('helvetica', 'bold');
       
-      // Better spacing for total monthly - move label further left from the amount
       const totalLabelText = 'Total Monthly:';
       const totalAmountText = `$${mrcTotal.toFixed(2)} USD`;
       const totalAmountWidth = doc.getTextWidth(totalAmountText);
       
-      // Position label even further left to give more space from the amount
-      doc.text(totalLabelText, colX.price - 35, yPos);
+      doc.text(totalLabelText, colX.price - 30, yPos);
       doc.text(totalAmountText, colX.total + 12 - totalAmountWidth, yPos);
+      
+      itemsSectionHeight = yPos - 167; // Track items section height
     }
     
-    // One-Time Fees - aligned with the same columns as Total Monthly
-    if (nrcItems.length > 0 && yPos < 250) {
-      yPos += 10;
-      doc.setFontSize(9);
+    // One-Time Fees - more compact
+    if (nrcItems.length > 0 && yPos < 240) {
+      yPos += 8;
+      doc.setFontSize(8);
       doc.setFont('helvetica', 'bold');
       
       const nrcTotal = nrcItems.reduce((total, item) => total + (Number(item.total_price) || 0), 0);
       const nrcTotalText = `$${nrcTotal.toFixed(2)} USD`;
       const nrcTotalWidth = doc.getTextWidth(nrcTotalText);
       
-      // Align with the same positions as Total Monthly
-      doc.text('One-Time Setup Fees:', colX.price - 35, yPos);
+      doc.text('One-Time Setup Fees:', colX.price - 30, yPos);
       doc.text(nrcTotalText, colX.total + 12 - nrcTotalWidth, yPos);
+      
+      itemsSectionHeight = yPos - 167; // Update items section height
     }
   }
   
@@ -396,29 +394,24 @@ export const generateQuotePDF = async (quote: Quote, clientInfo?: ClientInfo, sa
     }
   }
   
-  // Notes section (if space allows) - Properly positioned
-  if (quote.notes && yPos < 260) {
-    yPos += 12;
-    doc.setFontSize(9);
-    doc.setFont('helvetica', 'bold');
-    doc.text('Additional Notes:', 20, yPos);
-    yPos += 6;
-    
-    doc.setFont('helvetica', 'normal');
-    const splitNotes = doc.splitTextToSize(quote.notes, 175);
-    doc.text(splitNotes.slice(0, 2), 20, yPos);
-    yPos += splitNotes.slice(0, 2).length * 5;
-  }
+  // Calculate available space for template content
+  const maxYPosition = 270; // Bottom margin
+  const currentYPosition = yPos + 10;
+  const availableSpace = maxYPosition - currentYPosition;
+  const lineHeight = 4;
+  const maxLines = Math.floor(availableSpace / lineHeight);
   
-  // Template content section (Terms & Conditions)
-  if (templateContent && yPos < 250) {
-    yPos += 12;
+  // Template content section (Terms & Conditions) - Better space management
+  if (templateContent && maxLines > 2) {
+    yPos += 10;
     doc.setFontSize(9);
     doc.setFont('helvetica', 'bold');
     doc.text('Terms & Conditions:', 20, yPos);
     yPos += 6;
     
     doc.setFont('helvetica', 'normal');
+    doc.setFontSize(7); // Smaller font to fit more content
+    
     // Strip HTML tags and convert to plain text for PDF
     const plainTextContent = templateContent
       .replace(/<[^>]*>/g, '') // Remove HTML tags
@@ -429,10 +422,43 @@ export const generateQuotePDF = async (quote: Quote, clientInfo?: ClientInfo, sa
       .trim();
     
     const splitContent = doc.splitTextToSize(plainTextContent, 175);
-    // Limit to available space
-    const maxLines = Math.floor((280 - yPos) / 5);
+    
+    // Use all available lines
     const contentToShow = splitContent.slice(0, maxLines);
     doc.text(contentToShow, 20, yPos);
+    
+    // If content was truncated, add "continued..." indicator
+    if (splitContent.length > maxLines) {
+      const lastLineY = yPos + (contentToShow.length * lineHeight);
+      if (lastLineY < maxYPosition - 5) {
+        doc.setFont('helvetica', 'italic');
+        doc.setFontSize(6);
+        doc.text('(Terms and conditions continue - see full agreement)', 20, lastLineY + 5);
+      }
+    }
+  } else if (templateContent) {
+    // If no space for template content, add a note
+    if (yPos < maxYPosition - 10) {
+      yPos += 10;
+      doc.setFontSize(8);
+      doc.setFont('helvetica', 'italic');
+      doc.text('Complete terms and conditions are available upon request.', 20, yPos);
+    }
+  }
+  
+  // Notes section (if space allows and very compact)
+  if (quote.notes && yPos < maxYPosition - 15) {
+    yPos += 8;
+    doc.setFontSize(8);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Additional Notes:', 20, yPos);
+    yPos += 4;
+    
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(7);
+    const remainingLines = Math.floor((maxYPosition - yPos) / 4);
+    const splitNotes = doc.splitTextToSize(quote.notes, 175);
+    doc.text(splitNotes.slice(0, Math.min(remainingLines, 2)), 20, yPos);
   }
   
   return doc;
