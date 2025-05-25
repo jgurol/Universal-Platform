@@ -37,6 +37,7 @@ export const addQuoteToDatabase = async (
       commission_override: newQuote.commissionOverride || null,
       expires_at: newQuote.expiresAt,
       notes: newQuote.notes,
+      billing_address: newQuote.billingAddress,
       user_id: userId
     };
 
@@ -124,7 +125,8 @@ export const updateQuoteInDatabase = async (
       commission: commission,
       commission_override: updatedQuote.commissionOverride || null,
       expires_at: updatedQuote.expiresAt || null,
-      notes: updatedQuote.notes || null
+      notes: updatedQuote.notes || null,
+      billing_address: updatedQuote.billingAddress || null
     };
 
     const { data, error } = await supabase

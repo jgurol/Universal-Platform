@@ -40,7 +40,8 @@ export const mapQuoteData = (quoteData: any, clients: Client[], clientInfos: Cli
     commissionOverride: quoteData.commission_override ? Number(quoteData.commission_override) : undefined,
     expiresAt: quoteData.expires_at,
     notes: quoteData.notes,
-    quoteItems: quoteItems
+    quoteItems: quoteItems,
+    billingAddress: quoteData.billing_address
   };
 
   console.log(`[mapQuoteData] Mapped quote ${quoteData.id} final description: "${mappedQuote.description}"`);

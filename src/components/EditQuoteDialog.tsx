@@ -12,7 +12,7 @@ import { AddressSelector } from "@/components/AddressSelector";
 import { useQuoteForm } from "@/hooks/useQuoteForm";
 import { useQuoteItems } from "@/hooks/useQuoteItems";
 import { updateQuoteItems, calculateTotalsByChargeType } from "@/services/quoteItemsService";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 interface EditQuoteDialogProps {
   quote: Quote | null;
@@ -55,6 +55,13 @@ export const EditQuoteDialog = ({
   const { quoteItems, setQuoteItems } = useQuoteItems(quote, open);
   const [selectedAddressId, setSelectedAddressId] = useState<string | null>(null);
   const [customAddress, setCustomAddress] = useState<string>("");
+
+  // Initialize billing address from quote
+  useEffect(() => {
+    if (quote && open) {
+      setCustomAddress(quote.billingAddress || "");
+    }
+  }, [quote, open]);
 
   const handleAddressChange = (addressId: string | null, customAddr?: string) => {
     setSelectedAddressId(addressId);
