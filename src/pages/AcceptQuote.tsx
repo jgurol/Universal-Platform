@@ -30,14 +30,47 @@ const AcceptQuote = () => {
   useEffect(() => {
     const fetchQuoteData = async () => {
       if (!quoteId) {
+        console.error('AcceptQuote - No quote ID provided in URL params');
         setError("No quote ID provided");
         setIsLoading(false);
         return;
       }
 
-      console.log('AcceptQuote - Loading quote with ID:', quoteId);
+      console.log('AcceptQuote - Starting to load quote with ID:', quoteId);
+      console.log('AcceptQuote - Quote ID type:', typeof quoteId);
+      console.log('AcceptQuote - Quote ID length:', quoteId.length);
 
       try {
+        // First, let's check if the quote exists at all
+        console.log('AcceptQuote - Checking if quote exists...');
+        const { data: basicQuote, error: basicError } = await supabase
+          .from('quotes')
+          .select('id, description, status, acceptance_status')
+          .eq('id', quoteId)
+          .maybeSingle();
+
+        if (basicError) {
+          console.error('AcceptQuote - Error in basic quote check:', basicError);
+          setError(`Database error: ${basicError.message}`);
+          setIsLoading(false);
+          return;
+        }
+
+        if (!basicQuote) {
+          console.error('AcceptQuote - No quote found with ID:', quoteId);
+          // Let's also check all quotes to see what IDs exist
+          const { data: allQuotes } = await supabase
+            .from('quotes')
+            .select('id, description')
+            .limit(10);
+          console.log('AcceptQuote - Available quote IDs:', allQuotes?.map(q => q.id));
+          setError("Quote not found - please check the quote ID");
+          setIsLoading(false);
+          return;
+        }
+
+        console.log('AcceptQuote - Basic quote found:', basicQuote);
+
         // Check if quote is already accepted
         const { data: acceptance, error: acceptanceError } = await supabase
           .from('quote_acceptances')
@@ -54,7 +87,8 @@ const AcceptQuote = () => {
           return;
         }
 
-        // Fetch quote with items - use maybeSingle instead of single
+        // Now fetch the full quote with items
+        console.log('AcceptQuote - Fetching full quote data...');
         const { data: quoteData, error: quoteError } = await supabase
           .from('quotes')
           .select(`
@@ -69,24 +103,25 @@ const AcceptQuote = () => {
           .maybeSingle();
 
         if (quoteError) {
-          console.error('AcceptQuote - Error fetching quote:', quoteError);
-          setError(`Failed to load quote: ${quoteError.message}`);
+          console.error('AcceptQuote - Error fetching full quote:', quoteError);
+          setError(`Failed to load quote details: ${quoteError.message}`);
           setIsLoading(false);
           return;
         }
 
         if (!quoteData) {
-          console.log('AcceptQuote - No quote found with ID:', quoteId);
-          setError("Quote not found");
+          console.error('AcceptQuote - Quote data is null after successful basic check');
+          setError("Quote data could not be loaded");
           setIsLoading(false);
           return;
         }
 
-        console.log('AcceptQuote - Quote data loaded:', quoteData);
+        console.log('AcceptQuote - Full quote data loaded successfully:', quoteData);
         setQuote(quoteData as any);
 
         // Fetch client info if available
         if (quoteData.client_info_id) {
+          console.log('AcceptQuote - Fetching client info for ID:', quoteData.client_info_id);
           const { data: clientData, error: clientError } = await supabase
             .from('client_info')
             .select('*')
@@ -105,6 +140,7 @@ const AcceptQuote = () => {
 
         // Fetch template content if available
         if (quoteData.template_id) {
+          console.log('AcceptQuote - Fetching template for ID:', quoteData.template_id);
           const { data: templateData, error: templateError } = await supabase
             .from('quote_templates')
             .select('content')
@@ -114,11 +150,15 @@ const AcceptQuote = () => {
           if (!templateError && templateData) {
             console.log('AcceptQuote - Template content loaded');
             setTemplateContent(templateData.content);
+          } else if (templateError) {
+            console.error('AcceptQuote - Error fetching template:', templateError);
           }
         }
+
+        console.log('AcceptQuote - Quote loading completed successfully');
       } catch (error) {
-        console.error('AcceptQuote - Error in fetchQuoteData:', error);
-        setError(`Failed to load quote information: ${error}`);
+        console.error('AcceptQuote - Unexpected error in fetchQuoteData:', error);
+        setError(`Unexpected error: ${error}`);
       } finally {
         setIsLoading(false);
       }
@@ -275,9 +315,12 @@ const AcceptQuote = () => {
             <AlertCircle className="w-16 h-16 text-red-400 mx-auto mb-4" />
             <h1 className="text-2xl font-bold text-gray-900 mb-2">Error</h1>
             <p className="text-gray-600 mb-4">{error}</p>
-            <Button onClick={() => navigate('/')} variant="outline">
-              Return Home
-            </Button>
+            <div className="space-y-2">
+              <p className="text-sm text-gray-500">Quote ID: {quoteId}</p>
+              <Button onClick={() => navigate('/')} variant="outline">
+                Return Home
+              </Button>
+            </div>
           </CardContent>
         </Card>
       </div>
