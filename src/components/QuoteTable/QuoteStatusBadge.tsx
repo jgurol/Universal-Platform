@@ -1,4 +1,3 @@
-
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
@@ -19,19 +18,54 @@ export const QuoteStatusBadge = ({ quoteId, status, onStatusUpdate }: QuoteStatu
 
   const handleStatusChange = async (newStatus: string) => {
     try {
-      const { error } = await supabase
-        .from('quotes')
-        .update({ status: newStatus })
-        .eq('id', quoteId);
+      // If changing to pending, we need to clear acceptance data
+      if (newStatus === 'pending') {
+        // Delete any acceptance records
+        const { error: acceptanceError } = await supabase
+          .from('quote_acceptances')
+          .delete()
+          .eq('quote_id', quoteId);
 
-      if (error) {
-        console.error('Error updating quote status:', error);
-        toast({
-          title: "Failed to update status",
-          description: error.message,
-          variant: "destructive"
-        });
-        return;
+        if (acceptanceError) {
+          console.error('Error deleting acceptance records:', acceptanceError);
+        }
+
+        // Update quote with cleared acceptance fields
+        const { error } = await supabase
+          .from('quotes')
+          .update({ 
+            status: newStatus,
+            acceptance_status: 'pending',
+            accepted_at: null,
+            accepted_by: null
+          })
+          .eq('id', quoteId);
+
+        if (error) {
+          console.error('Error updating quote status:', error);
+          toast({
+            title: "Failed to update status",
+            description: error.message,
+            variant: "destructive"
+          });
+          return;
+        }
+      } else {
+        // For other status changes, just update the status
+        const { error } = await supabase
+          .from('quotes')
+          .update({ status: newStatus })
+          .eq('id', quoteId);
+
+        if (error) {
+          console.error('Error updating quote status:', error);
+          toast({
+            title: "Failed to update status",
+            description: error.message,
+            variant: "destructive"
+          });
+          return;
+        }
       }
 
       if (onStatusUpdate) {
@@ -40,7 +74,7 @@ export const QuoteStatusBadge = ({ quoteId, status, onStatusUpdate }: QuoteStatu
 
       toast({
         title: "Status updated",
-        description: `Quote status changed to ${newStatus}`,
+        description: `Quote status changed to ${newStatus}${newStatus === 'pending' ? ' and digital signature evidence removed' : ''}`,
       });
     } catch (err) {
       console.error('Error updating quote status:', err);
