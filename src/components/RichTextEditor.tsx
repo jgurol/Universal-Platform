@@ -23,7 +23,7 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
   const [isBoldActive, setIsBoldActive] = useState(false);
   const [isItalicActive, setIsItalicActive] = useState(false);
 
-  // Convert markdown to HTML for display
+  // Convert markdown to HTML for display - preserve line breaks properly
   const markdownToHtml = (text: string): string => {
     if (!text) return '';
     
@@ -35,21 +35,23 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
       .replace(/^(.*)$/, '<p>$1</p>'); // Wrap in paragraph tags
   };
 
-  // Convert HTML back to markdown - enhanced to better preserve line breaks
+  // Convert HTML back to markdown - preserve all line breaks
   const htmlToMarkdown = (html: string): string => {
     if (!html) return '';
     
     console.log('RichTextEditor - Converting HTML to markdown:', html.substring(0, 200));
     
     let markdown = html
-      // Handle different types of line breaks and paragraphs
+      // Handle contenteditable div structures
       .replace(/<div><br><\/div>/gi, '\n') // Empty div with br
       .replace(/<div><\/div>/gi, '\n') // Empty divs
-      .replace(/<div[^>]*>/gi, '\n') // Div starts
-      .replace(/<\/div>/gi, '') // Div ends
+      .replace(/<div[^>]*>/gi, '\n') // Div starts become newlines
+      .replace(/<\/div>/gi, '') // Remove div endings
+      // Handle paragraphs
       .replace(/<p[^>]*>/gi, '') // Remove paragraph opening tags
       .replace(/<\/p>/gi, '\n\n') // Convert paragraph closes to double newlines
-      .replace(/<br\s*\/?>/gi, '\n') // Convert line breaks to actual newlines
+      // Handle line breaks
+      .replace(/<br\s*\/?>/gi, '\n') // Convert all br tags to actual newlines
       // Convert formatting
       .replace(/<strong[^>]*>(.*?)<\/strong>/gi, '**$1**')
       .replace(/<b[^>]*>(.*?)<\/b>/gi, '**$1**')
@@ -99,17 +101,18 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
   // Handle Enter key to ensure proper line breaks
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter') {
+      e.preventDefault();
+      
       if (e.shiftKey) {
-        // Shift+Enter should create a line break
-        e.preventDefault();
-        document.execCommand('insertHTML', false, '<br><br>');
-        handleInput();
+        // Shift+Enter should create a single line break
+        document.execCommand('insertHTML', false, '<br>');
       } else {
-        // Regular Enter should create a paragraph break
-        e.preventDefault();
-        document.execCommand('insertHTML', false, '<br><br>');
-        handleInput();
+        // Regular Enter should create a line break (we'll let the conversion handle paragraph logic)
+        document.execCommand('insertHTML', false, '<br>');
       }
+      
+      // Trigger input handler to update the markdown
+      setTimeout(() => handleInput(), 0);
     }
   };
 
