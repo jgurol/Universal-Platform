@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -6,7 +5,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { AlertCircle } from "lucide-react";
 import { AddClientAddressData } from "@/types/clientAddress";
+import { validateAddress, formatValidationErrors } from "@/utils/addressValidation";
 
 interface AddAddressDialogProps {
   open: boolean;
@@ -24,9 +26,28 @@ export const AddAddressDialog = ({ open, onOpenChange, onAddAddress, clientInfoI
   const [country, setCountry] = useState("United States");
   const [isPrimary, setIsPrimary] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [validationErrors, setValidationErrors] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Clear previous validation errors
+    setValidationErrors(null);
+    
+    // Validate the address
+    const errors = validateAddress({
+      street_address: streetAddress,
+      city,
+      state,
+      zip_code: zipCode,
+      country
+    });
+    
+    if (errors.length > 0) {
+      setValidationErrors(formatValidationErrors(errors));
+      return;
+    }
+
     if (streetAddress && city && state && zipCode) {
       setIsSubmitting(true);
       try {
@@ -58,6 +79,7 @@ export const AddAddressDialog = ({ open, onOpenChange, onAddAddress, clientInfoI
     setZipCode("");
     setCountry("United States");
     setIsPrimary(false);
+    setValidationErrors(null);
   };
 
   return (
@@ -72,6 +94,16 @@ export const AddAddressDialog = ({ open, onOpenChange, onAddAddress, clientInfoI
             Add a new address for this client.
           </DialogDescription>
         </DialogHeader>
+        
+        {validationErrors && (
+          <Alert variant="destructive">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>
+              {validationErrors}
+            </AlertDescription>
+          </Alert>
+        )}
+        
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="addressType">Address Type</Label>

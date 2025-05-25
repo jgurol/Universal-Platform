@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -6,7 +5,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { AlertCircle } from "lucide-react";
 import { ClientAddress, UpdateClientAddressData } from "@/types/clientAddress";
+import { validateAddress, formatValidationErrors } from "@/utils/addressValidation";
 
 interface EditAddressDialogProps {
   address: ClientAddress;
@@ -24,6 +26,7 @@ export const EditAddressDialog = ({ address, open, onOpenChange, onUpdateAddress
   const [country, setCountry] = useState(address.country);
   const [isPrimary, setIsPrimary] = useState(address.is_primary);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [validationErrors, setValidationErrors] = useState<string | null>(null);
 
   useEffect(() => {
     setAddressType(address.address_type);
@@ -33,10 +36,29 @@ export const EditAddressDialog = ({ address, open, onOpenChange, onUpdateAddress
     setZipCode(address.zip_code);
     setCountry(address.country);
     setIsPrimary(address.is_primary);
+    setValidationErrors(null);
   }, [address]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Clear previous validation errors
+    setValidationErrors(null);
+    
+    // Validate the address
+    const errors = validateAddress({
+      street_address: streetAddress,
+      city,
+      state,
+      zip_code: zipCode,
+      country
+    });
+    
+    if (errors.length > 0) {
+      setValidationErrors(formatValidationErrors(errors));
+      return;
+    }
+
     if (streetAddress && city && state && zipCode) {
       setIsSubmitting(true);
       try {
@@ -69,6 +91,16 @@ export const EditAddressDialog = ({ address, open, onOpenChange, onUpdateAddress
             Update the address information.
           </DialogDescription>
         </DialogHeader>
+        
+        {validationErrors && (
+          <Alert variant="destructive">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>
+              {validationErrors}
+            </AlertDescription>
+          </Alert>
+        )}
+        
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="editAddressType">Address Type</Label>
