@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -13,15 +12,9 @@ import { Navigate } from "react-router-dom";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
+import type { Database } from "@/integrations/supabase/types";
 
-interface QuoteTemplate {
-  id: string;
-  name: string;
-  content: string;
-  is_default: boolean;
-  created_at: string;
-  updated_at: string;
-}
+type QuoteTemplate = Database['public']['Tables']['quote_templates']['Row'];
 
 export default function SystemSettings() {
   const { user, isAdmin } = useAuth();
@@ -66,7 +59,7 @@ export default function SystemSettings() {
   const fetchTemplates = async () => {
     try {
       const { data, error } = await supabase
-        .from('quote_templates' as any)
+        .from('quote_templates')
         .select('*')
         .order('name');
 
@@ -94,11 +87,11 @@ export default function SystemSettings() {
     setLoading(true);
     try {
       const { error } = await supabase
-        .from('quote_templates' as any)
+        .from('quote_templates')
         .insert([{
           name: newTemplate.name.trim(),
           content: newTemplate.content.trim(),
-          user_id: user?.id
+          user_id: user?.id!
         }]);
 
       if (error) throw error;
@@ -126,7 +119,7 @@ export default function SystemSettings() {
     setLoading(true);
     try {
       const { error } = await supabase
-        .from('quote_templates' as any)
+        .from('quote_templates')
         .update({
           name: editingTemplate.name,
           content: editingTemplate.content,
@@ -159,7 +152,7 @@ export default function SystemSettings() {
     setLoading(true);
     try {
       const { error } = await supabase
-        .from('quote_templates' as any)
+        .from('quote_templates')
         .delete()
         .eq('id', templateId);
 
@@ -186,13 +179,13 @@ export default function SystemSettings() {
     try {
       // First, unset all defaults
       await supabase
-        .from('quote_templates' as any)
+        .from('quote_templates')
         .update({ is_default: false })
         .neq('id', '00000000-0000-0000-0000-000000000000');
 
       // Then set the selected one as default
       const { error } = await supabase
-        .from('quote_templates' as any)
+        .from('quote_templates')
         .update({ is_default: true })
         .eq('id', templateId);
 
