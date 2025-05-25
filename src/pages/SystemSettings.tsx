@@ -50,34 +50,26 @@ export default function SystemSettings() {
 
   // Load settings from localStorage on component mount
   useEffect(() => {
-    const savedTimezone = localStorage.getItem('app_timezone');
-    if (savedTimezone) {
-      setSettings(prev => ({ ...prev, timezone: savedTimezone }));
-    }
+    const loadSettings = () => {
+      const savedSettings = {
+        timezone: localStorage.getItem('app_timezone') || settings.timezone,
+        companyName: localStorage.getItem('company_name') || settings.companyName,
+        businessAddress: localStorage.getItem('business_address') || settings.businessAddress,
+        businessPhone: localStorage.getItem('business_phone') || settings.businessPhone,
+        businessFax: localStorage.getItem('business_fax') || settings.businessFax,
+        supportEmail: localStorage.getItem('support_email') || settings.supportEmail,
+        defaultCommissionRate: localStorage.getItem('default_commission_rate') || settings.defaultCommissionRate
+      };
+      
+      setSettings(savedSettings);
+    };
     
     const savedLogoUrl = localStorage.getItem('company_logo_url');
     if (savedLogoUrl) {
       setLogoUrl(savedLogoUrl);
     }
 
-    // Load business settings from localStorage
-    const savedCompanyName = localStorage.getItem('company_name');
-    const savedBusinessAddress = localStorage.getItem('business_address');
-    const savedBusinessPhone = localStorage.getItem('business_phone');
-    const savedBusinessFax = localStorage.getItem('business_fax');
-    const savedSupportEmail = localStorage.getItem('support_email');
-
-    if (savedCompanyName || savedBusinessAddress || savedBusinessPhone || savedBusinessFax || savedSupportEmail) {
-      setSettings(prev => ({
-        ...prev,
-        companyName: savedCompanyName || prev.companyName,
-        businessAddress: savedBusinessAddress || prev.businessAddress,
-        businessPhone: savedBusinessPhone || prev.businessPhone,
-        businessFax: savedBusinessFax || prev.businessFax,
-        supportEmail: savedSupportEmail || prev.supportEmail
-      }));
-    }
-    
+    loadSettings();
     fetchTemplates();
   }, []);
 
@@ -281,21 +273,27 @@ export default function SystemSettings() {
     setLoading(true);
 
     try {
-      // Save all settings to localStorage
+      // Save all settings to localStorage with clear logging
+      console.log('Saving settings to localStorage:', settings);
+      
       localStorage.setItem('app_timezone', settings.timezone);
       localStorage.setItem('company_name', settings.companyName);
       localStorage.setItem('business_address', settings.businessAddress);
       localStorage.setItem('business_phone', settings.businessPhone);
       localStorage.setItem('business_fax', settings.businessFax);
       localStorage.setItem('support_email', settings.supportEmail);
+      localStorage.setItem('default_commission_rate', settings.defaultCommissionRate);
+      
+      console.log('Settings saved successfully');
       
       toast({
-        title: "Settings updated",
+        title: "Settings saved",
         description: "System configuration has been updated successfully",
       });
     } catch (error: any) {
+      console.error('Error saving settings:', error);
       toast({
-        title: "Update error",
+        title: "Save error",
         description: error.message || "An unexpected error occurred",
         variant: "destructive",
       });
@@ -348,7 +346,7 @@ export default function SystemSettings() {
                     <Input
                       id="companyName"
                       value={settings.companyName}
-                      onChange={(e) => setSettings({ ...settings, companyName: e.target.value })}
+                      onChange={(e) => setSettings(prev => ({ ...prev, companyName: e.target.value }))}
                       placeholder="Enter company name"
                     />
                   </div>
@@ -358,7 +356,7 @@ export default function SystemSettings() {
                     <Input
                       id="businessAddress"
                       value={settings.businessAddress}
-                      onChange={(e) => setSettings({ ...settings, businessAddress: e.target.value })}
+                      onChange={(e) => setSettings(prev => ({ ...prev, businessAddress: e.target.value }))}
                       placeholder="Enter complete business address"
                     />
                   </div>
@@ -369,7 +367,7 @@ export default function SystemSettings() {
                       <Input
                         id="businessPhone"
                         value={settings.businessPhone}
-                        onChange={(e) => setSettings({ ...settings, businessPhone: e.target.value })}
+                        onChange={(e) => setSettings(prev => ({ ...prev, businessPhone: e.target.value }))}
                         placeholder="Enter business phone number"
                       />
                     </div>
@@ -379,7 +377,7 @@ export default function SystemSettings() {
                       <Input
                         id="businessFax"
                         value={settings.businessFax}
-                        onChange={(e) => setSettings({ ...settings, businessFax: e.target.value })}
+                        onChange={(e) => setSettings(prev => ({ ...prev, businessFax: e.target.value }))}
                         placeholder="Enter business fax number"
                       />
                     </div>
@@ -391,7 +389,7 @@ export default function SystemSettings() {
                       id="supportEmail"
                       type="email"
                       value={settings.supportEmail}
-                      onChange={(e) => setSettings({ ...settings, supportEmail: e.target.value })}
+                      onChange={(e) => setSettings(prev => ({ ...prev, supportEmail: e.target.value }))}
                       placeholder="Enter support email address"
                     />
                   </div>
@@ -405,13 +403,13 @@ export default function SystemSettings() {
                       max="100"
                       step="0.1"
                       value={settings.defaultCommissionRate}
-                      onChange={(e) => setSettings({ ...settings, defaultCommissionRate: e.target.value })}
+                      onChange={(e) => setSettings(prev => ({ ...prev, defaultCommissionRate: e.target.value }))}
                       placeholder="Enter default commission rate"
                     />
                   </div>
 
                   <Button type="submit" disabled={loading}>
-                    {loading ? "Updating..." : "Update Settings"}
+                    {loading ? "Saving..." : "Save Settings"}
                   </Button>
                 </form>
               </CardContent>
