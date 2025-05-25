@@ -1,10 +1,9 @@
 
 import { Button } from "@/components/ui/button";
-import { Pencil, Trash2, FileText, Copy } from "lucide-react";
-import { useAuth } from "@/context/AuthContext";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger, DropdownMenuItem } from "@/components/ui/dropdown-menu";
+import { MoreHorizontal, Eye, Edit, Copy, Trash2 } from "lucide-react";
 import { Quote, ClientInfo } from "@/pages/Index";
-import { generateQuotePDF } from "@/utils/pdfUtils";
-import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/context/AuthContext";
 import { EmailStatusButton } from "./EmailStatusButton";
 
 interface QuoteActionsProps {
@@ -27,81 +26,50 @@ export const QuoteActions = ({
   onEmailClick
 }: QuoteActionsProps) => {
   const { isAdmin } = useAuth();
-  const { toast } = useToast();
 
-  const handlePreviewPDF = async () => {
-    try {
-      const pdf = await generateQuotePDF(quote, clientInfo, salespersonName);
-      const pdfBlob = pdf.output('blob');
-      const pdfUrl = URL.createObjectURL(pdfBlob);
-      window.open(pdfUrl, '_blank');
-      
-      toast({
-        title: "PDF Generated",
-        description: "Quote PDF has been opened in a new tab",
-      });
-    } catch (error) {
-      console.error('Error generating PDF:', error);
-      toast({
-        title: "Error",
-        description: "Failed to generate PDF preview",
-        variant: "destructive"
-      });
-    }
-  };
+  console.log('QuoteActions - Rendering for quote:', quote.id, 'Email status:', quote.email_status);
 
   return (
-    <div className="flex gap-1 justify-center">
-      <Button 
-        variant="ghost" 
-        size="sm" 
-        className="h-8 w-8 p-0 text-gray-500 hover:text-blue-600"
-        onClick={handlePreviewPDF}
-        title="Preview PDF"
-      >
-        <FileText className="w-4 h-4" />
-      </Button>
-      
+    <div className="flex items-center gap-2">
       <EmailStatusButton 
-        quoteId={quote.id}
+        quoteId={quote.id} 
         onEmailClick={onEmailClick}
       />
       
-      {isAdmin && onCopyQuote && (
-        <Button 
-          variant="ghost" 
-          size="sm" 
-          className="h-8 w-8 p-0 text-gray-500 hover:text-green-600"
-          onClick={() => onCopyQuote(quote)}
-          title="Copy Quote"
-        >
-          <Copy className="w-4 h-4" />
-        </Button>
-      )}
-      
-      {isAdmin && onEditClick && (
-        <Button 
-          variant="ghost" 
-          size="sm" 
-          className="h-8 w-8 p-0 text-gray-500 hover:text-blue-600"
-          onClick={() => onEditClick(quote)}
-          title="Edit Quote"
-        >
-          <Pencil className="w-4 h-4" />
-        </Button>
-      )}
-      
-      {isAdmin && onDeleteQuote && (
-        <Button 
-          variant="ghost" 
-          size="sm" 
-          className="h-8 w-8 p-0 text-gray-500 hover:text-red-600"
-          onClick={() => onDeleteQuote(quote.id)}
-          title="Delete Quote"
-        >
-          <Trash2 className="w-4 h-4" />
-        </Button>
-      )}
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+            <MoreHorizontal className="h-4 w-4" />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end">
+          <DropdownMenuItem onClick={() => window.open(`/quote/${quote.id}`, '_blank')}>
+            <Eye className="mr-2 h-4 w-4" />
+            View Quote
+          </DropdownMenuItem>
+          {isAdmin && onEditClick && (
+            <DropdownMenuItem onClick={() => onEditClick(quote)}>
+              <Edit className="mr-2 h-4 w-4" />
+              Edit
+            </DropdownMenuItem>
+          )}
+          {isAdmin && onCopyQuote && (
+            <DropdownMenuItem onClick={() => onCopyQuote(quote)}>
+              <Copy className="mr-2 h-4 w-4" />
+              Copy
+            </DropdownMenuItem>
+          )}
+          {isAdmin && onDeleteQuote && (
+            <DropdownMenuItem 
+              onClick={() => onDeleteQuote(quote.id)}
+              className="text-red-600"
+            >
+              <Trash2 className="mr-2 h-4 w-4" />
+              Delete
+            </DropdownMenuItem>
+          )}
+        </DropdownMenuContent>
+      </DropdownMenu>
     </div>
   );
 };
