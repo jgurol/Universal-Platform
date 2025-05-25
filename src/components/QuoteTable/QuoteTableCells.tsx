@@ -2,6 +2,7 @@
 import { Quote, ClientInfo } from "@/pages/Index";
 import { TableCell } from "@/components/ui/table";
 import { QuoteStatusBadge } from "./QuoteStatusBadge";
+import { AcceptanceStatusBadge } from "./AcceptanceStatusBadge";
 import { QuoteActions } from "./QuoteActions";
 import { getMRCTotal, getNRCTotal } from "./QuoteTableUtils";
 
@@ -58,6 +59,13 @@ export const QuoteTableCells = ({
           quoteId={quote.id}
           status={quote.status || 'pending'}
           onStatusUpdate={onStatusUpdate}
+        />
+      </TableCell>
+      <TableCell>
+        <AcceptanceStatusBadge
+          status={quote.acceptanceStatus}
+          acceptedBy={quote.acceptedBy}
+          acceptedAt={quote.acceptedAt}
         />
       </TableCell>
       <TableCell className="text-center">
