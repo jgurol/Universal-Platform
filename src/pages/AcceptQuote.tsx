@@ -28,6 +28,25 @@ const AcceptQuote = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const { toast } = useToast();
 
+  const fetchClientIp = async (): Promise<string> => {
+    try {
+      console.log('AcceptQuote - Fetching client IP address...');
+      const { data, error } = await supabase.functions.invoke('get-client-ip');
+      
+      if (error) {
+        console.error('AcceptQuote - Error fetching IP:', error);
+        return '0.0.0.0';
+      }
+
+      const ip = data?.ip || '0.0.0.0';
+      console.log('AcceptQuote - Client IP fetched:', ip);
+      return ip;
+    } catch (error) {
+      console.error('AcceptQuote - Unexpected error fetching IP:', error);
+      return '0.0.0.0';
+    }
+  };
+
   useEffect(() => {
     const fetchQuoteData = async () => {
       if (!quoteId) {
@@ -280,6 +299,9 @@ const AcceptQuote = () => {
       // Get signature as base64
       const signatureData = canvas.toDataURL();
 
+      // Fetch the real client IP address
+      const clientIp = await fetchClientIp();
+
       console.log('AcceptQuote - Submitting acceptance for quote:', quote.id);
 
       // Save acceptance to database
@@ -290,7 +312,7 @@ const AcceptQuote = () => {
           client_name: clientName.trim(),
           client_email: clientEmail.trim(),
           signature_data: signatureData,
-          ip_address: '0.0.0.0', // Would need to get real IP in production
+          ip_address: clientIp,
           user_agent: navigator.userAgent
         });
 
