@@ -12,6 +12,7 @@ import { Navigate } from "react-router-dom";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
+import { RichTextEditor } from "@/components/RichTextEditor";
 import type { Database } from "@/integrations/supabase/types";
 
 type QuoteTemplate = Database['public']['Tables']['quote_templates']['Row'];
@@ -386,10 +387,9 @@ export default function SystemSettings() {
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="templateContent">Terms & Conditions Content</Label>
-                      <Textarea
-                        id="templateContent"
+                      <RichTextEditor
                         value={newTemplate.content}
-                        onChange={(e) => setNewTemplate({ ...newTemplate, content: e.target.value })}
+                        onChange={(content) => setNewTemplate({ ...newTemplate, content })}
                         placeholder="Enter the terms and conditions text..."
                         rows={6}
                       />
@@ -421,9 +421,9 @@ export default function SystemSettings() {
                                 onChange={(e) => setEditingTemplate({ ...editingTemplate, name: e.target.value })}
                                 placeholder="Template name"
                               />
-                              <Textarea
+                              <RichTextEditor
                                 value={editingTemplate.content}
-                                onChange={(e) => setEditingTemplate({ ...editingTemplate, content: e.target.value })}
+                                onChange={(content) => setEditingTemplate({ ...editingTemplate, content })}
                                 rows={6}
                               />
                               <div className="flex gap-2">
@@ -474,7 +474,7 @@ export default function SystemSettings() {
                                 </div>
                               </div>
                               <div className="text-sm text-gray-600 bg-gray-50 p-3 rounded">
-                                {template.content}
+                                <div dangerouslySetInnerHTML={{ __html: template.content }} />
                               </div>
                             </div>
                           )}
