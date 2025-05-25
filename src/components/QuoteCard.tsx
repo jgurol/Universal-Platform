@@ -44,24 +44,30 @@ export const QuoteCard = ({
 
   const isExpired = quote.expiresAt && new Date(quote.expiresAt) < new Date();
 
-  // Calculate MRC and NRC totals from quote items
+  // Calculate MRC and NRC totals from quote items using the loaded data
   const getMRCTotal = () => {
     if (!quote.quoteItems || quote.quoteItems.length === 0) return 0;
-    return quote.quoteItems
+    const mrcTotal = quote.quoteItems
       .filter(item => item.charge_type === 'MRC')
       .reduce((total, item) => total + (item.total_price || 0), 0);
+    console.info('[QuoteCard] MRC Total for quote', quote.id, ':', mrcTotal);
+    return mrcTotal;
   };
 
   const getNRCTotal = () => {
     if (!quote.quoteItems || quote.quoteItems.length === 0) return 0;
-    return quote.quoteItems
+    const nrcTotal = quote.quoteItems
       .filter(item => item.charge_type === 'NRC')
       .reduce((total, item) => total + (item.total_price || 0), 0);
+    console.info('[QuoteCard] NRC Total for quote', quote.id, ':', nrcTotal);
+    return nrcTotal;
   };
 
   const mrcTotal = getMRCTotal();
   const nrcTotal = getNRCTotal();
   const totalAmount = mrcTotal + nrcTotal;
+
+  console.info('[QuoteCard] Quote', quote.id, 'items:', quote.quoteItems?.length || 0, 'MRC:', mrcTotal, 'NRC:', nrcTotal, 'Total:', totalAmount);
 
   return (
     <div className="flex items-center justify-between p-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors duration-200">

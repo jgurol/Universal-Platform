@@ -112,9 +112,14 @@ export const useIndexData = () => {
 
       if (quotesData) {
         const mappedQuotes = quotesData.map(quote => {
+          console.info('[fetchQuotes] Processing quote:', quote.id, 'with items:', quote.quote_items?.length || 0);
+          
           // Calculate totals from quote items by charge type
           const nrcTotal = quote.quote_items
-            ?.filter(item => item.charge_type === 'NRC')
+            ?.filter(item => {
+              console.info('[fetchQuotes] Item charge_type:', item.charge_type, 'total_price:', item.total_price);
+              return item.charge_type === 'NRC';
+            })
             .reduce((total, item) => total + (item.total_price || 0), 0) || 0;
           
           const mrcTotal = quote.quote_items
@@ -122,6 +127,8 @@ export const useIndexData = () => {
             .reduce((total, item) => total + (item.total_price || 0), 0) || 0;
           
           const totalAmount = nrcTotal + mrcTotal;
+
+          console.info('[fetchQuotes] Quote', quote.id, '- NRC:', nrcTotal, 'MRC:', mrcTotal, 'Total:', totalAmount);
 
           return {
             id: quote.id,
