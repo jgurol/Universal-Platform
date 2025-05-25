@@ -81,6 +81,56 @@ export type Database = {
         }
         Relationships: []
       }
+      client_addresses: {
+        Row: {
+          address_type: string
+          city: string
+          client_info_id: string
+          country: string
+          created_at: string
+          id: string
+          is_primary: boolean
+          state: string
+          street_address: string
+          updated_at: string
+          zip_code: string
+        }
+        Insert: {
+          address_type?: string
+          city: string
+          client_info_id: string
+          country?: string
+          created_at?: string
+          id?: string
+          is_primary?: boolean
+          state: string
+          street_address: string
+          updated_at?: string
+          zip_code: string
+        }
+        Update: {
+          address_type?: string
+          city?: string
+          client_info_id?: string
+          country?: string
+          created_at?: string
+          id?: string
+          is_primary?: boolean
+          state?: string
+          street_address?: string
+          updated_at?: string
+          zip_code?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_addresses_client_info_id_fkey"
+            columns: ["client_info_id"]
+            isOneToOne: false
+            referencedRelation: "client_info"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       client_info: {
         Row: {
           address: string | null

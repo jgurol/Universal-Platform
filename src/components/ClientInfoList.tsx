@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { 
   Table, 
@@ -9,9 +10,12 @@ import {
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Edit, MapPin, Trash2 } from "lucide-react";
 import { ClientInfo } from "@/pages/Index";
 import { EditClientInfoDialog } from "@/components/EditClientInfoDialog";
+import { ClientAddressList } from "@/components/ClientAddressList";
+import { useClientAddresses } from "@/hooks/useClientAddresses";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
@@ -24,7 +28,15 @@ interface ClientInfoListProps {
 export const ClientInfoList = ({ clientInfos, onUpdateClientInfo, agentMapping = {} }: ClientInfoListProps) => {
   const [editingClientInfo, setEditingClientInfo] = useState<ClientInfo | null>(null);
   const [deletingClientId, setDeletingClientId] = useState<string | null>(null);
+  const [viewingAddressesClientId, setViewingAddressesClientId] = useState<string | null>(null);
   const { toast } = useToast();
+
+  const { 
+    addresses, 
+    addAddress, 
+    updateAddress, 
+    deleteAddress 
+  } = useClientAddresses(viewingAddressesClientId);
 
   console.log("ClientInfoList received clientInfos:", clientInfos);
   console.log("ClientInfoList received agentMapping:", agentMapping);
@@ -72,6 +84,10 @@ export const ClientInfoList = ({ clientInfos, onUpdateClientInfo, agentMapping =
     return agentMapping[agentId] || "Unknown agent";
   };
 
+  const selectedClient = viewingAddressesClientId 
+    ? clientInfos.find(client => client.id === viewingAddressesClientId)
+    : null;
+
   return (
     <>
       {clientInfos.length === 0 ? (
@@ -103,6 +119,16 @@ export const ClientInfoList = ({ clientInfos, onUpdateClientInfo, agentMapping =
                       <Button
                         variant="outline"
                         size="sm"
+                        onClick={() => setViewingAddressesClientId(clientInfo.id)}
+                        className="hover:bg-purple-50 hover:border-purple-300"
+                        title="Manage Addresses"
+                      >
+                        <MapPin className="w-4 h-4" />
+                      </Button>
+                      
+                      <Button
+                        variant="outline"
+                        size="sm"
                         onClick={() => setEditingClientInfo(clientInfo)}
                         className="hover:bg-blue-50 hover:border-blue-300"
                       >
@@ -124,7 +150,7 @@ export const ClientInfoList = ({ clientInfos, onUpdateClientInfo, agentMapping =
                           <AlertDialogHeader>
                             <AlertDialogTitle>Are you sure?</AlertDialogTitle>
                             <AlertDialogDescription>
-                              This action will permanently delete the client "{clientInfo.company_name}" and cannot be undone.
+                              This action will permanently delete the client "{clientInfo.company_name}" and all associated addresses. This cannot be undone.
                             </AlertDialogDescription>
                           </AlertDialogHeader>
                           <AlertDialogFooter>
@@ -155,6 +181,23 @@ export const ClientInfoList = ({ clientInfos, onUpdateClientInfo, agentMapping =
           onUpdateClientInfo={onUpdateClientInfo}
         />
       )}
+
+      <Dialog open={!!viewingAddressesClientId} onOpenChange={(open) => !open && setViewingAddressesClientId(null)}>
+        <DialogContent className="sm:max-w-[700px] max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>
+              Manage Addresses - {selectedClient?.company_name}
+            </DialogTitle>
+          </DialogHeader>
+          <ClientAddressList
+            addresses={addresses}
+            clientInfoId={viewingAddressesClientId!}
+            onAddAddress={addAddress}
+            onUpdateAddress={updateAddress}
+            onDeleteAddress={deleteAddress}
+          />
+        </DialogContent>
+      </Dialog>
     </>
   );
 };
