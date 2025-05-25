@@ -38,6 +38,7 @@ export interface Quote {
   quoteItems?: any[];
   billingAddress?: string;
   serviceAddress?: string;
+  templateId?: string;
 }
 
 // Define the Transaction type for backward compatibility - maps to Quote

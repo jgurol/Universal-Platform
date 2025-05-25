@@ -42,7 +42,8 @@ export const mapQuoteData = (quoteData: any, clients: Client[], clientInfos: Cli
     notes: quoteData.notes,
     quoteItems: quoteItems,
     billingAddress: quoteData.billing_address,
-    serviceAddress: quoteData.service_address
+    serviceAddress: quoteData.service_address,
+    templateId: quoteData.template_id
   };
 
   console.log(`[mapQuoteData] Mapped quote ${quoteData.id} final description: "${mappedQuote.description}"`);
