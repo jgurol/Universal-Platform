@@ -293,6 +293,7 @@ export type Database = {
       }
       quote_items: {
         Row: {
+          charge_type: string | null
           created_at: string
           id: string
           item_id: string
@@ -303,6 +304,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          charge_type?: string | null
           created_at?: string
           id?: string
           item_id: string
@@ -313,6 +315,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          charge_type?: string | null
           created_at?: string
           id?: string
           item_id?: string

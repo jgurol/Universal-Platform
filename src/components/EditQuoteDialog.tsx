@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -73,7 +72,7 @@ export const EditQuoteDialog = ({
           quantity: item.quantity,
           unit_price: item.unit_price,
           total_price: item.total_price,
-          charge_type: (item.item?.charge_type as 'NRC' | 'MRC') || 'NRC',
+          charge_type: (item.charge_type as 'NRC' | 'MRC') || 'NRC',
           name: item.item?.name || '',
           description: item.item?.description || '',
           item: item.item
@@ -133,14 +132,15 @@ export const EditQuoteDialog = ({
             .delete()
             .eq('quote_id', quote.id);
 
-          // Insert updated quote items with all necessary fields
+          // Insert updated quote items with all necessary fields including charge_type
           if (quoteItems.length > 0) {
             const itemsToInsert = quoteItems.map(item => ({
               quote_id: quote.id,
               item_id: item.item_id,
               quantity: item.quantity,
               unit_price: item.unit_price,
-              total_price: item.total_price
+              total_price: item.total_price,
+              charge_type: item.charge_type // Now properly saving the charge_type
             }));
 
             const { error: insertError } = await supabase
