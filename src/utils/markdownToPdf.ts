@@ -42,10 +42,10 @@ export const addMarkdownTextToPDF = (
   console.log('PDF Generation - Cleaned content length:', cleanContent.length);
   console.log('PDF Generation - First 200 chars:', cleanContent.substring(0, 200));
   
-  // Split content into paragraphs - handle various paragraph separators
+  // Split content into paragraphs - better handling of line breaks
   const paragraphs = cleanContent
-    .split(/\n\s*\n|\r\n\s*\r\n/) // Split on double newlines
-    .map(p => p.replace(/\n/g, ' ').replace(/\r/g, ' ').trim()) // Convert single newlines to spaces
+    .split(/\n\s*\n|\r\n\s*\r\n/) // Split on double newlines for paragraphs
+    .map(p => p.trim()) // Don't convert single newlines to spaces yet
     .filter(p => p.length > 0);
   
   console.log('PDF Generation - Number of paragraphs found:', paragraphs.length);
@@ -59,55 +59,94 @@ export const addMarkdownTextToPDF = (
       currentY += paragraphSpacing;
     }
     
-    // Parse the paragraph for inline formatting
-    const sections = parseMarkdownInline(paragraph);
-    console.log(`PDF Generation - Paragraph ${paragraphIndex + 1} sections:`, sections.length);
+    // Split paragraph into lines (preserve single line breaks)
+    const lines = paragraph.split(/\n|\r\n/).map(line => line.trim()).filter(line => line.length > 0);
+    console.log(`PDF Generation - Paragraph ${paragraphIndex + 1} has ${lines.length} lines`);
     
-    let isFirstSectionInParagraph = true;
-    
-    sections.forEach((section, sectionIndex) => {
-      console.log(`PDF Generation - Processing section ${sectionIndex + 1}:`, section.text.substring(0, 50));
+    lines.forEach((line, lineIndex) => {
+      console.log(`PDF Generation - Processing line ${lineIndex + 1}:`, line.substring(0, 50));
       
-      // Check if we need a new page
-      if (currentY > pageHeight - bottomMargin) {
-        console.log('PDF Generation - Adding new page at Y:', currentY);
-        doc.addPage();
-        currentY = topMargin;
+      // Parse the line for inline formatting
+      const sections = parseMarkdownInline(line);
+      console.log(`PDF Generation - Line ${lineIndex + 1} sections:`, sections.length);
+      
+      let isFirstSectionInLine = true;
+      
+      sections.forEach((section, sectionIndex) => {
+        console.log(`PDF Generation - Processing section ${sectionIndex + 1}:`, section.text.substring(0, 50));
         
-        // Add header on new page
+        // Check if we need a new page
+        if (currentY > pageHeight - bottomMargin) {
+          console.log('PDF Generation - Adding new page at Y:', currentY);
+          doc.addPage();
+          currentY = topMargin;
+          
+          // Add header on new page
+          doc.setFontSize(9);
+          doc.setFont('helvetica', 'bold');
+          doc.text('Terms & Conditions (continued):', startX, currentY);
+          currentY += 10;
+        }
+        
+        // Set font style
         doc.setFontSize(9);
-        doc.setFont('helvetica', 'bold');
-        doc.text('Terms & Conditions (continued):', startX, currentY);
-        currentY += 10;
-      }
-      
-      // Set font style
-      doc.setFontSize(9);
-      if (section.bold && section.italic) {
-        doc.setFont('helvetica', 'bolditalic');
-      } else if (section.bold) {
-        doc.setFont('helvetica', 'bold');
-      } else if (section.italic) {
-        doc.setFont('helvetica', 'italic');
-      } else {
-        doc.setFont('helvetica', 'normal');
-      }
-      
-      if (section.text.trim()) {
-        // Split text to fit within the specified width
-        const splitText = doc.splitTextToSize(section.text, maxWidth);
-        console.log(`PDF Generation - Split text into ${Array.isArray(splitText) ? splitText.length : 1} lines`);
+        if (section.bold && section.italic) {
+          doc.setFont('helvetica', 'bolditalic');
+        } else if (section.bold) {
+          doc.setFont('helvetica', 'bold');
+        } else if (section.italic) {
+          doc.setFont('helvetica', 'italic');
+        } else {
+          doc.setFont('helvetica', 'normal');
+        }
         
-        // Add each line of the split text
-        if (Array.isArray(splitText)) {
-          splitText.forEach((line, lineIndex) => {
-            if (lineIndex > 0 || !isFirstSectionInParagraph) {
+        if (section.text.trim()) {
+          // Split text to fit within the specified width
+          const splitText = doc.splitTextToSize(section.text, maxWidth);
+          console.log(`PDF Generation - Split text into ${Array.isArray(splitText) ? splitText.length : 1} lines`);
+          
+          // Add each line of the split text
+          if (Array.isArray(splitText)) {
+            splitText.forEach((textLine, textLineIndex) => {
+              if (textLineIndex > 0 || !isFirstSectionInLine) {
+                currentY += lineHeight;
+              }
+              
+              // Check for page break within a section
+              if (currentY > pageHeight - bottomMargin) {
+                console.log('PDF Generation - Adding new page within section at Y:', currentY);
+                doc.addPage();
+                currentY = topMargin;
+                
+                // Add header on new page
+                doc.setFontSize(9);
+                doc.setFont('helvetica', 'bold');
+                doc.text('Terms & Conditions (continued):', startX, currentY);
+                currentY += 10;
+                
+                // Reset font style after header
+                if (section.bold && section.italic) {
+                  doc.setFont('helvetica', 'bolditalic');
+                } else if (section.bold) {
+                  doc.setFont('helvetica', 'bold');
+                } else if (section.italic) {
+                  doc.setFont('helvetica', 'italic');
+                } else {
+                  doc.setFont('helvetica', 'normal');
+                }
+              }
+              
+              doc.text(textLine, startX, currentY);
+              console.log(`PDF Generation - Added line at Y ${currentY}:`, textLine.substring(0, 30));
+            });
+          } else {
+            if (!isFirstSectionInLine) {
               currentY += lineHeight;
             }
             
-            // Check for page break within a section
+            // Check for page break
             if (currentY > pageHeight - bottomMargin) {
-              console.log('PDF Generation - Adding new page within section at Y:', currentY);
+              console.log('PDF Generation - Adding new page for single line at Y:', currentY);
               doc.addPage();
               currentY = topMargin;
               
@@ -129,48 +168,23 @@ export const addMarkdownTextToPDF = (
               }
             }
             
-            doc.text(line, startX, currentY);
-            console.log(`PDF Generation - Added line at Y ${currentY}:`, line.substring(0, 30));
-          });
-        } else {
-          if (!isFirstSectionInParagraph) {
-            currentY += lineHeight;
+            doc.text(splitText, startX, currentY);
+            console.log(`PDF Generation - Added single line at Y ${currentY}:`, splitText.substring(0, 30));
           }
           
-          // Check for page break
-          if (currentY > pageHeight - bottomMargin) {
-            console.log('PDF Generation - Adding new page for single line at Y:', currentY);
-            doc.addPage();
-            currentY = topMargin;
-            
-            // Add header on new page
-            doc.setFontSize(9);
-            doc.setFont('helvetica', 'bold');
-            doc.text('Terms & Conditions (continued):', startX, currentY);
-            currentY += 10;
-            
-            // Reset font style after header
-            if (section.bold && section.italic) {
-              doc.setFont('helvetica', 'bolditalic');
-            } else if (section.bold) {
-              doc.setFont('helvetica', 'bold');
-            } else if (section.italic) {
-              doc.setFont('helvetica', 'italic');
-            } else {
-              doc.setFont('helvetica', 'normal');
-            }
-          }
-          
-          doc.text(splitText, startX, currentY);
-          console.log(`PDF Generation - Added single line at Y ${currentY}:`, splitText.substring(0, 30));
+          isFirstSectionInLine = false;
         }
-        
-        isFirstSectionInParagraph = false;
+      });
+      
+      // Add line break after each line within a paragraph
+      if (lineIndex < lines.length - 1) {
+        currentY += lineHeight;
+        console.log(`PDF Generation - Added line break after line ${lineIndex + 1}, current Y:`, currentY);
       }
     });
     
-    // Add line break after each paragraph - this is the key fix
-    currentY += lineHeight + 4; // Extra line break for paragraph separation
+    // Add paragraph break after each paragraph
+    currentY += lineHeight + 4; // Extra spacing for paragraph separation
     console.log(`PDF Generation - Finished paragraph ${paragraphIndex + 1}, current Y:`, currentY);
   });
   
