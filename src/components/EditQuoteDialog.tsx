@@ -1,3 +1,4 @@
+
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -72,13 +73,17 @@ export const EditQuoteDialog = ({
   const handleBillingAddressChange = (addressId: string | null, customAddr?: string) => {
     console.log('EditQuoteDialog - Billing address changed:', { addressId, customAddr });
     setSelectedBillingAddressId(addressId);
-    setBillingAddress(customAddr || "");
+    if (customAddr !== undefined) {
+      setBillingAddress(customAddr);
+    }
   };
 
   const handleServiceAddressChange = (addressId: string | null, customAddr?: string) => {
     console.log('EditQuoteDialog - Service address changed:', { addressId, customAddr });
     setSelectedServiceAddressId(addressId);
-    setServiceAddress(customAddr || "");
+    if (customAddr !== undefined) {
+      setServiceAddress(customAddr);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
