@@ -149,6 +149,9 @@ export const AddQuoteDialog = ({ open, onOpenChange, onAddQuote, clients, client
   const selectedAgent = clientId ? clients.find(c => c.id === clientId) : null;
   const selectedClientInfo = clientInfoId && clientInfoId !== "none" ? clientInfos.find(info => info.id === clientInfoId) : null;
 
+  // Check if form is valid for submission
+  const isFormValid = clientInfoId && clientInfoId !== "none" && quoteItems.length > 0;
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[1400px] max-h-[90vh] overflow-y-auto">
@@ -299,7 +302,7 @@ export const AddQuoteDialog = ({ open, onOpenChange, onAddQuote, clients, client
             <Button 
               type="submit" 
               className="bg-blue-600 hover:bg-blue-700"
-              disabled={!selectedAgent || clientInfos.length === 0 || quoteItems.length === 0}
+              disabled={!isFormValid}
             >
               Add Quote
             </Button>
