@@ -10,11 +10,13 @@ import {
 import { Button } from "@/components/ui/button";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Edit, MapPin, Trash2 } from "lucide-react";
+import { Edit, MapPin, Trash2, Users } from "lucide-react";
 import { ClientInfo } from "@/pages/Index";
 import { EditClientInfoDialog } from "@/components/EditClientInfoDialog";
 import { ClientAddressList } from "@/components/ClientAddressList";
+import { ClientContactsList } from "@/components/ClientContactsList";
 import { useClientAddresses } from "@/hooks/useClientAddresses";
+import { useClientContacts } from "@/hooks/useClientContacts";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
@@ -28,6 +30,7 @@ export const ClientInfoList = ({ clientInfos, onUpdateClientInfo, agentMapping =
   const [editingClientInfo, setEditingClientInfo] = useState<ClientInfo | null>(null);
   const [deletingClientId, setDeletingClientId] = useState<string | null>(null);
   const [viewingAddressesClientId, setViewingAddressesClientId] = useState<string | null>(null);
+  const [viewingContactsClientId, setViewingContactsClientId] = useState<string | null>(null);
   const { toast } = useToast();
 
   const { 
@@ -36,6 +39,13 @@ export const ClientInfoList = ({ clientInfos, onUpdateClientInfo, agentMapping =
     updateAddress, 
     deleteAddress 
   } = useClientAddresses(viewingAddressesClientId);
+
+  const {
+    contacts,
+    addContact,
+    updateContact,
+    deleteContact
+  } = useClientContacts(viewingContactsClientId);
 
   console.log("ClientInfoList received clientInfos:", clientInfos);
   console.log("ClientInfoList received agentMapping:", agentMapping);
@@ -87,6 +97,10 @@ export const ClientInfoList = ({ clientInfos, onUpdateClientInfo, agentMapping =
     ? clientInfos.find(client => client.id === viewingAddressesClientId)
     : null;
 
+  const selectedContactsClient = viewingContactsClientId
+    ? clientInfos.find(client => client.id === viewingContactsClientId)
+    : null;
+
   return (
     <>
       {clientInfos.length === 0 ? (
@@ -115,6 +129,16 @@ export const ClientInfoList = ({ clientInfos, onUpdateClientInfo, agentMapping =
                   <TableCell>{new Date(clientInfo.updated_at).toLocaleDateString()}</TableCell>
                   <TableCell className="text-right">
                     <div className="flex justify-end gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setViewingContactsClientId(clientInfo.id)}
+                        className="hover:bg-green-50 hover:border-green-300"
+                        title="Manage Contacts"
+                      >
+                        <Users className="w-4 h-4" />
+                      </Button>
+
                       <Button
                         variant="outline"
                         size="sm"
@@ -194,6 +218,23 @@ export const ClientInfoList = ({ clientInfos, onUpdateClientInfo, agentMapping =
             onAddAddress={addAddress}
             onUpdateAddress={updateAddress}
             onDeleteAddress={deleteAddress}
+          />
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={!!viewingContactsClientId} onOpenChange={(open) => !open && setViewingContactsClientId(null)}>
+        <DialogContent className="sm:max-w-[700px] max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>
+              Manage Contacts - {selectedContactsClient?.company_name}
+            </DialogTitle>
+          </DialogHeader>
+          <ClientContactsList
+            clientInfoId={viewingContactsClientId!}
+            onAddContact={addContact}
+            onUpdateContact={updateContact}
+            onDeleteContact={deleteContact}
+            contacts={contacts}
           />
         </DialogContent>
       </Dialog>

@@ -134,6 +134,47 @@ export type Database = {
           },
         ]
       }
+      client_contacts: {
+        Row: {
+          client_info_id: string
+          created_at: string
+          email: string | null
+          id: string
+          is_primary: boolean
+          name: string
+          role: string | null
+          updated_at: string
+        }
+        Insert: {
+          client_info_id: string
+          created_at?: string
+          email?: string | null
+          id?: string
+          is_primary?: boolean
+          name: string
+          role?: string | null
+          updated_at?: string
+        }
+        Update: {
+          client_info_id?: string
+          created_at?: string
+          email?: string | null
+          id?: string
+          is_primary?: boolean
+          name?: string
+          role?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_contacts_client_info_id_fkey"
+            columns: ["client_info_id"]
+            isOneToOne: false
+            referencedRelation: "client_info"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       client_info: {
         Row: {
           address: string | null
