@@ -47,23 +47,28 @@ export const useQuotes = (
 
       console.info('[fetchQuotes] Raw quotesData from database:', quotesData);
       
-      // Log description values specifically
+      // Log address values specifically from database
       if (quotesData) {
         quotesData.forEach((quote, index) => {
-          console.log(`[fetchQuotes] Quote ${index} - ID: ${quote.id}, Description from DB: "${quote.description}"`);
+          console.log(`[fetchQuotes] Quote ${index} - ID: ${quote.id}, Description: "${quote.description}", Billing: "${quote.billing_address}", Service: "${quote.service_address}"`);
         });
       }
 
       if (quotesData) {
         const mappedQuotes = quotesData.map(quote => {
           const mapped = mapQuoteData(quote, clients, clientInfos);
-          console.log(`[fetchQuotes] Mapped quote ${quote.id} - Description: "${mapped.description}"`);
+          console.log(`[fetchQuotes] Mapped quote ${quote.id} - Description: "${mapped.description}", Billing: "${mapped.billingAddress}", Service: "${mapped.serviceAddress}"`);
           return mapped;
         });
         
         setQuotes(mappedQuotes);
         console.info('[fetchQuotes] Final mapped quotes count:', mappedQuotes.length);
-        console.info('[fetchQuotes] Final quotes with descriptions:', mappedQuotes.map(q => ({ id: q.id, description: q.description })));
+        console.info('[fetchQuotes] Final quotes with addresses:', mappedQuotes.map(q => ({ 
+          id: q.id, 
+          description: q.description,
+          billingAddress: q.billingAddress,
+          serviceAddress: q.serviceAddress
+        })));
       }
     } catch (err) {
       console.error('Error in fetchQuotes:', err);
