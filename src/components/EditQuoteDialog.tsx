@@ -7,6 +7,9 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Quote, Client, ClientInfo } from "@/pages/Index";
+import { QuoteItemsManager } from "@/components/QuoteItemsManager";
+import { QuoteItemData } from "@/types/quoteItems";
+import { supabase } from "@/integrations/supabase/client";
 
 interface EditQuoteDialogProps {
   quote: Quote | null;
@@ -36,6 +39,52 @@ export const EditQuoteDialog = ({
   const [expiresAt, setExpiresAt] = useState("");
   const [notes, setNotes] = useState("");
   const [commissionOverride, setCommissionOverride] = useState("");
+  const [quoteItems, setQuoteItems] = useState<QuoteItemData[]>([]);
+
+  // Fetch quote items when quote changes
+  useEffect(() => {
+    if (quote && open) {
+      fetchQuoteItems();
+    }
+  }, [quote, open]);
+
+  const fetchQuoteItems = async () => {
+    if (!quote) return;
+    
+    try {
+      const { data: items, error } = await supabase
+        .from('quote_items')
+        .select(`
+          *,
+          item:items(*)
+        `)
+        .eq('quote_id', quote.id);
+
+      if (error) {
+        console.error('Error fetching quote items:', error);
+        return;
+      }
+
+      if (items) {
+        // Transform database items to QuoteItemData format
+        const transformedItems: QuoteItemData[] = items.map(item => ({
+          id: item.id,
+          item_id: item.item_id,
+          quantity: item.quantity,
+          unit_price: item.unit_price,
+          total_price: item.total_price,
+          charge_type: (item.item?.charge_type as 'NRC' | 'MRC') || 'NRC',
+          name: item.item?.name || '',
+          description: item.item?.description || '',
+          item: item.item
+        }));
+        
+        setQuoteItems(transformedItems);
+      }
+    } catch (err) {
+      console.error('Exception fetching quote items:', err);
+    }
+  };
 
   // Update form when quote changes
   useEffect(() => {
@@ -54,19 +103,52 @@ export const EditQuoteDialog = ({
     }
   }, [quote]);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  // Calculate total amount from quote items
+  const calculateTotalAmount = (items: QuoteItemData[]) => {
+    return items.reduce((total, item) => total + item.total_price, 0);
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (quote && clientId && date) {
       const selectedClient = clients.find(client => client.id === clientId);
       const selectedClientInfo = clientInfoId && clientInfoId !== "none" ? clientInfos.find(info => info.id === clientInfoId) : null;
       
       if (selectedClient) {
+        const totalAmount = calculateTotalAmount(quoteItems);
+        
+        // Update quote items in database
+        try {
+          // Delete existing quote items
+          await supabase
+            .from('quote_items')
+            .delete()
+            .eq('quote_id', quote.id);
+
+          // Insert updated quote items
+          if (quoteItems.length > 0) {
+            const itemsToInsert = quoteItems.map(item => ({
+              quote_id: quote.id,
+              item_id: item.item_id,
+              quantity: item.quantity,
+              unit_price: item.unit_price,
+              total_price: item.total_price
+            }));
+
+            await supabase
+              .from('quote_items')
+              .insert(itemsToInsert);
+          }
+        } catch (err) {
+          console.error('Error updating quote items:', err);
+        }
+
         onUpdateQuote({
           ...quote,
           clientId,
           clientName: selectedClient.name,
           companyName: selectedClient.companyName || selectedClient.name,
-          amount: quote.amount, // Keep existing amount since it's calculated from items
+          amount: totalAmount,
           date,
           description: description || "",
           quoteNumber: quoteNumber || undefined,
@@ -91,11 +173,11 @@ export const EditQuoteDialog = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[550px] max-h-[90vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-[900px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Edit Quote</DialogTitle>
           <DialogDescription>
-            Update the quote details.
+            Update the quote details and items.
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -172,6 +254,15 @@ export const EditQuoteDialog = ({
                 </SelectContent>
               </Select>
             </div>
+          </div>
+
+          {/* Quote Items Section */}
+          <div className="border-t pt-4">
+            <QuoteItemsManager
+              items={quoteItems}
+              onItemsChange={setQuoteItems}
+              clientInfoId={clientInfoId !== "none" ? clientInfoId : undefined}
+            />
           </div>
 
           <div className="space-y-2">
