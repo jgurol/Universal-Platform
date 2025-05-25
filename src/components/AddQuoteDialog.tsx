@@ -112,19 +112,20 @@ export const AddQuoteDialog = ({ open, onOpenChange, onAddQuote, clients, client
     
     const totalAmount = calculateTotalAmount();
     
-    if (clientId && date) {
+    // Fix: Check for clientInfoId instead of clientId, since clientId can be empty if no agent is associated
+    if (clientInfoId && clientInfoId !== "none" && date) {
       console.log('Form validation passed');
-      const selectedClient = clients.find(client => client.id === clientId);
-      const selectedClientInfo = clientInfoId && clientInfoId !== "none" ? clientInfos.find(info => info.id === clientInfoId) : null;
+      const selectedClient = clientId ? clients.find(client => client.id === clientId) : null;
+      const selectedClientInfo = clientInfos.find(info => info.id === clientInfoId);
       
-      if (selectedClient) {
-        console.log('Selected client found:', selectedClient.name);
+      if (selectedClientInfo) {
+        console.log('Selected client info found:', selectedClientInfo.company_name);
         console.log('Calling onAddQuote with data...');
         
         onAddQuote({
-          clientId,
-          clientName: selectedClient.name,
-          companyName: selectedClient.companyName || selectedClient.name,
+          clientId: clientId || "", // Allow empty clientId if no agent is associated
+          clientName: selectedClient?.name || "No Agent Assigned",
+          companyName: selectedClientInfo.company_name,
           amount: totalAmount,
           date,
           description: description || "",
@@ -132,8 +133,8 @@ export const AddQuoteDialog = ({ open, onOpenChange, onAddQuote, clients, client
           quoteMonth: quoteMonth || undefined,
           quoteYear: quoteYear || undefined,
           status,
-          clientInfoId: clientInfoId !== "none" ? clientInfoId : undefined,
-          clientCompanyName: selectedClientInfo?.company_name,
+          clientInfoId: clientInfoId,
+          clientCompanyName: selectedClientInfo.company_name,
           commissionOverride: commissionOverride ? parseFloat(commissionOverride) : undefined,
           expiresAt: expiresAt || undefined,
           notes: notes || undefined,
@@ -155,10 +156,10 @@ export const AddQuoteDialog = ({ open, onOpenChange, onAddQuote, clients, client
         setQuoteItems([]);
         onOpenChange(false);
       } else {
-        console.log('Selected client not found!');
+        console.log('Selected client info not found!');
       }
     } else {
-      console.log('Form validation failed:', { clientId, date });
+      console.log('Form validation failed:', { clientInfoId, date });
     }
   };
 
