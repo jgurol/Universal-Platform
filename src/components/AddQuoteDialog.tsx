@@ -43,7 +43,7 @@ export const AddQuoteDialog = ({ open, onOpenChange, onAddQuote, clients, client
     }
   }, []);
 
-  // Generate next quote number when dialog opens
+  // Generate next quote number when dialog opens - starting from 3500
   useEffect(() => {
     const generateNextQuoteNumber = async () => {
       if (open && user) {
@@ -58,22 +58,22 @@ export const AddQuoteDialog = ({ open, onOpenChange, onAddQuote, clients, client
 
           if (error) {
             console.error('Error fetching last quote number:', error);
-            setQuoteNumber("1");
+            setQuoteNumber("3500");
             return;
           }
 
-          let nextNumber = 1;
+          let nextNumber = 3500; // Start from 3500 instead of 1
           if (data && data.length > 0 && data[0].quote_number) {
             const lastNumber = parseInt(data[0].quote_number);
             if (!isNaN(lastNumber)) {
-              nextNumber = lastNumber + 1;
+              nextNumber = Math.max(lastNumber + 1, 3500); // Ensure we never go below 3500
             }
           }
           
           setQuoteNumber(nextNumber.toString());
         } catch (err) {
           console.error('Error generating quote number:', err);
-          setQuoteNumber("1");
+          setQuoteNumber("3500");
         }
       }
     };
