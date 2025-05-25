@@ -240,7 +240,7 @@ export const generateQuotePDF = (quote: Quote, clientInfo?: ClientInfo, salesper
   const quoteTitle = quote.description || (clientInfo?.company_name ? `${clientInfo.company_name} - Service Agreement` : 'Service Agreement');
   doc.text(quoteTitle, 20, yPos);
   
-  // Items Section - Monthly Fees with proper table structure
+  // Items Section - Monthly Fees with proper table structure including addresses
   yPos += 15;
   
   if (quote.quoteItems && quote.quoteItems.length > 0) {
@@ -254,12 +254,13 @@ export const generateQuotePDF = (quote: Quote, clientInfo?: ClientInfo, salesper
       doc.text('Monthly Fees', 20, yPos);
       yPos += 12;
       
-      // Table structure with proper column alignment
+      // Table structure with proper column alignment (adjusted for address column)
       const colX = {
         description: 20,
-        qty: 130,
-        price: 155,
-        total: 175
+        address: 95,
+        qty: 145,
+        price: 165,
+        total: 185
       };
       
       // Table headers with background
@@ -268,19 +269,35 @@ export const generateQuotePDF = (quote: Quote, clientInfo?: ClientInfo, salesper
       doc.setDrawColor(200, 200, 200);
       doc.rect(colX.description, yPos - 8, 175, 10);
       
-      doc.setFontSize(9);
+      doc.setFontSize(8);
       doc.setFont('helvetica', 'bold');
       doc.text('Description', colX.description + 2, yPos - 2);
+      doc.text('Address', colX.address + 2, yPos - 2);
       doc.text('Qty', colX.qty + 2, yPos - 2);
       doc.text('Price', colX.price + 2, yPos - 2);
       doc.text('Total', colX.total + 2, yPos - 2);
       
       yPos += 5;
       
-      // MRC Items with aligned columns
+      // MRC Items with aligned columns including address
       doc.setFont('helvetica', 'normal');
       mrcItems.forEach((item, index) => {
         const itemName = item.item?.name || 'Monthly Service';
+        
+        // Get address from the item
+        let addressText = '';
+        if (item.address) {
+          // Format the full address from the client_addresses table
+          addressText = `${item.address.street_address}, ${item.address.city}, ${item.address.state} ${item.address.zip_code}`;
+        } else {
+          // Fallback to quote addresses or "Not specified"
+          addressText = quote.serviceAddress || quote.billingAddress || 'Not specified';
+        }
+        
+        // Truncate address if too long
+        if (addressText.length > 30) {
+          addressText = addressText.substring(0, 27) + '...';
+        }
         
         // Alternate row background
         if (index % 2 === 0) {
@@ -290,7 +307,9 @@ export const generateQuotePDF = (quote: Quote, clientInfo?: ClientInfo, salesper
         
         // Main item row with proper column alignment
         doc.setTextColor(0, 0, 0);
-        doc.text(itemName.substring(0, 35), colX.description + 2, yPos);
+        doc.setFontSize(8);
+        doc.text(itemName.substring(0, 25), colX.description + 2, yPos);
+        doc.text(addressText, colX.address + 2, yPos);
         doc.text(item.quantity.toString(), colX.qty + 2, yPos);
         doc.text(`$${Number(item.unit_price).toFixed(2)}`, colX.price + 2, yPos);
         doc.text(`$${Number(item.total_price).toFixed(2)}`, colX.total + 2, yPos);
@@ -304,6 +323,7 @@ export const generateQuotePDF = (quote: Quote, clientInfo?: ClientInfo, salesper
       yPos += 8;
       
       const mrcTotal = mrcItems.reduce((total, item) => total + (Number(item.total_price) || 0), 0);
+      doc.setFontSize(9);
       doc.setFont('helvetica', 'bold');
       doc.text('Total Monthly:', colX.price - 20, yPos);
       doc.text(`$${mrcTotal.toFixed(2)} USD`, colX.total + 2, yPos);
