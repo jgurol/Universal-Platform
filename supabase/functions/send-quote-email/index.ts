@@ -89,6 +89,16 @@ const handler = async (req: Request): Promise<Response> => {
     // Check if Resend returned an error
     if (emailResponse.error) {
       console.error("Resend API error:", emailResponse.error);
+      
+      // Update quote with error status
+      await supabase
+        .from('quotes')
+        .update({
+          email_status: 'error',
+          email_sent_at: new Date().toISOString()
+        })
+        .eq('id', quoteId);
+
       return new Response(JSON.stringify({ 
         success: false, 
         error: emailResponse.error.message || "Failed to send email via Resend"
@@ -101,24 +111,20 @@ const handler = async (req: Request): Promise<Response> => {
       });
     }
 
-    // Email sent successfully - now create tracking record
-    const { error: trackingError } = await supabase
-      .from('email_tracking')
-      .insert({
-        quote_id: quoteId,
-        email_id: emailResponse.data?.id,
-        recipient_email: to,
-        cc_emails: cc || [],
-        subject: subject,
-        sent_at: new Date().toISOString(),
-        status: 'sent'
-      });
+    // Email sent successfully - update quote status
+    const { error: updateError } = await supabase
+      .from('quotes')
+      .update({
+        email_status: 'success',
+        email_sent_at: new Date().toISOString()
+      })
+      .eq('id', quoteId);
 
-    if (trackingError) {
-      console.error('Error creating email tracking record:', trackingError);
-      // Don't fail the email send if tracking fails, just log it
+    if (updateError) {
+      console.error('Error updating quote email status:', updateError);
+      // Don't fail the email send if status update fails, just log it
     } else {
-      console.log('Email tracking record created successfully');
+      console.log('Quote email status updated successfully');
     }
 
     // Email sent successfully
