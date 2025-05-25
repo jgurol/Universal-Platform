@@ -89,14 +89,16 @@ export const useQuoteActions = (
         return;
       }
 
-      // Add quote items if any exist
+      // Add quote items if any exist - now including charge_type and address_id
       if (newQuote.quoteItems && newQuote.quoteItems.length > 0 && quoteData) {
         const quoteItemsToInsert = newQuote.quoteItems.map(item => ({
           quote_id: quoteData.id,
           item_id: item.item_id,
           quantity: item.quantity,
           unit_price: item.unit_price,
-          total_price: item.total_price
+          total_price: item.total_price,
+          charge_type: item.charge_type, // Fix: Include charge_type in database insert
+          address_id: item.address_id || null // Fix: Include address_id in database insert
         }));
 
         const { error: itemsError } = await supabase
