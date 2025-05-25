@@ -42,8 +42,11 @@ const handler = async (req: Request): Promise<Response> => {
     // Create tracking pixel URL
     const trackingPixelUrl = `${Deno.env.get("SUPABASE_URL")}/functions/v1/track-email-open?quote=${quoteId}`;
     
-    // Create acceptance URL - use the Lovable application URL
-    const acceptanceUrl = `https://lovable.app/accept-quote/${quoteId}`;
+    // Create acceptance URL - use the current origin (deployed app URL)
+    const baseUrl = req.headers.get('origin') || req.headers.get('referer')?.replace(/\/$/, '') || Deno.env.get("SUPABASE_URL")?.replace('supabase.co', 'lovable.app');
+    const acceptanceUrl = `${baseUrl}/accept-quote/${quoteId}`;
+
+    console.log('Acceptance URL generated:', acceptanceUrl);
 
     // Send email with PDF attachment, tracking pixel, and acceptance button
     const emailResponse = await resend.emails.send({
