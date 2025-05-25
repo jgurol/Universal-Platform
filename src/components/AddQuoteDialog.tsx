@@ -152,7 +152,7 @@ export const AddQuoteDialog = ({ open, onOpenChange, onAddQuote, clients, client
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[800px] max-h-[90vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-[1000px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Add Quote</DialogTitle>
           <DialogDescription>
