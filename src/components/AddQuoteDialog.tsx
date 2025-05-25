@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -36,12 +35,32 @@ export const AddQuoteDialog = ({ open, onOpenChange, onAddQuote, clients, client
   const [quoteItems, setQuoteItems] = useState<QuoteItemData[]>([]);
   const { user } = useAuth();
   
+  // Function to calculate expiration date (+60 days from quote date)
+  const calculateExpirationDate = (quoteDate: string): string => {
+    if (!quoteDate) return "";
+    
+    const date = new Date(quoteDate);
+    date.setDate(date.getDate() + 60);
+    
+    // Format as YYYY-MM-DD for input
+    return date.toISOString().split('T')[0];
+  };
+  
   // Initialize date with today's date in the configured timezone
   useEffect(() => {
     if (!date) {
-      setDate(getTodayInTimezone());
+      const todayDate = getTodayInTimezone();
+      setDate(todayDate);
+      setExpiresAt(calculateExpirationDate(todayDate));
     }
   }, []);
+
+  // Update expiration date when quote date changes
+  useEffect(() => {
+    if (date) {
+      setExpiresAt(calculateExpirationDate(date));
+    }
+  }, [date]);
 
   // Generate next quote number when dialog opens - starting from 3500
   useEffect(() => {
@@ -133,13 +152,14 @@ export const AddQuoteDialog = ({ open, onOpenChange, onAddQuote, clients, client
         // Reset form
         setClientId("");
         setClientInfoId("");
-        setDate(getTodayInTimezone());
+        const todayDate = getTodayInTimezone();
+        setDate(todayDate);
+        setExpiresAt(calculateExpirationDate(todayDate));
         setDescription("");
         setQuoteNumber("");
         setQuoteMonth("");
         setQuoteYear("");
         setStatus("pending");
-        setExpiresAt("");
         setNotes("");
         setCommissionOverride("");
         setQuoteItems([]);
@@ -193,13 +213,12 @@ export const AddQuoteDialog = ({ open, onOpenChange, onAddQuote, clients, client
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="expiresAt" className="text-sm">Expiration Date</Label>
+                <Label htmlFor="expiresAt" className="text-sm">Expiration Date (Auto +60 days)</Label>
                 <Input
                   id="expiresAt"
                   type="date"
                   value={expiresAt}
                   onChange={(e) => setExpiresAt(e.target.value)}
-                  placeholder="Optional"
                   className="h-8"
                 />
               </div>
