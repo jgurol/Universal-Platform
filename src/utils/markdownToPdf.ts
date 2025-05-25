@@ -169,8 +169,8 @@ export const addMarkdownTextToPDF = (
       }
     });
     
-    // Move to next line after each paragraph and add extra spacing
-    currentY += lineHeight + 2; // Extra spacing for paragraph separation
+    // Add line break after each paragraph - this is the key fix
+    currentY += lineHeight + 4; // Extra line break for paragraph separation
     console.log(`PDF Generation - Finished paragraph ${paragraphIndex + 1}, current Y:`, currentY);
   });
   
