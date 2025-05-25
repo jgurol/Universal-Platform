@@ -83,7 +83,8 @@ export const generateQuotePDF = (quote: Quote, clientInfo?: ClientInfo, salesper
     const parts = addressString.split(',').map(part => part.trim());
     
     if (parts.length >= 3) {
-      // Standard format: "Street, City, State Zip"
+      // Standard format: "Street (including suite), City, State Zip"
+      // Keep the first part as the complete street address (including suite)
       const street = parts[0];
       const city = parts[1];
       const stateZip = parts.slice(2).join(' ');
