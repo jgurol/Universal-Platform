@@ -82,7 +82,7 @@ export default function SystemSettings() {
             companyName: settingsMap.company_name || settings.companyName,
             businessAddress: settingsMap.business_address || settings.businessAddress,
             businessPhone: settingsMap.business_phone || settings.businessPhone,
-            businessFax: settingsMap.business_fax || settings.businessFax,
+            businessFax: settingsMap.business_fax || "",
             supportEmail: settingsMap.support_email || settings.supportEmail,
             defaultCommissionRate: settingsMap.default_commission_rate || settings.defaultCommissionRate,
             showCompanyNameOnPDF: settingsMap.show_company_name_on_pdf !== 'false'
@@ -363,7 +363,7 @@ export default function SystemSettings() {
         { key: 'company_name', value: settings.companyName },
         { key: 'business_address', value: settings.businessAddress },
         { key: 'business_phone', value: settings.businessPhone },
-        { key: 'business_fax', value: settings.businessFax },
+        { key: 'business_fax', value: settings.businessFax || '' },
         { key: 'support_email', value: settings.supportEmail },
         { key: 'default_commission_rate', value: settings.defaultCommissionRate },
         { key: 'show_company_name_on_pdf', value: settings.showCompanyNameOnPDF.toString() }
@@ -371,6 +371,7 @@ export default function SystemSettings() {
 
       // Update each setting individually
       for (const setting of settingsToUpdate) {
+        console.log(`Updating setting ${setting.key} with value:`, setting.value);
         const { error } = await supabase
           .from('system_settings')
           .upsert({
