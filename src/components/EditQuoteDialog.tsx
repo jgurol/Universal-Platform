@@ -103,9 +103,17 @@ export const EditQuoteDialog = ({
     }
   }, [quote]);
 
-  // Calculate total amount from quote items
-  const calculateTotalAmount = (items: QuoteItemData[]) => {
-    return items.reduce((total, item) => total + item.total_price, 0);
+  // Calculate total amount from quote items by charge type
+  const calculateTotalsByChargeType = (items: QuoteItemData[]) => {
+    const nrcTotal = items
+      .filter(item => item.charge_type === 'NRC')
+      .reduce((total, item) => total + item.total_price, 0);
+    
+    const mrcTotal = items
+      .filter(item => item.charge_type === 'MRC')
+      .reduce((total, item) => total + item.total_price, 0);
+    
+    return { nrcTotal, mrcTotal, totalAmount: nrcTotal + mrcTotal };
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -115,9 +123,9 @@ export const EditQuoteDialog = ({
       const selectedClientInfo = clientInfoId && clientInfoId !== "none" ? clientInfos.find(info => info.id === clientInfoId) : null;
       
       if (selectedClient) {
-        const totalAmount = calculateTotalAmount(quoteItems);
+        const { totalAmount } = calculateTotalsByChargeType(quoteItems);
         
-        // Update quote items in database
+        // Update quote items in database with all fields including charge_type changes
         try {
           // Delete existing quote items
           await supabase
@@ -125,7 +133,7 @@ export const EditQuoteDialog = ({
             .delete()
             .eq('quote_id', quote.id);
 
-          // Insert updated quote items
+          // Insert updated quote items with all necessary fields
           if (quoteItems.length > 0) {
             const itemsToInsert = quoteItems.map(item => ({
               quote_id: quote.id,
@@ -135,9 +143,13 @@ export const EditQuoteDialog = ({
               total_price: item.total_price
             }));
 
-            await supabase
+            const { error: insertError } = await supabase
               .from('quote_items')
               .insert(itemsToInsert);
+
+            if (insertError) {
+              console.error('Error inserting quote items:', insertError);
+            }
           }
         } catch (err) {
           console.error('Error updating quote items:', err);
