@@ -240,7 +240,7 @@ export const generateQuotePDF = (quote: Quote, clientInfo?: ClientInfo, salesper
   const quoteTitle = quote.description || (clientInfo?.company_name ? `${clientInfo.company_name} - Service Agreement` : 'Service Agreement');
   doc.text(quoteTitle, 20, yPos);
   
-  // Items Section - Monthly Fees with proper table structure
+  // Items Section - Monthly Fees with description and address layout
   yPos += 15;
   
   if (quote.quoteItems && quote.quoteItems.length > 0) {
@@ -280,25 +280,27 @@ export const generateQuotePDF = (quote: Quote, clientInfo?: ClientInfo, salesper
       // MRC Items with description and address on separate lines
       doc.setFont('helvetica', 'normal');
       mrcItems.forEach((item, index) => {
-        const itemName = item.item?.name || 'Monthly Service';
+        const itemName = item.item?.name || item.name || 'Monthly Service';
         
         // Get address from the item
         let addressText = '';
         if (item.address) {
           // Format the full address from the client_addresses table
           addressText = `${item.address.street_address}, ${item.address.city}, ${item.address.state} ${item.address.zip_code}`;
+          console.log('PDF Generation - Using item.address:', addressText);
         } else {
-          // Fallback to quote addresses or "Not specified"
-          addressText = quote.serviceAddress || quote.billingAddress || 'Not specified';
+          // Fallback to quote addresses or "Service location not specified"
+          addressText = quote.serviceAddress || quote.billingAddress || 'Service location not specified';
+          console.log('PDF Generation - Using fallback address:', addressText);
         }
         
         // Truncate address if too long
-        if (addressText.length > 50) {
-          addressText = addressText.substring(0, 47) + '...';
+        if (addressText.length > 45) {
+          addressText = addressText.substring(0, 42) + '...';
         }
         
         // Calculate row height (taller for description + address)
-        const rowHeight = 12;
+        const rowHeight = 14;
         
         // Alternate row background
         if (index % 2 === 0) {
@@ -312,12 +314,12 @@ export const generateQuotePDF = (quote: Quote, clientInfo?: ClientInfo, salesper
         doc.setFont('helvetica', 'normal');
         doc.text(itemName.substring(0, 35), colX.description + 2, yPos);
         
-        // Address line (smaller font, slightly indented)
-        doc.setFontSize(7);
+        // Address line (smaller font, gray color, slightly indented)
+        doc.setFontSize(6);
         doc.setTextColor(100, 100, 100); // Gray color for address
-        doc.text(addressText, colX.description + 4, yPos + 6);
+        doc.text(`Location: ${addressText}`, colX.description + 4, yPos + 7);
         
-        // Reset color for other columns
+        // Reset color and font for other columns
         doc.setTextColor(0, 0, 0);
         doc.setFontSize(8);
         doc.text(item.quantity.toString(), colX.qty + 2, yPos);
