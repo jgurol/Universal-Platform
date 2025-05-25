@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
@@ -134,6 +135,14 @@ export const useIndexData = () => {
               console.info(`[fetchQuotes] Item quantity: ${item.quantity}`);
               console.info(`[fetchQuotes] Item unit_price: ${item.unit_price}`);
               console.info(`[fetchQuotes] Full item object:`, item);
+              
+              // Test the filtering conditions
+              const isMRC = item.charge_type === 'MRC';
+              const isNRC = item.charge_type === 'NRC';
+              console.info(`[fetchQuotes] Is MRC? ${isMRC}`);
+              console.info(`[fetchQuotes] Is NRC? ${isNRC}`);
+              console.info(`[fetchQuotes] Charge type comparison - exact match MRC: ${item.charge_type === 'MRC'}`);
+              console.info(`[fetchQuotes] Charge type comparison - exact match NRC: ${item.charge_type === 'NRC'}`);
               console.info(`[fetchQuotes] ---- END ITEM ${index + 1} ----\n`);
             });
           } else {
@@ -144,29 +153,36 @@ export const useIndexData = () => {
           const allItems = quote.quote_items || [];
           console.info('[fetchQuotes] All items for filtering:', allItems);
           
-          const nrcItems = allItems.filter(item => {
-            const isNRC = item.charge_type === 'NRC';
-            console.info(`[fetchQuotes] Item ${item.id}: charge_type="${item.charge_type}", isNRC=${isNRC}`);
-            return isNRC;
-          });
+          // More explicit filtering with detailed logging
+          const nrcItems = [];
+          const mrcItems = [];
           
-          const mrcItems = allItems.filter(item => {
-            const isMRC = item.charge_type === 'MRC';
-            console.info(`[fetchQuotes] Item ${item.id}: charge_type="${item.charge_type}", isMRC=${isMRC}`);
-            return isMRC;
-          });
+          for (let i = 0; i < allItems.length; i++) {
+            const item = allItems[i];
+            console.info(`[fetchQuotes] Processing item ${i}: charge_type="${item.charge_type}", total_price=${item.total_price}`);
+            
+            if (item.charge_type === 'NRC') {
+              nrcItems.push(item);
+              console.info(`[fetchQuotes] Added item ${i} to NRC list`);
+            } else if (item.charge_type === 'MRC') {
+              mrcItems.push(item);
+              console.info(`[fetchQuotes] Added item ${i} to MRC list`);
+            } else {
+              console.info(`[fetchQuotes] Item ${i} has unknown charge_type: "${item.charge_type}"`);
+            }
+          }
           
-          console.info('[fetchQuotes] Filtered NRC Items:', nrcItems);
-          console.info('[fetchQuotes] Filtered MRC Items:', mrcItems);
+          console.info('[fetchQuotes] Final NRC Items:', nrcItems);
+          console.info('[fetchQuotes] Final MRC Items:', mrcItems);
           
           const nrcTotal = nrcItems.reduce((total, item) => {
-            const itemTotal = item.total_price || 0;
+            const itemTotal = Number(item.total_price) || 0;
             console.info(`[fetchQuotes] Adding NRC item total: ${itemTotal}, running total: ${total + itemTotal}`);
             return total + itemTotal;
           }, 0);
           
           const mrcTotal = mrcItems.reduce((total, item) => {
-            const itemTotal = item.total_price || 0;
+            const itemTotal = Number(item.total_price) || 0;
             console.info(`[fetchQuotes] Adding MRC item total: ${itemTotal}, running total: ${total + itemTotal}`);
             return total + itemTotal;
           }, 0);

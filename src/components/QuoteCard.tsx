@@ -1,4 +1,3 @@
-
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Clock, Building, FileText, Users, Pencil, Trash2, Calendar } from "lucide-react";
@@ -45,28 +44,58 @@ export const QuoteCard = ({
 
   const isExpired = quote.expiresAt && new Date(quote.expiresAt) < new Date();
 
-  // Calculate MRC and NRC totals from quote items
+  // Calculate MRC and NRC totals directly from quote items with detailed logging
   const getMRCTotal = () => {
+    console.info('[QuoteCard] getMRCTotal called for quote:', quote.id);
+    console.info('[QuoteCard] Quote items:', quote.quoteItems);
+    
     if (!quote.quoteItems || quote.quoteItems.length === 0) {
+      console.info('[QuoteCard] No quote items found, returning 0');
       return 0;
     }
     
-    const mrcItems = quote.quoteItems.filter(item => item.charge_type === 'MRC');
-    const mrcTotal = mrcItems.reduce((total, item) => total + (item.total_price || 0), 0);
+    console.info('[QuoteCard] Processing', quote.quoteItems.length, 'quote items');
     
-    console.info('[QuoteCard] MRC calculation - Items:', mrcItems, 'Total:', mrcTotal);
+    let mrcTotal = 0;
+    quote.quoteItems.forEach((item, index) => {
+      console.info(`[QuoteCard] Item ${index}: charge_type="${item.charge_type}", total_price=${item.total_price}`);
+      console.info(`[QuoteCard] Item ${index} full object:`, item);
+      
+      if (item.charge_type === 'MRC') {
+        const itemPrice = Number(item.total_price) || 0;
+        mrcTotal += itemPrice;
+        console.info(`[QuoteCard] Added MRC item ${index}: ${itemPrice}, running total: ${mrcTotal}`);
+      } else {
+        console.info(`[QuoteCard] Item ${index} is not MRC (charge_type: "${item.charge_type}")`);
+      }
+    });
+    
+    console.info('[QuoteCard] Final MRC total:', mrcTotal);
     return mrcTotal;
   };
 
   const getNRCTotal = () => {
+    console.info('[QuoteCard] getNRCTotal called for quote:', quote.id);
+    
     if (!quote.quoteItems || quote.quoteItems.length === 0) {
+      console.info('[QuoteCard] No quote items found, returning 0');
       return 0;
     }
     
-    const nrcItems = quote.quoteItems.filter(item => item.charge_type === 'NRC');
-    const nrcTotal = nrcItems.reduce((total, item) => total + (item.total_price || 0), 0);
+    let nrcTotal = 0;
+    quote.quoteItems.forEach((item, index) => {
+      console.info(`[QuoteCard] Item ${index}: charge_type="${item.charge_type}", total_price=${item.total_price}`);
+      
+      if (item.charge_type === 'NRC') {
+        const itemPrice = Number(item.total_price) || 0;
+        nrcTotal += itemPrice;
+        console.info(`[QuoteCard] Added NRC item ${index}: ${itemPrice}, running total: ${nrcTotal}`);
+      } else {
+        console.info(`[QuoteCard] Item ${index} is not NRC (charge_type: "${item.charge_type}")`);
+      }
+    });
     
-    console.info('[QuoteCard] NRC calculation - Items:', nrcItems, 'Total:', nrcTotal);
+    console.info('[QuoteCard] Final NRC total:', nrcTotal);
     return nrcTotal;
   };
 
