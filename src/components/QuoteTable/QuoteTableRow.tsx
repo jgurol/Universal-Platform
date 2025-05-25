@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { TableCell, TableRow } from "@/components/ui/table";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Pencil, Trash2, ChevronDown, FileText, Copy, Mail, CheckCircle, XCircle } from "lucide-react";
+import { Pencil, Trash2, ChevronDown, FileText, Copy, Mail, CheckCircle, XCircle, Eye } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { generateQuotePDF } from "@/utils/pdfUtils";
 import { useToast } from "@/hooks/use-toast";
@@ -34,6 +34,8 @@ export const QuoteTableRow = ({
   const { toast } = useToast();
   const [isEmailDialogOpen, setIsEmailDialogOpen] = useState(false);
   const [emailStatus, setEmailStatus] = useState<'idle' | 'success' | 'error'>('idle');
+  const [emailOpened, setEmailOpened] = useState(false);
+  const [emailOpenCount, setEmailOpenCount] = useState(0);
 
   // Load email status from database when component mounts
   useEffect(() => {
@@ -41,12 +43,16 @@ export const QuoteTableRow = ({
       try {
         const { data, error } = await supabase
           .from('quotes')
-          .select('email_status')
+          .select('email_status, email_opened, email_open_count')
           .eq('id', quote.id)
           .single();
 
-        if (!error && data?.email_status) {
-          setEmailStatus(data.email_status as 'idle' | 'success' | 'error');
+        if (!error && data) {
+          if (data.email_status) {
+            setEmailStatus(data.email_status as 'idle' | 'success' | 'error');
+          }
+          setEmailOpened(data.email_opened || false);
+          setEmailOpenCount(data.email_open_count || 0);
         }
       } catch (err) {
         console.error('Error loading email status:', err);
@@ -196,6 +202,18 @@ export const QuoteTableRow = ({
     return 'text-gray-500 hover:text-blue-600';
   };
 
+  const getEmailOpenIndicator = () => {
+    if (emailOpened && emailStatus === 'success') {
+      return (
+        <div className="flex items-center gap-1 text-xs text-blue-600" title={`Email opened ${emailOpenCount} time(s)`}>
+          <Eye className="w-3 h-3" />
+          {emailOpenCount > 1 && <span>{emailOpenCount}</span>}
+        </div>
+      );
+    }
+    return null;
+  };
+
   const getStatusBadge = () => {
     const status = quote.status || 'pending';
     
@@ -297,15 +315,22 @@ export const QuoteTableRow = ({
             >
               <FileText className="w-4 h-4" />
             </Button>
-            <Button 
-              variant={emailStatus !== 'idle' ? 'outline' : 'ghost'}
-              size="sm" 
-              className={`h-8 w-8 p-0 transition-all duration-500 border ${getEmailButtonClass()}`}
-              onClick={() => setIsEmailDialogOpen(true)}
-              title={emailStatus === 'success' ? 'Email sent successfully!' : emailStatus === 'error' ? 'Email failed to send' : 'Email Quote'}
-            >
-              {getEmailIcon()}
-            </Button>
+            <div className="relative">
+              <Button 
+                variant={emailStatus !== 'idle' ? 'outline' : 'ghost'}
+                size="sm" 
+                className={`h-8 w-8 p-0 transition-all duration-500 border ${getEmailButtonClass()}`}
+                onClick={() => setIsEmailDialogOpen(true)}
+                title={emailStatus === 'success' ? 'Email sent successfully!' : emailStatus === 'error' ? 'Email failed to send' : 'Email Quote'}
+              >
+                {getEmailIcon()}
+              </Button>
+              {getEmailOpenIndicator() && (
+                <div className="absolute -top-1 -right-1">
+                  {getEmailOpenIndicator()}
+                </div>
+              )}
+            </div>
             {isAdmin && onCopyQuote && (
               <Button 
                 variant="ghost" 

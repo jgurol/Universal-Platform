@@ -153,7 +153,8 @@ ${salespersonName || 'Sales Team'}`);
               subject,
               message,
               pdfBase64: base64String,
-              fileName: `Quote_${quote.quoteNumber || quote.id.slice(0, 8)}.pdf`
+              fileName: `Quote_${quote.quoteNumber || quote.id.slice(0, 8)}.pdf`,
+              quoteId: quote.id // Add quote ID for tracking
             }
           });
 

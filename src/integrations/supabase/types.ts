@@ -440,6 +440,9 @@ export type Database = {
           created_at: string | null
           date: string
           description: string | null
+          email_open_count: number | null
+          email_opened: boolean | null
+          email_opened_at: string | null
           email_sent_at: string | null
           email_status: string | null
           expires_at: string | null
@@ -464,6 +467,9 @@ export type Database = {
           created_at?: string | null
           date: string
           description?: string | null
+          email_open_count?: number | null
+          email_opened?: boolean | null
+          email_opened_at?: string | null
           email_sent_at?: string | null
           email_status?: string | null
           expires_at?: string | null
@@ -488,6 +494,9 @@ export type Database = {
           created_at?: string | null
           date?: string
           description?: string | null
+          email_open_count?: number | null
+          email_opened?: boolean | null
+          email_opened_at?: string | null
           email_sent_at?: string | null
           email_status?: string | null
           expires_at?: string | null

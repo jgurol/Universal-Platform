@@ -16,6 +16,7 @@ interface SendQuoteEmailRequest {
   message: string;
   pdfBase64: string;
   fileName: string;
+  quoteId: string;
 }
 
 const handler = async (req: Request): Promise<Response> => {
@@ -25,11 +26,12 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
-    const { to, cc, subject, message, pdfBase64, fileName }: SendQuoteEmailRequest = await req.json();
+    const { to, cc, subject, message, pdfBase64, fileName, quoteId }: SendQuoteEmailRequest = await req.json();
 
     console.log('Sending email to:', to);
     console.log('CC recipients:', cc);
     console.log('Subject:', subject);
+    console.log('Quote ID for tracking:', quoteId);
 
     // Prepare email recipients
     const recipients = [to];
@@ -37,7 +39,10 @@ const handler = async (req: Request): Promise<Response> => {
       recipients.push(...cc);
     }
 
-    // Send email with PDF attachment
+    // Create tracking pixel URL
+    const trackingPixelUrl = `${Deno.env.get("SUPABASE_URL")}/functions/v1/track-email-open?quote=${quoteId}`;
+
+    // Send email with PDF attachment and tracking pixel
     const emailResponse = await resend.emails.send({
       from: "Quotes <onboarding@resend.dev>", // You can customize this
       to: recipients,
@@ -45,6 +50,9 @@ const handler = async (req: Request): Promise<Response> => {
       html: `
         <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
           ${message.split('\n').map(line => `<p>${line}</p>`).join('')}
+          
+          <!-- Tracking pixel -->
+          <img src="${trackingPixelUrl}" width="1" height="1" style="display: block; width: 1px; height: 1px;" alt="" />
         </div>
       `,
       attachments: [
