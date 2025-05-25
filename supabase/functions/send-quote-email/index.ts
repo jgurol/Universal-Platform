@@ -41,15 +41,35 @@ const handler = async (req: Request): Promise<Response> => {
 
     // Create tracking pixel URL
     const trackingPixelUrl = `${Deno.env.get("SUPABASE_URL")}/functions/v1/track-email-open?quote=${quoteId}`;
+    
+    // Create acceptance URL
+    const acceptanceUrl = `${Deno.env.get("SUPABASE_URL").replace('/rest/v1', '')}/accept-quote/${quoteId}`;
 
-    // Send email with PDF attachment and tracking pixel
+    // Send email with PDF attachment, tracking pixel, and acceptance button
     const emailResponse = await resend.emails.send({
       from: "Quotes <onboarding@resend.dev>", // You can customize this
       to: recipients,
       subject: subject,
       html: `
-        <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
-          ${message.split('\n').map(line => `<p>${line}</p>`).join('')}
+        <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto;">
+          ${message.split('\n').map(line => `<p style="margin: 10px 0;">${line}</p>`).join('')}
+          
+          <div style="text-align: center; margin: 30px 0;">
+            <a href="${acceptanceUrl}" 
+               style="display: inline-block; background-color: #4CAF50; color: white; padding: 15px 30px; text-decoration: none; border-radius: 5px; font-weight: bold; font-size: 16px; border: none;">
+              🖊️ ACCEPT AGREEMENT
+            </a>
+          </div>
+          
+          <p style="margin: 20px 0; padding: 15px; background-color: #f8f9fa; border-left: 4px solid #4CAF50; border-radius: 4px;">
+            <strong>📎 Quote Details:</strong> Please find the complete quote attached as a PDF. To accept this agreement, click the green button above or open the PDF and click the "Accept Agreement" button.
+          </p>
+          
+          <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;">
+          
+          <p style="font-size: 12px; color: #666; text-align: center;">
+            This quote was sent from our quoting system. If you have any questions, please reply to this email.
+          </p>
           
           <!-- Tracking pixel -->
           <img src="${trackingPixelUrl}" width="1" height="1" style="display: block; width: 1px; height: 1px;" alt="" />
