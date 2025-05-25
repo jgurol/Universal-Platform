@@ -11,6 +11,7 @@ import { Quote, ClientInfo } from "@/pages/Index";
 import { useToast } from "@/hooks/use-toast";
 import { useClientContacts } from "@/hooks/useClientContacts";
 import { generateQuotePDF } from "@/utils/pdfUtils";
+import { supabase } from "@/integrations/supabase/client";
 import { Mail, X } from "lucide-react";
 
 interface EmailQuoteDialogProps {
