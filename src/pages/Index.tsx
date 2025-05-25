@@ -1,5 +1,6 @@
 
 import { IndexPageLayout } from "@/components/IndexPageLayout";
+import { NavigationBar } from "@/components/NavigationBar";
 import { useIndexData } from "@/hooks/useIndexData";
 import { useQuoteActions } from "@/hooks/useQuoteActions";
 import { useClientActions } from "@/hooks/useClientActions";
@@ -110,17 +111,20 @@ const Index = () => {
   const { addClient } = useClientActions(clients, setClients, fetchClients);
 
   return (
-    <IndexPageLayout
-      clients={clients}
-      quotes={quotes}
-      clientInfos={clientInfos}
-      associatedAgentId={associatedAgentId}
-      onAddClient={addClient}
-      onAddQuote={addQuote}
-      onUpdateQuote={updateQuote}
-      onDeleteQuote={deleteQuote}
-      onFetchClients={fetchClients}
-    />
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
+      <NavigationBar />
+      <IndexPageLayout
+        clients={clients}
+        quotes={quotes}
+        clientInfos={clientInfos}
+        associatedAgentId={associatedAgentId}
+        onAddClient={addClient}
+        onAddQuote={addQuote}
+        onUpdateQuote={updateQuote}
+        onDeleteQuote={deleteQuote}
+        onFetchClients={fetchClients}
+      />
+    </div>
   );
 };
 
