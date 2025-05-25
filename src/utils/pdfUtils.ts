@@ -1,4 +1,3 @@
-
 import jsPDF from 'jspdf';
 import { Quote, ClientInfo } from '@/pages/Index';
 
@@ -248,20 +247,20 @@ export const generateQuotePDF = (quote: Quote, clientInfo?: ClientInfo, salesper
     const mrcItems = quote.quoteItems.filter(item => item.charge_type === 'MRC');
     const nrcItems = quote.quoteItems.filter(item => item.charge_type === 'NRC');
     
+    // Define table structure with properly aligned columns for both MRC and NRC sections
+    const colX = {
+      description: 20,
+      qty: 150,        // Moved further right for better alignment
+      price: 165,      // Aligned with Qty column
+      total: 180       // Aligned with Price column
+    };
+    
     // Monthly Fees Section
     if (mrcItems.length > 0) {
       doc.setFontSize(12);
       doc.setFont('helvetica', 'bold');
       doc.text('Monthly Fees', 20, yPos);
       yPos += 12;
-      
-      // Table structure with properly aligned columns
-      const colX = {
-        description: 20,
-        qty: 150,        // Moved further right for better alignment
-        price: 165,      // Aligned with Qty column
-        total: 180       // Aligned with Price column
-      };
       
       // Table headers with background
       doc.setFillColor(240, 240, 240);
