@@ -1,3 +1,4 @@
+
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Clock, Building, FileText, Users, Pencil, Trash2, Calendar } from "lucide-react";
@@ -44,70 +45,28 @@ export const QuoteCard = ({
 
   const isExpired = quote.expiresAt && new Date(quote.expiresAt) < new Date();
 
-  // Calculate MRC and NRC totals from quote items using the loaded data
+  // Calculate MRC and NRC totals from quote items
   const getMRCTotal = () => {
-    console.info('[QuoteCard] === GETTING MRC TOTAL ===');
-    console.info('[QuoteCard] Quote ID:', quote.id);
-    console.info('[QuoteCard] Quote items:', quote.quoteItems);
-    console.info('[QuoteCard] Quote items length:', quote.quoteItems?.length || 0);
-    
     if (!quote.quoteItems || quote.quoteItems.length === 0) {
-      console.info('[QuoteCard] No quote items found for quote', quote.id);
       return 0;
     }
     
-    // Log every single item and its charge_type
-    quote.quoteItems.forEach((item, index) => {
-      console.info(`[QuoteCard] Item ${index}:`, {
-        id: item.id,
-        charge_type: item.charge_type,
-        total_price: item.total_price,
-        full_item: item
-      });
-    });
+    const mrcItems = quote.quoteItems.filter(item => item.charge_type === 'MRC');
+    const mrcTotal = mrcItems.reduce((total, item) => total + (item.total_price || 0), 0);
     
-    const mrcItems = quote.quoteItems.filter(item => {
-      const isMRC = item.charge_type === 'MRC';
-      console.info('[QuoteCard] Item', item.id, 'charge_type:', item.charge_type, 'is MRC:', isMRC, 'total_price:', item.total_price);
-      return isMRC;
-    });
-    
-    console.info('[QuoteCard] MRC Items found:', mrcItems);
-    
-    const mrcTotal = mrcItems.reduce((total, item) => {
-      const itemTotal = item.total_price || 0;
-      console.info('[QuoteCard] Adding MRC item total:', itemTotal);
-      return total + itemTotal;
-    }, 0);
-    
-    console.info('[QuoteCard] Final MRC Total for quote', quote.id, ':', mrcTotal);
+    console.info('[QuoteCard] MRC calculation - Items:', mrcItems, 'Total:', mrcTotal);
     return mrcTotal;
   };
 
   const getNRCTotal = () => {
-    console.info('[QuoteCard] === GETTING NRC TOTAL ===');
-    console.info('[QuoteCard] Quote ID:', quote.id);
-    
     if (!quote.quoteItems || quote.quoteItems.length === 0) {
-      console.info('[QuoteCard] No quote items found for quote', quote.id);
       return 0;
     }
     
-    const nrcItems = quote.quoteItems.filter(item => {
-      const isNRC = item.charge_type === 'NRC';
-      console.info('[QuoteCard] Item', item.id, 'charge_type:', item.charge_type, 'is NRC:', isNRC, 'total_price:', item.total_price);
-      return isNRC;
-    });
+    const nrcItems = quote.quoteItems.filter(item => item.charge_type === 'NRC');
+    const nrcTotal = nrcItems.reduce((total, item) => total + (item.total_price || 0), 0);
     
-    console.info('[QuoteCard] NRC Items found:', nrcItems);
-    
-    const nrcTotal = nrcItems.reduce((total, item) => {
-      const itemTotal = item.total_price || 0;
-      console.info('[QuoteCard] Adding NRC item total:', itemTotal);
-      return total + itemTotal;
-    }, 0);
-    
-    console.info('[QuoteCard] Final NRC Total for quote', quote.id, ':', nrcTotal);
+    console.info('[QuoteCard] NRC calculation - Items:', nrcItems, 'Total:', nrcTotal);
     return nrcTotal;
   };
 
@@ -115,9 +74,7 @@ export const QuoteCard = ({
   const nrcTotal = getNRCTotal();
   const totalAmount = mrcTotal + nrcTotal;
 
-  console.info('[QuoteCard] ========== FINAL TOTALS ==========');
-  console.info('[QuoteCard] Quote', quote.id, 'MRC Total:', mrcTotal, 'NRC Total:', nrcTotal, 'Grand Total:', totalAmount);
-  console.info('[QuoteCard] =====================================');
+  console.info('[QuoteCard] Final totals for quote', quote.id, '- MRC:', mrcTotal, 'NRC:', nrcTotal, 'Total:', totalAmount);
 
   return (
     <div className="flex items-center justify-between p-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors duration-200">
