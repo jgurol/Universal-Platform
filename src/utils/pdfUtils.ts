@@ -8,7 +8,7 @@ const addFormattedTextToPDF = (doc: jsPDF, htmlContent: string, startX: number, 
   const pageHeight = 297;
   const bottomMargin = 20;
   const topMargin = 20;
-  const paragraphSpacing = lineHeight * 0.5; // Two units spacing between paragraphs
+  const paragraphSpacing = 2; // Two units spacing between paragraphs
   
   // Clean and parse the HTML content
   const cleanContent = cleanHtmlContent(htmlContent);
