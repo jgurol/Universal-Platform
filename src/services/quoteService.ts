@@ -12,6 +12,7 @@ export const addQuoteToDatabase = async (
 ) => {
   try {
     console.log('[addQuote] Starting quote creation process');
+    console.log('[addQuote] Template ID being saved:', newQuote.templateId);
     
     const commission = await calculateCommission(
       newQuote.amount,
@@ -39,11 +40,11 @@ export const addQuoteToDatabase = async (
       notes: newQuote.notes,
       billing_address: newQuote.billingAddress,
       service_address: newQuote.serviceAddress,
-      template_id: newQuote.templateId,
+      template_id: newQuote.templateId || null,
       user_id: userId
     };
 
-    console.log('[addQuote] Template ID being saved:', newQuote.templateId);
+    console.log('[addQuote] Data being inserted:', quoteDataToInsert);
 
     const { data: quoteData, error: quoteError } = await supabase
       .from('quotes')
@@ -60,6 +61,8 @@ export const addQuoteToDatabase = async (
       });
       return null;
     }
+
+    console.log('[addQuote] Quote created successfully with template_id:', quoteData.template_id);
 
     // Add quote items if any exist
     if (quoteData && newQuote.quoteItems && newQuote.quoteItems.length > 0) {
@@ -155,7 +158,7 @@ export const updateQuoteInDatabase = async (
       return null;
     }
 
-    console.log('[updateQuote] Successfully updated quote with template:', data);
+    console.log('[updateQuote] Successfully updated quote with template_id:', data.template_id);
     return data;
   } catch (err) {
     console.error('Error in update quote operation:', err);
