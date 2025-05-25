@@ -1,4 +1,3 @@
-
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,6 +12,11 @@ import { useQuoteForm } from "@/hooks/useQuoteForm";
 import { useQuoteItems } from "@/hooks/useQuoteItems";
 import { updateQuoteItems, calculateTotalsByChargeType } from "@/services/quoteItemsService";
 import { useState, useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/context/AuthContext";
+import type { Database } from "@/integrations/supabase/types";
+
+type QuoteTemplate = Database['public']['Tables']['quote_templates']['Row'];
 
 interface EditQuoteDialogProps {
   quote: Quote | null;
@@ -58,6 +62,10 @@ export const EditQuoteDialog = ({
   const [selectedServiceAddressId, setSelectedServiceAddressId] = useState<string | null>(null);
   const [serviceAddress, setServiceAddress] = useState<string>("");
 
+  const [selectedTemplateId, setSelectedTemplateId] = useState<string>("");
+  const [templates, setTemplates] = useState<QuoteTemplate[]>([]);
+  const { user } = useAuth();
+
   // Initialize addresses from quote
   useEffect(() => {
     if (quote && open) {
@@ -67,6 +75,35 @@ export const EditQuoteDialog = ({
         billing: quote.billingAddress, 
         service: quote.serviceAddress 
       });
+    }
+  }, [quote, open]);
+
+  // Load templates when dialog opens
+  useEffect(() => {
+    const fetchTemplates = async () => {
+      if (open && user) {
+        try {
+          const { data, error } = await supabase
+            .from('quote_templates')
+            .select('*')
+            .eq('user_id', user.id)
+            .order('name');
+
+          if (error) throw error;
+          setTemplates(data || []);
+        } catch (error) {
+          console.error('Error loading templates:', error);
+        }
+      }
+    };
+
+    fetchTemplates();
+  }, [open, user]);
+
+  // Initialize template selection from quote
+  useEffect(() => {
+    if (quote && open) {
+      setSelectedTemplateId((quote as any).templateId || "");
     }
   }, [quote, open]);
 
@@ -126,8 +163,9 @@ export const EditQuoteDialog = ({
           expiresAt: expiresAt || undefined,
           notes: notes || undefined,
           billingAddress: billingAddress || undefined,
-          serviceAddress: serviceAddress || undefined
-        });
+          serviceAddress: serviceAddress || undefined,
+          templateId: selectedTemplateId || undefined
+        } as Quote);
         
         onOpenChange(false);
       }
@@ -261,7 +299,29 @@ export const EditQuoteDialog = ({
               rows={3}
             />
           </div>
-          
+
+          <div className="space-y-2">
+            <Label htmlFor="templateId">Quote Template (Optional)</Label>
+            <Select value={selectedTemplateId} onValueChange={setSelectedTemplateId}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select a template to include" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="">No template</SelectItem>
+                {templates.map((template) => (
+                  <SelectItem key={template.id} value={template.id}>
+                    {template.name} {template.is_default && "(Default)"}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {templates.length === 0 && (
+              <p className="text-sm text-gray-500">
+                No templates available. Create templates in System Settings.
+              </p>
+            )}
+          </div>
+
           <div className="flex justify-end space-x-2 mt-6">
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               Cancel

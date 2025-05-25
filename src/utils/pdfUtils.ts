@@ -1,7 +1,8 @@
 import jsPDF from 'jspdf';
 import { Quote, ClientInfo } from '@/pages/Index';
+import { supabase } from '@/integrations/supabase/client';
 
-export const generateQuotePDF = (quote: Quote, clientInfo?: ClientInfo, salespersonName?: string) => {
+export const generateQuotePDF = async (quote: Quote, clientInfo?: ClientInfo, salespersonName?: string) => {
   const doc = new jsPDF();
   
   // Debug logging - let's see exactly what we're getting
@@ -377,6 +378,24 @@ export const generateQuotePDF = (quote: Quote, clientInfo?: ClientInfo, salesper
     }
   }
   
+  // Get template content if templateId is provided
+  let templateContent = '';
+  if ((quote as any).templateId) {
+    try {
+      const { data: template, error } = await supabase
+        .from('quote_templates')
+        .select('content')
+        .eq('id', (quote as any).templateId)
+        .single();
+      
+      if (!error && template) {
+        templateContent = template.content;
+      }
+    } catch (error) {
+      console.error('Error fetching template for PDF:', error);
+    }
+  }
+  
   // Notes section (if space allows) - Properly positioned
   if (quote.notes && yPos < 260) {
     yPos += 12;
@@ -388,6 +407,32 @@ export const generateQuotePDF = (quote: Quote, clientInfo?: ClientInfo, salesper
     doc.setFont('helvetica', 'normal');
     const splitNotes = doc.splitTextToSize(quote.notes, 175);
     doc.text(splitNotes.slice(0, 2), 20, yPos);
+    yPos += splitNotes.slice(0, 2).length * 5;
+  }
+  
+  // Template content section (Terms & Conditions)
+  if (templateContent && yPos < 250) {
+    yPos += 12;
+    doc.setFontSize(9);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Terms & Conditions:', 20, yPos);
+    yPos += 6;
+    
+    doc.setFont('helvetica', 'normal');
+    // Strip HTML tags and convert to plain text for PDF
+    const plainTextContent = templateContent
+      .replace(/<[^>]*>/g, '') // Remove HTML tags
+      .replace(/&nbsp;/g, ' ') // Replace non-breaking spaces
+      .replace(/&amp;/g, '&') // Replace HTML entities
+      .replace(/&lt;/g, '<')
+      .replace(/&gt;/g, '>')
+      .trim();
+    
+    const splitContent = doc.splitTextToSize(plainTextContent, 175);
+    // Limit to available space
+    const maxLines = Math.floor((280 - yPos) / 5);
+    const contentToShow = splitContent.slice(0, maxLines);
+    doc.text(contentToShow, 20, yPos);
   }
   
   return doc;

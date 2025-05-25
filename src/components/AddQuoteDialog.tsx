@@ -12,6 +12,9 @@ import { useAuth } from "@/context/AuthContext";
 import { QuoteItemsManager } from "@/components/QuoteItemsManager";
 import { QuoteItemData } from "@/types/quoteItems";
 import { AddressSelector } from "@/components/AddressSelector";
+import type { Database } from "@/integrations/supabase/types";
+
+type QuoteTemplate = Database['public']['Tables']['quote_templates']['Row'];
 
 interface AddQuoteDialogProps {
   open: boolean;
@@ -39,6 +42,8 @@ export const AddQuoteDialog = ({ open, onOpenChange, onAddQuote, clients, client
   const [selectedBillingAddressId, setSelectedBillingAddressId] = useState<string | null>(null);
   const [serviceAddress, setServiceAddress] = useState<string>("");
   const [selectedServiceAddressId, setSelectedServiceAddressId] = useState<string | null>(null);
+  const [selectedTemplateId, setSelectedTemplateId] = useState<string>("");
+  const [templates, setTemplates] = useState<QuoteTemplate[]>([]);
   const { user } = useAuth();
   
   // Function to calculate expiration date (+60 days from quote date)
@@ -106,6 +111,35 @@ export const AddQuoteDialog = ({ open, onOpenChange, onAddQuote, clients, client
     generateNextQuoteNumber();
   }, [open, user]);
   
+  // Load templates when dialog opens
+  useEffect(() => {
+    const fetchTemplates = async () => {
+      if (open && user) {
+        try {
+          const { data, error } = await supabase
+            .from('quote_templates')
+            .select('*')
+            .eq('user_id', user.id)
+            .order('name');
+
+          if (error) throw error;
+          
+          setTemplates(data || []);
+          
+          // Auto-select default template if available
+          const defaultTemplate = data?.find(t => t.is_default);
+          if (defaultTemplate) {
+            setSelectedTemplateId(defaultTemplate.id);
+          }
+        } catch (error) {
+          console.error('Error loading templates:', error);
+        }
+      }
+    };
+
+    fetchTemplates();
+  }, [open, user]);
+
   // Handle client selection - auto-select salesperson based on client's agent_id
   useEffect(() => {
     if (clientInfoId && clientInfoId !== "none") {
@@ -180,13 +214,15 @@ export const AddQuoteDialog = ({ open, onOpenChange, onAddQuote, clients, client
             address_id: selectedBillingAddressId || selectedServiceAddressId || undefined
           })),
           billingAddress: billingAddress || undefined,
-          serviceAddress: serviceAddress || undefined
+          serviceAddress: serviceAddress || undefined,
+          templateId: selectedTemplateId || undefined
         };
         
         console.log('[AddQuoteDialog] Calling onAddQuote with data:', quoteData);
         onAddQuote(quoteData);
         
         // Reset form
+        setSelectedTemplateId("");
         setClientId("");
         setClientInfoId("");
         const todayDate = getTodayInTimezone();
@@ -349,6 +385,28 @@ export const AddQuoteDialog = ({ open, onOpenChange, onAddQuote, clients, client
                 <SelectItem value="rejected">Rejected</SelectItem>
               </SelectContent>
             </Select>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="templateId">Quote Template (Optional)</Label>
+            <Select value={selectedTemplateId} onValueChange={setSelectedTemplateId}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select a template to include" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="">No template</SelectItem>
+                {templates.map((template) => (
+                  <SelectItem key={template.id} value={template.id}>
+                    {template.name} {template.is_default && "(Default)"}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {templates.length === 0 && (
+              <p className="text-sm text-gray-500">
+                No templates available. Create templates in System Settings.
+              </p>
+            )}
           </div>
 
           <div className="space-y-2">
