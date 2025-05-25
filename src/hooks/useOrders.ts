@@ -14,13 +14,20 @@ export const useOrders = () => {
     
     try {
       setIsLoading(true);
+      console.log('Fetching orders for user:', user.id);
+      
       const { data, error } = await supabase
         .from('orders')
         .select('*')
         .eq('user_id', user.id)
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching orders:', error);
+        throw error;
+      }
+      
+      console.log('Fetched orders:', data);
       setOrders(data || []);
     } catch (error) {
       console.error('Error fetching orders:', error);
@@ -30,17 +37,33 @@ export const useOrders = () => {
   };
 
   const deleteOrder = async (orderId: string) => {
+    if (!user) {
+      throw new Error('User not authenticated');
+    }
+
     try {
+      console.log('Attempting to delete order:', orderId, 'for user:', user.id);
+      
       const { error } = await supabase
         .from('orders')
         .delete()
         .eq('id', orderId)
-        .eq('user_id', user?.id);
+        .eq('user_id', user.id); // Ensure user can only delete their own orders
 
-      if (error) throw error;
+      if (error) {
+        console.error('Supabase delete error:', error);
+        throw error;
+      }
       
-      // Update local state
-      setOrders(prevOrders => prevOrders.filter(order => order.id !== orderId));
+      console.log('Order deleted successfully:', orderId);
+      
+      // Update local state immediately
+      setOrders(prevOrders => {
+        const updatedOrders = prevOrders.filter(order => order.id !== orderId);
+        console.log('Updated orders after deletion:', updatedOrders);
+        return updatedOrders;
+      });
+      
       return true;
     } catch (error) {
       console.error('Error deleting order:', error);

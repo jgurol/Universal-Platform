@@ -21,24 +21,34 @@ import {
 } from "@/components/ui/alert-dialog";
 
 export const OrdersManagement = () => {
-  const { orders, isLoading, deleteOrder } = useOrders();
+  const { orders, isLoading, deleteOrder, fetchOrders } = useOrders();
   const { toast } = useToast();
   const [deletingOrderId, setDeletingOrderId] = useState<string | null>(null);
 
   const handleDeleteOrder = async (orderId: string) => {
     try {
       setDeletingOrderId(orderId);
+      console.log('Starting order deletion process for:', orderId);
+      
       await deleteOrder(orderId);
+      
       toast({
         title: "Success",
         description: "Order deleted successfully",
       });
+      
+      console.log('Order deletion completed successfully');
     } catch (error) {
+      console.error('Order deletion failed:', error);
+      
       toast({
         title: "Error",
-        description: "Failed to delete order",
+        description: `Failed to delete order: ${error instanceof Error ? error.message : 'Unknown error'}`,
         variant: "destructive",
       });
+      
+      // Refresh orders in case of error to ensure UI is in sync with database
+      await fetchOrders();
     } finally {
       setDeletingOrderId(null);
     }
