@@ -124,15 +124,16 @@ export const useIndexData = () => {
               charge_type: item.charge_type,
               total_price: item.total_price,
               quantity: item.quantity,
-              unit_price: item.unit_price
+              unit_price: item.unit_price,
+              raw_item: item
             });
           });
           
           // Calculate totals from quote items by charge type
           const nrcItems = quote.quote_items?.filter(item => {
-            const isMRC = item.charge_type === 'NRC';
-            console.info('[fetchQuotes] Item', item.id, 'charge_type:', item.charge_type, 'is NRC:', isMRC, 'total_price:', item.total_price);
-            return isMRC;
+            const isNRC = item.charge_type === 'NRC';
+            console.info('[fetchQuotes] Item', item.id, 'charge_type:', item.charge_type, 'is NRC:', isNRC, 'total_price:', item.total_price);
+            return isNRC;
           }) || [];
           
           const mrcItems = quote.quote_items?.filter(item => {
@@ -141,11 +142,20 @@ export const useIndexData = () => {
             return isMRC;
           }) || [];
           
-          console.info('[fetchQuotes] NRC Items:', nrcItems);
-          console.info('[fetchQuotes] MRC Items:', mrcItems);
+          console.info('[fetchQuotes] NRC Items for quote', quote.id, ':', nrcItems);
+          console.info('[fetchQuotes] MRC Items for quote', quote.id, ':', mrcItems);
           
-          const nrcTotal = nrcItems.reduce((total, item) => total + (item.total_price || 0), 0);
-          const mrcTotal = mrcItems.reduce((total, item) => total + (item.total_price || 0), 0);
+          const nrcTotal = nrcItems.reduce((total, item) => {
+            const itemTotal = item.total_price || 0;
+            console.info('[fetchQuotes] Adding NRC item total:', itemTotal, 'running total:', total + itemTotal);
+            return total + itemTotal;
+          }, 0);
+          
+          const mrcTotal = mrcItems.reduce((total, item) => {
+            const itemTotal = item.total_price || 0;
+            console.info('[fetchQuotes] Adding MRC item total:', itemTotal, 'running total:', total + itemTotal);
+            return total + itemTotal;
+          }, 0);
           
           const totalAmount = nrcTotal + mrcTotal;
 
