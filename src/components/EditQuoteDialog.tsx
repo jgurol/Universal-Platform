@@ -124,7 +124,7 @@ export const EditQuoteDialog = ({
       if (selectedClient) {
         const { totalAmount } = calculateTotalsByChargeType(quoteItems);
         
-        // Update quote items in database with all fields including charge_type changes
+        // Update quote items in database with all fields including charge_type and address_id
         try {
           // Delete existing quote items
           await supabase
@@ -132,7 +132,7 @@ export const EditQuoteDialog = ({
             .delete()
             .eq('quote_id', quote.id);
 
-          // Insert updated quote items with all necessary fields including charge_type
+          // Insert updated quote items with all necessary fields including charge_type and address_id
           if (quoteItems.length > 0) {
             const itemsToInsert = quoteItems.map(item => ({
               quote_id: quote.id,
@@ -140,7 +140,8 @@ export const EditQuoteDialog = ({
               quantity: item.quantity,
               unit_price: item.unit_price,
               total_price: item.total_price,
-              charge_type: item.charge_type // Now properly saving the charge_type
+              charge_type: item.charge_type,
+              address_id: item.address_id || null // Now properly saving the address_id
             }));
 
             const { error: insertError } = await supabase
