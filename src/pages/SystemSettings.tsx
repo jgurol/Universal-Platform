@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -65,7 +66,7 @@ export default function SystemSettings() {
   const fetchTemplates = async () => {
     try {
       const { data, error } = await supabase
-        .from('quote_templates')
+        .from('quote_templates' as any)
         .select('*')
         .order('name');
 
@@ -93,7 +94,7 @@ export default function SystemSettings() {
     setLoading(true);
     try {
       const { error } = await supabase
-        .from('quote_templates')
+        .from('quote_templates' as any)
         .insert([{
           name: newTemplate.name.trim(),
           content: newTemplate.content.trim(),
@@ -125,7 +126,7 @@ export default function SystemSettings() {
     setLoading(true);
     try {
       const { error } = await supabase
-        .from('quote_templates')
+        .from('quote_templates' as any)
         .update({
           name: editingTemplate.name,
           content: editingTemplate.content,
@@ -158,7 +159,7 @@ export default function SystemSettings() {
     setLoading(true);
     try {
       const { error } = await supabase
-        .from('quote_templates')
+        .from('quote_templates' as any)
         .delete()
         .eq('id', templateId);
 
@@ -185,13 +186,13 @@ export default function SystemSettings() {
     try {
       // First, unset all defaults
       await supabase
-        .from('quote_templates')
+        .from('quote_templates' as any)
         .update({ is_default: false })
         .neq('id', '00000000-0000-0000-0000-000000000000');
 
       // Then set the selected one as default
       const { error } = await supabase
-        .from('quote_templates')
+        .from('quote_templates' as any)
         .update({ is_default: true })
         .eq('id', templateId);
 
