@@ -356,8 +356,8 @@ export const generateQuotePDF = (quote: Quote, clientInfo?: ClientInfo, salesper
       const totalAmountText = `$${mrcTotal.toFixed(2)} USD`;
       const totalAmountWidth = doc.getTextWidth(totalAmountText);
       
-      // Position label further left to give more space from the amount
-      doc.text(totalLabelText, colX.price - 25, yPos);
+      // Position label even further left to give more space from the amount
+      doc.text(totalLabelText, colX.price - 35, yPos);
       doc.text(totalAmountText, colX.total + 12 - totalAmountWidth, yPos);
     }
     
@@ -372,7 +372,7 @@ export const generateQuotePDF = (quote: Quote, clientInfo?: ClientInfo, salesper
       const nrcTotalWidth = doc.getTextWidth(nrcTotalText);
       
       // Align with the same positions as Total Monthly
-      doc.text('One-Time Setup Fees:', colX.price - 25, yPos);
+      doc.text('One-Time Setup Fees:', colX.price - 35, yPos);
       doc.text(nrcTotalText, colX.total + 12 - nrcTotalWidth, yPos);
     }
   }
