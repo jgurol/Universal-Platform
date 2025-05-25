@@ -14,7 +14,7 @@ export const EmailStatusButton = ({ quoteId, onEmailClick }: EmailStatusButtonPr
   const [emailOpened, setEmailOpened] = useState(false);
   const [emailOpenCount, setEmailOpenCount] = useState(0);
 
-  // Load email status from database when component mounts
+  // Load email status from database when component mounts or quoteId changes
   useEffect(() => {
     const loadEmailStatus = async () => {
       try {
@@ -25,6 +25,7 @@ export const EmailStatusButton = ({ quoteId, onEmailClick }: EmailStatusButtonPr
           .single();
 
         if (!error && data) {
+          console.log('EmailStatusButton - Loaded email status for quote:', quoteId, data);
           if (data.email_status) {
             setEmailStatus(data.email_status as 'idle' | 'success' | 'error');
           }
@@ -37,6 +38,39 @@ export const EmailStatusButton = ({ quoteId, onEmailClick }: EmailStatusButtonPr
     };
 
     loadEmailStatus();
+  }, [quoteId]);
+
+  // Set up real-time subscription to listen for quote updates
+  useEffect(() => {
+    const channel = supabase
+      .channel(`quote-email-status-${quoteId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'quotes',
+          filter: `id=eq.${quoteId}`
+        },
+        (payload) => {
+          console.log('EmailStatusButton - Real-time update received:', payload);
+          const newData = payload.new as any;
+          if (newData.email_status) {
+            setEmailStatus(newData.email_status);
+          }
+          if (newData.email_opened !== undefined) {
+            setEmailOpened(newData.email_opened);
+          }
+          if (newData.email_open_count !== undefined) {
+            setEmailOpenCount(newData.email_open_count);
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [quoteId]);
 
   const getEmailIcon = () => {
