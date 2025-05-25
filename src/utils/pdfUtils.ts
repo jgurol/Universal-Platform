@@ -53,6 +53,7 @@ export const generateQuotePDF = async (quote: Quote, clientInfo?: ClientInfo, sa
   console.log('PDF Generation - Quote serviceAddress:', quote.serviceAddress);
   console.log('PDF Generation - Quote billingAddress:', quote.billingAddress);
   console.log('PDF Generation - ClientInfo object:', clientInfo);
+  console.log('PDF Generation - Template ID from quote:', (quote as any).templateId);
   
   // Load business information from database instead of localStorage
   const businessSettings = await loadSettingsFromDatabase();
@@ -483,6 +484,7 @@ export const generateQuotePDF = async (quote: Quote, clientInfo?: ClientInfo, sa
   // Get template content if templateId is provided
   let templateContent = '';
   if ((quote as any).templateId) {
+    console.log('PDF Generation - Loading template with ID:', (quote as any).templateId);
     try {
       const { data: template, error } = await supabase
         .from('quote_templates')
@@ -490,17 +492,25 @@ export const generateQuotePDF = async (quote: Quote, clientInfo?: ClientInfo, sa
         .eq('id', (quote as any).templateId)
         .single();
       
-      if (!error && template) {
+      if (error) {
+        console.error('Error fetching template for PDF:', error);
+      } else if (template) {
         templateContent = template.content;
-        console.log('PDF Generation - Raw template content:', templateContent);
+        console.log('PDF Generation - Template loaded successfully, content length:', templateContent?.length || 0);
+        console.log('PDF Generation - Template content preview:', templateContent?.substring(0, 200) || 'No content');
+      } else {
+        console.log('PDF Generation - No template data returned');
       }
     } catch (error) {
       console.error('Error fetching template for PDF:', error);
     }
+  } else {
+    console.log('PDF Generation - No template ID provided in quote');
   }
   
   // Template content section (Terms & Conditions) with markdown formatting
-  if (templateContent) {
+  if (templateContent && templateContent.trim()) {
+    console.log('PDF Generation - Adding template content to PDF');
     yPos += 15;
     
     // Add Terms & Conditions header
@@ -515,6 +525,8 @@ export const generateQuotePDF = async (quote: Quote, clientInfo?: ClientInfo, sa
     // Use the new markdown parser
     const finalY = addMarkdownTextToPDF(doc, templateContent, 20, yPos, 175);
     yPos = finalY;
+  } else {
+    console.log('PDF Generation - No template content to add');
   }
   
   // Notes section (if space allows and on current page)
