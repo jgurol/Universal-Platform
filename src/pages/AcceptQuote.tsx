@@ -38,6 +38,8 @@ const AcceptQuote = () => {
       }
 
       console.log('AcceptQuote - Starting to load quote with ID:', quoteId);
+      console.log('AcceptQuote - Quote ID type:', typeof quoteId);
+      console.log('AcceptQuote - Quote ID length:', quoteId.length);
 
       try {
         // Step 1: Check if quote is already accepted
@@ -57,8 +59,35 @@ const AcceptQuote = () => {
           return;
         }
 
-        // Step 2: Fetch quote with related data
-        console.log('AcceptQuote - Fetching quote data...');
+        // Step 2: First, let's check if the quote exists at all
+        console.log('AcceptQuote - Checking if quote exists in database...');
+        const { data: basicQuoteCheck, error: basicError } = await supabase
+          .from('quotes')
+          .select('id, description, client_id, client_info_id')
+          .eq('id', quoteId)
+          .maybeSingle();
+
+        console.log('AcceptQuote - Basic quote check result:', basicQuoteCheck);
+        console.log('AcceptQuote - Basic quote check error:', basicError);
+
+        if (basicError) {
+          console.error('AcceptQuote - Error in basic quote check:', basicError);
+          setError(`Database error during basic check: ${basicError.message}`);
+          setIsLoading(false);
+          return;
+        }
+
+        if (!basicQuoteCheck) {
+          console.error('AcceptQuote - Quote not found in basic check with ID:', quoteId);
+          setError("Quote not found - please check the quote ID");
+          setIsLoading(false);
+          return;
+        }
+
+        console.log('AcceptQuote - Quote found! Proceeding with full fetch...');
+
+        // Step 3: Fetch quote with related data
+        console.log('AcceptQuote - Fetching full quote data...');
         const { data: quoteData, error: quoteError } = await supabase
           .from('quotes')
           .select(`
@@ -73,30 +102,41 @@ const AcceptQuote = () => {
           .maybeSingle();
 
         if (quoteError) {
-          console.error('AcceptQuote - Error fetching quote:', quoteError);
+          console.error('AcceptQuote - Error fetching full quote:', quoteError);
           setError(`Database error: ${quoteError.message}`);
           setIsLoading(false);
           return;
         }
 
         if (!quoteData) {
-          console.error('AcceptQuote - No quote found with ID:', quoteId);
+          console.error('AcceptQuote - No quote data returned in full fetch');
           setError("Quote not found - please check the quote ID");
           setIsLoading(false);
           return;
         }
 
-        console.log('AcceptQuote - Quote data loaded:', quoteData);
+        console.log('AcceptQuote - Full quote data loaded:', quoteData);
 
-        // Step 3: Fetch agents and client_infos separately for proper mapping
+        // Step 4: Fetch agents and client_infos separately for proper mapping
         console.log('AcceptQuote - Fetching agents and client infos for mapping...');
         const [agentsResult, clientInfosResult] = await Promise.all([
           supabase.from('agents').select('*'),
           supabase.from('client_info').select('*')
         ]);
 
+        if (agentsResult.error) {
+          console.error('AcceptQuote - Error fetching agents:', agentsResult.error);
+        }
+        
+        if (clientInfosResult.error) {
+          console.error('AcceptQuote - Error fetching client infos:', clientInfosResult.error);
+        }
+
         const rawAgents = agentsResult.data || [];
         const rawClientInfos = clientInfosResult.data || [];
+
+        console.log('AcceptQuote - Raw agents count:', rawAgents.length);
+        console.log('AcceptQuote - Raw client infos count:', rawClientInfos.length);
 
         // Transform raw database data to expected Client type
         const clients = rawAgents.map(agent => ({
@@ -113,12 +153,15 @@ const AcceptQuote = () => {
 
         const clientInfos = rawClientInfos; // ClientInfo type already matches the database structure
 
-        // Step 4: Use mapQuoteData utility to properly convert to Quote type
+        console.log('AcceptQuote - Transformed clients count:', clients.length);
+        console.log('AcceptQuote - Client infos count:', clientInfos.length);
+
+        // Step 5: Use mapQuoteData utility to properly convert to Quote type
         const mappedQuote = mapQuoteData(quoteData, clients, clientInfos);
         console.log('AcceptQuote - Mapped quote:', mappedQuote);
         setQuote(mappedQuote);
 
-        // Step 5: Fetch client info if available
+        // Step 6: Fetch client info if available
         if (quoteData.client_info_id) {
           console.log('AcceptQuote - Fetching client info for ID:', quoteData.client_info_id);
           const clientData = clientInfos.find(c => c.id === quoteData.client_info_id);
@@ -127,10 +170,12 @@ const AcceptQuote = () => {
             setClientInfo(clientData);
             setClientName(clientData.contact_name || "");
             setClientEmail(clientData.email || "");
+          } else {
+            console.log('AcceptQuote - No client info found for ID:', quoteData.client_info_id);
           }
         }
 
-        // Step 6: Fetch template content if available
+        // Step 7: Fetch template content if available
         if (quoteData.template_id) {
           console.log('AcceptQuote - Fetching template for ID:', quoteData.template_id);
           const { data: templateData, error: templateError } = await supabase
