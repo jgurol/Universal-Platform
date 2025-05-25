@@ -60,6 +60,10 @@ export const RecentQuotes = ({
     }
   };
 
+  const handleUpdateQuote = async (updatedQuote: Quote) => {
+    await onUpdateQuote(updatedQuote.id, updatedQuote);
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -97,7 +101,7 @@ export const RecentQuotes = ({
       <AddQuoteDialog
         open={isAddDialogOpen}
         onOpenChange={setIsAddDialogOpen}
-        onSubmit={onAddQuote}
+        onAddQuote={onAddQuote}
         clients={clients}
         clientInfos={clientInfos}
         associatedAgentId={associatedAgentId}
@@ -108,7 +112,7 @@ export const RecentQuotes = ({
           open={!!editingQuote}
           onOpenChange={(open) => !open && setEditingQuote(null)}
           quote={editingQuote}
-          onSubmit={(updatedQuote) => onUpdateQuote(editingQuote.id, updatedQuote)}
+          onUpdateQuote={handleUpdateQuote}
           clients={clients}
           clientInfos={clientInfos}
         />
@@ -118,8 +122,7 @@ export const RecentQuotes = ({
         open={!!deletingQuoteId}
         onOpenChange={(open) => !open && setDeletingQuoteId(null)}
         onConfirm={confirmDelete}
-        title="Delete Quote"
-        description="Are you sure you want to delete this quote? This action cannot be undone."
+        onCancel={() => setDeletingQuoteId(null)}
       />
 
       <SignatureDialog

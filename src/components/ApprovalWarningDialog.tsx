@@ -14,29 +14,32 @@ interface ApprovalWarningDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onConfirm: () => void;
-  onCancel: () => void;
+  onCancel?: () => void;
+  title?: string;
+  description?: string;
 }
 
 export const ApprovalWarningDialog = ({
   open,
   onOpenChange,
   onConfirm,
-  onCancel
+  onCancel,
+  title = "Delete Quote",
+  description = "Are you sure you want to delete this quote? This action cannot be undone."
 }: ApprovalWarningDialogProps) => {
   return (
     <AlertDialog open={open} onOpenChange={onOpenChange}>
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>Approve Unpaid Invoice?</AlertDialogTitle>
+          <AlertDialogTitle>{title}</AlertDialogTitle>
           <AlertDialogDescription>
-            You are about to approve a commission for an invoice that hasn't been marked as paid yet. 
-            Are you sure you want to proceed?
+            {description}
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
           <AlertDialogCancel onClick={onCancel}>Cancel</AlertDialogCancel>
-          <AlertDialogAction onClick={onConfirm} className="bg-amber-600 hover:bg-amber-700">
-            Approve Anyway
+          <AlertDialogAction onClick={onConfirm} className="bg-red-600 hover:bg-red-700">
+            Delete
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>
