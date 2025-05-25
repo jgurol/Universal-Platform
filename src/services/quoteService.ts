@@ -103,6 +103,7 @@ export const updateQuoteInDatabase = async (
 ) => {
   try {
     console.log('[updateQuote] Received quote data:', updatedQuote);
+    console.log('[updateQuote] Service address being saved:', updatedQuote.serviceAddress);
     
     const commission = await calculateCommission(
       updatedQuote.amount,
@@ -126,8 +127,11 @@ export const updateQuoteInDatabase = async (
       commission_override: updatedQuote.commissionOverride || null,
       expires_at: updatedQuote.expiresAt || null,
       notes: updatedQuote.notes || null,
-      billing_address: updatedQuote.billingAddress || null
+      billing_address: updatedQuote.billingAddress || null,
+      service_address: updatedQuote.serviceAddress || null
     };
+
+    console.log('[updateQuote] Data being sent to database:', quoteUpdateData);
 
     const { data, error } = await supabase
       .from('quotes')
@@ -146,6 +150,7 @@ export const updateQuoteInDatabase = async (
       return null;
     }
 
+    console.log('[updateQuote] Successfully updated quote with addresses:', data);
     return data;
   } catch (err) {
     console.error('Error in update quote operation:', err);
