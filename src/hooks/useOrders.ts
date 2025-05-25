@@ -29,6 +29,25 @@ export const useOrders = () => {
     }
   };
 
+  const deleteOrder = async (orderId: string) => {
+    try {
+      const { error } = await supabase
+        .from('orders')
+        .delete()
+        .eq('id', orderId)
+        .eq('user_id', user?.id);
+
+      if (error) throw error;
+      
+      // Update local state
+      setOrders(prevOrders => prevOrders.filter(order => order.id !== orderId));
+      return true;
+    } catch (error) {
+      console.error('Error deleting order:', error);
+      throw error;
+    }
+  };
+
   useEffect(() => {
     fetchOrders();
   }, [user]);
@@ -36,6 +55,7 @@ export const useOrders = () => {
   return {
     orders,
     isLoading,
-    fetchOrders
+    fetchOrders,
+    deleteOrder
   };
 };
