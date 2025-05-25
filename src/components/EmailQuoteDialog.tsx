@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -11,7 +12,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useClientContacts } from "@/hooks/useClientContacts";
 import { generateQuotePDF } from "@/utils/pdfUtils";
 import { supabase } from "@/integrations/supabase/client";
-import { Mail, X } from "lucide-react";
+import { Mail, X, CheckCircle, XCircle } from "lucide-react";
 
 interface EmailQuoteDialogProps {
   open: boolean;
@@ -166,7 +167,7 @@ ${salespersonName || 'Sales Team'}`);
             // Keep dialog open for a moment to show the green icon
             setTimeout(() => {
               onOpenChange(false);
-            }, 1500);
+            }, 3000);
           } else {
             throw new Error(data?.error || 'Failed to send email');
           }
@@ -217,7 +218,13 @@ ${salespersonName || 'Sales Team'}`);
   const getMailIconColor = () => {
     if (emailStatus === 'success') return 'text-green-600';
     if (emailStatus === 'error') return 'text-red-600';
-    return 'text-gray-600';
+    return 'text-blue-600';
+  };
+
+  const getStatusIcon = () => {
+    if (emailStatus === 'success') return <CheckCircle className="w-5 h-5 text-green-600" />;
+    if (emailStatus === 'error') return <XCircle className="w-5 h-5 text-red-600" />;
+    return <Mail className={`w-5 h-5 transition-colors duration-300 ${getMailIconColor()}`} />;
   };
 
   const availableContacts = contacts.filter(contact => contact.email);
@@ -230,8 +237,14 @@ ${salespersonName || 'Sales Team'}`);
       <DialogContent className="sm:max-w-[700px]">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <Mail className={`w-5 h-5 ${getMailIconColor()}`} />
+            {getStatusIcon()}
             Email Quote to Customer
+            {emailStatus === 'success' && (
+              <span className="text-sm font-normal text-green-600 ml-2">✓ Sent!</span>
+            )}
+            {emailStatus === 'error' && (
+              <span className="text-sm font-normal text-red-600 ml-2">✗ Failed</span>
+            )}
           </DialogTitle>
           <DialogDescription>
             Send the quote PDF directly to your customer's email address.
@@ -364,10 +377,16 @@ ${salespersonName || 'Sales Team'}`);
           <Button 
             onClick={handleSendEmail}
             disabled={isLoading || !recipientEmail}
-            className="bg-blue-600 hover:bg-blue-700"
+            className={`transition-colors duration-300 ${
+              emailStatus === 'success' 
+                ? 'bg-green-600 hover:bg-green-700' 
+                : emailStatus === 'error'
+                ? 'bg-red-600 hover:bg-red-700'
+                : 'bg-blue-600 hover:bg-blue-700'
+            }`}
           >
-            <Mail className={`w-4 h-4 mr-2 ${getMailIconColor()}`} />
-            {isLoading ? "Sending..." : "Send Email"}
+            <Mail className={`w-4 h-4 mr-2 transition-colors duration-300 ${getMailIconColor()}`} />
+            {isLoading ? "Sending..." : emailStatus === 'success' ? "Email Sent!" : "Send Email"}
           </Button>
         </div>
       </DialogContent>
