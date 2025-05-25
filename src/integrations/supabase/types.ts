@@ -293,6 +293,7 @@ export type Database = {
       }
       quote_items: {
         Row: {
+          address_id: string | null
           charge_type: string | null
           created_at: string
           id: string
@@ -304,6 +305,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          address_id?: string | null
           charge_type?: string | null
           created_at?: string
           id?: string
@@ -315,6 +317,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          address_id?: string | null
           charge_type?: string | null
           created_at?: string
           id?: string
@@ -326,6 +329,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "quote_items_address_id_fkey"
+            columns: ["address_id"]
+            isOneToOne: false
+            referencedRelation: "client_addresses"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "quote_items_item_id_fkey"
             columns: ["item_id"]

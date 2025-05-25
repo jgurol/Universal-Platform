@@ -55,7 +55,8 @@ export const EditQuoteDialog = ({
         .from('quote_items')
         .select(`
           *,
-          item:items(*)
+          item:items(*),
+          address:client_addresses(*)
         `)
         .eq('quote_id', quote.id);
 
@@ -73,9 +74,11 @@ export const EditQuoteDialog = ({
           unit_price: item.unit_price,
           total_price: item.total_price,
           charge_type: (item.charge_type as 'NRC' | 'MRC') || 'NRC',
+          address_id: item.address_id,
           name: item.item?.name || '',
           description: item.item?.description || '',
-          item: item.item
+          item: item.item,
+          address: item.address
         }));
         
         setQuoteItems(transformedItems);
