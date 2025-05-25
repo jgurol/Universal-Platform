@@ -5,48 +5,11 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
 const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
-const supabase = createClient(supabaseUrl, supabaseServiceKey, {
-  auth: {
-    autoRefreshToken: false,
-    persistSession: false
-  }
-});
+const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-};
-
-const generateOrderNumber = async (): Promise<string> => {
-  // Get the highest existing order number
-  const { data: lastOrder, error } = await supabase
-    .from('orders')
-    .select('order_number')
-    .order('order_number', { ascending: false })
-    .limit(1);
-
-  if (error) {
-    console.error('Error fetching last order number:', error);
-    // If we can't get the last order, start from 15000
-    return '15000';
-  }
-
-  if (!lastOrder || lastOrder.length === 0) {
-    // No orders exist yet, start from 15000
-    return '15000';
-  }
-
-  const lastOrderNumber = lastOrder[0].order_number;
-  
-  // Extract the numeric part and increment
-  const numericPart = parseInt(lastOrderNumber);
-  if (isNaN(numericPart)) {
-    // If the last order number isn't numeric, start from 15000
-    return '15000';
-  }
-
-  const nextNumber = numericPart + 1;
-  return nextNumber.toString();
 };
 
 const handler = async (req: Request): Promise<Response> => {
@@ -59,35 +22,34 @@ const handler = async (req: Request): Promise<Response> => {
 
     console.log('Processing quote approval for:', quoteId);
 
-    // First, check if orders already exist for this quote
-    const { data: existingOrders, error: existingOrdersError } = await supabase
+    // First, check if an order already exists for this quote
+    const { data: existingOrder } = await supabase
       .from('orders')
-      .select('id, order_number')
-      .eq('quote_id', quoteId);
+      .select('id')
+      .eq('quote_id', quoteId)
+      .single();
 
-    if (existingOrdersError) {
-      console.error('Error checking existing orders:', existingOrdersError);
-      throw new Error(`Failed to check existing orders: ${existingOrdersError.message}`);
-    }
-
-    if (existingOrders && existingOrders.length > 0) {
-      console.log('Orders already exist for quote:', quoteId, 'Count:', existingOrders.length);
-      return new Response(JSON.stringify({ 
-        success: true, 
-        orderIds: existingOrders.map(o => o.id),
-        orderNumbers: existingOrders.map(o => o.order_number),
-        message: 'Orders already exist for this quote',
-        ordersCount: existingOrders.length
-      }), {
+    if (existingOrder) {
+      console.log('Order already exists for quote:', quoteId);
+      return new Response(JSON.stringify({ success: true, orderId: existingOrder.id }), {
         status: 200,
         headers: { "Content-Type": "application/json", ...corsHeaders },
       });
     }
 
-    // Get quote details 
+    // Get quote details
     const { data: quote, error: quoteError } = await supabase
       .from('quotes')
-      .select('*')
+      .select(`
+        *,
+        quote_items (
+          *,
+          item:items(
+            *,
+            category:categories(*)
+          )
+        )
+      `)
       .eq('id', quoteId)
       .single();
 
@@ -95,80 +57,103 @@ const handler = async (req: Request): Promise<Response> => {
       throw new Error(`Failed to fetch quote: ${quoteError?.message}`);
     }
 
-    console.log(`Creating single order for quote ${quoteId}`);
+    // Generate unique order number by checking existing orders
+    let orderNumber: string;
+    let isUnique = false;
+    let attempts = 0;
+    const maxAttempts = 10;
 
-    // Generate sequential order number
-    const orderNumber = await generateOrderNumber();
+    while (!isUnique && attempts < maxAttempts) {
+      const now = new Date();
+      const year = now.getFullYear();
+      const dayOfYear = Math.floor((now - new Date(year, 0, 0)) / (1000 * 60 * 60 * 24));
+      const hour = now.getHours();
+      const minute = now.getMinutes();
+      const second = now.getSeconds();
+      
+      // Add attempt number to ensure uniqueness if there are conflicts
+      const suffix = attempts > 0 ? `-${attempts}` : '';
+      orderNumber = `ORD-${year}-${dayOfYear.toString().padStart(3, '0')}-${hour.toString().padStart(2, '0')}${minute.toString().padStart(2, '0')}${second.toString().padStart(2, '0')}${suffix}`;
 
-    // Ensure user_id is properly set
-    if (!quote.user_id) {
-      throw new Error('Quote user_id is missing - cannot create order');
+      // Check if this order number already exists
+      const { data: existingOrderNumber } = await supabase
+        .from('orders')
+        .select('id')
+        .eq('order_number', orderNumber)
+        .single();
+
+      if (!existingOrderNumber) {
+        isUnique = true;
+      } else {
+        attempts++;
+        // Wait a bit before retrying to ensure timestamp difference
+        await new Promise(resolve => setTimeout(resolve, 100));
+      }
     }
 
-    console.log(`Creating order for quote ${quoteId} with user_id: ${quote.user_id} and order number: ${orderNumber}`);
+    if (!isUnique) {
+      throw new Error('Failed to generate unique order number after multiple attempts');
+    }
 
-    // Create single order for the entire quote
-    const orderData = {
-      quote_id: quoteId,
-      order_number: orderNumber,
-      user_id: quote.user_id,
-      client_id: quote.client_id,
-      client_info_id: quote.client_info_id,
-      amount: quote.amount,
-      status: 'pending',
-      billing_address: quote.billing_address,
-      service_address: quote.service_address,
-      notes: quote.notes || `Order for quote ${quote.quote_number || quoteId}`,
-      commission: quote.commission || 0,
-      commission_override: quote.commission_override
-    };
-
-    console.log('Order data to insert:', orderData);
-
-    // Insert the order
+    // Create order
     const { data: newOrder, error: orderError } = await supabase
       .from('orders')
-      .insert(orderData)
+      .insert({
+        quote_id: quoteId,
+        order_number: orderNumber,
+        user_id: quote.user_id,
+        client_id: quote.client_id,
+        client_info_id: quote.client_info_id,
+        amount: quote.amount,
+        status: 'pending',
+        billing_address: quote.billing_address,
+        service_address: quote.service_address,
+        notes: quote.notes,
+        commission: quote.commission,
+        commission_override: quote.commission_override
+      })
       .select()
       .single();
 
     if (orderError) {
-      console.error(`Failed to create order:`, orderError);
-      
-      // If it's a duplicate key error, try to fetch the existing order
-      if (orderError.code === '23505') {
-        console.log('Duplicate order detected, fetching existing order');
-        const { data: existingOrder } = await supabase
-          .from('orders')
-          .select('*')
-          .eq('quote_id', quoteId)
-          .single();
-        
-        if (existingOrder) {
-          console.log('Found existing order:', existingOrder.id);
-          return new Response(JSON.stringify({ 
-            success: true, 
-            orderIds: [existingOrder.id],
-            orderNumbers: [existingOrder.order_number],
-            ordersCount: 1,
-            message: 'Order already exists for this quote'
-          }), {
-            status: 200,
-            headers: { "Content-Type": "application/json", ...corsHeaders },
-          });
-        }
-      }
-      
       throw new Error(`Failed to create order: ${orderError.message}`);
     }
 
-    console.log(`Created order ${newOrder.id} with number ${orderNumber}`);
+    console.log('Created order:', newOrder.id, 'with order number:', orderNumber);
+
+    // Check for circuit-related items
+    const circuitCategories = ['broadband', 'dedicated fiber', 'fixed wireless', '4g/5g'];
+    const circuitItems = quote.quote_items?.filter(item => 
+      item.item?.category && 
+      circuitCategories.includes(item.item.category.name.toLowerCase())
+    ) || [];
+
+    if (circuitItems.length > 0) {
+      const circuitType = circuitItems[0].item.category.name.toLowerCase();
+      
+      // Create circuit tracking
+      const { error: trackingError } = await supabase
+        .from('circuit_tracking')
+        .insert({
+          order_id: newOrder.id,
+          circuit_type: circuitType,
+          status: 'ordered',
+          progress_percentage: 0
+        });
+
+      if (trackingError) {
+        console.error('Failed to create circuit tracking:', trackingError);
+        // Don't fail the entire process if circuit tracking fails
+      } else {
+        console.log('Created circuit tracking for order:', newOrder.id);
+      }
+    }
 
     return new Response(JSON.stringify({ 
       success: true, 
-      orderIds: [newOrder.id],
-      orderNumbers: [newOrder.order_number],
-      ordersCount: 1
+      orderId: newOrder.id,
+      orderNumber: orderNumber,
+      hasCircuitTracking: circuitItems.length > 0
     }), {
       status: 200,
       headers: { "Content-Type": "application/json", ...corsHeaders },
