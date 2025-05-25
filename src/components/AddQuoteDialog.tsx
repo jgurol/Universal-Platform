@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -8,6 +7,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { Quote, Client, ClientInfo } from "@/pages/Index";
 import { getTodayInTimezone } from "@/utils/dateUtils";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/context/AuthContext";
 
 interface AddQuoteDialogProps {
   open: boolean;
@@ -30,6 +31,7 @@ export const AddQuoteDialog = ({ open, onOpenChange, onAddQuote, clients, client
   const [expiresAt, setExpiresAt] = useState("");
   const [notes, setNotes] = useState("");
   const [commissionOverride, setCommissionOverride] = useState("");
+  const { user } = useAuth();
   
   // Initialize date with today's date in the configured timezone
   useEffect(() => {
@@ -37,6 +39,44 @@ export const AddQuoteDialog = ({ open, onOpenChange, onAddQuote, clients, client
       setDate(getTodayInTimezone());
     }
   }, []);
+
+  // Generate next quote number when dialog opens
+  useEffect(() => {
+    const generateNextQuoteNumber = async () => {
+      if (open && user) {
+        try {
+          const { data, error } = await supabase
+            .from('quotes')
+            .select('quote_number')
+            .eq('user_id', user.id)
+            .not('quote_number', 'is', null)
+            .order('created_at', { ascending: false })
+            .limit(1);
+
+          if (error) {
+            console.error('Error fetching last quote number:', error);
+            setQuoteNumber("1");
+            return;
+          }
+
+          let nextNumber = 1;
+          if (data && data.length > 0 && data[0].quote_number) {
+            const lastNumber = parseInt(data[0].quote_number);
+            if (!isNaN(lastNumber)) {
+              nextNumber = lastNumber + 1;
+            }
+          }
+          
+          setQuoteNumber(nextNumber.toString());
+        } catch (err) {
+          console.error('Error generating quote number:', err);
+          setQuoteNumber("1");
+        }
+      }
+    };
+
+    generateNextQuoteNumber();
+  }, [open, user]);
   
   // Handle client selection - auto-select agent based on client's agent_id
   useEffect(() => {
@@ -186,7 +226,8 @@ export const AddQuoteDialog = ({ open, onOpenChange, onAddQuote, clients, client
                 id="quoteNumber"
                 value={quoteNumber}
                 onChange={(e) => setQuoteNumber(e.target.value)}
-                placeholder="Enter quote number"
+                placeholder="Auto-generated"
+                disabled
               />
             </div>
 
