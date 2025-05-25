@@ -7,32 +7,43 @@ interface TextSection {
   italic: boolean;
 }
 
-// Simple and reliable markdown parser for PDF generation
+// Enhanced markdown parser for PDF generation with better formatting
 export const addMarkdownTextToPDF = (
   doc: jsPDF, 
   markdownContent: string, 
   startX: number, 
   startY: number, 
   maxWidth: number, 
-  lineHeight: number = 4
+  lineHeight: number = 5
 ): number => {
   let currentY = startY;
   const pageHeight = 297;
   const bottomMargin = 20;
   const topMargin = 20;
-  const paragraphSpacing = 2;
+  const paragraphSpacing = 6; // Increased paragraph spacing
   
   if (!markdownContent) return currentY;
   
   console.log('PDF Generation - Processing markdown content:', markdownContent);
   
-  // Split content into paragraphs (double newlines)
-  const paragraphs = markdownContent
-    .split(/\n\n+/)
-    .map(p => p.trim())
+  // Clean up the content first - remove any HTML remnants
+  const cleanContent = markdownContent
+    .replace(/<[^>]*>/g, '') // Remove any HTML tags
+    .replace(/&nbsp;/g, ' ') // Replace HTML spaces
+    .replace(/&amp;/g, '&') // Replace HTML entities
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .trim();
+  
+  // Split content into paragraphs (double newlines or single newlines for now)
+  const paragraphs = cleanContent
+    .split(/\n\s*\n/) // Split on double newlines with optional whitespace
+    .map(p => p.replace(/\n/g, ' ').trim()) // Convert single newlines to spaces and trim
     .filter(p => p.length > 0);
   
-  console.log('PDF Generation - Paragraphs found:', paragraphs.length);
+  console.log('PDF Generation - Cleaned paragraphs found:', paragraphs.length);
+  console.log('PDF Generation - Paragraphs:', paragraphs);
   
   paragraphs.forEach((paragraph, paragraphIndex) => {
     // Add spacing between paragraphs (except first one)
@@ -53,11 +64,11 @@ export const addMarkdownTextToPDF = (
         doc.setFontSize(9);
         doc.setFont('helvetica', 'bold');
         doc.text('Terms & Conditions (continued):', startX, currentY);
-        currentY += 8;
+        currentY += 10;
       }
       
       // Set font style
-      doc.setFontSize(8);
+      doc.setFontSize(9); // Slightly larger font for better readability
       if (section.bold && section.italic) {
         doc.setFont('helvetica', 'bolditalic');
       } else if (section.bold) {
@@ -68,28 +79,36 @@ export const addMarkdownTextToPDF = (
         doc.setFont('helvetica', 'normal');
       }
       
-      // Handle line breaks within sections
-      const lines = section.text.split('\n');
-      
-      lines.forEach((line, lineIndex) => {
-        if (lineIndex > 0) {
-          currentY += lineHeight;
-        }
+      if (section.text.trim()) {
+        // Split text to fit within the specified width
+        const splitText = doc.splitTextToSize(section.text, maxWidth);
         
-        if (line.trim()) {
-          // Split text to fit within the specified width
-          const splitText = doc.splitTextToSize(line, maxWidth);
+        // Add each line of the split text
+        if (Array.isArray(splitText)) {
+          splitText.forEach((line, lineIndex) => {
+            if (lineIndex > 0) {
+              currentY += lineHeight;
+            }
+            doc.text(line, startX, currentY);
+          });
+          // Move to next line position for next section
+          if (splitText.length > 1) {
+            currentY += lineHeight * (splitText.length - 1);
+          }
+        } else {
           doc.text(splitText, startX, currentY);
-          currentY += splitText.length * lineHeight;
         }
-      });
+      }
     });
+    
+    // Move to next line after each section group
+    currentY += lineHeight;
   });
   
   return currentY;
 };
 
-// Parse markdown inline formatting (**bold**, *italic*)
+// Enhanced markdown inline formatting parser
 const parseMarkdownInline = (text: string): TextSection[] => {
   const sections: TextSection[] = [];
   let currentIndex = 0;

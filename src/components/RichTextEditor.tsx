@@ -23,7 +23,7 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
   const [isBoldActive, setIsBoldActive] = useState(false);
   const [isItalicActive, setIsItalicActive] = useState(false);
 
-  // Convert markdown-style format to HTML for display
+  // Convert markdown to HTML for display
   const markdownToHtml = (text: string): string => {
     if (!text) return '';
     
@@ -35,20 +35,33 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
       .replace(/^(.*)$/, '<p>$1</p>'); // Wrap in paragraph tags
   };
 
-  // Convert HTML back to markdown-style format
+  // Convert HTML back to markdown - improved version
   const htmlToMarkdown = (html: string): string => {
     if (!html) return '';
     
-    return html
-      .replace(/<p>/g, '') // Remove opening p tags
-      .replace(/<\/p>/g, '\n\n') // Convert closing p tags to double newlines
-      .replace(/<br\s*\/?>/gi, '\n') // Convert br tags to newlines
-      .replace(/<strong>(.*?)<\/strong>/g, '**$1**') // <strong> to **bold**
-      .replace(/<b>(.*?)<\/b>/g, '**$1**') // <b> to **bold**
-      .replace(/<em>(.*?)<\/em>/g, '*$1*') // <em> to *italic*
-      .replace(/<i>(.*?)<\/i>/g, '*$1*') // <i> to *italic*
-      .replace(/\n\n+/g, '\n\n') // Normalize multiple newlines to double
+    let markdown = html
+      // Remove paragraph tags and convert to proper line breaks
+      .replace(/<p[^>]*>/gi, '')
+      .replace(/<\/p>/gi, '\n\n')
+      // Convert line breaks
+      .replace(/<br\s*\/?>/gi, '\n')
+      // Convert bold formatting
+      .replace(/<strong[^>]*>(.*?)<\/strong>/gi, '**$1**')
+      .replace(/<b[^>]*>(.*?)<\/b>/gi, '**$1**')
+      // Convert italic formatting
+      .replace(/<em[^>]*>(.*?)<\/em>/gi, '*$1*')
+      .replace(/<i[^>]*>(.*?)<\/i>/gi, '*$1*')
+      // Remove any remaining HTML tags
+      .replace(/<[^>]*>/g, '')
+      // Clean up multiple newlines
+      .replace(/\n{3,}/g, '\n\n')
+      // Remove leading/trailing whitespace
       .trim();
+    
+    // Decode HTML entities
+    const div = document.createElement('div');
+    div.innerHTML = markdown;
+    return div.textContent || div.innerText || markdown;
   };
 
   // Initialize the editor content
@@ -61,12 +74,16 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
     }
   }, [value]);
 
-  // Handle content changes
+  // Handle content changes and convert to markdown
   const handleInput = () => {
     if (editorRef.current) {
       const htmlContent = editorRef.current.innerHTML;
       const markdownContent = htmlToMarkdown(htmlContent);
-      onChange(markdownContent);
+      
+      // Only call onChange if the content actually changed
+      if (markdownContent !== value) {
+        onChange(markdownContent);
+      }
     }
   };
 
@@ -80,21 +97,21 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
   const handleBold = () => {
     document.execCommand('bold', false, undefined);
     updateToolbarState();
-    handleInput(); // Update the markdown content
+    handleInput();
     editorRef.current?.focus();
   };
 
   const handleItalic = () => {
     document.execCommand('italic', false, undefined);
     updateToolbarState();
-    handleInput(); // Update the markdown content
+    handleInput();
     editorRef.current?.focus();
   };
 
   // Handle key events for toolbar state updates
   const handleKeyUp = () => {
     updateToolbarState();
-    handleInput(); // Update the markdown content
+    handleInput();
   };
 
   const handleMouseUp = () => {
