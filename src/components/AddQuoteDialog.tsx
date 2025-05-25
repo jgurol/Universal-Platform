@@ -9,6 +9,17 @@ import { Quote, Client, ClientInfo } from "@/pages/Index";
 import { getTodayInTimezone } from "@/utils/dateUtils";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
+import { QuoteItemsManager } from "@/components/QuoteItemsManager";
+
+interface QuoteItemData {
+  id: string;
+  item_id: string;
+  quantity: number;
+  unit_price: number;
+  cost_override?: number;
+  total_price: number;
+  item?: any;
+}
 
 interface AddQuoteDialogProps {
   open: boolean;
@@ -31,6 +42,7 @@ export const AddQuoteDialog = ({ open, onOpenChange, onAddQuote, clients, client
   const [expiresAt, setExpiresAt] = useState("");
   const [notes, setNotes] = useState("");
   const [commissionOverride, setCommissionOverride] = useState("");
+  const [quoteItems, setQuoteItems] = useState<QuoteItemData[]>([]);
   const { user } = useAuth();
   
   // Initialize date with today's date in the configured timezone
@@ -93,6 +105,12 @@ export const AddQuoteDialog = ({ open, onOpenChange, onAddQuote, clients, client
     }
   }, [clientInfoId, clientInfos]);
 
+  // Update amount when quote items change
+  useEffect(() => {
+    const totalAmount = quoteItems.reduce((total, item) => total + item.total_price, 0);
+    setAmount(totalAmount.toString());
+  }, [quoteItems]);
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (clientId && amount && date) {
@@ -115,7 +133,8 @@ export const AddQuoteDialog = ({ open, onOpenChange, onAddQuote, clients, client
           clientCompanyName: selectedClientInfo?.company_name,
           commissionOverride: commissionOverride ? parseFloat(commissionOverride) : undefined,
           expiresAt: expiresAt || undefined,
-          notes: notes || undefined
+          notes: notes || undefined,
+          quoteItems: quoteItems
         });
         
         // Reset form
@@ -131,6 +150,7 @@ export const AddQuoteDialog = ({ open, onOpenChange, onAddQuote, clients, client
         setExpiresAt("");
         setNotes("");
         setCommissionOverride("");
+        setQuoteItems([]);
         onOpenChange(false);
       }
     }
@@ -141,7 +161,7 @@ export const AddQuoteDialog = ({ open, onOpenChange, onAddQuote, clients, client
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[550px] max-h-[90vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-[800px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Add Quote</DialogTitle>
           <DialogDescription>
@@ -182,9 +202,14 @@ export const AddQuoteDialog = ({ open, onOpenChange, onAddQuote, clients, client
             </div>
           )}
 
+          <QuoteItemsManager 
+            items={quoteItems}
+            onItemsChange={setQuoteItems}
+          />
+
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="amount">Amount ($)</Label>
+              <Label htmlFor="amount">Total Amount ($)</Label>
               <Input
                 id="amount"
                 type="number"
@@ -192,8 +217,9 @@ export const AddQuoteDialog = ({ open, onOpenChange, onAddQuote, clients, client
                 min="0"
                 value={amount}
                 onChange={(e) => setAmount(e.target.value)}
-                placeholder="Enter amount"
-                required
+                placeholder="Calculated from items"
+                readOnly
+                className="bg-gray-100"
               />
             </div>
             
@@ -288,7 +314,7 @@ export const AddQuoteDialog = ({ open, onOpenChange, onAddQuote, clients, client
             <Button 
               type="submit" 
               className="bg-blue-600 hover:bg-blue-700"
-              disabled={!selectedAgent || clientInfos.length === 0}
+              disabled={!selectedAgent || clientInfos.length === 0 || quoteItems.length === 0}
             >
               Add Quote
             </Button>

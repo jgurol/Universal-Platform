@@ -58,7 +58,7 @@ export const useQuoteActions = (
         newQuote.commissionOverride
       );
 
-      const { data, error } = await supabase
+      const { data: quoteData, error: quoteError } = await supabase
         .from('quotes')
         .insert({
           client_id: newQuote.clientId,
@@ -79,14 +79,41 @@ export const useQuoteActions = (
         .select('*')
         .single();
 
-      if (error) {
-        console.error('Error adding quote:', error);
+      if (quoteError) {
+        console.error('Error adding quote:', quoteError);
         toast({
           title: "Failed to add quote",
-          description: error.message,
+          description: quoteError.message,
           variant: "destructive"
         });
-      } else if (data) {
+        return;
+      }
+
+      // Add quote items if any exist
+      if (newQuote.quoteItems && newQuote.quoteItems.length > 0 && quoteData) {
+        const quoteItemsToInsert = newQuote.quoteItems.map(item => ({
+          quote_id: quoteData.id,
+          item_id: item.item_id,
+          quantity: item.quantity,
+          unit_price: item.unit_price,
+          total_price: item.total_price
+        }));
+
+        const { error: itemsError } = await supabase
+          .from('quote_items')
+          .insert(quoteItemsToInsert);
+
+        if (itemsError) {
+          console.error('Error adding quote items:', itemsError);
+          toast({
+            title: "Quote added but items failed",
+            description: "The quote was created but some items couldn't be added.",
+            variant: "destructive"
+          });
+        }
+      }
+
+      if (quoteData) {
         // Refresh quotes to get the new one
         fetchQuotes();
         

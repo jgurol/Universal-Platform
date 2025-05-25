@@ -1,4 +1,3 @@
-
 import { IndexPageLayout } from "@/components/IndexPageLayout";
 import { useIndexData } from "@/hooks/useIndexData";
 import { useQuoteActions } from "@/hooks/useQuoteActions";
@@ -36,6 +35,7 @@ export interface Quote {
   commissionOverride?: number;
   expiresAt?: string;
   notes?: string;
+  quoteItems?: any[];
 }
 
 // Define the Transaction type for backward compatibility - maps to Quote
