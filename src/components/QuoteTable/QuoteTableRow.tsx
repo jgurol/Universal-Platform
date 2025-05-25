@@ -116,30 +116,44 @@ export const QuoteTableRow = ({
   };
 
   const handleEmailSuccess = () => {
+    console.log('Email success - setting status to success');
     setEmailStatus('success');
-    // Reset status after 3 seconds
+    toast({
+      title: "Email sent!",
+      description: "Quote email has been sent successfully",
+    });
+    // Reset status after 5 seconds (increased from 3)
     setTimeout(() => {
+      console.log('Resetting email status to idle');
       setEmailStatus('idle');
-    }, 3000);
+    }, 5000);
   };
 
   const handleEmailError = () => {
+    console.log('Email error - setting status to error');
     setEmailStatus('error');
-    // Reset status after 3 seconds
+    toast({
+      title: "Email failed",
+      description: "Failed to send quote email",
+      variant: "destructive"
+    });
+    // Reset status after 5 seconds (increased from 3)
     setTimeout(() => {
+      console.log('Resetting email status to idle');
       setEmailStatus('idle');
-    }, 3000);
+    }, 5000);
   };
 
   const getEmailIcon = () => {
+    console.log('Current email status:', emailStatus);
     if (emailStatus === 'success') return <CheckCircle className="w-4 h-4 text-green-600" />;
     if (emailStatus === 'error') return <XCircle className="w-4 h-4 text-red-600" />;
     return <Mail className="w-4 h-4" />;
   };
 
   const getEmailButtonClass = () => {
-    if (emailStatus === 'success') return 'text-green-600 hover:text-green-700';
-    if (emailStatus === 'error') return 'text-red-600 hover:text-red-700';
+    if (emailStatus === 'success') return 'text-green-600 hover:text-green-700 bg-green-50 border-green-200';
+    if (emailStatus === 'error') return 'text-red-600 hover:text-red-700 bg-red-50 border-red-200';
     return 'text-gray-500 hover:text-blue-600';
   };
 
@@ -245,11 +259,11 @@ export const QuoteTableRow = ({
               <FileText className="w-4 h-4" />
             </Button>
             <Button 
-              variant="ghost" 
+              variant={emailStatus !== 'idle' ? 'outline' : 'ghost'}
               size="sm" 
-              className={`h-8 w-8 p-0 transition-colors duration-300 ${getEmailButtonClass()}`}
+              className={`h-8 w-8 p-0 transition-all duration-500 border ${getEmailButtonClass()}`}
               onClick={() => setIsEmailDialogOpen(true)}
-              title="Email Quote"
+              title={emailStatus === 'success' ? 'Email sent successfully!' : emailStatus === 'error' ? 'Email failed to send' : 'Email Quote'}
             >
               {getEmailIcon()}
             </Button>
