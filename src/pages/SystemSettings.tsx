@@ -336,26 +336,35 @@ export default function SystemSettings() {
     try {
       console.log('Saving settings to database:', settings);
 
-      // Prepare settings data for upsert
-      const settingsData = [
-        { setting_key: 'timezone', setting_value: settings.timezone },
-        { setting_key: 'company_name', setting_value: settings.companyName },
-        { setting_key: 'business_address', setting_value: settings.businessAddress },
-        { setting_key: 'business_phone', setting_value: settings.businessPhone },
-        { setting_key: 'business_fax', setting_value: settings.businessFax },
-        { setting_key: 'support_email', setting_value: settings.supportEmail },
-        { setting_key: 'default_commission_rate', setting_value: settings.defaultCommissionRate },
-        { setting_key: 'show_company_name_on_pdf', setting_value: settings.showCompanyNameOnPDF.toString() }
-      ].map(item => ({
-        ...item,
-        updated_at: new Date().toISOString()
-      }));
+      // Use individual upsert operations to avoid constraint violations
+      const settingsToUpdate = [
+        { key: 'timezone', value: settings.timezone },
+        { key: 'company_name', value: settings.companyName },
+        { key: 'business_address', value: settings.businessAddress },
+        { key: 'business_phone', value: settings.businessPhone },
+        { key: 'business_fax', value: settings.businessFax },
+        { key: 'support_email', value: settings.supportEmail },
+        { key: 'default_commission_rate', value: settings.defaultCommissionRate },
+        { key: 'show_company_name_on_pdf', value: settings.showCompanyNameOnPDF.toString() }
+      ];
 
-      const { error } = await supabase
-        .from('system_settings')
-        .upsert(settingsData);
+      // Update each setting individually
+      for (const setting of settingsToUpdate) {
+        const { error } = await supabase
+          .from('system_settings')
+          .upsert({
+            setting_key: setting.key,
+            setting_value: setting.value,
+            updated_at: new Date().toISOString()
+          }, {
+            onConflict: 'setting_key'
+          });
 
-      if (error) throw error;
+        if (error) {
+          console.error(`Error updating setting ${setting.key}:`, error);
+          throw error;
+        }
+      }
 
       console.log('Settings saved successfully to database');
       
