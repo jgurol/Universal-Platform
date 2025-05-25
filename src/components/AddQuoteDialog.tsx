@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -12,6 +11,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
 import { QuoteItemsManager } from "@/components/QuoteItemsManager";
 import { QuoteItemData } from "@/types/quoteItems";
+import { AddressSelector } from "@/components/AddressSelector";
 
 interface AddQuoteDialogProps {
   open: boolean;
@@ -34,6 +34,8 @@ export const AddQuoteDialog = ({ open, onOpenChange, onAddQuote, clients, client
   const [notes, setNotes] = useState("");
   const [commissionOverride, setCommissionOverride] = useState("");
   const [quoteItems, setQuoteItems] = useState<QuoteItemData[]>([]);
+  const [selectedAddressId, setSelectedAddressId] = useState<string | null>(null);
+  const [customAddress, setCustomAddress] = useState<string>("");
   const { user } = useAuth();
   
   // Function to calculate expiration date (+60 days from quote date)
@@ -116,6 +118,11 @@ export const AddQuoteDialog = ({ open, onOpenChange, onAddQuote, clients, client
     }
   }, [clientInfoId, clientInfos]);
 
+  const handleAddressChange = (addressId: string | null, customAddr?: string) => {
+    setSelectedAddressId(addressId);
+    setCustomAddress(customAddr || "");
+  };
+
   const calculateTotalAmount = () => {
     return quoteItems.reduce((total, item) => total + item.total_price, 0);
   };
@@ -149,7 +156,11 @@ export const AddQuoteDialog = ({ open, onOpenChange, onAddQuote, clients, client
           commissionOverride: commissionOverride ? parseFloat(commissionOverride) : undefined,
           expiresAt: expiresAt || undefined,
           notes: notes || undefined,
-          quoteItems: quoteItems
+          quoteItems: quoteItems.map(item => ({
+            ...item,
+            address_id: selectedAddressId || undefined
+          })),
+          billingAddress: customAddress || undefined
         };
         
         console.log('[AddQuoteDialog] Calling onAddQuote with data:', quoteData);
@@ -169,6 +180,8 @@ export const AddQuoteDialog = ({ open, onOpenChange, onAddQuote, clients, client
         setNotes("");
         setCommissionOverride("");
         setQuoteItems([]);
+        setSelectedAddressId(null);
+        setCustomAddress("");
         onOpenChange(false);
       }
     }
@@ -269,6 +282,14 @@ export const AddQuoteDialog = ({ open, onOpenChange, onAddQuote, clients, client
               </SelectContent>
             </Select>
           </div>
+
+          {/* Address Selection */}
+          <AddressSelector
+            clientInfoId={clientInfoId !== "none" ? clientInfoId : null}
+            selectedAddressId={selectedAddressId || undefined}
+            onAddressChange={handleAddressChange}
+            label="Billing Address"
+          />
 
           {/* Salesperson Display */}
           {selectedSalesperson && (

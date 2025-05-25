@@ -8,9 +8,11 @@ import { Textarea } from "@/components/ui/textarea";
 import { Quote, Client, ClientInfo } from "@/pages/Index";
 import { QuoteItemsManager } from "@/components/QuoteItemsManager";
 import { QuoteDetailsSection } from "@/components/QuoteDetailsSection";
+import { AddressSelector } from "@/components/AddressSelector";
 import { useQuoteForm } from "@/hooks/useQuoteForm";
 import { useQuoteItems } from "@/hooks/useQuoteItems";
 import { updateQuoteItems, calculateTotalsByChargeType } from "@/services/quoteItemsService";
+import { useState } from "react";
 
 interface EditQuoteDialogProps {
   quote: Quote | null;
@@ -51,6 +53,13 @@ export const EditQuoteDialog = ({
   } = useQuoteForm(quote, open);
 
   const { quoteItems, setQuoteItems } = useQuoteItems(quote, open);
+  const [selectedAddressId, setSelectedAddressId] = useState<string | null>(null);
+  const [customAddress, setCustomAddress] = useState<string>("");
+
+  const handleAddressChange = (addressId: string | null, customAddr?: string) => {
+    setSelectedAddressId(addressId);
+    setCustomAddress(customAddr || "");
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -61,8 +70,13 @@ export const EditQuoteDialog = ({
       if (selectedClient) {
         const { totalAmount } = calculateTotalsByChargeType(quoteItems);
         
-        // Update quote items in database
-        await updateQuoteItems(quote.id, quoteItems);
+        // Update quote items in database with address information
+        const updatedQuoteItems = quoteItems.map(item => ({
+          ...item,
+          address_id: selectedAddressId || undefined
+        }));
+        
+        await updateQuoteItems(quote.id, updatedQuoteItems);
 
         onUpdateQuote({
           ...quote,
@@ -78,7 +92,8 @@ export const EditQuoteDialog = ({
           clientCompanyName: selectedClientInfo?.company_name,
           commissionOverride: commissionOverride ? parseFloat(commissionOverride) : undefined,
           expiresAt: expiresAt || undefined,
-          notes: notes || undefined
+          notes: notes || undefined,
+          billingAddress: customAddress || undefined
         });
         
         onOpenChange(false);
@@ -142,6 +157,14 @@ export const EditQuoteDialog = ({
               </SelectContent>
             </Select>
           </div>
+
+          {/* Address Selection */}
+          <AddressSelector
+            clientInfoId={clientInfoId !== "none" ? clientInfoId : null}
+            selectedAddressId={selectedAddressId || undefined}
+            onAddressChange={handleAddressChange}
+            label="Billing Address"
+          />
 
           {/* Salesperson Display */}
           {selectedSalesperson && (
