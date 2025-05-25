@@ -1,6 +1,7 @@
+
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Clock, Building, FileText, Users, Pencil, Trash2, Calendar } from "lucide-react";
+import { Clock, Building, FileText, Users, Pencil, Trash2, Calendar, Copy } from "lucide-react";
 import { Quote, ClientInfo } from "@/pages/Index";
 import { useAuth } from "@/context/AuthContext";
 import { formatDateForDisplay } from "@/utils/dateUtils";
@@ -10,6 +11,7 @@ interface QuoteCardProps {
   clientInfos: ClientInfo[];
   onEditClick?: (quote: Quote) => void;
   onDeleteQuote?: (quoteId: string) => void;
+  onCopyQuote?: (quote: Quote) => void;
 }
 
 // Array for month names - needed for display
@@ -32,13 +34,20 @@ export const QuoteCard = ({
   quote,
   clientInfos,
   onEditClick,
-  onDeleteQuote
+  onDeleteQuote,
+  onCopyQuote
 }: QuoteCardProps) => {
   const { isAdmin } = useAuth();
 
   const handleDeleteQuote = () => {
     if (onDeleteQuote) {
       onDeleteQuote(quote.id);
+    }
+  };
+
+  const handleCopyQuote = () => {
+    if (onCopyQuote) {
+      onCopyQuote(quote);
     }
   };
 
@@ -160,16 +169,28 @@ export const QuoteCard = ({
           <div className="font-medium text-gray-600">
             Commission: ${quote.commission?.toFixed(2) || '0.00'}
           </div>
-          {isAdmin && onDeleteQuote && (
+          {isAdmin && (onDeleteQuote || onCopyQuote) && (
             <div className="flex gap-2">
-              <Button 
-                size="sm" 
-                variant="outline" 
-                className="text-xs h-7 text-red-600 border-red-200 hover:bg-red-50"
-                onClick={handleDeleteQuote}
-              >
-                <Trash2 className="w-3 h-3 mr-1 text-red-600" /> Delete
-              </Button>
+              {onCopyQuote && (
+                <Button 
+                  size="sm" 
+                  variant="outline" 
+                  className="text-xs h-7 text-green-600 border-green-200 hover:bg-green-50"
+                  onClick={handleCopyQuote}
+                >
+                  <Copy className="w-3 h-3 mr-1 text-green-600" /> Copy
+                </Button>
+              )}
+              {onDeleteQuote && (
+                <Button 
+                  size="sm" 
+                  variant="outline" 
+                  className="text-xs h-7 text-red-600 border-red-200 hover:bg-red-50"
+                  onClick={handleDeleteQuote}
+                >
+                  <Trash2 className="w-3 h-3 mr-1 text-red-600" /> Delete
+                </Button>
+              )}
             </div>
           )}
         </div>

@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Pencil, Trash2, ChevronDown, ChevronUp, ArrowUpDown, FileText } from "lucide-react";
+import { Pencil, Trash2, ChevronDown, ChevronUp, ArrowUpDown, FileText, Copy } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { useAgentMapping } from "@/hooks/useAgentMapping";
 import { supabase } from "@/integrations/supabase/client";
@@ -17,6 +17,7 @@ interface QuoteTableProps {
   onEditClick?: (quote: Quote) => void;
   onDeleteQuote?: (quoteId: string) => void;
   onUpdateQuote?: (quote: Quote) => void;
+  onCopyQuote?: (quote: Quote) => void;
 }
 
 type SortField = 'salesperson' | 'quoteNumber' | 'customerName' | 'status';
@@ -27,7 +28,8 @@ export const QuoteTable = ({
   clientInfos,
   onEditClick,
   onDeleteQuote,
-  onUpdateQuote
+  onUpdateQuote,
+  onCopyQuote
 }: QuoteTableProps) => {
   const { isAdmin } = useAuth();
   const { agentMapping } = useAgentMapping();
@@ -126,6 +128,12 @@ export const QuoteTable = ({
         description: "Failed to update quote status",
         variant: "destructive"
       });
+    }
+  };
+
+  const handleCopyQuote = (quote: Quote) => {
+    if (onCopyQuote) {
+      onCopyQuote(quote);
     }
   };
 
@@ -328,6 +336,17 @@ export const QuoteTable = ({
                     >
                       <FileText className="w-4 h-4" />
                     </Button>
+                    {isAdmin && onCopyQuote && (
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        className="h-8 w-8 p-0 text-gray-500 hover:text-green-600"
+                        onClick={() => handleCopyQuote(quote)}
+                        title="Copy Quote"
+                      >
+                        <Copy className="w-4 h-4" />
+                      </Button>
+                    )}
                     {isAdmin && onEditClick && (
                       <Button 
                         variant="ghost" 

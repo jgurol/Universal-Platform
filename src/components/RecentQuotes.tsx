@@ -40,6 +40,29 @@ export const RecentQuotes = ({
     setIsEditQuoteOpen(true);
   };
 
+  // Function to handle copying a quote - only for admins
+  const handleCopyQuote = (quote: Quote) => {
+    if (!isAdmin) return;
+    
+    // Create a new quote based on the existing one
+    const newQuote: Omit<Quote, "id"> = {
+      clientId: quote.clientId,
+      clientName: quote.clientName,
+      companyName: quote.companyName,
+      amount: quote.amount,
+      date: new Date().toISOString().split('T')[0], // Set to today's date
+      description: `Copy of ${quote.description || 'Quote'}`,
+      status: 'pending', // Reset status to pending
+      clientInfoId: quote.clientInfoId,
+      clientCompanyName: quote.clientCompanyName,
+      commissionOverride: quote.commissionOverride,
+      notes: quote.notes,
+      quoteItems: quote.quoteItems || []
+    };
+    
+    onAddQuote(newQuote);
+  };
+
   return (
     <>
       <Card className="bg-white shadow-lg border-0">
@@ -61,6 +84,7 @@ export const RecentQuotes = ({
               onEditClick={isAdmin ? handleEditClick : undefined}
               onDeleteQuote={onDeleteQuote}
               onUpdateQuote={onUpdateQuote}
+              onCopyQuote={isAdmin ? handleCopyQuote : undefined}
             />
           )}
         </CardContent>
