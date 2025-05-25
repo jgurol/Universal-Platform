@@ -1,4 +1,3 @@
-
 import jsPDF from 'jspdf';
 import { Quote, ClientInfo } from '@/pages/Index';
 import { supabase } from '@/integrations/supabase/client';
@@ -50,16 +49,16 @@ export const generateQuotePDF = async (quote: Quote, clientInfo?: ClientInfo, sa
     }
   }
   
-  // Adjust header positioning based on logo - reduced spacing
-  const headerYStart = Math.max(25, 15 + logoYOffset);
+  // Adjust header positioning based on logo - no extra spacing
+  const headerYStart = 15 + logoYOffset;
   
   // Document type in top right
   doc.setFontSize(14);
   doc.setTextColor(128, 128, 128); // Gray color
   doc.text('Agreement', 160, headerYStart);
   
-  // Company Information (left side) - Reduced spacing from logo
-  const companyInfoY = headerYStart + 10; // Reduced from 15 to 10
+  // Company Information (left side) - Start immediately after logo
+  const companyInfoY = headerYStart;
   doc.setFontSize(9);
   doc.setTextColor(0, 0, 0); // Black
   doc.setFont('helvetica', 'bold');
