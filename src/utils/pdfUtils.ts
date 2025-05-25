@@ -85,19 +85,37 @@ export const generateQuotePDF = (quote: Quote, clientInfo?: ClientInfo, salesper
     const parts = addressString.split(',').map(part => part.trim());
     console.log('Address parts:', parts);
     
+    // Look for common patterns to identify where the street address ends
     if (parts.length >= 3) {
-      // For addresses like "123 Main St Suite 100, Los Angeles, CA 90210"
-      // Keep everything before the first comma as the street address (including suite)
-      const streetAddress = parts[0]; // This includes suite numbers
-      const city = parts[1];
-      const stateZip = parts.slice(2).join(', '); // Join remaining parts with commas
+      // Check if second part looks like a suite/unit (starts with Suite, Unit, Apt, etc.)
+      const secondPart = parts[1];
+      const suitePattern = /^(suite|unit|apt|apartment|ste|floor|fl|#)\s/i;
       
-      console.log('Parsed address:', { streetAddress, city, stateZip });
-      
-      return {
-        street: streetAddress,
-        cityStateZip: `${city}, ${stateZip}`
-      };
+      if (suitePattern.test(secondPart)) {
+        // Second part is a suite/unit, combine with first part for street address
+        const streetAddress = `${parts[0]}, ${parts[1]}`;
+        const city = parts[2];
+        const stateZip = parts.slice(3).join(', ');
+        
+        console.log('Parsed address with suite:', { streetAddress, city, stateZip });
+        
+        return {
+          street: streetAddress,
+          cityStateZip: `${city}${stateZip ? ', ' + stateZip : ''}`
+        };
+      } else {
+        // Standard format: "Street, City, State Zip"
+        const streetAddress = parts[0];
+        const city = parts[1];
+        const stateZip = parts.slice(2).join(', ');
+        
+        console.log('Parsed address standard:', { streetAddress, city, stateZip });
+        
+        return {
+          street: streetAddress,
+          cityStateZip: `${city}, ${stateZip}`
+        };
+      }
     } else if (parts.length === 2) {
       // Fallback: "Street, City State"
       return {
