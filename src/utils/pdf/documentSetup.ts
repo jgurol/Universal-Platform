@@ -48,7 +48,7 @@ export const addAgreementDetailsBox = (doc: jsPDF, context: PDFGenerationContext
   const boxX = 135;
   const boxY = 40;
   const boxWidth = 60;
-  const boxHeight = 52;
+  const boxHeight = 36; // Reduced height for 4 lines
   
   // Gray background
   doc.setFillColor(230, 230, 230);
@@ -60,12 +60,11 @@ export const addAgreementDetailsBox = (doc: jsPDF, context: PDFGenerationContext
   doc.setFont('helvetica', 'bold');
   doc.setTextColor(0, 0, 0);
   
-  // Labels (left aligned)
+  // Labels (left aligned) - only 4 lines
   doc.text('Agreement', boxX + 3, boxY + 8);
   doc.text('Date:', boxX + 3, boxY + 18);
   doc.text('Expires', boxX + 3, boxY + 28);
-  doc.text('Account', boxX + 3, boxY + 38);
-  doc.text('Manager', boxX + 3, boxY + 45);
+  doc.text('Account Manager', boxX + 3, boxY + 38); // Combined on one line
   
   // Values (right aligned)
   doc.setFont('helvetica', 'normal');
@@ -92,7 +91,7 @@ export const addAgreementDetailsBox = (doc: jsPDF, context: PDFGenerationContext
   
   const managerName = context.salespersonName || 'N/A';
   const managerWidth = doc.getTextWidth(managerName);
-  doc.text(managerName, boxX + boxWidth - 3 - managerWidth, boxY + 45);
+  doc.text(managerName, boxX + boxWidth - 3 - managerWidth, boxY + 38);
 };
 
 export const addStatusIndicator = (doc: jsPDF, context: PDFGenerationContext): void => {
