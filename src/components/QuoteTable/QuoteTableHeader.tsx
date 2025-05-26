@@ -23,50 +23,50 @@ export const QuoteTableHeader = ({ sortField, sortDirection, onSort }: QuoteTabl
 
   return (
     <>
-      <th className="font-semibold text-left">
+      <th className="font-semibold text-center">
         <Button 
           variant="ghost" 
-          className="h-auto p-0 font-semibold text-left hover:bg-transparent flex items-center"
+          className="h-auto p-0 font-semibold text-center hover:bg-transparent flex items-center justify-center w-full"
           onClick={() => onSort('salesperson')}
         >
           Salesperson
           {getSortIcon('salesperson')}
         </Button>
       </th>
-      <th className="font-semibold text-left">
+      <th className="font-semibold text-center">
         <Button 
           variant="ghost" 
-          className="h-auto p-0 font-semibold text-left hover:bg-transparent flex items-center"
+          className="h-auto p-0 font-semibold text-center hover:bg-transparent flex items-center justify-center w-full"
           onClick={() => onSort('quoteNumber')}
         >
           Quote Number
           {getSortIcon('quoteNumber')}
         </Button>
       </th>
-      <th className="font-semibold text-left">
+      <th className="font-semibold text-center">
         <Button 
           variant="ghost" 
-          className="h-auto p-0 font-semibold text-left hover:bg-transparent flex items-center"
+          className="h-auto p-0 font-semibold text-center hover:bg-transparent flex items-center justify-center w-full"
           onClick={() => onSort('customerName')}
         >
           Customer Name
           {getSortIcon('customerName')}
         </Button>
       </th>
-      <th className="font-semibold text-left">Quote Name</th>
-      <th className="font-semibold text-left">NRC</th>
-      <th className="font-semibold text-left">MRC</th>
-      <th className="font-semibold text-left">
+      <th className="font-semibold text-center">Quote Name</th>
+      <th className="font-semibold text-center">NRC</th>
+      <th className="font-semibold text-center">MRC</th>
+      <th className="font-semibold text-center">
         <Button 
           variant="ghost" 
-          className="h-auto p-0 font-semibold text-left hover:bg-transparent flex items-center"
+          className="h-auto p-0 font-semibold text-center hover:bg-transparent flex items-center justify-center w-full"
           onClick={() => onSort('status')}
         >
           Status
           {getSortIcon('status')}
         </Button>
       </th>
-      <th className="font-semibold text-left">Actions</th>
+      <th className="font-semibold text-center">Actions</th>
     </>
   );
 };
