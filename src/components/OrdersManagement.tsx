@@ -107,14 +107,12 @@ export const OrdersManagement = () => {
             total_price,
             charge_type,
             address_id,
-            custom_name,
-            custom_description,
             items (
               id,
               name,
               description,
               sku,
-              unit_price
+              price
             ),
             client_addresses (
               id,
@@ -132,7 +130,7 @@ export const OrdersManagement = () => {
 
       // Fetch client info
       const { data: clientInfoData } = await supabase
-        .from('client_infos')
+        .from('client_info')
         .select('*')
         .eq('id', quoteData.client_info_id)
         .single();
@@ -140,15 +138,15 @@ export const OrdersManagement = () => {
       // Transform the data to match Quote interface
       const quote: Quote = {
         id: quoteData.id,
-        clientId: quoteData.user_id,
-        clientName: quoteData.client_name || '',
-        companyName: quoteData.company_name || '',
+        clientId: quoteData.client_id || '',
+        clientName: acceptance.client_name,
+        companyName: acceptance.client_name,
         amount: quoteData.amount || 0,
-        date: quoteData.created_at,
+        date: quoteData.created_at || '',
         description: quoteData.description || '',
-        quoteNumber: quoteData.quote_number,
+        quoteNumber: quoteData.quote_number || '',
         status: 'approved', // Since this is an accepted quote
-        clientInfoId: quoteData.client_info_id,
+        clientInfoId: quoteData.client_info_id || '',
         quoteItems: quoteData.quote_items?.map((item: any) => ({
           id: item.id,
           item_id: item.item_id,
@@ -157,15 +155,15 @@ export const OrdersManagement = () => {
           total_price: item.total_price,
           charge_type: item.charge_type,
           address_id: item.address_id,
-          name: item.custom_name || item.items?.name || '',
-          description: item.custom_description || item.items?.description || '',
+          name: item.items?.name || '',
+          description: item.items?.description || '',
           item: item.items,
           address: item.client_addresses
         })) || [],
-        billingAddress: quoteData.billing_address,
-        serviceAddress: quoteData.service_address,
-        expiresAt: quoteData.expires_at,
-        notes: quoteData.notes
+        billingAddress: quoteData.billing_address || '',
+        serviceAddress: quoteData.service_address || '',
+        expiresAt: quoteData.expires_at || '',
+        notes: quoteData.notes || ''
       };
 
       const clientInfo: ClientInfo | undefined = clientInfoData ? {
