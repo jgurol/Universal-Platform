@@ -2,7 +2,7 @@
 import { Button } from "@/components/ui/button";
 import { ArrowUpDown, ChevronUp, ChevronDown } from "lucide-react";
 
-type SortField = 'salesperson' | 'quoteNumber' | 'customerName' | 'status';
+type SortField = 'salesperson' | 'quoteNumber' | 'customerName' | 'status' | 'dateApproved';
 type SortDirection = 'asc' | 'desc';
 
 interface QuoteTableHeaderProps {
@@ -64,6 +64,16 @@ export const QuoteTableHeader = ({ sortField, sortDirection, onSort }: QuoteTabl
         >
           Status
           {getSortIcon('status')}
+        </Button>
+      </th>
+      <th className="font-semibold text-center">
+        <Button 
+          variant="ghost" 
+          className="h-auto p-0 font-semibold text-center hover:bg-transparent flex items-center justify-center w-full"
+          onClick={() => onSort('dateApproved')}
+        >
+          Date Approved
+          {getSortIcon('dateApproved')}
         </Button>
       </th>
       <th className="font-semibold text-center">Actions</th>
