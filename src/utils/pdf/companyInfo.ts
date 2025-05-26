@@ -11,8 +11,8 @@ export const addCompanyInfo = (doc: jsPDF, context: PDFGenerationContext): void 
   const city = addressParts[1] || '';
   const stateZip = addressParts.slice(2).join(', ') || '';
   
-  // Company Information (first column, right-aligned with logo area)
-  const companyInfoX = 135; // Aligned with agreement box
+  // Company Information (first column)
+  const companyInfoX = 20; // Move to first column
   const companyInfoY = 40;
   doc.setFontSize(10);
   doc.setTextColor(0, 0, 0);
