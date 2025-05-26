@@ -204,7 +204,7 @@ export const CircuitTrackingManagement = () => {
                     {(provided) => (
                       <div {...provided.droppableProps} ref={provided.innerRef} className="space-y-6">
                         {sortedGroupEntries.map(([groupKey, trackings], index) => (
-                          <Draggable key={groupKey} draggableId={groupKey} index={index}>
+                          <Draggable key={groupKey as string} draggableId={groupKey as string} index={index}>
                             {(provided) => (
                               <div
                                 ref={provided.innerRef}
@@ -217,7 +217,7 @@ export const CircuitTrackingManagement = () => {
                                 >
                                   <GripVertical className="w-4 h-4 text-gray-400" />
                                   <h3 className="font-semibold">
-                                    Stage: {groupKey} ({trackings.length} item{trackings.length > 1 ? 's' : ''})
+                                    Stage: {groupKey as string} ({(trackings as any[]).length} item{(trackings as any[]).length > 1 ? 's' : ''})
                                   </h3>
                                 </div>
                                 
@@ -232,7 +232,7 @@ export const CircuitTrackingManagement = () => {
                                     </TableRow>
                                   </TableHeader>
                                   <TableBody>
-                                    {trackings.map((circuit) => {
+                                    {(trackings as any[]).map((circuit) => {
                                       const progress = getProgressFromStage(circuit.stage || 'Ready to Order');
                                       const progressBarClass = getProgressBarClassName(circuit.stage || 'Ready to Order');
                                       return (

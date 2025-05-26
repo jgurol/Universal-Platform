@@ -10,6 +10,7 @@ import { QuoteTable } from "@/components/QuoteTable";
 import { QuoteEmptyState } from "@/components/QuoteEmptyState";
 import { useAuth } from "@/context/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
+import { Checkbox } from "@/components/ui/checkbox";
 
 interface RecentQuotesProps {
   quotes: Quote[];
@@ -34,6 +35,7 @@ export const RecentQuotes = ({
   const [isEditQuoteOpen, setIsEditQuoteOpen] = useState(false);
   const [currentQuote, setCurrentQuote] = useState<Quote | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
+  const [showArchived, setShowArchived] = useState(false);
   const { isAdmin, user } = useAuth();
 
   // Function to handle editing a quote - only for admins
@@ -106,8 +108,13 @@ export const RecentQuotes = ({
     onAddQuote(newQuote);
   };
 
-  // Function to filter quotes based on search term
+  // Filter quotes based on search term and archived status
   const filteredQuotes = quotes.filter(quote => {
+    // Filter by archived status
+    const archivedMatch = showArchived ? (quote as any).archived === true : !(quote as any).archived;
+    
+    if (!archivedMatch) return false;
+    
     if (!searchTerm) return true;
     
     const searchLower = searchTerm.toLowerCase();
@@ -142,6 +149,19 @@ export const RecentQuotes = ({
             searchTerm={searchTerm}
             onSearchChange={setSearchTerm}
           />
+          <div className="flex items-center space-x-2">
+            <Checkbox
+              id="show-archived"
+              checked={showArchived}
+              onCheckedChange={setShowArchived}
+            />
+            <label
+              htmlFor="show-archived"
+              className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+            >
+              Show archived quotes
+            </label>
+          </div>
         </CardHeader>
         <CardContent className="p-0">
           {!filteredQuotes || filteredQuotes.length === 0 ? (
@@ -156,6 +176,10 @@ export const RecentQuotes = ({
                   >
                     Clear search
                   </Button>
+                </div>
+              ) : showArchived ? (
+                <div className="text-center py-8">
+                  <p className="text-gray-500">No archived quotes found.</p>
                 </div>
               ) : (
                 <QuoteEmptyState associatedAgentId={associatedAgentId} />

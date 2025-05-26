@@ -657,6 +657,7 @@ export type Database = {
           accepted_at: string | null
           accepted_by: string | null
           amount: number
+          archived: boolean
           billing_address: string | null
           client_id: string | null
           client_info_id: string | null
@@ -687,6 +688,7 @@ export type Database = {
           accepted_at?: string | null
           accepted_by?: string | null
           amount: number
+          archived?: boolean
           billing_address?: string | null
           client_id?: string | null
           client_info_id?: string | null
@@ -717,6 +719,7 @@ export type Database = {
           accepted_at?: string | null
           accepted_by?: string | null
           amount?: number
+          archived?: boolean
           billing_address?: string | null
           client_id?: string | null
           client_info_id?: string | null

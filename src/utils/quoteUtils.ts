@@ -13,7 +13,7 @@ export const mapQuoteData = (
   const client = clients.find(c => c.id === quoteData.client_id);
   const clientInfo = clientInfos.find(ci => ci.id === quoteData.client_info_id);
   
-  const mapped: Quote = {
+  const mapped: Quote & { archived?: boolean } = {
     id: quoteData.id,
     clientId: quoteData.client_id || "",
     clientName: client?.name || "Unknown Client",
@@ -37,7 +37,8 @@ export const mapQuoteData = (
     templateId: quoteData.template_id,
     acceptanceStatus: quoteData.acceptance_status,
     acceptedAt: quoteData.accepted_at,
-    acceptedBy: quoteData.accepted_by
+    acceptedBy: quoteData.accepted_by,
+    archived: quoteData.archived || false
   };
   
   console.log(`[mapQuoteData] Mapped quote ${quoteData.id} final description: "${mapped.description}"`);
