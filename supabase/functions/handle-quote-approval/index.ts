@@ -60,7 +60,7 @@ serve(async (req) => {
       orderNumber = existingOrders[0].order_number
       console.log('Using existing order:', orderNumber)
       
-      // Just update the quote status since order already exists
+      // Update the quote status to approved (safe to do multiple times)
       console.log('Updating quote status to approved...')
       const { error: quoteUpdateError } = await supabaseServiceRole
         .from('quotes')
@@ -81,25 +81,7 @@ serve(async (req) => {
       // No existing order, need to create one
       console.log('No existing order found, creating new order...')
       
-      // First, update the quote status to approved
-      console.log('Updating quote status to approved...')
-      const { error: quoteUpdateError } = await supabaseServiceRole
-        .from('quotes')
-        .update({
-          status: 'approved',
-          acceptance_status: 'accepted',
-          accepted_at: new Date().toISOString()
-        })
-        .eq('id', quoteId)
-
-      if (quoteUpdateError) {
-        console.error('Error updating quote status:', quoteUpdateError)
-        throw quoteUpdateError
-      }
-
-      console.log('Quote status updated to approved successfully')
-
-      // Get the quote data
+      // Get the quote data first
       const { data: quote, error: quoteError } = await supabaseServiceRole
         .from('quotes')
         .select('*')
@@ -141,6 +123,24 @@ serve(async (req) => {
       orderNumber = nextOrderNumber.toString()
       console.log('Generated order number:', orderNumber)
 
+      // Update quote status first, then create order
+      console.log('Updating quote status to approved...')
+      const { error: quoteUpdateError } = await supabaseServiceRole
+        .from('quotes')
+        .update({
+          status: 'approved',
+          acceptance_status: 'accepted',
+          accepted_at: new Date().toISOString()
+        })
+        .eq('id', quoteId)
+
+      if (quoteUpdateError) {
+        console.error('Error updating quote status:', quoteUpdateError)
+        throw quoteUpdateError
+      }
+
+      console.log('Quote status updated to approved successfully')
+
       // Create new order using service role client
       console.log('About to create order with data:', {
         quote_id: quoteId,
@@ -173,17 +173,42 @@ serve(async (req) => {
 
       if (orderError) {
         console.error('Error creating order:', orderError)
-        console.error('Order error details:', {
-          code: orderError.code,
-          message: orderError.message,
-          details: orderError.details,
-          hint: orderError.hint
-        })
-        throw orderError
-      }
+        
+        // If we get a duplicate key error, check if order was created by another process
+        if (orderError.code === '23505' && orderError.message?.includes('orders_quote_id_key')) {
+          console.log('Duplicate order detected, checking for existing order...')
+          
+          const { data: existingOrder, error: existingOrderError } = await supabaseServiceRole
+            .from('orders')
+            .select('id, order_number')
+            .eq('quote_id', quoteId)
+            .single()
 
-      orderId = newOrder.id
-      console.log('Created new order with ID:', orderId)
+          if (existingOrderError) {
+            console.error('Error fetching existing order after duplicate:', existingOrderError)
+            throw orderError // Throw original error
+          }
+
+          if (existingOrder) {
+            console.log('Found existing order after duplicate error:', existingOrder.order_number)
+            orderId = existingOrder.id
+            orderNumber = existingOrder.order_number
+          } else {
+            throw orderError // Throw original error if no existing order found
+          }
+        } else {
+          console.error('Order error details:', {
+            code: orderError.code,
+            message: orderError.message,
+            details: orderError.details,
+            hint: orderError.hint
+          })
+          throw orderError
+        }
+      } else {
+        orderId = newOrder.id
+        console.log('Created new order with ID:', orderId)
+      }
     }
 
     // Get quote items with circuit-related categories
@@ -274,7 +299,7 @@ serve(async (req) => {
         success: true,
         orderIds: [orderId],
         orderNumbers: [orderNumber],
-        message: existingOrders && existingOrders.length > 0 ? 'Orders already exist for this quote' : 'Order created successfully',
+        message: existingOrders && existingOrders.length > 0 ? 'Order already exists for this quote' : 'Order created successfully',
         ordersCount: 1,
         circuitTrackingCreated: trackingRecords.length
       }),
