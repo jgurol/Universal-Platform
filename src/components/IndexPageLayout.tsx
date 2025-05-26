@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Header } from "@/components/Header";
 import { ProgramsGrid } from "@/components/ProgramsGrid";
@@ -15,6 +14,7 @@ interface IndexPageLayoutProps {
   onAddQuote: (quote: Omit<Quote, "id">) => void;
   onUpdateQuote: (quote: Quote) => void;
   onDeleteQuote: (quoteId: string) => void;
+  onUnarchiveQuote: (quoteId: string) => void;
   onFetchClients: () => Promise<void>;
 }
 
@@ -27,6 +27,7 @@ export const IndexPageLayout = ({
   onAddQuote,
   onUpdateQuote,
   onDeleteQuote,
+  onUnarchiveQuote,
   onFetchClients
 }: IndexPageLayoutProps) => {
   const [isAddClientOpen, setIsAddClientOpen] = useState(false);
