@@ -23,6 +23,7 @@ export interface CircuitTracking {
   quote_item_id?: string;
   circuit_type: string;
   status: string;
+  stage?: string;
   progress_percentage: number;
   estimated_completion_date?: string;
   actual_completion_date?: string;

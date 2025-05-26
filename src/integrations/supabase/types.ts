@@ -144,6 +144,7 @@ export type Database = {
           order_id: string
           progress_percentage: number | null
           quote_item_id: string | null
+          stage: string | null
           status: string
           updated_at: string
         }
@@ -159,6 +160,7 @@ export type Database = {
           order_id: string
           progress_percentage?: number | null
           quote_item_id?: string | null
+          stage?: string | null
           status?: string
           updated_at?: string
         }
@@ -174,6 +176,7 @@ export type Database = {
           order_id?: string
           progress_percentage?: number | null
           quote_item_id?: string | null
+          stage?: string | null
           status?: string
           updated_at?: string
         }

@@ -1,5 +1,5 @@
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -7,13 +7,35 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useCircuitTracking } from "@/hooks/useCircuitTracking";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { Plus, Zap } from "lucide-react";
 
+const STAGES = [
+  'Hold',
+  'Ready to Order',
+  'Ordered',
+  'Order Acknowledged',
+  'Site Survey',
+  'Build in Progress',
+  "Jepp'd",
+  'FOC',
+  'Pending Install',
+  'IP Assigned',
+  'Router Install',
+  'Setup Autopay',
+  'Add to Circuit Management',
+  'Demark Extension',
+  'Activation',
+  'Documentation',
+  'Ready for Billing',
+  'Billed'
+];
+
 export const CircuitTrackingManagement = () => {
-  const { circuitTrackings, isLoading, updateCircuitProgress, addMilestone } = useCircuitTracking();
+  const { circuitTrackings, isLoading, updateCircuitStage, addMilestone } = useCircuitTracking();
   const { toast } = useToast();
   const [selectedCircuit, setSelectedCircuit] = useState<string | null>(null);
   const [newMilestone, setNewMilestone] = useState({
@@ -23,17 +45,17 @@ export const CircuitTrackingManagement = () => {
     status: 'pending' as const
   });
 
-  const handleProgressUpdate = async (circuitId: string, newProgress: number) => {
+  const handleStageUpdate = async (circuitId: string, newStage: string) => {
     try {
-      await updateCircuitProgress(circuitId, newProgress);
+      await updateCircuitStage(circuitId, newStage);
       toast({
-        title: "Progress Updated",
-        description: "Circuit progress has been updated successfully.",
+        title: "Stage Updated",
+        description: "Circuit stage has been updated successfully.",
       });
     } catch (error) {
       toast({
         title: "Error",
-        description: "Failed to update progress. Please try again.",
+        description: "Failed to update stage. Please try again.",
         variant: "destructive",
       });
     }
@@ -141,8 +163,8 @@ export const CircuitTrackingManagement = () => {
                           <TableHead className="w-[80px]">Qty</TableHead>
                           <TableHead className="w-[100px]">Unit Price</TableHead>
                           <TableHead className="w-[100px]">Status</TableHead>
-                          <TableHead className="w-[120px]">Progress</TableHead>
-                          <TableHead className="w-[150px]">Actions</TableHead>
+                          <TableHead className="w-[150px]">Stage</TableHead>
+                          <TableHead className="w-[100px]">Actions</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
@@ -166,80 +188,72 @@ export const CircuitTrackingManagement = () => {
                               </Badge>
                             </TableCell>
                             <TableCell>
-                              <div className="space-y-1">
-                                <Progress value={circuit.progress_percentage} className="h-2" />
-                                <span className="text-xs text-gray-500">{circuit.progress_percentage}%</span>
-                              </div>
+                              <Select
+                                value={circuit.stage || 'Hold'}
+                                onValueChange={(value) => handleStageUpdate(circuit.id, value)}
+                              >
+                                <SelectTrigger className="w-full">
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {STAGES.map((stage) => (
+                                    <SelectItem key={stage} value={stage}>
+                                      {stage}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
                             </TableCell>
                             <TableCell>
-                              <div className="flex gap-1">
-                                <Input
-                                  type="number"
-                                  min="0"
-                                  max="100"
-                                  placeholder="%"
-                                  className="w-16 h-8 text-xs"
-                                  onKeyPress={(e) => {
-                                    if (e.key === 'Enter') {
-                                      const value = parseInt((e.target as HTMLInputElement).value);
-                                      if (value >= 0 && value <= 100) {
-                                        handleProgressUpdate(circuit.id, value);
-                                        (e.target as HTMLInputElement).value = '';
-                                      }
-                                    }
-                                  }}
-                                />
-                                
-                                <Dialog>
-                                  <DialogTrigger asChild>
-                                    <Button 
-                                      variant="outline" 
-                                      size="sm"
-                                      className="h-8 px-2"
-                                      onClick={() => setSelectedCircuit(circuit.id)}
-                                    >
-                                      <Plus className="w-3 h-3" />
-                                    </Button>
-                                  </DialogTrigger>
-                                  <DialogContent>
-                                    <DialogHeader>
-                                      <DialogTitle>Add Milestone</DialogTitle>
-                                    </DialogHeader>
-                                    <div className="space-y-4">
-                                      <div>
-                                        <Label htmlFor="milestone-name">Milestone Name</Label>
-                                        <Input
-                                          id="milestone-name"
-                                          value={newMilestone.milestone_name}
-                                          onChange={(e) => setNewMilestone(prev => ({ ...prev, milestone_name: e.target.value }))}
-                                          placeholder="e.g., Site Survey Completed"
-                                        />
-                                      </div>
-                                      <div>
-                                        <Label htmlFor="milestone-description">Description</Label>
-                                        <Textarea
-                                          id="milestone-description"
-                                          value={newMilestone.milestone_description}
-                                          onChange={(e) => setNewMilestone(prev => ({ ...prev, milestone_description: e.target.value }))}
-                                          placeholder="Optional description"
-                                        />
-                                      </div>
-                                      <div>
-                                        <Label htmlFor="target-date">Target Date</Label>
-                                        <Input
-                                          id="target-date"
-                                          type="date"
-                                          value={newMilestone.target_date}
-                                          onChange={(e) => setNewMilestone(prev => ({ ...prev, target_date: e.target.value }))}
-                                        />
-                                      </div>
-                                      <Button onClick={handleAddMilestone} className="w-full">
-                                        Add Milestone
-                                      </Button>
+                              <Dialog>
+                                <DialogTrigger asChild>
+                                  <Button 
+                                    variant="outline" 
+                                    size="sm"
+                                    className="h-8 px-2"
+                                    onClick={() => setSelectedCircuit(circuit.id)}
+                                  >
+                                    <Plus className="w-3 h-3" />
+                                  </Button>
+                                </DialogTrigger>
+                                <DialogContent>
+                                  <DialogHeader>
+                                    <DialogTitle>Add Milestone</DialogTitle>
+                                  </DialogHeader>
+                                  <div className="space-y-4">
+                                    <div>
+                                      <Label htmlFor="milestone-name">Milestone Name</Label>
+                                      <Input
+                                        id="milestone-name"
+                                        value={newMilestone.milestone_name}
+                                        onChange={(e) => setNewMilestone(prev => ({ ...prev, milestone_name: e.target.value }))}
+                                        placeholder="e.g., Site Survey Completed"
+                                      />
                                     </div>
-                                  </DialogContent>
-                                </Dialog>
-                              </div>
+                                    <div>
+                                      <Label htmlFor="milestone-description">Description</Label>
+                                      <Textarea
+                                        id="milestone-description"
+                                        value={newMilestone.milestone_description}
+                                        onChange={(e) => setNewMilestone(prev => ({ ...prev, milestone_description: e.target.value }))}
+                                        placeholder="Optional description"
+                                      />
+                                    </div>
+                                    <div>
+                                      <Label htmlFor="target-date">Target Date</Label>
+                                      <Input
+                                        id="target-date"
+                                        type="date"
+                                        value={newMilestone.target_date}
+                                        onChange={(e) => setNewMilestone(prev => ({ ...prev, target_date: e.target.value }))}
+                                      />
+                                    </div>
+                                    <Button onClick={handleAddMilestone} className="w-full">
+                                      Add Milestone
+                                    </Button>
+                                  </div>
+                                </DialogContent>
+                              </Dialog>
                             </TableCell>
                           </TableRow>
                         ))}

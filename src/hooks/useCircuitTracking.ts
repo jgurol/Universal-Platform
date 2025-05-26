@@ -156,6 +156,7 @@ export const useCircuitTracking = () => {
                   quote_item_id: quoteItem.id,
                   circuit_type: quoteItem.item?.category?.name || 'Circuit',
                   status: 'ordered',
+                  stage: 'Hold',
                   progress_percentage: 0,
                   created_at: order.created_at,
                   updated_at: order.updated_at,
@@ -191,6 +192,50 @@ export const useCircuitTracking = () => {
       console.error('Error fetching circuit trackings:', error);
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const updateCircuitStage = async (id: string, stage: string) => {
+    try {
+      // Handle virtual tracking items - create actual tracking record first
+      if (id.startsWith('virtual-')) {
+        const quoteItemId = id.replace('virtual-', '');
+        const virtualItem = circuitTrackings.find(item => item.id === id);
+        
+        if (virtualItem) {
+          const { data: newTracking, error: createError } = await supabase
+            .from('circuit_tracking')
+            .insert({
+              order_id: virtualItem.order_id,
+              quote_item_id: quoteItemId,
+              circuit_type: virtualItem.circuit_type,
+              status: 'in_progress',
+              stage: stage,
+              progress_percentage: 0,
+              item_name: virtualItem.item_name,
+              item_description: virtualItem.item_description
+            })
+            .select()
+            .single();
+
+          if (createError) throw createError;
+          
+          await fetchCircuitTrackings();
+          return;
+        }
+      }
+
+      // Update existing tracking record
+      const { error } = await supabase
+        .from('circuit_tracking')
+        .update({ stage })
+        .eq('id', id);
+
+      if (error) throw error;
+      await fetchCircuitTrackings();
+    } catch (error) {
+      console.error('Error updating circuit stage:', error);
+      throw error;
     }
   };
 
@@ -301,7 +346,8 @@ export const useCircuitTracking = () => {
     circuitTrackings,
     isLoading,
     fetchCircuitTrackings,
-    updateCircuitProgress,
+    updateCircuitStage,
+    updateCircuitProgress: updateCircuitStage, // Keep backward compatibility
     addMilestone
   };
 };
