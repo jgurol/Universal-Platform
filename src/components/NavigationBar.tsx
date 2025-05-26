@@ -65,7 +65,7 @@ export function NavigationBar() {
                         Manage users, set permissions, and control access
                       </ListItem>
                       
-                      <ListItem href="/settings/system" title="System Configuration" Icon={Settings}>
+                      <ListItem href="/system-settings" title="System Configuration" Icon={Settings}>
                         Configure global system settings and defaults
                       </ListItem>
                     </>
