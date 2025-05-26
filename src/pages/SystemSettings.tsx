@@ -14,6 +14,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { RichTextEditor } from "@/components/RichTextEditor";
 import { Checkbox } from "@/components/ui/checkbox";
+import { NavigationBar } from "@/components/NavigationBar";
 import type { Database } from "@/integrations/supabase/types";
 
 type QuoteTemplate = Database['public']['Tables']['quote_templates']['Row'];
@@ -408,409 +409,415 @@ export default function SystemSettings() {
 
   if (!user) {
     return (
-      <div className="container mx-auto py-8">
-        <div className="text-center">
-          <p>Please log in to access system settings.</p>
+      <div>
+        <NavigationBar />
+        <div className="container mx-auto py-8">
+          <div className="text-center">
+            <p>Please log in to access system settings.</p>
+          </div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="container mx-auto py-8 max-w-4xl">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">System Configuration</h1>
-        <p className="text-gray-600">Configure global system settings and defaults</p>
-      </div>
+    <div>
+      <NavigationBar />
+      <div className="container mx-auto py-8 max-w-4xl">
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">System Configuration</h1>
+          <p className="text-gray-600">Configure global system settings and defaults</p>
+        </div>
 
-      <Tabs defaultValue="general" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-4">
-          <TabsTrigger value="general">General</TabsTrigger>
-          <TabsTrigger value="datetime">Date & Time</TabsTrigger>
-          <TabsTrigger value="quotes">Quotes</TabsTrigger>
-          <TabsTrigger value="security">Security</TabsTrigger>
-        </TabsList>
+        <Tabs defaultValue="general" className="space-y-6">
+          <TabsList className="grid w-full grid-cols-4">
+            <TabsTrigger value="general">General</TabsTrigger>
+            <TabsTrigger value="datetime">Date & Time</TabsTrigger>
+            <TabsTrigger value="quotes">Quotes</TabsTrigger>
+            <TabsTrigger value="security">Security</TabsTrigger>
+          </TabsList>
 
-        <TabsContent value="general">
-          <div className="space-y-6">
+          <TabsContent value="general">
+            <div className="space-y-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Settings className="h-5 w-5" />
+                    General Settings
+                  </CardTitle>
+                  <CardDescription>
+                    Configure basic system-wide settings
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <form onSubmit={handleUpdateSettings} className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="companyName">Company Name</Label>
+                      <Input
+                        id="companyName"
+                        value={settings.companyName}
+                        onChange={(e) => setSettings(prev => ({ ...prev, companyName: e.target.value }))}
+                        placeholder="Enter company name"
+                      />
+                    </div>
+
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id="showCompanyNameOnPDF"
+                        checked={settings.showCompanyNameOnPDF}
+                        onCheckedChange={(checked) => setSettings(prev => ({ ...prev, showCompanyNameOnPDF: checked as boolean }))}
+                      />
+                      <Label htmlFor="showCompanyNameOnPDF">Display company name on PDF quotes</Label>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="businessAddress">Business Address</Label>
+                      <Input
+                        id="businessAddress"
+                        value={settings.businessAddress}
+                        onChange={(e) => setSettings(prev => ({ ...prev, businessAddress: e.target.value }))}
+                        placeholder="Enter complete business address"
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="businessPhone">Business Phone</Label>
+                        <Input
+                          id="businessPhone"
+                          value={settings.businessPhone}
+                          onChange={(e) => setSettings(prev => ({ ...prev, businessPhone: e.target.value }))}
+                          placeholder="Enter business phone number"
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="businessFax">Business Fax</Label>
+                        <Input
+                          id="businessFax"
+                          value={settings.businessFax}
+                          onChange={(e) => setSettings(prev => ({ ...prev, businessFax: e.target.value }))}
+                          placeholder="Enter business fax number"
+                        />
+                      </div>
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Label htmlFor="supportEmail">Support Email</Label>
+                      <Input
+                        id="supportEmail"
+                        type="email"
+                        value={settings.supportEmail}
+                        onChange={(e) => setSettings(prev => ({ ...prev, supportEmail: e.target.value }))}
+                        placeholder="Enter support email address"
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="defaultCommissionRate">Default Commission Rate (%)</Label>
+                      <Input
+                        id="defaultCommissionRate"
+                        type="number"
+                        min="0"
+                        max="100"
+                        step="0.1"
+                        value={settings.defaultCommissionRate}
+                        onChange={(e) => setSettings(prev => ({ ...prev, defaultCommissionRate: e.target.value }))}
+                        placeholder="Enter default commission rate"
+                      />
+                    </div>
+
+                    <Button type="submit" disabled={loading}>
+                      {loading ? "Saving..." : "Save Settings"}
+                    </Button>
+                  </form>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Upload className="h-5 w-5" />
+                    Company Logo
+                  </CardTitle>
+                  <CardDescription>
+                    Upload a company logo to be displayed on quote PDFs
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {logoUrl ? (
+                    <div className="space-y-3">
+                      <div className="flex items-center gap-4">
+                        <img src={logoUrl} alt="Company Logo" className="h-16 w-auto object-contain border rounded" />
+                        <div className="flex flex-col gap-2">
+                          <p className="text-sm text-gray-600">Current logo</p>
+                          <Button variant="outline" size="sm" onClick={handleRemoveLogo}>
+                            <X className="h-4 w-4 mr-2" />
+                            Remove Logo
+                          </Button>
+                        </div>
+                      </div>
+                      <Separator />
+                    </div>
+                  ) : null}
+                  
+                  <div className="space-y-3">
+                    <Label htmlFor="logoUpload">Upload New Logo</Label>
+                    <Input
+                      id="logoUpload"
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) => setLogoFile(e.target.files?.[0] || null)}
+                      className="file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                    />
+                    <p className="text-xs text-gray-500">
+                      Recommended: PNG or JPG format, max 2MB. Logo will be displayed in the top-left corner of quote PDFs.
+                    </p>
+                    <Button onClick={handleLogoUpload} disabled={loading || !logoFile}>
+                      <Upload className="h-4 w-4 mr-2" />
+                      {loading ? "Uploading..." : "Upload Logo"}
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="datetime">
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <Settings className="h-5 w-5" />
-                  General Settings
+                  <Clock className="h-5 w-5" />
+                  Date & Time Settings
                 </CardTitle>
                 <CardDescription>
-                  Configure basic system-wide settings
+                  Configure timezone and date handling preferences
                 </CardDescription>
               </CardHeader>
               <CardContent>
                 <form onSubmit={handleUpdateSettings} className="space-y-4">
                   <div className="space-y-2">
-                    <Label htmlFor="companyName">Company Name</Label>
-                    <Input
-                      id="companyName"
-                      value={settings.companyName}
-                      onChange={(e) => setSettings(prev => ({ ...prev, companyName: e.target.value }))}
-                      placeholder="Enter company name"
-                    />
-                  </div>
-
-                  <div className="flex items-center space-x-2">
-                    <Checkbox
-                      id="showCompanyNameOnPDF"
-                      checked={settings.showCompanyNameOnPDF}
-                      onCheckedChange={(checked) => setSettings(prev => ({ ...prev, showCompanyNameOnPDF: checked as boolean }))}
-                    />
-                    <Label htmlFor="showCompanyNameOnPDF">Display company name on PDF quotes</Label>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="businessAddress">Business Address</Label>
-                    <Input
-                      id="businessAddress"
-                      value={settings.businessAddress}
-                      onChange={(e) => setSettings(prev => ({ ...prev, businessAddress: e.target.value }))}
-                      placeholder="Enter complete business address"
-                    />
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="businessPhone">Business Phone</Label>
-                      <Input
-                        id="businessPhone"
-                        value={settings.businessPhone}
-                        onChange={(e) => setSettings(prev => ({ ...prev, businessPhone: e.target.value }))}
-                        placeholder="Enter business phone number"
-                      />
+                    <Label htmlFor="timezone">Application Timezone</Label>
+                    <Select 
+                      value={settings.timezone} 
+                      onValueChange={(value) => setSettings({ ...settings, timezone: value })}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select timezone" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {timezones.map((tz) => (
+                          <SelectItem key={tz.value} value={tz.value}>
+                            {tz.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <div className="text-xs text-gray-500">
+                      This setting affects how dates are displayed and processed throughout the application.
+                      Current setting: {settings.timezone}
                     </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="businessFax">Business Fax</Label>
-                      <Input
-                        id="businessFax"
-                        value={settings.businessFax}
-                        onChange={(e) => setSettings(prev => ({ ...prev, businessFax: e.target.value }))}
-                        placeholder="Enter business fax number"
-                      />
-                    </div>
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor="supportEmail">Support Email</Label>
-                    <Input
-                      id="supportEmail"
-                      type="email"
-                      value={settings.supportEmail}
-                      onChange={(e) => setSettings(prev => ({ ...prev, supportEmail: e.target.value }))}
-                      placeholder="Enter support email address"
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="defaultCommissionRate">Default Commission Rate (%)</Label>
-                    <Input
-                      id="defaultCommissionRate"
-                      type="number"
-                      min="0"
-                      max="100"
-                      step="0.1"
-                      value={settings.defaultCommissionRate}
-                      onChange={(e) => setSettings(prev => ({ ...prev, defaultCommissionRate: e.target.value }))}
-                      placeholder="Enter default commission rate"
-                    />
                   </div>
 
                   <Button type="submit" disabled={loading}>
-                    {loading ? "Saving..." : "Save Settings"}
+                    {loading ? "Updating..." : "Update Timezone Settings"}
                   </Button>
                 </form>
               </CardContent>
             </Card>
+          </TabsContent>
 
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Upload className="h-5 w-5" />
-                  Company Logo
-                </CardTitle>
-                <CardDescription>
-                  Upload a company logo to be displayed on quote PDFs
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {logoUrl ? (
-                  <div className="space-y-3">
-                    <div className="flex items-center gap-4">
-                      <img src={logoUrl} alt="Company Logo" className="h-16 w-auto object-contain border rounded" />
-                      <div className="flex flex-col gap-2">
-                        <p className="text-sm text-gray-600">Current logo</p>
-                        <Button variant="outline" size="sm" onClick={handleRemoveLogo}>
-                          <X className="h-4 w-4 mr-2" />
-                          Remove Logo
-                        </Button>
-                      </div>
-                    </div>
-                    <Separator />
-                  </div>
-                ) : null}
-                
-                <div className="space-y-3">
-                  <Label htmlFor="logoUpload">Upload New Logo</Label>
-                  <Input
-                    id="logoUpload"
-                    type="file"
-                    accept="image/*"
-                    onChange={(e) => setLogoFile(e.target.files?.[0] || null)}
-                    className="file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
-                  />
-                  <p className="text-xs text-gray-500">
-                    Recommended: PNG or JPG format, max 2MB. Logo will be displayed in the top-left corner of quote PDFs.
-                  </p>
-                  <Button onClick={handleLogoUpload} disabled={loading || !logoFile}>
-                    <Upload className="h-4 w-4 mr-2" />
-                    {loading ? "Uploading..." : "Upload Logo"}
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        </TabsContent>
-
-        <TabsContent value="datetime">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Clock className="h-5 w-5" />
-                Date & Time Settings
-              </CardTitle>
-              <CardDescription>
-                Configure timezone and date handling preferences
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <form onSubmit={handleUpdateSettings} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="timezone">Application Timezone</Label>
-                  <Select 
-                    value={settings.timezone} 
-                    onValueChange={(value) => setSettings({ ...settings, timezone: value })}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select timezone" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {timezones.map((tz) => (
-                        <SelectItem key={tz.value} value={tz.value}>
-                          {tz.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <div className="text-xs text-gray-500">
-                    This setting affects how dates are displayed and processed throughout the application.
-                    Current setting: {settings.timezone}
-                  </div>
-                </div>
-
-                <Button type="submit" disabled={loading}>
-                  {loading ? "Updating..." : "Update Timezone Settings"}
-                </Button>
-              </form>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="quotes">
-          <div className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <FileText className="h-5 w-5" />
-                  Quote Templates
-                </CardTitle>
-                <CardDescription>
-                  Manage terms and conditions templates that can be appended to quotes and included in PDFs
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                {/* Add New Template Section */}
-                <div className="space-y-4 p-4 border rounded-lg bg-gray-50">
-                  <h3 className="text-lg font-medium flex items-center gap-2">
-                    <Plus className="h-4 w-4" />
-                    Add New Template
-                  </h3>
-                  <div className="space-y-3">
-                    <div className="space-y-2">
-                      <Label htmlFor="templateName">Template Name</Label>
-                      <Input
-                        id="templateName"
-                        value={newTemplate.name}
-                        onChange={(e) => setNewTemplate({ ...newTemplate, name: e.target.value })}
-                        placeholder="Enter template name (e.g., Standard Terms)"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="templateContent">Terms & Conditions Content</Label>
-                      <RichTextEditor
-                        value={newTemplate.content}
-                        onChange={(content) => setNewTemplate({ ...newTemplate, content })}
-                        placeholder="Enter the terms and conditions text..."
-                        rows={6}
-                      />
-                    </div>
-                    <Button onClick={handleAddTemplate} disabled={loading}>
-                      <Plus className="h-4 w-4 mr-2" />
-                      Add Template
-                    </Button>
-                  </div>
-                </div>
-
-                {/* Existing Templates */}
-                <div className="space-y-4">
-                  <h3 className="text-lg font-medium">Existing Templates</h3>
-                  {templates.length === 0 ? (
-                    <div className="text-center py-8 text-gray-500">
-                      <FileText className="h-8 w-8 mx-auto mb-2 text-gray-300" />
-                      <p>No templates found. Create your first template above.</p>
-                    </div>
-                  ) : (
+          <TabsContent value="quotes">
+            <div className="space-y-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <FileText className="h-5 w-5" />
+                    Quote Templates
+                  </CardTitle>
+                  <CardDescription>
+                    Manage terms and conditions templates that can be appended to quotes and included in PDFs
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  {/* Add New Template Section */}
+                  <div className="space-y-4 p-4 border rounded-lg bg-gray-50">
+                    <h3 className="text-lg font-medium flex items-center gap-2">
+                      <Plus className="h-4 w-4" />
+                      Add New Template
+                    </h3>
                     <div className="space-y-3">
-                      {templates.map((template) => (
-                        <div key={template.id} className="border rounded-lg p-4 space-y-3">
-                          {editingTemplate?.id === template.id ? (
-                            // Edit Mode
-                            <div className="space-y-3">
-                              <Input
-                                value={editingTemplate.name}
-                                onChange={(e) => setEditingTemplate({ ...editingTemplate, name: e.target.value })}
-                                placeholder="Template name"
-                              />
-                              <RichTextEditor
-                                value={editingTemplate.content}
-                                onChange={(content) => setEditingTemplate({ ...editingTemplate, content })}
-                                rows={6}
-                              />
-                              <div className="flex gap-2">
-                                <Button onClick={handleUpdateTemplate} disabled={loading}>
-                                  Save Changes
-                                </Button>
-                                <Button variant="outline" onClick={() => setEditingTemplate(null)}>
-                                  Cancel
-                                </Button>
-                              </div>
-                            </div>
-                          ) : (
-                            // View Mode
-                            <div>
-                              <div className="flex items-center justify-between mb-2">
-                                <h4 className="font-medium flex items-center gap-2">
-                                  {template.name}
-                                  {template.is_default && (
-                                    <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">Default</span>
-                                  )}
-                                </h4>
+                      <div className="space-y-2">
+                        <Label htmlFor="templateName">Template Name</Label>
+                        <Input
+                          id="templateName"
+                          value={newTemplate.name}
+                          onChange={(e) => setNewTemplate({ ...newTemplate, name: e.target.value })}
+                          placeholder="Enter template name (e.g., Standard Terms)"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="templateContent">Terms & Conditions Content</Label>
+                        <RichTextEditor
+                          value={newTemplate.content}
+                          onChange={(content) => setNewTemplate({ ...newTemplate, content })}
+                          placeholder="Enter the terms and conditions text..."
+                          rows={6}
+                        />
+                      </div>
+                      <Button onClick={handleAddTemplate} disabled={loading}>
+                        <Plus className="h-4 w-4 mr-2" />
+                        Add Template
+                      </Button>
+                    </div>
+                  </div>
+
+                  {/* Existing Templates */}
+                  <div className="space-y-4">
+                    <h3 className="text-lg font-medium">Existing Templates</h3>
+                    {templates.length === 0 ? (
+                      <div className="text-center py-8 text-gray-500">
+                        <FileText className="h-8 w-8 mx-auto mb-2 text-gray-300" />
+                        <p>No templates found. Create your first template above.</p>
+                      </div>
+                    ) : (
+                      <div className="space-y-3">
+                        {templates.map((template) => (
+                          <div key={template.id} className="border rounded-lg p-4 space-y-3">
+                            {editingTemplate?.id === template.id ? (
+                              // Edit Mode
+                              <div className="space-y-3">
+                                <Input
+                                  value={editingTemplate.name}
+                                  onChange={(e) => setEditingTemplate({ ...editingTemplate, name: e.target.value })}
+                                  placeholder="Template name"
+                                />
+                                <RichTextEditor
+                                  value={editingTemplate.content}
+                                  onChange={(content) => setEditingTemplate({ ...editingTemplate, content })}
+                                  rows={6}
+                                />
                                 <div className="flex gap-2">
-                                  {!template.is_default && (
-                                    <Button
-                                      variant="outline"
-                                      size="sm"
-                                      onClick={() => handleSetDefaultTemplate(template.id)}
-                                      disabled={loading}
-                                    >
-                                      Set as Default
-                                    </Button>
-                                  )}
-                                  <Button
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={() => setEditingTemplate(template)}
-                                  >
-                                    <Edit className="h-4 w-4" />
+                                  <Button onClick={handleUpdateTemplate} disabled={loading}>
+                                    Save Changes
                                   </Button>
-                                  <Button
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={() => handleDeleteTemplate(template.id)}
-                                    disabled={loading}
-                                  >
-                                    <Trash2 className="h-4 w-4" />
+                                  <Button variant="outline" onClick={() => setEditingTemplate(null)}>
+                                    Cancel
                                   </Button>
                                 </div>
                               </div>
-                              <div className="text-sm text-gray-600 bg-gray-50 p-3 rounded">
-                                <div dangerouslySetInnerHTML={{ __html: template.content }} />
+                            ) : (
+                              // View Mode
+                              <div>
+                                <div className="flex items-center justify-between mb-2">
+                                  <h4 className="font-medium flex items-center gap-2">
+                                    {template.name}
+                                    {template.is_default && (
+                                      <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">Default</span>
+                                    )}
+                                  </h4>
+                                  <div className="flex gap-2">
+                                    {!template.is_default && (
+                                      <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() => handleSetDefaultTemplate(template.id)}
+                                        disabled={loading}
+                                      >
+                                        Set as Default
+                                      </Button>
+                                    )}
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      onClick={() => setEditingTemplate(template)}
+                                    >
+                                      <Edit className="h-4 w-4" />
+                                    </Button>
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      onClick={() => handleDeleteTemplate(template.id)}
+                                      disabled={loading}
+                                    >
+                                      <Trash2 className="h-4 w-4" />
+                                    </Button>
+                                  </div>
+                                </div>
+                                <div className="text-sm text-gray-600 bg-gray-50 p-3 rounded">
+                                  <div dangerouslySetInnerHTML={{ __html: template.content }} />
+                                </div>
                               </div>
-                            </div>
-                          )}
-                        </div>
-                      ))}
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="security">
+            <div className="space-y-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Shield className="h-5 w-5" />
+                    Security Settings
+                  </CardTitle>
+                  <CardDescription>
+                    Configure security and access control settings
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Shield className="h-4 w-4 text-gray-500" />
+                      <span className="text-sm font-medium">Authentication Method:</span>
                     </div>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        </TabsContent>
-
-        <TabsContent value="security">
-          <div className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Shield className="h-5 w-5" />
-                  Security Settings
-                </CardTitle>
-                <CardDescription>
-                  Configure security and access control settings
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Shield className="h-4 w-4 text-gray-500" />
-                    <span className="text-sm font-medium">Authentication Method:</span>
+                    <span className="text-sm text-gray-600">Email & Password</span>
                   </div>
-                  <span className="text-sm text-gray-600">Email & Password</span>
-                </div>
-                
-                <Separator />
-                
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Settings className="h-4 w-4 text-gray-500" />
-                    <span className="text-sm font-medium">User Registration:</span>
+                  
+                  <Separator />
+                  
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Settings className="h-4 w-4 text-gray-500" />
+                      <span className="text-sm font-medium">User Registration:</span>
+                    </div>
+                    <span className="text-sm text-gray-600">Enabled (Admin Approval Required)</span>
                   </div>
-                  <span className="text-sm text-gray-600">Enabled (Admin Approval Required)</span>
-                </div>
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
 
-            <Card className="border-orange-200">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-orange-700">
-                  <AlertTriangle className="h-5 w-5" />
-                  Database Management
-                </CardTitle>
-                <CardDescription>
-                  Advanced database operations and maintenance
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="bg-orange-50 p-4 rounded-lg">
-                  <p className="text-sm text-orange-700 mb-2">
-                    <strong>Warning:</strong> These operations can affect system performance and data integrity.
-                  </p>
-                  <p className="text-sm text-orange-600">
-                    Database maintenance and backup operations should be performed during off-peak hours.
-                    Contact your system administrator for assistance with these operations.
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        </TabsContent>
-      </Tabs>
+              <Card className="border-orange-200">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2 text-orange-700">
+                    <AlertTriangle className="h-5 w-5" />
+                    Database Management
+                  </CardTitle>
+                  <CardDescription>
+                    Advanced database operations and maintenance
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="bg-orange-50 p-4 rounded-lg">
+                    <p className="text-sm text-orange-700 mb-2">
+                      <strong>Warning:</strong> These operations can affect system performance and data integrity.
+                    </p>
+                    <p className="text-sm text-orange-600">
+                      Database maintenance and backup operations should be performed during off-peak hours.
+                      Contact your system administrator for assistance with these operations.
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
+        </Tabs>
+      </div>
     </div>
   );
 }
