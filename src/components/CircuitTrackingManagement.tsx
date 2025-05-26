@@ -1,4 +1,3 @@
-
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -37,6 +36,16 @@ const getProgressFromStage = (stage: string): number => {
   const index = STAGES.indexOf(stage);
   if (index === -1) return 0;
   return Math.round((index / (STAGES.length - 1)) * 100);
+};
+
+const getProgressBarClassName = (stage: string): string => {
+  if (stage === "Jepp'd") {
+    return "h-2 [&>div]:bg-red-500";
+  }
+  if (stage === "FOC") {
+    return "h-2 [&>div]:bg-green-500";
+  }
+  return "h-2";
 };
 
 export const CircuitTrackingManagement = () => {
@@ -163,6 +172,7 @@ export const CircuitTrackingManagement = () => {
                       <TableBody>
                         {trackings.map((circuit) => {
                           const progress = getProgressFromStage(circuit.stage || 'Ready to Order');
+                          const progressBarClass = getProgressBarClassName(circuit.stage || 'Ready to Order');
                           return (
                             <TableRow key={circuit.id}>
                               <TableCell className="font-medium">
@@ -179,7 +189,7 @@ export const CircuitTrackingManagement = () => {
                               </TableCell>
                               <TableCell>
                                 <div className="space-y-1">
-                                  <Progress value={progress} className="h-2" />
+                                  <Progress value={progress} className={progressBarClass} />
                                   <span className="text-xs text-gray-500">{progress}%</span>
                                 </div>
                               </TableCell>
