@@ -20,6 +20,7 @@ export interface Order {
 export interface CircuitTracking {
   id: string;
   order_id: string;
+  quote_item_id?: string;
   circuit_type: string;
   status: string;
   progress_percentage: number;
@@ -28,6 +29,8 @@ export interface CircuitTracking {
   created_at: string;
   updated_at: string;
   notes?: string;
+  item_name?: string;
+  item_description?: string;
 }
 
 export interface CircuitMilestone {

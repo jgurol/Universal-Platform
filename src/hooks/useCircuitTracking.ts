@@ -18,7 +18,12 @@ export const useCircuitTracking = () => {
         .from('circuit_tracking')
         .select(`
           *,
-          order:orders(*)
+          order:orders(*),
+          quote_item:quote_items(
+            *,
+            item:items(*),
+            address:client_addresses(*)
+          )
         `)
         .order('created_at', { ascending: false });
 

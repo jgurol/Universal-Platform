@@ -1,0 +1,209 @@
+
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+}
+
+serve(async (req) => {
+  if (req.method === 'OPTIONS') {
+    return new Response('ok', { headers: corsHeaders })
+  }
+
+  try {
+    const supabaseClient = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+    )
+
+    const { quote_id } = await req.json()
+    
+    console.log('Processing quote approval for quote:', quote_id)
+
+    // Check if order already exists for this quote
+    const { data: existingOrders, error: orderCheckError } = await supabaseClient
+      .from('orders')
+      .select('id, order_number')
+      .eq('quote_id', quote_id)
+
+    if (orderCheckError) {
+      console.error('Error checking existing orders:', orderCheckError)
+      throw orderCheckError
+    }
+
+    let orderId: string
+    let orderNumber: string
+
+    if (existingOrders && existingOrders.length > 0) {
+      // Order already exists, use the existing one
+      orderId = existingOrders[0].id
+      orderNumber = existingOrders[0].order_number
+      console.log('Using existing order:', orderNumber)
+    } else {
+      // Get the quote data first
+      const { data: quote, error: quoteError } = await supabaseClient
+        .from('quotes')
+        .select('*')
+        .eq('id', quote_id)
+        .single()
+
+      if (quoteError) {
+        console.error('Error fetching quote:', quoteError)
+        throw quoteError
+      }
+
+      // Generate sequential order number starting from 15000
+      const { data: lastOrder, error: lastOrderError } = await supabaseClient
+        .from('orders')
+        .select('order_number')
+        .order('created_at', { ascending: false })
+        .limit(1)
+
+      if (lastOrderError && lastOrderError.code !== 'PGRST116') {
+        console.error('Error fetching last order:', lastOrderError)
+        throw lastOrderError
+      }
+
+      let nextOrderNumber = 15000
+      if (lastOrder && lastOrder.length > 0 && lastOrder[0].order_number) {
+        const lastNumber = parseInt(lastOrder[0].order_number)
+        if (!isNaN(lastNumber)) {
+          nextOrderNumber = Math.max(lastNumber + 1, 15000)
+        }
+      }
+
+      orderNumber = nextOrderNumber.toString()
+      console.log('Generated order number:', orderNumber)
+
+      // Create new order
+      const { data: newOrder, error: orderError } = await supabaseClient
+        .from('orders')
+        .insert({
+          quote_id: quote_id,
+          order_number: orderNumber,
+          user_id: quote.user_id,
+          client_id: quote.client_id,
+          client_info_id: quote.client_info_id,
+          amount: quote.amount,
+          status: 'pending',
+          billing_address: quote.billing_address,
+          service_address: quote.service_address,
+          notes: quote.notes,
+          commission: quote.commission,
+          commission_override: quote.commission_override
+        })
+        .select()
+        .single()
+
+      if (orderError) {
+        console.error('Error creating order:', orderError)
+        throw orderError
+      }
+
+      orderId = newOrder.id
+      console.log('Created new order with ID:', orderId)
+    }
+
+    // Get quote items with circuit-related categories
+    const circuitCategories = ['broadband', 'dedicated fiber', 'fixed wireless', '4G/5G']
+    
+    const { data: circuitItems, error: itemsError } = await supabaseClient
+      .from('quote_items')
+      .select(`
+        *,
+        item:items(
+          *,
+          category:categories(name)
+        )
+      `)
+      .eq('quote_id', quote_id)
+
+    if (itemsError) {
+      console.error('Error fetching quote items:', itemsError)
+      throw itemsError
+    }
+
+    // Filter items that are circuit-related
+    const circuitRelatedItems = circuitItems?.filter(item => 
+      item.item?.category?.name && 
+      circuitCategories.some(cat => 
+        item.item.category.name.toLowerCase().includes(cat.toLowerCase())
+      )
+    ) || []
+
+    console.log('Found circuit-related items:', circuitRelatedItems.length)
+
+    // Check for existing circuit tracking records for this order
+    const { data: existingTracking, error: trackingCheckError } = await supabaseClient
+      .from('circuit_tracking')
+      .select('id, quote_item_id')
+      .eq('order_id', orderId)
+
+    if (trackingCheckError) {
+      console.error('Error checking existing circuit tracking:', trackingCheckError)
+      throw trackingCheckError
+    }
+
+    const existingItemIds = new Set(existingTracking?.map(t => t.quote_item_id) || [])
+
+    // Create circuit tracking records for each circuit item that doesn't already have tracking
+    const trackingRecords = []
+    for (const item of circuitRelatedItems) {
+      if (!existingItemIds.has(item.id)) {
+        const circuitType = circuitCategories.find(cat => 
+          item.item.category.name.toLowerCase().includes(cat.toLowerCase())
+        ) || 'broadband'
+
+        trackingRecords.push({
+          order_id: orderId,
+          quote_item_id: item.id,
+          circuit_type: circuitType.toLowerCase(),
+          status: 'ordered',
+          progress_percentage: 0,
+          item_name: item.item.name,
+          item_description: item.item.description
+        })
+      }
+    }
+
+    if (trackingRecords.length > 0) {
+      const { error: trackingError } = await supabaseClient
+        .from('circuit_tracking')
+        .insert(trackingRecords)
+
+      if (trackingError) {
+        console.error('Error creating circuit tracking records:', trackingError)
+        throw trackingError
+      }
+
+      console.log('Created circuit tracking records:', trackingRecords.length)
+    }
+
+    return new Response(
+      JSON.stringify({
+        success: true,
+        orderIds: [orderId],
+        orderNumbers: [orderNumber],
+        message: existingOrders && existingOrders.length > 0 ? 'Orders already exist for this quote' : 'Order created successfully',
+        ordersCount: 1,
+        circuitTrackingCreated: trackingRecords.length
+      }),
+      {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 200,
+      },
+    )
+
+  } catch (error) {
+    console.error('Error in handle-quote-approval:', error)
+    return new Response(
+      JSON.stringify({ error: error.message }),
+      {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 400,
+      },
+    )
+  }
+})
