@@ -1,4 +1,3 @@
-
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
@@ -78,7 +77,11 @@ export const CircuitTrackingManagement = () => {
 
   const formatLocation = (address: any) => {
     if (!address) return '-';
-    return `${address.city}, ${address.state}`;
+    const parts = [];
+    if (address.street_address) parts.push(address.street_address);
+    if (address.city) parts.push(address.city);
+    if (address.state) parts.push(address.state);
+    return parts.join(', ');
   };
 
   // Group circuit trackings by order
