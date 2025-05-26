@@ -82,11 +82,14 @@ export const useCircuitTracking = () => {
               // Only create virtual tracking if:
               // 1. No existing tracking exists
               // 2. The quote item has an actual item with a name (not just a category)
-              // 3. The item name is not just a generic category name
+              // 3. The item name is not just a generic category name or "broadband"
+              // 4. The item name has more substance than just the category
               if (!existingTracking && 
                   quoteItem.item?.name && 
                   quoteItem.item.name.toLowerCase() !== 'broadband' &&
-                  quoteItem.item.name.toLowerCase() !== quoteItem.item?.category?.name?.toLowerCase()) {
+                  quoteItem.item.name.toLowerCase() !== quoteItem.item?.category?.name?.toLowerCase() &&
+                  quoteItem.item.name.trim().length > 3 &&
+                  !quoteItem.item.name.toLowerCase().includes('general')) {
                 allTrackingItems.push({
                   id: `virtual-${quoteItem.id}`,
                   order_id: order.id,
