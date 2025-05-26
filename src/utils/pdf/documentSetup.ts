@@ -36,11 +36,14 @@ export const setupDocument = async (context: PDFGenerationContext): Promise<{ do
     }
   }
   
-  // Document type in top right
+  // Document type in top right - right aligned to match the agreement box
   doc.setFontSize(18);
   doc.setFont('helvetica', 'normal');
   doc.setTextColor(128, 128, 128); // Gray color
-  doc.text('Agreement', 185, 20);
+  const agreementText = 'Agreement';
+  const textWidth = doc.getTextWidth(agreementText);
+  const rightMargin = 200; // Right align to match the agreement box
+  doc.text(agreementText, rightMargin - textWidth, 20);
   
   return { doc, logoYOffset };
 };
