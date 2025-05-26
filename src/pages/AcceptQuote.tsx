@@ -321,41 +321,21 @@ const AcceptQuote = () => {
         throw new Error(`Failed to save acceptance: ${acceptanceError.message}`);
       }
 
-      // Update quote status to approved and set acceptance details
-      const { error: quoteError } = await supabase
-        .from('quotes')
-        .update({
-          status: 'approved',
-          acceptance_status: 'accepted',
-          accepted_at: new Date().toISOString(),
-          accepted_by: clientName.trim()
-        })
-        .eq('id', quote.id);
+      // Call the edge function to handle everything (quote approval, order creation, etc.)
+      console.log('AcceptQuote - Calling edge function to handle quote approval');
+      const { data: orderResult, error: orderError } = await supabase.functions
+        .invoke('handle-quote-approval', {
+          body: { quoteId: quote.id }
+        });
 
-      if (quoteError) {
-        console.error('AcceptQuote - Error updating quote status:', quoteError);
-        throw new Error(`Failed to update quote status: ${quoteError.message}`);
+      if (orderError) {
+        console.error('AcceptQuote - Error in edge function:', orderError);
+        throw new Error(`Failed to process quote approval: ${orderError.message}`);
       }
 
-      // Call the edge function to handle order creation and circuit tracking
-      try {
-        const { data: orderResult, error: orderError } = await supabase.functions
-          .invoke('handle-quote-approval', {
-            body: { quoteId: quote.id }
-          });
-
-        if (orderError) {
-          console.error('AcceptQuote - Error creating order:', orderError);
-          // Don't fail the acceptance process if order creation fails
-        } else {
-          console.log('AcceptQuote - Order created successfully:', orderResult);
-        }
-      } catch (orderErr) {
-        console.error('AcceptQuote - Order creation failed:', orderErr);
-        // Continue with acceptance even if order creation fails
-      }
-
-      console.log('AcceptQuote - Quote acceptance completed successfully - status updated to approved');
+      console.log('AcceptQuote - Edge function completed successfully:', orderResult);
+      console.log('AcceptQuote - Quote acceptance and processing completed successfully');
+      
       setIsAccepted(true);
       toast({
         title: "Agreement Accepted",

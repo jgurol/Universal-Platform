@@ -39,6 +39,24 @@ serve(async (req) => {
     console.log('Processing quote approval for quote:', quoteId)
     console.log('Using service role client for database operations')
 
+    // First, update the quote status to approved using service role
+    console.log('Updating quote status to approved...')
+    const { error: quoteUpdateError } = await supabaseServiceRole
+      .from('quotes')
+      .update({
+        status: 'approved',
+        acceptance_status: 'accepted',
+        accepted_at: new Date().toISOString()
+      })
+      .eq('id', quoteId)
+
+    if (quoteUpdateError) {
+      console.error('Error updating quote status:', quoteUpdateError)
+      throw quoteUpdateError
+    }
+
+    console.log('Quote status updated to approved successfully')
+
     // Check if order already exists for this quote
     const { data: existingOrders, error: orderCheckError } = await supabaseServiceRole
       .from('orders')
