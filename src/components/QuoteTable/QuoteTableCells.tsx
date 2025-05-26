@@ -17,6 +17,13 @@ interface QuoteTableCellsProps {
   onUnarchiveQuote?: (quoteId: string) => void;
 }
 
+const getInitials = (name: string): string => {
+  return name
+    .split(' ')
+    .map(word => word.charAt(0).toUpperCase())
+    .join('');
+};
+
 export const QuoteTableCells = ({
   quote,
   clientInfo,
@@ -34,7 +41,11 @@ export const QuoteTableCells = ({
   return (
     <>
       <TableCell className="font-medium">
-        {salespersonName}
+        <div className="flex items-center">
+          <span className="text-sm font-semibold text-gray-700" title={salespersonName}>
+            {getInitials(salespersonName)}
+          </span>
+        </div>
       </TableCell>
       <TableCell>
         <div className="font-mono text-sm">
