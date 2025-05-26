@@ -1,3 +1,4 @@
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,7 +11,7 @@ import { Progress } from "@/components/ui/progress";
 import { useCircuitTracking } from "@/hooks/useCircuitTracking";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Zap, ToggleLeft, ToggleRight } from "lucide-react";
+import { Plus, Zap } from "lucide-react";
 
 const STAGES = [
   'Ready to Order',
@@ -30,6 +31,12 @@ const STAGES = [
   'Documentation',
   'Ready for Billing',
   'Billed'
+];
+
+const GROUPING_OPTIONS = [
+  { value: 'order', label: 'Order Number' },
+  { value: 'stage', label: 'Stage' },
+  { value: 'customer', label: 'Customer' }
 ];
 
 const getProgressFromStage = (stage: string): number => {
@@ -59,7 +66,7 @@ export const CircuitTrackingManagement = () => {
   const { circuitTrackings, isLoading, updateCircuitStage, addMilestone } = useCircuitTracking();
   const { toast } = useToast();
   const [selectedCircuit, setSelectedCircuit] = useState<string | null>(null);
-  const [groupByStage, setGroupByStage] = useState(false);
+  const [groupBy, setGroupBy] = useState<'order' | 'stage' | 'customer'>('order');
   const [newMilestone, setNewMilestone] = useState({
     milestone_name: '',
     milestone_description: '',
@@ -116,11 +123,24 @@ export const CircuitTrackingManagement = () => {
     return parts.join(', ');
   };
 
-  // Group circuit trackings by order or by stage
+  // Group circuit trackings by order, stage, or customer
   const groupedTrackings = circuitTrackings.reduce((acc, tracking) => {
-    const groupKey = groupByStage 
-      ? (tracking.stage || 'Ready to Order')
-      : tracking.order_id;
+    let groupKey: string;
+    
+    switch (groupBy) {
+      case 'stage':
+        groupKey = tracking.stage || 'Ready to Order';
+        break;
+      case 'customer':
+        groupKey = tracking.quote_item?.quote?.client_info?.company_name || 
+                  tracking.quote_item?.quote?.accepted_by || 
+                  'Unknown Customer';
+        break;
+      case 'order':
+      default:
+        groupKey = tracking.order_id;
+        break;
+    }
     
     if (!acc[groupKey]) {
       acc[groupKey] = [];
@@ -143,15 +163,18 @@ export const CircuitTrackingManagement = () => {
           </CardTitle>
           <div className="flex items-center gap-4">
             <span className="text-sm text-gray-600">Group by:</span>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setGroupByStage(!groupByStage)}
-              className="flex items-center gap-2"
-            >
-              {groupByStage ? <ToggleRight className="w-4 h-4" /> : <ToggleLeft className="w-4 h-4" />}
-              {groupByStage ? "Stage" : "Order Number"}
-            </Button>
+            <Select value={groupBy} onValueChange={(value: 'order' | 'stage' | 'customer') => setGroupBy(value)}>
+              <SelectTrigger className="w-40">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {GROUPING_OPTIONS.map((option) => (
+                  <SelectItem key={option.value} value={option.value}>
+                    {option.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
         </CardHeader>
         <CardContent>
@@ -164,8 +187,10 @@ export const CircuitTrackingManagement = () => {
               {Object.entries(groupedTrackings).map(([groupKey, trackings]) => {
                 // Get group header info
                 const getGroupHeader = () => {
-                  if (groupByStage) {
+                  if (groupBy === 'stage') {
                     return `Stage: ${groupKey} (${trackings.length} item${trackings.length > 1 ? 's' : ''})`;
+                  } else if (groupBy === 'customer') {
+                    return `Customer: ${groupKey} (${trackings.length} item${trackings.length > 1 ? 's' : ''})`;
                   } else {
                     // Group by order - use existing logic
                     const firstTracking = trackings[0];
@@ -191,11 +216,13 @@ export const CircuitTrackingManagement = () => {
                         <TableRow>
                           <TableHead className="w-[200px]">Item Name</TableHead>
                           <TableHead className="w-[250px]">Location</TableHead>
-                          {!groupByStage && <TableHead className="w-[80px]">Qty</TableHead>}
-                          {!groupByStage && <TableHead className="w-[100px]">Unit Price</TableHead>}
-                          {groupByStage && <TableHead className="w-[150px]">Order</TableHead>}
+                          {groupBy === 'order' && <TableHead className="w-[80px]">Qty</TableHead>}
+                          {groupBy === 'order' && <TableHead className="w-[100px]">Unit Price</TableHead>}
+                          {groupBy === 'stage' && <TableHead className="w-[150px]">Order</TableHead>}
+                          {groupBy === 'customer' && <TableHead className="w-[150px]">Order</TableHead>}
                           <TableHead className="w-[150px]">Progress</TableHead>
-                          {!groupByStage && <TableHead className="w-[150px]">Stage</TableHead>}
+                          {groupBy === 'order' && <TableHead className="w-[150px]">Stage</TableHead>}
+                          {groupBy === 'customer' && <TableHead className="w-[150px]">Stage</TableHead>}
                           <TableHead className="w-[100px]">Actions</TableHead>
                         </TableRow>
                       </TableHeader>
@@ -211,17 +238,17 @@ export const CircuitTrackingManagement = () => {
                               <TableCell className="text-sm text-gray-600">
                                 {formatLocation(circuit.quote_item?.address)}
                               </TableCell>
-                              {!groupByStage && (
+                              {groupBy === 'order' && (
                                 <TableCell>
                                   {circuit.quote_item?.quantity || '-'}
                                 </TableCell>
                               )}
-                              {!groupByStage && (
+                              {groupBy === 'order' && (
                                 <TableCell>
                                   ${circuit.quote_item?.unit_price || '0'}
                                 </TableCell>
                               )}
-                              {groupByStage && (
+                              {(groupBy === 'stage' || groupBy === 'customer') && (
                                 <TableCell className="text-sm text-gray-600">
                                   {circuit.order?.order_number || circuit.order_id.slice(0, 8)}
                                 </TableCell>
@@ -232,7 +259,7 @@ export const CircuitTrackingManagement = () => {
                                   <span className="text-xs text-gray-500">{progress}%</span>
                                 </div>
                               </TableCell>
-                              {!groupByStage && (
+                              {(groupBy === 'order' || groupBy === 'customer') && (
                                 <TableCell>
                                   <Select
                                     value={circuit.stage || 'Ready to Order'}
