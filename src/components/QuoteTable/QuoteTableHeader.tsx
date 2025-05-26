@@ -54,8 +54,8 @@ export const QuoteTableHeader = ({ sortField, sortDirection, onSort }: QuoteTabl
         </Button>
       </th>
       <th className="font-semibold">Quote Name</th>
-      <th className="font-semibold text-right">Total NRC</th>
-      <th className="font-semibold text-right">Total MRC</th>
+      <th className="font-semibold text-right">NRC</th>
+      <th className="font-semibold text-right">MRC</th>
       <th className="font-semibold">
         <Button 
           variant="ghost" 
