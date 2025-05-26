@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -270,6 +269,7 @@ export const OrdersManagement = () => {
             <Table>
               <TableHeader>
                 <TableRow>
+                  <TableHead>Quote Number</TableHead>
                   <TableHead>Order Number</TableHead>
                   <TableHead>Account Manager</TableHead>
                   <TableHead>Accepted by</TableHead>
@@ -288,6 +288,9 @@ export const OrdersManagement = () => {
                   
                   return (
                     <TableRow key={order.id}>
+                      <TableCell className="font-mono text-sm">
+                        {quoteData?.quote_number || `Q-${order.quote_id.slice(0, 8)}`}
+                      </TableCell>
                       <TableCell className="font-mono text-sm">
                         {order.order_number}
                       </TableCell>
