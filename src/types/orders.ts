@@ -37,6 +37,7 @@ export interface CircuitTracking {
   quote_item?: {
     item: {
       name: string;
+      description?: string;
       category: {
         name: string;
       };
