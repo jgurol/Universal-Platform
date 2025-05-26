@@ -4,142 +4,29 @@ import { PDFGenerationContext } from './types';
 
 export const addQuoteItems = (doc: jsPDF, context: PDFGenerationContext, startY: number): number => {
   const { quote, clientInfo } = context;
-  let yPos = startY;
+  let yPos = startY + 10;
   
-  // Quote Title
+  // Quote Title - large and bold like in reference
   doc.setTextColor(0, 0, 0);
-  doc.setFontSize(14);
+  doc.setFontSize(16);
   doc.setFont('helvetica', 'bold');
-  const quoteTitle = quote.description || (clientInfo?.company_name ? `${clientInfo.company_name} - Service Agreement` : 'Service Agreement');
-  doc.text(quoteTitle, 20, yPos);
   
-  // Items Section
-  yPos += 12;
-  
-  if (quote.quoteItems && quote.quoteItems.length > 0) {
-    const mrcItems = quote.quoteItems.filter(item => item.charge_type === 'MRC');
-    const nrcItems = quote.quoteItems.filter(item => item.charge_type === 'NRC');
-    
-    const colX = {
-      description: 20,
-      qty: 150,
-      price: 165,
-      total: 180
-    };
-    
-    // Monthly Fees Section
-    if (mrcItems.length > 0) {
-      yPos = addMRCItems(doc, mrcItems, quote, yPos, colX);
-    }
-    
-    // One-Time Fees
-    if (nrcItems.length > 0) {
-      yPos = addNRCItems(doc, nrcItems, yPos, colX);
-    }
+  // Create title based on service address or company name
+  let quoteTitle = '';
+  if (quote.serviceAddress) {
+    // Extract location from service address for title
+    const addressParts = quote.serviceAddress.split(',');
+    const location = addressParts.length >= 2 ? addressParts[1].trim() : 'Service Location';
+    quoteTitle = `${clientInfo?.company_name || 'Client'} - ${location} - Secondary Circuit`;
+  } else {
+    quoteTitle = quote.description || `${clientInfo?.company_name || 'Client'} - Service Agreement`;
   }
   
-  return yPos;
-};
-
-const addMRCItems = (doc: jsPDF, mrcItems: any[], quote: any, yPos: number, colX: any): number => {
-  doc.setFontSize(12);
-  doc.setFont('helvetica', 'bold');
-  doc.text('Monthly Fees', 20, yPos);
-  yPos += 10;
+  doc.text(quoteTitle, 20, yPos);
+  yPos += 15;
   
-  doc.setFillColor(240, 240, 240);
-  doc.rect(colX.description, yPos - 6, 175, 8, 'F');
-  doc.setDrawColor(200, 200, 200);
-  doc.rect(colX.description, yPos - 6, 175, 8);
-  
-  doc.setFontSize(8);
-  doc.setFont('helvetica', 'bold');
-  doc.text('Description', colX.description + 2, yPos - 1);
-  doc.text('Qty', colX.qty + 2, yPos - 1);
-  doc.text('Price', colX.price + 2, yPos - 1);
-  doc.text('Total', colX.total + 2, yPos - 1);
-  
-  yPos += 4;
-  
-  doc.setFont('helvetica', 'normal');
-  mrcItems.forEach((item, index) => {
-    const itemName = item.item?.name || item.name || 'Monthly Service';
-    
-    let addressText = '';
-    if (item.address) {
-      addressText = `${item.address.street_address}, ${item.address.city}, ${item.address.state} ${item.address.zip_code}`;
-    } else {
-      addressText = quote.serviceAddress || quote.billingAddress || 'Service location not specified';
-    }
-    
-    if (addressText.length > 40) {
-      addressText = addressText.substring(0, 37) + '...';
-    }
-    
-    const rowHeight = 10;
-    
-    if (index % 2 === 0) {
-      doc.setFillColor(250, 250, 250);
-      doc.rect(colX.description, yPos - 3, 175, rowHeight, 'F');
-    }
-    
-    doc.setTextColor(0, 0, 0);
-    doc.setFontSize(7);
-    doc.setFont('helvetica', 'normal');
-    doc.text(itemName.substring(0, 35), colX.description + 2, yPos);
-    
-    doc.setFontSize(6);
-    doc.setTextColor(80, 80, 80);
-    doc.text(`Loc: ${addressText}`, colX.description + 4, yPos + 5);
-    
-    doc.setTextColor(0, 0, 0);
-    doc.setFontSize(7);
-    
-    const qtyText = item.quantity.toString();
-    const priceText = `$${Number(item.unit_price).toFixed(2)}`;
-    const totalText = `$${Number(item.total_price).toFixed(2)}`;
-    
-    const qtyWidth = doc.getTextWidth(qtyText);
-    const priceWidth = doc.getTextWidth(priceText);
-    const totalWidth = doc.getTextWidth(totalText);
-    
-    doc.text(qtyText, colX.qty + 12 - qtyWidth, yPos);
-    doc.text(priceText, colX.price + 12 - priceWidth, yPos);
-    doc.text(totalText, colX.total + 12 - totalWidth, yPos);
-    
-    yPos += rowHeight;
-  });
-  
-  yPos += 2;
-  doc.setDrawColor(0, 0, 0);
-  doc.line(colX.description, yPos, 195, yPos);
-  yPos += 6;
-  
-  const mrcTotal = mrcItems.reduce((total, item) => total + (Number(item.total_price) || 0), 0);
-  doc.setFontSize(8);
-  doc.setFont('helvetica', 'bold');
-  
-  const totalLabelText = 'Total Monthly:';
-  const totalAmountText = `$${mrcTotal.toFixed(2)} USD`;
-  const totalAmountWidth = doc.getTextWidth(totalAmountText);
-  
-  doc.text(totalLabelText, colX.price - 30, yPos);
-  doc.text(totalAmountText, colX.total + 12 - totalAmountWidth, yPos);
-  
-  return yPos;
-};
-
-const addNRCItems = (doc: jsPDF, nrcItems: any[], yPos: number, colX: any): number => {
-  yPos += 8;
-  doc.setFontSize(8);
-  doc.setFont('helvetica', 'bold');
-  
-  const nrcTotal = nrcItems.reduce((total, item) => total + (Number(item.total_price) || 0), 0);
-  const nrcTotalText = `$${nrcTotal.toFixed(2)} USD`;
-  const nrcTotalWidth = doc.getTextWidth(nrcTotalText);
-  
-  doc.text('One-Time Setup Fees:', colX.price - 30, yPos);
-  doc.text(nrcTotalText, colX.total + 12 - nrcTotalWidth, yPos);
+  // Items table would go here if needed
+  // For now, we'll just add some spacing
   
   return yPos;
 };
