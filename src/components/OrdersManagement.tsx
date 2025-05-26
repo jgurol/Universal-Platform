@@ -268,154 +268,220 @@ export const OrdersManagement = () => {
         </CardContent>
       </Card>
 
-      {/* Agreement Viewer Dialog */}
+      {/* Agreement Viewer Dialog - PDF Style */}
       <Dialog open={agreementDialogOpen} onOpenChange={setAgreementDialogOpen}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Signed Agreement</DialogTitle>
-            <DialogDescription>
-              Agreement details, quote items, and digital signature
-            </DialogDescription>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto bg-white">
+          <DialogHeader className="border-b pb-4">
+            <div className="flex justify-between items-center">
+              <div>
+                <DialogTitle className="text-xl font-normal text-gray-600">Service Agreement</DialogTitle>
+                <DialogDescription className="text-sm text-gray-500 mt-1">
+                  Digitally signed agreement and order details
+                </DialogDescription>
+              </div>
+              <div className="bg-green-100 px-3 py-1 rounded">
+                <span className="text-green-800 font-medium text-sm">APPROVED</span>
+              </div>
+            </div>
           </DialogHeader>
+          
           {selectedAgreement && (
-            <div className="space-y-6">
-              {/* Client Information */}
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <h4 className="text-sm font-medium text-gray-500">Client Name</h4>
-                  <p className="text-lg">{selectedAgreement.client_name}</p>
-                </div>
-                <div>
-                  <h4 className="text-sm font-medium text-gray-500">Email</h4>
-                  <p className="text-lg">{selectedAgreement.client_email}</p>
-                </div>
-                <div>
-                  <h4 className="text-sm font-medium text-gray-500">Signed Date</h4>
-                  <p className="text-lg">{formatDateForDisplay(selectedAgreement.accepted_at)}</p>
-                </div>
-                <div>
-                  <h4 className="text-sm font-medium text-gray-500">IP Address</h4>
-                  <p className="text-lg font-mono text-sm">{selectedAgreement.ip_address || 'N/A'}</p>
+            <div className="space-y-6 pt-4">
+              {/* Agreement Details Box - PDF Style */}
+              <div className="bg-gray-50 border border-gray-200 p-4 rounded-lg">
+                <div className="grid grid-cols-2 gap-6">
+                  <div className="space-y-3">
+                    <div>
+                      <span className="text-sm font-medium text-gray-700">Agreement:</span>
+                      <div className="text-sm text-gray-900 mt-1">Service Agreement v2</div>
+                    </div>
+                    <div>
+                      <span className="text-sm font-medium text-gray-700">Date:</span>
+                      <div className="text-sm text-gray-900 mt-1">{formatDateForDisplay(selectedAgreement.accepted_at)}</div>
+                    </div>
+                  </div>
+                  <div className="space-y-3">
+                    <div>
+                      <span className="text-sm font-medium text-gray-700">Client:</span>
+                      <div className="text-sm text-gray-900 mt-1">{selectedAgreement.client_name}</div>
+                    </div>
+                    <div>
+                      <span className="text-sm font-medium text-gray-700">Email:</span>
+                      <div className="text-sm text-gray-900 mt-1">{selectedAgreement.client_email}</div>
+                    </div>
+                  </div>
                 </div>
               </div>
 
-              {/* Quote Items */}
+              {/* Quote Items Section - PDF Style */}
               {selectedQuoteItems.length > 0 && (
-                <div className="space-y-4">
-                  <h4 className="text-lg font-medium">Quote Items</h4>
+                <div className="space-y-6">
+                  <h3 className="text-lg font-medium text-gray-900 border-b pb-2">Service Agreement Items</h3>
                   
-                  {/* Monthly Recurring Items */}
+                  {/* Monthly Fees Section */}
                   {selectedQuoteItems.filter(item => item.charge_type === 'MRC').length > 0 && (
-                    <div className="space-y-2">
-                      <h5 className="text-md font-medium text-blue-700">Monthly Recurring Charges (MRC)</h5>
-                      <div className="overflow-x-auto">
-                        <Table>
-                          <TableHeader>
-                            <TableRow>
-                              <TableHead>Item</TableHead>
-                              <TableHead>Description</TableHead>
-                              <TableHead>Quantity</TableHead>
-                              <TableHead>Unit Price</TableHead>
-                              <TableHead>Total</TableHead>
-                            </TableRow>
-                          </TableHeader>
-                          <TableBody>
-                            {selectedQuoteItems
-                              .filter(item => item.charge_type === 'MRC')
-                              .map((item) => (
-                                <TableRow key={item.id}>
-                                  <TableCell className="font-medium">{item.name}</TableCell>
-                                  <TableCell className="text-sm text-gray-600">{item.description}</TableCell>
-                                  <TableCell>{item.quantity}</TableCell>
-                                  <TableCell>${item.unit_price.toFixed(2)}</TableCell>
-                                  <TableCell className="font-medium">${item.total_price.toFixed(2)}</TableCell>
-                                </TableRow>
-                              ))}
-                          </TableBody>
-                        </Table>
-                      </div>
-                      <div className="text-right">
-                        <strong>MRC Total: ${getMRCTotal(selectedQuoteItems).toFixed(2)}</strong>
+                    <div className="space-y-3">
+                      <h4 className="text-md font-medium text-blue-700">Monthly Fees</h4>
+                      <div className="bg-gray-50 rounded-lg overflow-hidden">
+                        <div className="bg-gray-100 px-4 py-2 border-b border-gray-200">
+                          <div className="grid grid-cols-12 gap-2 text-xs font-medium text-gray-700">
+                            <div className="col-span-5">Description</div>
+                            <div className="col-span-1 text-center">Qty</div>
+                            <div className="col-span-2 text-right">Price</div>
+                            <div className="col-span-2 text-right">Total</div>
+                            <div className="col-span-2"></div>
+                          </div>
+                        </div>
+                        <div className="divide-y divide-gray-200">
+                          {selectedQuoteItems
+                            .filter(item => item.charge_type === 'MRC')
+                            .map((item, index) => (
+                              <div key={item.id} className={`px-4 py-3 ${index % 2 === 0 ? 'bg-white' : 'bg-gray-25'}`}>
+                                <div className="grid grid-cols-12 gap-2 items-start">
+                                  <div className="col-span-5">
+                                    <div className="text-sm font-medium text-gray-900">{item.name}</div>
+                                    {item.address && (
+                                      <div className="text-xs text-gray-600 mt-1">
+                                        Location: {item.address.street_address}, {item.address.city}, {item.address.state} {item.address.zip_code}
+                                      </div>
+                                    )}
+                                  </div>
+                                  <div className="col-span-1 text-center text-sm">{item.quantity}</div>
+                                  <div className="col-span-2 text-right text-sm">${item.unit_price.toFixed(2)}</div>
+                                  <div className="col-span-2 text-right text-sm font-medium">${item.total_price.toFixed(2)}</div>
+                                  <div className="col-span-2"></div>
+                                </div>
+                              </div>
+                            ))}
+                        </div>
+                        <div className="bg-gray-100 px-4 py-3 border-t border-gray-200">
+                          <div className="flex justify-end">
+                            <div className="text-sm font-bold">
+                              Total Monthly: ${getMRCTotal(selectedQuoteItems).toFixed(2)} USD
+                            </div>
+                          </div>
+                        </div>
                       </div>
                     </div>
                   )}
 
-                  {/* Non-Recurring Items */}
+                  {/* One-Time Fees Section */}
                   {selectedQuoteItems.filter(item => item.charge_type === 'NRC').length > 0 && (
-                    <div className="space-y-2">
-                      <h5 className="text-md font-medium text-green-700">One-Time Charges (NRC)</h5>
-                      <div className="overflow-x-auto">
-                        <Table>
-                          <TableHeader>
-                            <TableRow>
-                              <TableHead>Item</TableHead>
-                              <TableHead>Description</TableHead>
-                              <TableHead>Quantity</TableHead>
-                              <TableHead>Unit Price</TableHead>
-                              <TableHead>Total</TableHead>
-                            </TableRow>
-                          </TableHeader>
-                          <TableBody>
-                            {selectedQuoteItems
-                              .filter(item => item.charge_type === 'NRC')
-                              .map((item) => (
-                                <TableRow key={item.id}>
-                                  <TableCell className="font-medium">{item.name}</TableCell>
-                                  <TableCell className="text-sm text-gray-600">{item.description}</TableCell>
-                                  <TableCell>{item.quantity}</TableCell>
-                                  <TableCell>${item.unit_price.toFixed(2)}</TableCell>
-                                  <TableCell className="font-medium">${item.total_price.toFixed(2)}</TableCell>
-                                </TableRow>
-                              ))}
-                          </TableBody>
-                        </Table>
-                      </div>
-                      <div className="text-right">
-                        <strong>NRC Total: ${getNRCTotal(selectedQuoteItems).toFixed(2)}</strong>
+                    <div className="space-y-3">
+                      <h4 className="text-md font-medium text-green-700">One-Time Setup Fees</h4>
+                      <div className="bg-gray-50 rounded-lg overflow-hidden">
+                        <div className="bg-gray-100 px-4 py-2 border-b border-gray-200">
+                          <div className="grid grid-cols-12 gap-2 text-xs font-medium text-gray-700">
+                            <div className="col-span-5">Description</div>
+                            <div className="col-span-1 text-center">Qty</div>
+                            <div className="col-span-2 text-right">Price</div>
+                            <div className="col-span-2 text-right">Total</div>
+                            <div className="col-span-2"></div>
+                          </div>
+                        </div>
+                        <div className="divide-y divide-gray-200">
+                          {selectedQuoteItems
+                            .filter(item => item.charge_type === 'NRC')
+                            .map((item, index) => (
+                              <div key={item.id} className={`px-4 py-3 ${index % 2 === 0 ? 'bg-white' : 'bg-gray-25'}`}>
+                                <div className="grid grid-cols-12 gap-2 items-start">
+                                  <div className="col-span-5">
+                                    <div className="text-sm font-medium text-gray-900">{item.name}</div>
+                                    {item.address && (
+                                      <div className="text-xs text-gray-600 mt-1">
+                                        Location: {item.address.street_address}, {item.address.city}, {item.address.state} {item.address.zip_code}
+                                      </div>
+                                    )}
+                                  </div>
+                                  <div className="col-span-1 text-center text-sm">{item.quantity}</div>
+                                  <div className="col-span-2 text-right text-sm">${item.unit_price.toFixed(2)}</div>
+                                  <div className="col-span-2 text-right text-sm font-medium">${item.total_price.toFixed(2)}</div>
+                                  <div className="col-span-2"></div>
+                                </div>
+                              </div>
+                            ))}
+                        </div>
+                        <div className="bg-gray-100 px-4 py-3 border-t border-gray-200">
+                          <div className="flex justify-end">
+                            <div className="text-sm font-bold">
+                              One-Time Setup Fees: ${getNRCTotal(selectedQuoteItems).toFixed(2)} USD
+                            </div>
+                          </div>
+                        </div>
                       </div>
                     </div>
                   )}
 
-                  {/* Grand Total */}
+                  {/* Grand Total Section */}
                   <div className="border-t pt-4">
-                    <div className="text-right">
-                      <div className="text-xl font-bold">
-                        Grand Total: ${(getMRCTotal(selectedQuoteItems) + getNRCTotal(selectedQuoteItems)).toFixed(2)}
+                    <div className="bg-gray-100 p-4 rounded-lg">
+                      <div className="flex justify-between items-center">
+                        <span className="text-lg font-medium text-gray-900">Grand Total:</span>
+                        <span className="text-2xl font-bold text-gray-900">
+                          ${(getMRCTotal(selectedQuoteItems) + getNRCTotal(selectedQuoteItems)).toFixed(2)} USD
+                        </span>
                       </div>
                     </div>
                   </div>
                 </div>
               )}
               
-              {/* Digital Signature */}
-              <div className="space-y-2">
-                <h4 className="text-sm font-medium text-gray-500">Digital Signature</h4>
-                <div className="border rounded-lg p-4 bg-gray-50">
-                  <img 
-                    src={selectedAgreement.signature_data} 
-                    alt="Digital Signature" 
-                    className="max-w-full h-auto border border-gray-200 rounded bg-white"
-                  />
-                </div>
-                <div className="flex justify-end">
-                  <Button 
-                    variant="outline" 
-                    size="sm"
-                    onClick={() => handleDownloadSignature(selectedAgreement)}
-                  >
-                    <Download className="w-4 h-4 mr-2" />
-                    Download Signature
-                  </Button>
+              {/* Digital Signature Section - PDF Style */}
+              <div className="space-y-4 border-t pt-6">
+                <h4 className="text-md font-medium text-gray-900">Digital Acceptance Evidence</h4>
+                <div className="bg-gray-50 border border-gray-200 rounded-lg p-6">
+                  <div className="space-y-4">
+                    <div className="grid grid-cols-2 gap-6 text-sm">
+                      <div>
+                        <span className="font-medium text-gray-700">Accepted by:</span>
+                        <div className="text-gray-900 mt-1">{selectedAgreement.client_name}</div>
+                      </div>
+                      <div>
+                        <span className="font-medium text-gray-700">Date & Time:</span>
+                        <div className="text-gray-900 mt-1">{new Date(selectedAgreement.accepted_at).toLocaleString()}</div>
+                      </div>
+                      <div>
+                        <span className="font-medium text-gray-700">IP Address:</span>
+                        <div className="text-gray-900 mt-1 font-mono text-xs">{selectedAgreement.ip_address || 'N/A'}</div>
+                      </div>
+                      <div>
+                        <span className="font-medium text-gray-700">Email:</span>
+                        <div className="text-gray-900 mt-1">{selectedAgreement.client_email}</div>
+                      </div>
+                    </div>
+                    
+                    <div className="pt-4">
+                      <span className="font-medium text-gray-700 text-sm">Digital Signature:</span>
+                      <div className="mt-2 p-4 bg-white border border-gray-200 rounded-lg">
+                        <img 
+                          src={selectedAgreement.signature_data} 
+                          alt="Digital Signature" 
+                          className="max-w-full h-auto max-h-32 border border-gray-100 rounded bg-white"
+                        />
+                      </div>
+                    </div>
+                    
+                    <div className="pt-2 flex justify-end">
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => handleDownloadSignature(selectedAgreement)}
+                      >
+                        <Download className="w-4 h-4 mr-2" />
+                        Download Signature
+                      </Button>
+                    </div>
+                  </div>
                 </div>
               </div>
               
               {/* Device Information */}
               {selectedAgreement.user_agent && (
-                <div>
-                  <h4 className="text-sm font-medium text-gray-500">Device Information</h4>
-                  <p className="text-sm text-gray-600 font-mono bg-gray-50 p-2 rounded">
+                <div className="border-t pt-4">
+                  <span className="font-medium text-gray-700 text-sm">Device Information:</span>
+                  <div className="mt-2 p-3 bg-gray-50 border border-gray-200 rounded text-xs text-gray-600 font-mono">
                     {selectedAgreement.user_agent}
-                  </p>
+                  </div>
                 </div>
               )}
             </div>
