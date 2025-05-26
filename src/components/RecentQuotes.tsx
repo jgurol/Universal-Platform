@@ -153,7 +153,7 @@ export const RecentQuotes = ({
             <Checkbox
               id="show-archived"
               checked={showArchived}
-              onCheckedChange={setShowArchived}
+              onCheckedChange={(checked) => setShowArchived(checked === true)}
             />
             <label
               htmlFor="show-archived"
