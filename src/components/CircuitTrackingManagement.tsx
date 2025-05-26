@@ -101,7 +101,7 @@ export const CircuitTrackingManagement = () => {
         <CardContent>
           {circuitTrackings.length === 0 ? (
             <div className="text-center py-8 text-gray-500">
-              No circuit orders found. Circuit tracking is automatically created when quotes with broadband, dedicated fiber, fixed wireless, or 4G/5G items are approved.
+              No orders with quote items found. Order tracking is automatically created when quotes are approved.
             </div>
           ) : (
             <div className="space-y-8">
@@ -146,6 +146,11 @@ export const CircuitTrackingManagement = () => {
                                   {circuit.quote_item?.address && (
                                     <p>
                                       <span className="font-medium">Service Address:</span> {circuit.quote_item.address.street_address}, {circuit.quote_item.address.city}, {circuit.quote_item.address.state}
+                                    </p>
+                                  )}
+                                  {circuit.quote_item && (
+                                    <p>
+                                      <span className="font-medium">Quantity:</span> {circuit.quote_item.quantity} x ${circuit.quote_item.unit_price}
                                     </p>
                                   )}
                                 </div>
