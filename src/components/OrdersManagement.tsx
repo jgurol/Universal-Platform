@@ -94,7 +94,7 @@ export const OrdersManagement = () => {
     setAgreementDialogOpen(true);
 
     try {
-      // Fetch the full quote data to generate PDF
+      // Fetch the full quote data including template_id
       const { data: quoteData, error: quoteError } = await supabase
         .from('quotes')
         .select(`
@@ -135,7 +135,7 @@ export const OrdersManagement = () => {
         .eq('id', quoteData.client_info_id)
         .single();
 
-      // Transform the data to match Quote interface
+      // Transform the data to match Quote interface, including templateId
       const quote: Quote = {
         id: quoteData.id,
         clientId: quoteData.client_id || '',
@@ -163,7 +163,8 @@ export const OrdersManagement = () => {
         billingAddress: quoteData.billing_address || '',
         serviceAddress: quoteData.service_address || '',
         expiresAt: quoteData.expires_at || '',
-        notes: quoteData.notes || ''
+        notes: quoteData.notes || '',
+        templateId: quoteData.template_id || undefined // Include template ID
       };
 
       const clientInfo: ClientInfo | undefined = clientInfoData ? {
