@@ -11,9 +11,9 @@ export const addCompanyInfo = (doc: jsPDF, context: PDFGenerationContext): void 
   const city = addressParts[1] || '';
   const stateZip = addressParts.slice(2).join(', ') || '';
   
-  // Company Information (first column)
-  const companyInfoX = 20; // Move to first column
-  const companyInfoY = 40;
+  // Company Information (first column) - narrower margin
+  const companyInfoX = 10;
+  const companyInfoY = 35;
   doc.setFontSize(10);
   doc.setTextColor(0, 0, 0);
   

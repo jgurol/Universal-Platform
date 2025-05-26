@@ -18,8 +18,8 @@ export const addMarkdownTextToPDF = (
 ): number => {
   let currentY = startY;
   const pageHeight = 297;
-  const bottomMargin = 20;
-  const topMargin = 20;
+  const bottomMargin = 10; // Reduced from 20
+  const topMargin = 10; // Reduced from 20
   const paragraphSpacing = 3; // Reduced from 6
   
   if (!markdownContent) return currentY;

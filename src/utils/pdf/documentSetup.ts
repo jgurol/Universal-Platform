@@ -1,3 +1,4 @@
+
 import jsPDF from 'jspdf';
 import { PDFGenerationContext } from './types';
 
@@ -22,7 +23,7 @@ export const setupDocument = async (context: PDFGenerationContext): Promise<{ do
           logoWidth = maxHeight * aspectRatio;
         }
         
-        doc.addImage(context.businessSettings.logoUrl, 'JPEG', 20, 15, logoWidth, logoHeight);
+        doc.addImage(context.businessSettings.logoUrl, 'JPEG', 10, 10, logoWidth, logoHeight);
         logoYOffset = logoHeight;
       };
       img.src = context.businessSettings.logoUrl;
@@ -39,15 +40,15 @@ export const setupDocument = async (context: PDFGenerationContext): Promise<{ do
   doc.setFontSize(18);
   doc.setFont('helvetica', 'normal');
   doc.setTextColor(128, 128, 128); // Gray color
-  doc.text('Agreement', 170, 25);
+  doc.text('Agreement', 185, 20);
   
   return { doc, logoYOffset };
 };
 
 export const addAgreementDetailsBox = (doc: jsPDF, context: PDFGenerationContext): void => {
-  const boxX = 135;
-  const boxY = 40;
-  const boxWidth = 60;
+  const boxX = 145;
+  const boxY = 35;
+  const boxWidth = 55;
   const boxHeight = 40; // Slightly increased height for better spacing
   
   // Gray background
@@ -95,9 +96,9 @@ export const addAgreementDetailsBox = (doc: jsPDF, context: PDFGenerationContext
 };
 
 export const addStatusIndicator = (doc: jsPDF, context: PDFGenerationContext): void => {
-  const buttonX = 135;
-  const buttonY = 100;
-  const buttonWidth = 60;
+  const buttonX = 145;
+  const buttonY = 85;
+  const buttonWidth = 55;
   const buttonHeight = 12;
   
   if (context.isApproved) {

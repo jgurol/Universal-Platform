@@ -19,15 +19,15 @@ export const addClientInfo = (doc: jsPDF, context: PDFGenerationContext): number
   
   if (!clientInfo) {
     console.log('PDF clientInfo.ts - No clientInfo provided, returning early');
-    return 120;
+    return 105;
   }
   
-  // Column positions
-  const billingCol = 20;
-  const serviceCol = 67;
+  // Column positions - narrower margins
+  const billingCol = 10;
+  const serviceCol = 105;
   
   // Section headers
-  let yPos = 100;
+  let yPos = 85;
   doc.setFontSize(11);
   doc.setFont('helvetica', 'bold');
   doc.setTextColor(0, 0, 0);
@@ -53,6 +53,6 @@ export const addClientInfo = (doc: jsPDF, context: PDFGenerationContext): number
   renderServiceAddress(doc, context, yPos, serviceAddress, serviceCol);
   renderContactInfo(doc, context, yPos, billingCol, serviceCol);
   
-  console.log('PDF clientInfo.ts - Completed addClientInfo, returning Y position:', 180);
-  return 180; // Return Y position for next section
+  console.log('PDF clientInfo.ts - Completed addClientInfo, returning Y position:', 165);
+  return 165; // Return Y position for next section
 };
