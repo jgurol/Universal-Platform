@@ -43,17 +43,17 @@ export const QuoteTableHeader = ({ sortField, sortDirection, onSort }: QuoteTabl
           {getSortIcon('quoteNumber')}
         </Button>
       </th>
-      <th className="font-semibold text-center">
+      <th className="font-semibold text-left">
         <Button 
           variant="ghost" 
-          className="h-auto p-0 font-semibold text-center hover:bg-transparent flex items-center justify-center w-full"
+          className="h-auto p-0 font-semibold text-left hover:bg-transparent flex items-center"
           onClick={() => onSort('customerName')}
         >
           Customer Name
           {getSortIcon('customerName')}
         </Button>
       </th>
-      <th className="font-semibold text-center">Quote Name</th>
+      <th className="font-semibold text-left">Quote Name</th>
       <th className="font-semibold text-center">NRC</th>
       <th className="font-semibold text-center">MRC</th>
       <th className="font-semibold text-center">
