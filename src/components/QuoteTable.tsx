@@ -71,12 +71,8 @@ export const QuoteTable = ({
     }
 
     // For non-quote number fields, use string comparison
-    if (sortField !== 'quoteNumber') {
-      const comparison = aValue.localeCompare(bValue);
-      return sortDirection === 'asc' ? comparison : -comparison;
-    }
-
-    return 0;
+    const stringComparison = aValue.localeCompare(bValue);
+    return sortDirection === 'asc' ? stringComparison : -stringComparison;
   });
 
   return (
