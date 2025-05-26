@@ -13,9 +13,16 @@ serve(async (req) => {
   }
 
   try {
-    const supabaseClient = createClient(
+    // Create supabase client with service role key - this bypasses RLS
+    const supabaseServiceRole = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
+      {
+        auth: {
+          autoRefreshToken: false,
+          persistSession: false
+        }
+      }
     )
 
     const requestBody = await req.json()
@@ -30,9 +37,10 @@ serve(async (req) => {
     }
     
     console.log('Processing quote approval for quote:', quoteId)
+    console.log('Using service role client for database operations')
 
     // Check if order already exists for this quote
-    const { data: existingOrders, error: orderCheckError } = await supabaseClient
+    const { data: existingOrders, error: orderCheckError } = await supabaseServiceRole
       .from('orders')
       .select('id, order_number')
       .eq('quote_id', quoteId)
@@ -51,8 +59,8 @@ serve(async (req) => {
       orderNumber = existingOrders[0].order_number
       console.log('Using existing order:', orderNumber)
     } else {
-      // Get the quote data first
-      const { data: quote, error: quoteError } = await supabaseClient
+      // Get the quote data first using service role
+      const { data: quote, error: quoteError } = await supabaseServiceRole
         .from('quotes')
         .select('*')
         .eq('id', quoteId)
@@ -68,8 +76,10 @@ serve(async (req) => {
         throw new Error('Quote not found')
       }
 
+      console.log('Quote found, creating order for user:', quote.user_id)
+
       // Generate sequential order number starting from 15000
-      const { data: lastOrder, error: lastOrderError } = await supabaseClient
+      const { data: lastOrder, error: lastOrderError } = await supabaseServiceRole
         .from('orders')
         .select('order_number')
         .order('created_at', { ascending: false })
@@ -91,8 +101,18 @@ serve(async (req) => {
       orderNumber = nextOrderNumber.toString()
       console.log('Generated order number:', orderNumber)
 
-      // Create new order
-      const { data: newOrder, error: orderError } = await supabaseClient
+      // Create new order using service role client
+      console.log('About to create order with data:', {
+        quote_id: quoteId,
+        order_number: orderNumber,
+        user_id: quote.user_id,
+        client_id: quote.client_id,
+        client_info_id: quote.client_info_id,
+        amount: quote.amount,
+        status: 'pending'
+      })
+
+      const { data: newOrder, error: orderError } = await supabaseServiceRole
         .from('orders')
         .insert({
           quote_id: quoteId,
@@ -113,6 +133,12 @@ serve(async (req) => {
 
       if (orderError) {
         console.error('Error creating order:', orderError)
+        console.error('Order error details:', {
+          code: orderError.code,
+          message: orderError.message,
+          details: orderError.details,
+          hint: orderError.hint
+        })
         throw orderError
       }
 
@@ -123,7 +149,7 @@ serve(async (req) => {
     // Get quote items with circuit-related categories
     const circuitCategories = ['broadband', 'dedicated fiber', 'fixed wireless', '4G/5G']
     
-    const { data: circuitItems, error: itemsError } = await supabaseClient
+    const { data: circuitItems, error: itemsError } = await supabaseServiceRole
       .from('quote_items')
       .select(`
         *,
@@ -150,7 +176,7 @@ serve(async (req) => {
     console.log('Found circuit-related items:', circuitRelatedItems.length)
 
     // Check for existing circuit tracking records for this order
-    const { data: existingTracking, error: trackingCheckError } = await supabaseClient
+    const { data: existingTracking, error: trackingCheckError } = await supabaseServiceRole
       .from('circuit_tracking')
       .select('id, quote_item_id')
       .eq('order_id', orderId)
@@ -183,12 +209,20 @@ serve(async (req) => {
     }
 
     if (trackingRecords.length > 0) {
-      const { error: trackingError } = await supabaseClient
+      console.log('About to create circuit tracking records:', trackingRecords.length)
+      
+      const { error: trackingError } = await supabaseServiceRole
         .from('circuit_tracking')
         .insert(trackingRecords)
 
       if (trackingError) {
         console.error('Error creating circuit tracking records:', trackingError)
+        console.error('Circuit tracking error details:', {
+          code: trackingError.code,
+          message: trackingError.message,
+          details: trackingError.details,
+          hint: trackingError.hint
+        })
         throw trackingError
       }
 
