@@ -1,16 +1,9 @@
-
 import jsPDF from 'jspdf';
 import { PDFGenerationContext } from './types';
 
 export const setupDocument = async (context: PDFGenerationContext): Promise<{ doc: jsPDF; logoYOffset: number }> => {
   const doc = new jsPDF();
   let logoYOffset = 0;
-  
-  // Add CALIFORNIA | TELECOM header
-  doc.setFontSize(24);
-  doc.setFont('helvetica', 'bold');
-  doc.setTextColor(41, 55, 140); // Dark blue color
-  doc.text('CALIFORNIA | TELECOM', 20, 25);
   
   // Load and add company logo if available
   if (context.businessSettings.logoUrl) {
