@@ -10,7 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { useCircuitTracking } from "@/hooks/useCircuitTracking";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Zap, Package } from "lucide-react";
+import { Plus, Zap, Package, FileText } from "lucide-react";
 
 export const CircuitTrackingManagement = () => {
   const { circuitTrackings, isLoading, updateCircuitProgress, addMilestone } = useCircuitTracking();
@@ -119,23 +119,36 @@ export const CircuitTrackingManagement = () => {
                         <Card key={circuit.id} className="bg-gray-50">
                           <CardContent className="pt-6">
                             <div className="flex justify-between items-start mb-4">
-                              <div>
-                                <h4 className="font-semibold text-lg">
+                              <div className="flex-1">
+                                <h4 className="font-semibold text-lg mb-2">
                                   {circuit.item_name || circuit.quote_item?.item?.name || circuit.circuit_type.charAt(0).toUpperCase() + circuit.circuit_type.slice(1).replace('_', ' ')}
                                 </h4>
-                                <p className="text-sm text-gray-600">
-                                  Type: {circuit.circuit_type.charAt(0).toUpperCase() + circuit.circuit_type.slice(1).replace('_', ' ')}
-                                </p>
+                                
+                                {/* Item Description - highlighted */}
                                 {(circuit.item_description || circuit.quote_item?.item?.description) && (
-                                  <p className="text-sm text-gray-500 mt-1">
-                                    {circuit.item_description || circuit.quote_item?.item?.description}
-                                  </p>
+                                  <div className="mb-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                                    <div className="flex items-start gap-2">
+                                      <FileText className="w-4 h-4 text-blue-600 mt-0.5 flex-shrink-0" />
+                                      <div>
+                                        <p className="text-sm font-medium text-blue-900 mb-1">Item Description:</p>
+                                        <p className="text-sm text-blue-800">
+                                          {circuit.item_description || circuit.quote_item?.item?.description}
+                                        </p>
+                                      </div>
+                                    </div>
+                                  </div>
                                 )}
-                                {circuit.quote_item?.address && (
-                                  <p className="text-sm text-gray-500 mt-1">
-                                    Service Address: {circuit.quote_item.address.street_address}, {circuit.quote_item.address.city}, {circuit.quote_item.address.state}
+
+                                <div className="space-y-1 text-sm text-gray-600">
+                                  <p>
+                                    <span className="font-medium">Type:</span> {circuit.circuit_type.charAt(0).toUpperCase() + circuit.circuit_type.slice(1).replace('_', ' ')}
                                   </p>
-                                )}
+                                  {circuit.quote_item?.address && (
+                                    <p>
+                                      <span className="font-medium">Service Address:</span> {circuit.quote_item.address.street_address}, {circuit.quote_item.address.city}, {circuit.quote_item.address.state}
+                                    </p>
+                                  )}
+                                </div>
                               </div>
                               <Badge className={getStatusColor(circuit.status)}>
                                 {circuit.status.charAt(0).toUpperCase() + circuit.status.slice(1).replace('_', ' ')}

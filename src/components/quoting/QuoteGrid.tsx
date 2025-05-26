@@ -72,6 +72,10 @@ export const QuoteGrid = ({
             <QuoteCard
               key={quote.id}
               quote={quote}
+              clientInfos={clientInfos}
+              onEditClick={onEditClick}
+              onDeleteQuote={onDeleteQuote}
+              onCopyQuote={onCopyQuote}
             />
           ))}
         </div>
