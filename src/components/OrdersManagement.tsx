@@ -156,6 +156,10 @@ export const OrdersManagement = () => {
         .eq('id', quoteData.client_info_id)
         .single();
 
+      // Get the account manager name for the PDF
+      const agentId = clientInfoData?.agent_id;
+      const accountManagerName = agentId ? agentMapping[agentId] || 'Unknown' : 'No Agent';
+
       // Transform the data to match Quote interface, including templateId
       const quote: Quote = {
         id: quoteData.id,
@@ -203,8 +207,8 @@ export const OrdersManagement = () => {
         updated_at: clientInfoData.updated_at
       } : undefined;
 
-      // Generate PDF using the same function as quotes tab
-      const pdf = await generateQuotePDF(quote, clientInfo, acceptance.client_name);
+      // Generate PDF using the same function as quotes tab, but pass the correct account manager name
+      const pdf = await generateQuotePDF(quote, clientInfo, accountManagerName);
       const pdfBlob = pdf.output('blob');
       const url = URL.createObjectURL(pdfBlob);
       
