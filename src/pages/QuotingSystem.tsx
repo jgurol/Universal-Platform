@@ -1,6 +1,5 @@
 
 import { useState } from "react";
-import { Header } from "@/components/Header";
 import { NavigationBar } from "@/components/NavigationBar";
 import { RecentQuotes } from "@/components/RecentQuotes";
 import { ItemsManagement } from "@/components/ItemsManagement";
@@ -40,9 +39,6 @@ const QuotingSystem = () => {
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
       <NavigationBar />
       <div className="container mx-auto px-4 py-8 max-w-7xl">
-        {/* Header */}
-        <Header />
-
         {/* Page Title */}
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">Quoting System</h1>
