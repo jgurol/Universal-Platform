@@ -57,12 +57,31 @@ serve(async (req) => {
 
     console.log('Quote found, processing approval for user:', quote.user_id)
 
+    // STEP 1: Update quote status FIRST, before any order operations
+    console.log('Step 1: Updating quote status to approved...')
+    const { error: quoteUpdateError } = await supabaseServiceRole
+      .from('quotes')
+      .update({
+        status: 'approved',
+        acceptance_status: 'accepted',
+        accepted_at: new Date().toISOString()
+      })
+      .eq('id', quoteId)
+
+    if (quoteUpdateError) {
+      console.error('Error updating quote status:', quoteUpdateError)
+      throw quoteUpdateError
+    }
+
+    console.log('Quote status updated to approved successfully')
+
+    // STEP 2: Handle order creation/retrieval separately
     let orderId: string
     let orderNumber: string
     let orderAlreadyExisted = false
 
-    // Try to get existing order first
-    console.log('Checking for existing orders...')
+    // Check for existing order
+    console.log('Step 2: Checking for existing orders...')
     const { data: existingOrders, error: orderCheckError } = await supabaseServiceRole
       .from('orders')
       .select('id, order_number')
@@ -80,10 +99,10 @@ serve(async (req) => {
       orderAlreadyExisted = true
       console.log('Using existing order:', orderNumber)
     } else {
-      // No existing order, try to create one
-      console.log('No existing order found, attempting to create new order...')
+      // No existing order, create one
+      console.log('No existing order found, creating new order...')
       
-      // Generate truly unique order number using timestamp and random component
+      // Generate unique order number
       const now = new Date()
       const year = now.getFullYear()
       const dayOfYear = Math.floor((now.getTime() - new Date(year, 0, 0).getTime()) / (1000 * 60 * 60 * 24))
@@ -93,102 +112,62 @@ serve(async (req) => {
       orderNumber = `ORD-${year}-${dayOfYear.toString().padStart(3, '0')}-${timeComponent}${randomComponent}`
       console.log('Generated unique order number:', orderNumber)
 
-      try {
-        // Attempt to create new order
-        console.log('About to create order with data:', {
+      // Create order
+      const { data: newOrder, error: orderError } = await supabaseServiceRole
+        .from('orders')
+        .insert({
           quote_id: quoteId,
           order_number: orderNumber,
           user_id: quote.user_id,
           client_id: quote.client_id,
           client_info_id: quote.client_info_id,
           amount: quote.amount,
-          status: 'pending'
+          status: 'pending',
+          billing_address: quote.billing_address,
+          service_address: quote.service_address,
+          notes: quote.notes,
+          commission: quote.commission,
+          commission_override: quote.commission_override
         })
+        .select()
+        .single()
 
-        const { data: newOrder, error: orderError } = await supabaseServiceRole
-          .from('orders')
-          .insert({
-            quote_id: quoteId,
-            order_number: orderNumber,
-            user_id: quote.user_id,
-            client_id: quote.client_id,
-            client_info_id: quote.client_info_id,
-            amount: quote.amount,
-            status: 'pending',
-            billing_address: quote.billing_address,
-            service_address: quote.service_address,
-            notes: quote.notes,
-            commission: quote.commission,
-            commission_override: quote.commission_override
-          })
-          .select()
-          .single()
-
-        if (orderError) {
-          console.error('Error creating order:', orderError)
+      if (orderError) {
+        console.error('Error creating order:', orderError)
+        
+        // If we get a duplicate key error, fetch the existing order created by another process
+        if (orderError.code === '23505' && orderError.message?.includes('orders_quote_id_key')) {
+          console.log('Duplicate order detected, fetching existing order...')
           
-          // If we get a duplicate key error, it means another process created the order
-          if (orderError.code === '23505' && orderError.message?.includes('orders_quote_id_key')) {
-            console.log('Duplicate order detected during creation, fetching existing order...')
-            
-            // Fetch the existing order that was created by another process
-            const { data: existingOrder, error: existingOrderError } = await supabaseServiceRole
-              .from('orders')
-              .select('id, order_number')
-              .eq('quote_id', quoteId)
-              .single()
+          const { data: existingOrder, error: existingOrderError } = await supabaseServiceRole
+            .from('orders')
+            .select('id, order_number')
+            .eq('quote_id', quoteId)
+            .single()
 
-            if (existingOrderError) {
-              console.error('Error fetching existing order after duplicate:', existingOrderError)
-              throw orderError // Throw original error
-            }
+          if (existingOrderError) {
+            console.error('Error fetching existing order after duplicate:', existingOrderError)
+            throw orderError // Throw original error
+          }
 
-            if (existingOrder) {
-              console.log('Successfully found existing order after duplicate error:', existingOrder.order_number)
-              orderId = existingOrder.id
-              orderNumber = existingOrder.order_number
-              orderAlreadyExisted = true
-            } else {
-              throw orderError // Throw original error if no existing order found
-            }
+          if (existingOrder) {
+            console.log('Successfully found existing order after duplicate error:', existingOrder.order_number)
+            orderId = existingOrder.id
+            orderNumber = existingOrder.order_number
+            orderAlreadyExisted = true
           } else {
-            console.error('Order creation failed with non-duplicate error:', {
-              code: orderError.code,
-              message: orderError.message,
-              details: orderError.details,
-              hint: orderError.hint
-            })
-            throw orderError
+            throw orderError // Throw original error if no existing order found
           }
         } else {
-          orderId = newOrder.id
-          console.log('Successfully created new order with ID:', orderId)
+          throw orderError
         }
-      } catch (createError) {
-        console.error('Unexpected error during order creation:', createError)
-        throw createError
+      } else {
+        orderId = newOrder.id
+        console.log('Successfully created new order with ID:', orderId)
       }
     }
 
-    // ALWAYS update quote status to approved, regardless of order creation outcome
-    console.log('Updating quote status to approved...')
-    const { error: quoteUpdateError } = await supabaseServiceRole
-      .from('quotes')
-      .update({
-        status: 'approved',
-        acceptance_status: 'accepted',
-        accepted_at: new Date().toISOString()
-      })
-      .eq('id', quoteId)
-
-    if (quoteUpdateError) {
-      console.error('Error updating quote status:', quoteUpdateError)
-      throw quoteUpdateError
-    }
-
-    console.log('Quote status updated to approved successfully')
-
-    // Get quote items with circuit-related categories
+    // STEP 3: Handle circuit tracking (only if no existing tracking and we have circuit items)
     const circuitCategories = ['broadband', 'dedicated fiber', 'fixed wireless', '4G/5G']
     
     const { data: circuitItems, error: itemsError } = await supabaseServiceRole
@@ -217,7 +196,7 @@ serve(async (req) => {
 
     console.log('Found circuit-related items:', circuitRelatedItems.length)
 
-    // Check for existing circuit tracking record for this order (should be only one per order)
+    // Check for existing circuit tracking record for this order
     const { data: existingTracking, error: trackingCheckError } = await supabaseServiceRole
       .from('circuit_tracking')
       .select('id')
@@ -237,7 +216,7 @@ serve(async (req) => {
         primaryCircuitItem.item.category.name.toLowerCase().includes(cat.toLowerCase())
       ) || 'broadband'
 
-      console.log('Creating single circuit tracking record for order:', orderId)
+      console.log('Creating circuit tracking record for order:', orderId)
       
       const { error: trackingError } = await supabaseServiceRole
         .from('circuit_tracking')
@@ -253,16 +232,10 @@ serve(async (req) => {
 
       if (trackingError) {
         console.error('Error creating circuit tracking record:', trackingError)
-        console.error('Circuit tracking error details:', {
-          code: trackingError.code,
-          message: trackingError.message,
-          details: trackingError.details,
-          hint: trackingError.hint
-        })
-        throw trackingError
+        // Don't throw error for circuit tracking - it's not critical
+      } else {
+        console.log('Created circuit tracking record successfully')
       }
-
-      console.log('Created circuit tracking record successfully')
     } else if (existingTracking) {
       console.log('Circuit tracking already exists for this order')
     } else {
