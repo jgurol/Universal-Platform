@@ -11,9 +11,9 @@ export const addCompanyInfo = (doc: jsPDF, context: PDFGenerationContext): void 
   const city = addressParts[1] || '';
   const stateZip = addressParts.slice(2).join(', ') || '';
   
-  // Company Information (left side) - positioned below the header
-  const companyInfoY = 55;
-  doc.setFontSize(11);
+  // Company Information (left side)
+  const companyInfoY = 40;
+  doc.setFontSize(9);
   doc.setTextColor(0, 0, 0);
   
   let currentY = companyInfoY;
@@ -21,24 +21,20 @@ export const addCompanyInfo = (doc: jsPDF, context: PDFGenerationContext): void 
   if (businessSettings.showCompanyNameOnPDF) {
     doc.setFont('helvetica', 'bold');
     doc.text(businessSettings.companyName, 20, currentY);
-    currentY += 5;
+    currentY += 3;
   }
   
   doc.setFont('helvetica', 'normal');
   doc.text(streetAddress, 20, currentY);
-  currentY += 4;
+  currentY += 3;
   
-  if (city && stateZip) {
-    doc.text(`${city}, ${stateZip}`, 20, currentY);
-    currentY += 4;
+  if (city) {
+    doc.text(city + (stateZip ? ', ' + stateZip : ''), 20, currentY);
+    currentY += 3;
   }
   
-  // Add "United States" line
-  doc.text('United States', 20, currentY);
-  currentY += 6;
-  
   doc.text(`Tel: ${businessSettings.businessPhone}`, 20, currentY);
-  currentY += 4;
+  currentY += 3;
   
   if (businessSettings.businessFax && businessSettings.businessFax.trim() !== '') {
     doc.text(`Fax: ${businessSettings.businessFax}`, 20, currentY);
