@@ -10,6 +10,7 @@ import { useToast } from "@/hooks/use-toast";
 import { formatDateForDisplay } from "@/utils/dateUtils";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
+import { QuoteItemData } from "@/types/quoteItems";
 
 interface QuoteAcceptance {
   id: string;
@@ -17,7 +18,7 @@ interface QuoteAcceptance {
   client_email: string;
   signature_data: string;
   accepted_at: string;
-  ip_address: string;
+  ip_address: string | null;
   user_agent: string;
 }
 
@@ -25,40 +26,81 @@ export const OrdersManagement = () => {
   const { orders, isLoading, deleteOrder } = useOrders();
   const { toast } = useToast();
   const [quoteAcceptances, setQuoteAcceptances] = useState<Record<string, QuoteAcceptance>>({});
+  const [quoteItems, setQuoteItems] = useState<Record<string, QuoteItemData[]>>({});
   const [selectedAgreement, setSelectedAgreement] = useState<QuoteAcceptance | null>(null);
+  const [selectedQuoteItems, setSelectedQuoteItems] = useState<QuoteItemData[]>([]);
   const [agreementDialogOpen, setAgreementDialogOpen] = useState(false);
 
-  // Fetch quote acceptances for orders
+  // Fetch quote acceptances and quote items for orders
   useEffect(() => {
-    const fetchQuoteAcceptances = async () => {
+    const fetchQuoteData = async () => {
       if (orders.length === 0) return;
 
       const quoteIds = orders.map(order => order.quote_id);
       
       try {
-        const { data, error } = await supabase
+        // Fetch quote acceptances
+        const { data: acceptanceData, error: acceptanceError } = await supabase
           .from('quote_acceptances')
           .select('*')
           .in('quote_id', quoteIds);
 
-        if (error) {
-          console.error('Error fetching quote acceptances:', error);
-          return;
+        if (acceptanceError) {
+          console.error('Error fetching quote acceptances:', acceptanceError);
+        } else if (acceptanceData) {
+          // Create a map of quote_id to acceptance data
+          const acceptancesMap: Record<string, QuoteAcceptance> = {};
+          acceptanceData.forEach(acceptance => {
+            acceptancesMap[acceptance.quote_id] = {
+              ...acceptance,
+              ip_address: acceptance.ip_address?.toString() || null
+            };
+          });
+          setQuoteAcceptances(acceptancesMap);
         }
 
-        // Create a map of quote_id to acceptance data
-        const acceptancesMap: Record<string, QuoteAcceptance> = {};
-        data?.forEach(acceptance => {
-          acceptancesMap[acceptance.quote_id] = acceptance;
-        });
+        // Fetch quote items for each quote
+        const { data: itemsData, error: itemsError } = await supabase
+          .from('quote_items')
+          .select(`
+            *,
+            item:items(*),
+            address:client_addresses(*)
+          `)
+          .in('quote_id', quoteIds);
 
-        setQuoteAcceptances(acceptancesMap);
+        if (itemsError) {
+          console.error('Error fetching quote items:', itemsError);
+        } else if (itemsData) {
+          // Group items by quote_id
+          const itemsMap: Record<string, QuoteItemData[]> = {};
+          itemsData.forEach(item => {
+            if (!itemsMap[item.quote_id]) {
+              itemsMap[item.quote_id] = [];
+            }
+            itemsMap[item.quote_id].push({
+              id: item.id,
+              item_id: item.item_id,
+              quantity: item.quantity,
+              unit_price: item.unit_price,
+              total_price: item.total_price,
+              charge_type: item.charge_type as 'NRC' | 'MRC',
+              address_id: item.address_id,
+              name: item.item?.name || '',
+              description: item.item?.description || '',
+              item: item.item,
+              address: item.address
+            });
+          });
+          setQuoteItems(itemsMap);
+        }
+
       } catch (error) {
-        console.error('Error fetching quote acceptances:', error);
+        console.error('Error fetching quote data:', error);
       }
     };
 
-    fetchQuoteAcceptances();
+    fetchQuoteData();
   }, [orders]);
 
   const handleDeleteOrder = async (orderId: string) => {
@@ -80,8 +122,10 @@ export const OrdersManagement = () => {
 
   const handleViewAgreement = (quoteId: string) => {
     const acceptance = quoteAcceptances[quoteId];
+    const items = quoteItems[quoteId] || [];
     if (acceptance) {
       setSelectedAgreement(acceptance);
+      setSelectedQuoteItems(items);
       setAgreementDialogOpen(true);
     }
   };
@@ -107,6 +151,18 @@ export const OrdersManagement = () => {
         variant: "destructive",
       });
     }
+  };
+
+  const getMRCTotal = (items: QuoteItemData[]) => {
+    return items
+      .filter(item => item.charge_type === 'MRC')
+      .reduce((total, item) => total + item.total_price, 0);
+  };
+
+  const getNRCTotal = (items: QuoteItemData[]) => {
+    return items
+      .filter(item => item.charge_type === 'NRC')
+      .reduce((total, item) => total + item.total_price, 0);
   };
 
   if (isLoading) {
@@ -214,15 +270,16 @@ export const OrdersManagement = () => {
 
       {/* Agreement Viewer Dialog */}
       <Dialog open={agreementDialogOpen} onOpenChange={setAgreementDialogOpen}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Signed Agreement</DialogTitle>
             <DialogDescription>
-              Agreement details and digital signature
+              Agreement details, quote items, and digital signature
             </DialogDescription>
           </DialogHeader>
           {selectedAgreement && (
-            <div className="space-y-4">
+            <div className="space-y-6">
+              {/* Client Information */}
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <h4 className="text-sm font-medium text-gray-500">Client Name</h4>
@@ -238,10 +295,99 @@ export const OrdersManagement = () => {
                 </div>
                 <div>
                   <h4 className="text-sm font-medium text-gray-500">IP Address</h4>
-                  <p className="text-lg font-mono text-sm">{selectedAgreement.ip_address}</p>
+                  <p className="text-lg font-mono text-sm">{selectedAgreement.ip_address || 'N/A'}</p>
                 </div>
               </div>
+
+              {/* Quote Items */}
+              {selectedQuoteItems.length > 0 && (
+                <div className="space-y-4">
+                  <h4 className="text-lg font-medium">Quote Items</h4>
+                  
+                  {/* Monthly Recurring Items */}
+                  {selectedQuoteItems.filter(item => item.charge_type === 'MRC').length > 0 && (
+                    <div className="space-y-2">
+                      <h5 className="text-md font-medium text-blue-700">Monthly Recurring Charges (MRC)</h5>
+                      <div className="overflow-x-auto">
+                        <Table>
+                          <TableHeader>
+                            <TableRow>
+                              <TableHead>Item</TableHead>
+                              <TableHead>Description</TableHead>
+                              <TableHead>Quantity</TableHead>
+                              <TableHead>Unit Price</TableHead>
+                              <TableHead>Total</TableHead>
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {selectedQuoteItems
+                              .filter(item => item.charge_type === 'MRC')
+                              .map((item) => (
+                                <TableRow key={item.id}>
+                                  <TableCell className="font-medium">{item.name}</TableCell>
+                                  <TableCell className="text-sm text-gray-600">{item.description}</TableCell>
+                                  <TableCell>{item.quantity}</TableCell>
+                                  <TableCell>${item.unit_price.toFixed(2)}</TableCell>
+                                  <TableCell className="font-medium">${item.total_price.toFixed(2)}</TableCell>
+                                </TableRow>
+                              ))}
+                          </TableBody>
+                        </Table>
+                      </div>
+                      <div className="text-right">
+                        <strong>MRC Total: ${getMRCTotal(selectedQuoteItems).toFixed(2)}</strong>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Non-Recurring Items */}
+                  {selectedQuoteItems.filter(item => item.charge_type === 'NRC').length > 0 && (
+                    <div className="space-y-2">
+                      <h5 className="text-md font-medium text-green-700">One-Time Charges (NRC)</h5>
+                      <div className="overflow-x-auto">
+                        <Table>
+                          <TableHeader>
+                            <TableRow>
+                              <TableHead>Item</TableHead>
+                              <TableHead>Description</TableHead>
+                              <TableHead>Quantity</TableHead>
+                              <TableHead>Unit Price</TableHead>
+                              <TableHead>Total</TableHead>
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {selectedQuoteItems
+                              .filter(item => item.charge_type === 'NRC')
+                              .map((item) => (
+                                <TableRow key={item.id}>
+                                  <TableCell className="font-medium">{item.name}</TableCell>
+                                  <TableCell className="text-sm text-gray-600">{item.description}</TableCell>
+                                  <TableCell>{item.quantity}</TableCell>
+                                  <TableCell>${item.unit_price.toFixed(2)}</TableCell>
+                                  <TableCell className="font-medium">${item.total_price.toFixed(2)}</TableCell>
+                                </TableRow>
+                              ))}
+                          </TableBody>
+                        </Table>
+                      </div>
+                      <div className="text-right">
+                        <strong>NRC Total: ${getNRCTotal(selectedQuoteItems).toFixed(2)}</strong>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Grand Total */}
+                  <div className="border-t pt-4">
+                    <div className="text-right">
+                      <div className="text-xl font-bold">
+                        Grand Total: ${(getMRCTotal(selectedQuoteItems) + getNRCTotal(selectedQuoteItems)).toFixed(2)}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
               
+              {/* Digital Signature */}
               <div className="space-y-2">
                 <h4 className="text-sm font-medium text-gray-500">Digital Signature</h4>
                 <div className="border rounded-lg p-4 bg-gray-50">
@@ -263,6 +409,7 @@ export const OrdersManagement = () => {
                 </div>
               </div>
               
+              {/* Device Information */}
               {selectedAgreement.user_agent && (
                 <div>
                   <h4 className="text-sm font-medium text-gray-500">Device Information</h4>
