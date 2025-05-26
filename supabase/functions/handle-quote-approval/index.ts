@@ -228,48 +228,42 @@ serve(async (req) => {
 
     console.log('Found circuit-related items:', circuitRelatedItems.length)
 
-    // Check for existing circuit tracking records for this order
+    // Check for existing circuit tracking record for this order (should be only one per order)
     const { data: existingTracking, error: trackingCheckError } = await supabaseServiceRole
       .from('circuit_tracking')
-      .select('id, quote_item_id')
+      .select('id')
       .eq('order_id', orderId)
+      .maybeSingle()
 
     if (trackingCheckError) {
       console.error('Error checking existing circuit tracking:', trackingCheckError)
       throw trackingCheckError
     }
 
-    const existingItemIds = new Set(existingTracking?.map(t => t.quote_item_id) || [])
+    // Only create circuit tracking if we have circuit items and no existing tracking
+    if (circuitRelatedItems.length > 0 && !existingTracking) {
+      // Get the primary circuit type (use the first one found)
+      const primaryCircuitItem = circuitRelatedItems[0]
+      const circuitType = circuitCategories.find(cat => 
+        primaryCircuitItem.item.category.name.toLowerCase().includes(cat.toLowerCase())
+      ) || 'broadband'
 
-    // Create circuit tracking records for each circuit item that doesn't already have tracking
-    const trackingRecords = []
-    for (const item of circuitRelatedItems) {
-      if (!existingItemIds.has(item.id)) {
-        const circuitType = circuitCategories.find(cat => 
-          item.item.category.name.toLowerCase().includes(cat.toLowerCase())
-        ) || 'broadband'
-
-        trackingRecords.push({
-          order_id: orderId,
-          quote_item_id: item.id,
-          circuit_type: circuitType.toLowerCase(),
-          status: 'ordered',
-          progress_percentage: 0,
-          item_name: item.item.name,
-          item_description: item.item.description
-        })
-      }
-    }
-
-    if (trackingRecords.length > 0) {
-      console.log('About to create circuit tracking records:', trackingRecords.length)
+      console.log('Creating single circuit tracking record for order:', orderId)
       
       const { error: trackingError } = await supabaseServiceRole
         .from('circuit_tracking')
-        .insert(trackingRecords)
+        .insert({
+          order_id: orderId,
+          quote_item_id: primaryCircuitItem.id,
+          circuit_type: circuitType.toLowerCase(),
+          status: 'ordered',
+          progress_percentage: 0,
+          item_name: primaryCircuitItem.item.name,
+          item_description: primaryCircuitItem.item.description
+        })
 
       if (trackingError) {
-        console.error('Error creating circuit tracking records:', trackingError)
+        console.error('Error creating circuit tracking record:', trackingError)
         console.error('Circuit tracking error details:', {
           code: trackingError.code,
           message: trackingError.message,
@@ -279,9 +273,11 @@ serve(async (req) => {
         throw trackingError
       }
 
-      console.log('Created circuit tracking records:', trackingRecords.length)
+      console.log('Created circuit tracking record successfully')
+    } else if (existingTracking) {
+      console.log('Circuit tracking already exists for this order')
     } else {
-      console.log('No new circuit tracking records needed')
+      console.log('No circuit items found, skipping circuit tracking creation')
     }
 
     return new Response(
@@ -291,7 +287,7 @@ serve(async (req) => {
         orderNumbers: [orderNumber],
         message: existingOrders && existingOrders.length > 0 ? 'Order already exists for this quote' : 'Order created successfully',
         ordersCount: 1,
-        circuitTrackingCreated: trackingRecords.length
+        circuitTrackingCreated: circuitRelatedItems.length > 0 && !existingTracking ? 1 : 0
       }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
