@@ -1,4 +1,3 @@
-
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -88,6 +87,16 @@ export const CircuitTrackingManagement = () => {
     milestone_description: '',
     target_date: '',
     status: 'pending' as const
+  });
+
+  // Add debug logging to see what data we're getting
+  console.log('Circuit trackings data:', circuitTrackings);
+  circuitTrackings.forEach(circuit => {
+    console.log(`Circuit ${circuit.id} quote data:`, {
+      quote: circuit.quote_item?.quote,
+      accepted_at: circuit.quote_item?.quote?.accepted_at,
+      quote_number: circuit.quote_item?.quote?.quote_number
+    });
   });
 
   const handleStageUpdate = async (circuitId: string, newStage: string) => {
@@ -251,6 +260,8 @@ export const CircuitTrackingManagement = () => {
                                     {(trackings as any[]).map((circuit) => {
                                       const progress = getProgressFromStage(circuit.stage || 'Ready to Order');
                                       const progressBarClass = getProgressBarClassName(circuit.stage || 'Ready to Order');
+                                      const approvedDate = circuit.quote_item?.quote?.accepted_at;
+                                      
                                       return (
                                         <TableRow key={circuit.id}>
                                           <TableCell className="font-medium">
@@ -263,7 +274,7 @@ export const CircuitTrackingManagement = () => {
                                             {circuit.order?.order_number || circuit.order_id.slice(0, 8)}
                                           </TableCell>
                                           <TableCell className="text-sm text-gray-600">
-                                            {formatDate(circuit.quote_item?.quote?.accepted_at)}
+                                            {formatDate(approvedDate)}
                                           </TableCell>
                                           <TableCell>
                                             <div className="space-y-1">
@@ -378,6 +389,8 @@ export const CircuitTrackingManagement = () => {
                           {trackings.map((circuit) => {
                             const progress = getProgressFromStage(circuit.stage || 'Ready to Order');
                             const progressBarClass = getProgressBarClassName(circuit.stage || 'Ready to Order');
+                            const approvedDate = circuit.quote_item?.quote?.accepted_at;
+                            
                             return (
                               <TableRow key={circuit.id}>
                                 <TableCell className="font-medium">
@@ -402,7 +415,7 @@ export const CircuitTrackingManagement = () => {
                                   </TableCell>
                                 )}
                                 <TableCell className="text-sm text-gray-600">
-                                  {formatDate(circuit.quote_item?.quote?.accepted_at)}
+                                  {formatDate(approvedDate)}
                                 </TableCell>
                                 <TableCell>
                                   <div className="space-y-1">
