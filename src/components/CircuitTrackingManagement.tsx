@@ -39,11 +39,18 @@ const getProgressFromStage = (stage: string): number => {
 };
 
 const getProgressBarClassName = (stage: string): string => {
+  const stageIndex = STAGES.indexOf(stage);
+  const jeppIndex = STAGES.indexOf("Jepp'd");
+  const focIndex = STAGES.indexOf("FOC");
+  
   if (stage === "Jepp'd") {
     return "h-2 [&>div]:bg-red-500";
   }
-  if (stage === "FOC") {
+  if (stage === "FOC" || stageIndex > focIndex) {
     return "h-2 [&>div]:bg-green-500";
+  }
+  if (stageIndex < jeppIndex) {
+    return "h-2 [&>div]:bg-yellow-500";
   }
   return "h-2";
 };
