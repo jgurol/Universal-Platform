@@ -11,32 +11,36 @@ export const addCompanyInfo = (doc: jsPDF, context: PDFGenerationContext): void 
   const city = addressParts[1] || '';
   const stateZip = addressParts.slice(2).join(', ') || '';
   
-  // Company Information (left side)
+  // Company Information (first column, right-aligned with logo area)
+  const companyInfoX = 135; // Aligned with agreement box
   const companyInfoY = 40;
-  doc.setFontSize(9);
+  doc.setFontSize(10);
   doc.setTextColor(0, 0, 0);
   
   let currentY = companyInfoY;
   
   if (businessSettings.showCompanyNameOnPDF) {
     doc.setFont('helvetica', 'bold');
-    doc.text(businessSettings.companyName, 20, currentY);
-    currentY += 3;
+    doc.text(businessSettings.companyName, companyInfoX, currentY);
+    currentY += 4;
   }
   
   doc.setFont('helvetica', 'normal');
-  doc.text(streetAddress, 20, currentY);
-  currentY += 3;
+  doc.text(streetAddress, companyInfoX, currentY);
+  currentY += 4;
   
   if (city) {
-    doc.text(city + (stateZip ? ', ' + stateZip : ''), 20, currentY);
-    currentY += 3;
+    doc.text(city + (stateZip ? ', ' + stateZip : ''), companyInfoX, currentY);
+    currentY += 4;
   }
   
-  doc.text(`Tel: ${businessSettings.businessPhone}`, 20, currentY);
-  currentY += 3;
+  doc.text('United States', companyInfoX, currentY);
+  currentY += 6;
+  
+  doc.text(`Tel: ${businessSettings.businessPhone}`, companyInfoX, currentY);
+  currentY += 4;
   
   if (businessSettings.businessFax && businessSettings.businessFax.trim() !== '') {
-    doc.text(`Fax: ${businessSettings.businessFax}`, 20, currentY);
+    doc.text(`Fax: ${businessSettings.businessFax}`, companyInfoX, currentY);
   }
 };

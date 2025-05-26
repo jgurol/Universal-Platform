@@ -3,22 +3,22 @@ import jsPDF from 'jspdf';
 import { PDFGenerationContext } from '../types';
 import { formatAddress } from '../addressFormatting';
 
-export const renderServiceAddress = (doc: jsPDF, context: PDFGenerationContext, rightColYPos: number, serviceAddress: string | null): number => {
+export const renderServiceAddress = (doc: jsPDF, context: PDFGenerationContext, yPos: number, serviceAddress: string | null, xPos: number = 67): number => {
   const { clientInfo } = context;
   
   if (!clientInfo) return 0;
   
-  // Service address (right column)
+  // Service address (second column)
   doc.setFont('helvetica', 'bold');
-  doc.setTextColor(0, 0, 0); // Ensure black text
-  doc.text(clientInfo.company_name, 110, rightColYPos);
+  doc.setTextColor(0, 0, 0);
+  doc.text(clientInfo.company_name, xPos, yPos);
   doc.setFont('helvetica', 'normal');
-  doc.setTextColor(0, 0, 0); // Reset to black for normal text
+  doc.setTextColor(0, 0, 0);
   
   let rightYOffset = 0;
   if (clientInfo.contact_name) {
-    doc.text(clientInfo.contact_name, 110, rightColYPos + 7);
-    rightYOffset = 7;
+    doc.text(clientInfo.contact_name, xPos, yPos + 4);
+    rightYOffset = 4;
   }
   
   if (serviceAddress && serviceAddress.trim() !== '') {
@@ -27,42 +27,30 @@ export const renderServiceAddress = (doc: jsPDF, context: PDFGenerationContext, 
     console.log('PDF serviceAddress - Formatted service address result:', formattedService);
     
     if (formattedService) {
-      const serviceStreetY = rightColYPos + 7 + rightYOffset;
-      const serviceCityY = rightColYPos + 14 + rightYOffset;
-      
-      console.log('PDF serviceAddress - About to add service street at Y position:', serviceStreetY);
-      console.log('PDF serviceAddress - Service street text:', formattedService.street);
+      const serviceStreetY = yPos + 4 + rightYOffset;
+      const serviceCityY = yPos + 8 + rightYOffset;
       
       try {
-        doc.setTextColor(0, 0, 0); // Explicitly set black text
+        doc.setTextColor(0, 0, 0);
         doc.setFont('helvetica', 'normal');
-        doc.text(formattedService.street, 110, serviceStreetY);
+        doc.text(formattedService.street, xPos, serviceStreetY);
         console.log('PDF serviceAddress - Successfully added service street');
-      } catch (error) {
-        console.error('PDF serviceAddress - Error adding service street:', error);
-      }
-      
-      if (formattedService.cityStateZip) {
-        console.log('PDF serviceAddress - About to add service cityStateZip at Y position:', serviceCityY);
-        console.log('PDF serviceAddress - Service cityStateZip text:', formattedService.cityStateZip);
-        try {
-          doc.setTextColor(0, 0, 0); // Explicitly set black text
-          doc.text(formattedService.cityStateZip, 110, serviceCityY);
+        
+        if (formattedService.cityStateZip) {
+          doc.setTextColor(0, 0, 0);
+          doc.text(formattedService.cityStateZip, xPos, serviceCityY);
+          doc.text('United States', xPos, serviceCityY + 4);
           console.log('PDF serviceAddress - Successfully added service cityStateZip');
-        } catch (error) {
-          console.error('PDF serviceAddress - Error adding service cityStateZip:', error);
         }
-      } else {
-        console.log('PDF serviceAddress - No cityStateZip for service address');
+      } catch (error) {
+        console.error('PDF serviceAddress - Error adding service address:', error);
       }
-    } else {
-      console.log('PDF serviceAddress - formatAddress returned null for service');
     }
   } else {
     console.log('PDF serviceAddress - No service address found, showing fallback message');
     doc.setFont('helvetica', 'italic');
     doc.setTextColor(150, 150, 150);
-    doc.text('No service address specified', 110, rightColYPos + 7 + rightYOffset);
+    doc.text('No service address specified', xPos, yPos + 4 + rightYOffset);
     doc.setTextColor(0, 0, 0);
     doc.setFont('helvetica', 'normal');
   }

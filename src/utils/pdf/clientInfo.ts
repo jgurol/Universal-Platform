@@ -19,38 +19,40 @@ export const addClientInfo = (doc: jsPDF, context: PDFGenerationContext): number
   
   if (!clientInfo) {
     console.log('PDF clientInfo.ts - No clientInfo provided, returning early');
-    return 70;
+    return 120;
   }
   
-  // Billing Information and Service Address sections
-  let yPos = 70;
+  // Column positions
+  const billingCol = 20;
+  const serviceCol = 67;
+  
+  // Section headers
+  let yPos = 100;
   doc.setFontSize(11);
   doc.setFont('helvetica', 'bold');
-  doc.setTextColor(0, 0, 0); // Ensure black text
-  doc.text('Billing Information', 20, yPos);
-  doc.text('Service Address', 110, yPos);
+  doc.setTextColor(0, 0, 0);
+  doc.text('Billing Information', billingCol, yPos);
+  doc.text('Service Address', serviceCol, yPos);
   
+  // Underlines
   doc.setDrawColor(200, 200, 200);
-  doc.line(20, yPos + 2, 85, yPos + 2);
-  doc.line(110, yPos + 2, 175, yPos + 2);
+  doc.line(billingCol, yPos + 2, billingCol + 45, yPos + 2);
+  doc.line(serviceCol, yPos + 2, serviceCol + 45, yPos + 2);
   
   yPos += 8;
   doc.setFontSize(9);
   doc.setFont('helvetica', 'normal');
-  doc.setTextColor(0, 0, 0); // Ensure black text for content
+  doc.setTextColor(0, 0, 0);
   
   // Resolve addresses
   const billingAddress = resolveBillingAddress(context);
   const serviceAddress = resolveServiceAddress(context, billingAddress);
   
   // Render sections
-  renderBillingInfo(doc, context, yPos, billingAddress);
+  renderBillingInfo(doc, context, yPos, billingAddress, billingCol);
+  renderServiceAddress(doc, context, yPos, serviceAddress, serviceCol);
+  renderContactInfo(doc, context, yPos, billingCol, serviceCol);
   
-  const rightColYPos = 78;
-  renderServiceAddress(doc, context, rightColYPos, serviceAddress);
-  
-  renderContactInfo(doc, context, yPos, rightColYPos);
-  
-  console.log('PDF clientInfo.ts - Completed addClientInfo, returning Y position:', 145);
-  return 145; // Return Y position for next section
+  console.log('PDF clientInfo.ts - Completed addClientInfo, returning Y position:', 180);
+  return 180; // Return Y position for next section
 };
