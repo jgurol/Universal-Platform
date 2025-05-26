@@ -31,6 +31,22 @@ export interface CircuitTracking {
   notes?: string;
   item_name?: string;
   item_description?: string;
+  order?: {
+    order_number: string;
+  };
+  quote_item?: {
+    item: {
+      name: string;
+      category: {
+        name: string;
+      };
+    };
+    address?: {
+      street_address: string;
+      city: string;
+      state: string;
+    };
+  };
 }
 
 export interface CircuitMilestone {

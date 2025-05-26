@@ -121,13 +121,20 @@ export const CircuitTrackingManagement = () => {
                             <div className="flex justify-between items-start mb-4">
                               <div>
                                 <h4 className="font-semibold text-lg">
-                                  {circuit.item_name || circuit.circuit_type.charAt(0).toUpperCase() + circuit.circuit_type.slice(1).replace('_', ' ')}
+                                  {circuit.item_name || circuit.quote_item?.item?.name || circuit.circuit_type.charAt(0).toUpperCase() + circuit.circuit_type.slice(1).replace('_', ' ')}
                                 </h4>
                                 <p className="text-sm text-gray-600">
                                   Type: {circuit.circuit_type.charAt(0).toUpperCase() + circuit.circuit_type.slice(1).replace('_', ' ')}
                                 </p>
-                                {circuit.item_description && (
-                                  <p className="text-sm text-gray-500 mt-1">{circuit.item_description}</p>
+                                {(circuit.item_description || circuit.quote_item?.item?.description) && (
+                                  <p className="text-sm text-gray-500 mt-1">
+                                    {circuit.item_description || circuit.quote_item?.item?.description}
+                                  </p>
+                                )}
+                                {circuit.quote_item?.address && (
+                                  <p className="text-sm text-gray-500 mt-1">
+                                    Service Address: {circuit.quote_item.address.street_address}, {circuit.quote_item.address.city}, {circuit.quote_item.address.state}
+                                  </p>
                                 )}
                               </div>
                               <Badge className={getStatusColor(circuit.status)}>

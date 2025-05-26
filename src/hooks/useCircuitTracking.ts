@@ -18,10 +18,13 @@ export const useCircuitTracking = () => {
         .from('circuit_tracking')
         .select(`
           *,
-          order:orders(*),
+          order:orders(order_number),
           quote_item:quote_items(
             *,
-            item:items(*),
+            item:items(
+              *,
+              category:categories(name)
+            ),
             address:client_addresses(*)
           )
         `)

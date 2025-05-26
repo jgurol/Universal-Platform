@@ -135,9 +135,12 @@ export type Database = {
           created_at: string
           estimated_completion_date: string | null
           id: string
+          item_description: string | null
+          item_name: string | null
           notes: string | null
           order_id: string
           progress_percentage: number | null
+          quote_item_id: string | null
           status: string
           updated_at: string
         }
@@ -147,9 +150,12 @@ export type Database = {
           created_at?: string
           estimated_completion_date?: string | null
           id?: string
+          item_description?: string | null
+          item_name?: string | null
           notes?: string | null
           order_id: string
           progress_percentage?: number | null
+          quote_item_id?: string | null
           status?: string
           updated_at?: string
         }
@@ -159,9 +165,12 @@ export type Database = {
           created_at?: string
           estimated_completion_date?: string | null
           id?: string
+          item_description?: string | null
+          item_name?: string | null
           notes?: string | null
           order_id?: string
           progress_percentage?: number | null
+          quote_item_id?: string | null
           status?: string
           updated_at?: string
         }
@@ -171,6 +180,13 @@ export type Database = {
             columns: ["order_id"]
             isOneToOne: true
             referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "circuit_tracking_quote_item_id_fkey"
+            columns: ["quote_item_id"]
+            isOneToOne: false
+            referencedRelation: "quote_items"
             referencedColumns: ["id"]
           },
         ]
