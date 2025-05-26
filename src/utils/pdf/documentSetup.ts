@@ -48,7 +48,7 @@ export const addAgreementDetailsBox = (doc: jsPDF, context: PDFGenerationContext
   const boxX = 135;
   const boxY = 40;
   const boxWidth = 60;
-  const boxHeight = 36; // Reduced height for 4 lines
+  const boxHeight = 40; // Slightly increased height for better spacing
   
   // Gray background
   doc.setFillColor(230, 230, 230);
@@ -60,17 +60,17 @@ export const addAgreementDetailsBox = (doc: jsPDF, context: PDFGenerationContext
   doc.setFont('helvetica', 'bold');
   doc.setTextColor(0, 0, 0);
   
-  // Labels (left aligned) - only 4 lines
-  doc.text('Agreement', boxX + 3, boxY + 8);
-  doc.text('Date:', boxX + 3, boxY + 18);
-  doc.text('Expires', boxX + 3, boxY + 28);
-  doc.text('Account Manager', boxX + 3, boxY + 38); // Combined on one line
+  // Labels (left aligned) - only 4 lines with better spacing
+  doc.text('Agreement', boxX + 2, boxY + 10);
+  doc.text('Date:', boxX + 2, boxY + 20);
+  doc.text('Expires', boxX + 2, boxY + 30);
+  doc.text('Account Manager', boxX + 2, boxY + 40);
   
   // Values (right aligned)
   doc.setFont('helvetica', 'normal');
   const quoteNum = context.quote.quoteNumber || `${context.quote.id.slice(0, 4)} v2`;
   const quoteNumWidth = doc.getTextWidth(quoteNum);
-  doc.text(quoteNum, boxX + boxWidth - 3 - quoteNumWidth, boxY + 8);
+  doc.text(quoteNum, boxX + boxWidth - 2 - quoteNumWidth, boxY + 10);
   
   const dateStr = new Date(context.quote.date).toLocaleDateString('en-US', { 
     month: '2-digit', 
@@ -78,7 +78,7 @@ export const addAgreementDetailsBox = (doc: jsPDF, context: PDFGenerationContext
     year: 'numeric' 
   });
   const dateWidth = doc.getTextWidth(dateStr);
-  doc.text(dateStr, boxX + boxWidth - 3 - dateWidth, boxY + 18);
+  doc.text(dateStr, boxX + boxWidth - 2 - dateWidth, boxY + 20);
   
   const expiresStr = context.quote.expiresAt ? 
     new Date(context.quote.expiresAt).toLocaleDateString('en-US', { 
@@ -87,11 +87,11 @@ export const addAgreementDetailsBox = (doc: jsPDF, context: PDFGenerationContext
       year: 'numeric' 
     }) : 'N/A';
   const expiresWidth = doc.getTextWidth(expiresStr);
-  doc.text(expiresStr, boxX + boxWidth - 3 - expiresWidth, boxY + 28);
+  doc.text(expiresStr, boxX + boxWidth - 2 - expiresWidth, boxY + 30);
   
   const managerName = context.salespersonName || 'N/A';
   const managerWidth = doc.getTextWidth(managerName);
-  doc.text(managerName, boxX + boxWidth - 3 - managerWidth, boxY + 38);
+  doc.text(managerName, boxX + boxWidth - 2 - managerWidth, boxY + 40);
 };
 
 export const addStatusIndicator = (doc: jsPDF, context: PDFGenerationContext): void => {
