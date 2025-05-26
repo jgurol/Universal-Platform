@@ -50,6 +50,14 @@ export interface CircuitTracking {
       city: string;
       state: string;
     };
+    quote?: {
+      id: string;
+      quote_number: string;
+      client_info?: {
+        company_name: string;
+      };
+      accepted_by?: string;
+    };
   };
 }
 

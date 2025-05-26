@@ -30,7 +30,15 @@ export const useCircuitTracking = () => {
               *,
               category:categories(name, type)
             ),
-            address:client_addresses(*)
+            address:client_addresses(*),
+            quote:quotes(
+              id,
+              quote_number,
+              accepted_by,
+              client_info:client_info(
+                company_name
+              )
+            )
           )
         `)
         .order('created_at', { ascending: false });
@@ -46,6 +54,7 @@ export const useCircuitTracking = () => {
           *,
           quote:quotes!inner(
             *,
+            client_info:client_info(*),
             quote_items(
               id,
               quantity,
@@ -155,7 +164,15 @@ export const useCircuitTracking = () => {
                   order: {
                     order_number: order.order_number
                   },
-                  quote_item: quoteItem
+                  quote_item: {
+                    ...quoteItem,
+                    quote: {
+                      id: order.quote.id,
+                      quote_number: order.quote.quote_number,
+                      accepted_by: order.quote.accepted_by,
+                      client_info: order.quote.client_info
+                    }
+                  }
                 });
               } else {
                 const reason = !existingTracking ? 
