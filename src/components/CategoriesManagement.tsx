@@ -41,6 +41,8 @@ export const CategoriesManagement = () => {
         return 'bg-purple-100 text-purple-800';
       case 'AI':
         return 'bg-orange-100 text-orange-800';
+      case 'VOIP':
+        return 'bg-cyan-100 text-cyan-800';
       default:
         return 'bg-gray-100 text-gray-800';
     }

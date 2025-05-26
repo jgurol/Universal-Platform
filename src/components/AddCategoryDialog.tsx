@@ -17,7 +17,7 @@ interface AddCategoryDialogProps {
 export const AddCategoryDialog = ({ open, onOpenChange, onAddCategory }: AddCategoryDialogProps) => {
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
-  const [type, setType] = useState<'Circuit' | 'Network' | 'Managed Services' | 'AI'>('Network');
+  const [type, setType] = useState<'Circuit' | 'Network' | 'Managed Services' | 'AI' | 'VOIP'>('Network');
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -60,7 +60,7 @@ export const AddCategoryDialog = ({ open, onOpenChange, onAddCategory }: AddCate
 
           <div className="space-y-2">
             <Label htmlFor="category-type">Type *</Label>
-            <Select value={type} onValueChange={(value: 'Circuit' | 'Network' | 'Managed Services' | 'AI') => setType(value)}>
+            <Select value={type} onValueChange={(value: 'Circuit' | 'Network' | 'Managed Services' | 'AI' | 'VOIP') => setType(value)}>
               <SelectTrigger>
                 <SelectValue placeholder="Select category type" />
               </SelectTrigger>
@@ -69,6 +69,7 @@ export const AddCategoryDialog = ({ open, onOpenChange, onAddCategory }: AddCate
                 <SelectItem value="Network">Network</SelectItem>
                 <SelectItem value="Managed Services">Managed Services</SelectItem>
                 <SelectItem value="AI">AI</SelectItem>
+                <SelectItem value="VOIP">VOIP</SelectItem>
               </SelectContent>
             </Select>
           </div>

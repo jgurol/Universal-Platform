@@ -18,7 +18,7 @@ interface EditCategoryDialogProps {
 export const EditCategoryDialog = ({ open, onOpenChange, onUpdateCategory, category }: EditCategoryDialogProps) => {
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
-  const [type, setType] = useState<'Circuit' | 'Network' | 'Managed Services' | 'AI'>('Network');
+  const [type, setType] = useState<'Circuit' | 'Network' | 'Managed Services' | 'AI' | 'VOIP'>('Network');
 
   useEffect(() => {
     if (category) {
@@ -64,7 +64,7 @@ export const EditCategoryDialog = ({ open, onOpenChange, onUpdateCategory, categ
 
           <div className="space-y-2">
             <Label htmlFor="edit-category-type">Type *</Label>
-            <Select value={type} onValueChange={(value: 'Circuit' | 'Network' | 'Managed Services' | 'AI') => setType(value)}>
+            <Select value={type} onValueChange={(value: 'Circuit' | 'Network' | 'Managed Services' | 'AI' | 'VOIP') => setType(value)}>
               <SelectTrigger>
                 <SelectValue placeholder="Select category type" />
               </SelectTrigger>
@@ -73,6 +73,7 @@ export const EditCategoryDialog = ({ open, onOpenChange, onUpdateCategory, categ
                 <SelectItem value="Network">Network</SelectItem>
                 <SelectItem value="Managed Services">Managed Services</SelectItem>
                 <SelectItem value="AI">AI</SelectItem>
+                <SelectItem value="VOIP">VOIP</SelectItem>
               </SelectContent>
             </Select>
           </div>

@@ -879,7 +879,7 @@ export type Database = {
       }
     }
     Enums: {
-      category_type: "Circuit" | "Network" | "Managed Services" | "AI"
+      category_type: "Circuit" | "Network" | "Managed Services" | "AI" | "VOIP"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -995,7 +995,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      category_type: ["Circuit", "Network", "Managed Services", "AI"],
+      category_type: ["Circuit", "Network", "Managed Services", "AI", "VOIP"],
     },
   },
 } as const
