@@ -76,8 +76,8 @@ export const QuoteTable = ({
         return 0;
     }
 
-    // For non-quote number and non-date fields, use string comparison
-    if (sortField !== 'dateApproved') {
+    // For string-based fields (not quote number and not date), use string comparison
+    if (sortField !== 'quoteNumber' && sortField !== 'dateApproved') {
       const stringComparison = aValue.localeCompare(bValue);
       return sortDirection === 'asc' ? stringComparison : -stringComparison;
     }
