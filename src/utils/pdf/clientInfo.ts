@@ -19,11 +19,11 @@ export const addClientInfo = (doc: jsPDF, context: PDFGenerationContext): number
   
   if (!clientInfo) {
     console.log('PDF clientInfo.ts - No clientInfo provided, returning early');
-    return 115;
+    return 130;
   }
   
   // Billing Information and Service Address sections
-  let yPos = 115;
+  let yPos = 125;
   doc.setFontSize(12);
   doc.setFont('helvetica', 'bold');
   doc.setTextColor(0, 0, 0);
@@ -47,6 +47,6 @@ export const addClientInfo = (doc: jsPDF, context: PDFGenerationContext): number
   
   renderContactInfo(doc, context, yPos, rightColYPos);
   
-  console.log('PDF clientInfo.ts - Completed addClientInfo, returning Y position:', 185);
-  return 185; // Return Y position for next section
+  console.log('PDF clientInfo.ts - Completed addClientInfo, returning Y position:', 200);
+  return 200; // Return Y position for next section
 };

@@ -13,14 +13,15 @@ export const renderBillingInfo = (doc: jsPDF, context: PDFGenerationContext, yPo
   // Company name in bold
   doc.setFont('helvetica', 'bold');
   doc.setTextColor(0, 0, 0);
+  doc.setFontSize(10);
   doc.text(clientInfo.company_name, 20, currentY);
-  currentY += 5;
+  currentY += 4;
   
   // Contact name
   if (clientInfo.contact_name) {
     doc.setFont('helvetica', 'normal');
     doc.text(clientInfo.contact_name, 20, currentY);
-    currentY += 5;
+    currentY += 4;
   }
   
   if (billingAddress && billingAddress.trim() !== '') {
@@ -32,16 +33,16 @@ export const renderBillingInfo = (doc: jsPDF, context: PDFGenerationContext, yPo
       doc.setFont('helvetica', 'normal');
       doc.setTextColor(0, 0, 0);
       doc.text(formattedBilling.street, 20, currentY);
-      currentY += 5;
+      currentY += 4;
       
       if (formattedBilling.cityStateZip) {
         doc.text(formattedBilling.cityStateZip, 20, currentY);
-        currentY += 5;
+        currentY += 4;
       }
       
       // Add "United States" line
       doc.text('United States', 20, currentY);
-      currentY += 8;
+      currentY += 6;
     }
   } else {
     doc.setFont('helvetica', 'italic');
@@ -49,7 +50,7 @@ export const renderBillingInfo = (doc: jsPDF, context: PDFGenerationContext, yPo
     doc.text('No billing address specified', 20, currentY);
     doc.setTextColor(0, 0, 0);
     doc.setFont('helvetica', 'normal');
-    currentY += 8;
+    currentY += 6;
   }
   
   // Contact information
@@ -57,7 +58,7 @@ export const renderBillingInfo = (doc: jsPDF, context: PDFGenerationContext, yPo
     doc.setFont('helvetica', 'normal');
     doc.setTextColor(0, 0, 0);
     doc.text(`Tel: ${clientInfo.phone}`, 20, currentY);
-    currentY += 5;
+    currentY += 4;
   }
   
   if (clientInfo.email) {

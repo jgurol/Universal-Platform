@@ -13,14 +13,15 @@ export const renderServiceAddress = (doc: jsPDF, context: PDFGenerationContext, 
   // Company name in bold
   doc.setFont('helvetica', 'bold');
   doc.setTextColor(0, 0, 0);
+  doc.setFontSize(10);
   doc.text(clientInfo.company_name, 110, currentY);
-  currentY += 5;
+  currentY += 4;
   
   // Contact name
   if (clientInfo.contact_name) {
     doc.setFont('helvetica', 'normal');
     doc.text(clientInfo.contact_name, 110, currentY);
-    currentY += 5;
+    currentY += 4;
   }
   
   if (serviceAddress && serviceAddress.trim() !== '') {
@@ -32,16 +33,16 @@ export const renderServiceAddress = (doc: jsPDF, context: PDFGenerationContext, 
       doc.setFont('helvetica', 'normal');
       doc.setTextColor(0, 0, 0);
       doc.text(formattedService.street, 110, currentY);
-      currentY += 5;
+      currentY += 4;
       
       if (formattedService.cityStateZip) {
         doc.text(formattedService.cityStateZip, 110, currentY);
-        currentY += 5;
+        currentY += 4;
       }
       
       // Add "United States" line
       doc.text('United States', 110, currentY);
-      currentY += 8;
+      currentY += 6;
     }
   } else {
     doc.setFont('helvetica', 'italic');
@@ -49,7 +50,7 @@ export const renderServiceAddress = (doc: jsPDF, context: PDFGenerationContext, 
     doc.text('No service address specified', 110, currentY);
     doc.setTextColor(0, 0, 0);
     doc.setFont('helvetica', 'normal');
-    currentY += 8;
+    currentY += 6;
   }
   
   // Contact information
@@ -57,7 +58,7 @@ export const renderServiceAddress = (doc: jsPDF, context: PDFGenerationContext, 
     doc.setFont('helvetica', 'normal');
     doc.setTextColor(0, 0, 0);
     doc.text(`Tel: ${clientInfo.phone}`, 110, currentY);
-    currentY += 5;
+    currentY += 4;
   }
   
   if (clientInfo.email) {
