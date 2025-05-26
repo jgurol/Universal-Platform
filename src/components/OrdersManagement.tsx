@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -6,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Trash2, FileText, Eye } from "lucide-react";
 import { useOrders } from "@/hooks/useOrders";
 import { useToast } from "@/hooks/use-toast";
+import { useAgentMapping } from "@/hooks/useAgentMapping";
 import { formatDateForDisplay } from "@/utils/dateUtils";
 import { supabase } from "@/integrations/supabase/client";
 import { QuoteItemData } from "@/types/quoteItems";
@@ -25,10 +27,12 @@ interface QuoteAcceptance {
 export const OrdersManagement = () => {
   const { orders, isLoading, deleteOrder } = useOrders();
   const { toast } = useToast();
+  const { agentMapping } = useAgentMapping();
   const [quoteAcceptances, setQuoteAcceptances] = useState<Record<string, QuoteAcceptance>>({});
+  const [quotesData, setQuotesData] = useState<Record<string, any>>({});
   const [isGeneratingPdf, setIsGeneratingPdf] = useState<string | null>(null);
 
-  // Fetch quote acceptances for orders
+  // Fetch quote data and acceptances for orders
   useEffect(() => {
     const fetchQuoteData = async () => {
       if (orders.length === 0) return;
@@ -54,6 +58,30 @@ export const OrdersManagement = () => {
             };
           });
           setQuoteAcceptances(acceptancesMap);
+        }
+
+        // Fetch quote data to get client_info_id for account manager lookup
+        const { data: quotesQueryData, error: quotesError } = await supabase
+          .from('quotes')
+          .select(`
+            id,
+            client_info_id,
+            template_id,
+            *,
+            client_info (
+              agent_id
+            )
+          `)
+          .in('id', quoteIds);
+
+        if (quotesError) {
+          console.error('Error fetching quotes data:', quotesError);
+        } else if (quotesQueryData) {
+          const quotesMap: Record<string, any> = {};
+          quotesQueryData.forEach(quote => {
+            quotesMap[quote.id] = quote;
+          });
+          setQuotesData(quotesMap);
         }
       } catch (error) {
         console.error('Error fetching quote data:', error);
@@ -239,9 +267,9 @@ export const OrdersManagement = () => {
               <TableHeader>
                 <TableRow>
                   <TableHead>Order Number</TableHead>
-                  <TableHead>Amount</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Created Date</TableHead>
+                  <TableHead>Account Manager</TableHead>
+                  <TableHead>Accepted by</TableHead>
+                  <TableHead>Accepted Date</TableHead>
                   <TableHead>Agreement</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
@@ -249,29 +277,24 @@ export const OrdersManagement = () => {
               <TableBody>
                 {orders.map((order) => {
                   const acceptance = quoteAcceptances[order.quote_id];
+                  const quoteData = quotesData[order.quote_id];
+                  const agentId = quoteData?.client_info?.agent_id;
+                  const accountManager = agentId ? agentMapping[agentId] || 'Unknown' : 'No Agent';
                   const isGenerating = isGeneratingPdf === order.quote_id;
+                  
                   return (
                     <TableRow key={order.id}>
                       <TableCell className="font-mono text-sm">
                         {order.order_number}
                       </TableCell>
-                      <TableCell className="font-mono">
-                        ${order.amount.toLocaleString()}
+                      <TableCell>
+                        {accountManager}
                       </TableCell>
                       <TableCell>
-                        <Badge 
-                          variant="outline" 
-                          className={
-                            order.status === 'completed' ? 'bg-green-50 text-green-700 border-green-200' :
-                            order.status === 'pending' ? 'bg-yellow-50 text-yellow-700 border-yellow-200' :
-                            'bg-gray-50 text-gray-700 border-gray-200'
-                          }
-                        >
-                          {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
-                        </Badge>
+                        {acceptance ? acceptance.client_name : 'Not Available'}
                       </TableCell>
                       <TableCell>
-                        {formatDateForDisplay(order.created_at)}
+                        {acceptance ? formatDateForDisplay(acceptance.accepted_at) : 'Not Available'}
                       </TableCell>
                       <TableCell>
                         {acceptance ? (
