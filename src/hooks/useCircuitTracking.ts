@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
@@ -24,6 +23,7 @@ export const useCircuitTracking = () => {
             quote_id
           ),
           quote_item:quote_items(
+            id,
             quantity,
             unit_price,
             item:items(
@@ -45,6 +45,7 @@ export const useCircuitTracking = () => {
           quote:quotes!inner(
             *,
             quote_items(
+              id,
               quantity,
               unit_price,
               item:items(

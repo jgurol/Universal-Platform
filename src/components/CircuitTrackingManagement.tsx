@@ -7,10 +7,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useCircuitTracking } from "@/hooks/useCircuitTracking";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Zap, Package, FileText } from "lucide-react";
+import { Plus, Zap } from "lucide-react";
 
 export const CircuitTrackingManagement = () => {
   const { circuitTrackings, isLoading, updateCircuitProgress, addMilestone } = useCircuitTracking();
@@ -104,156 +105,126 @@ export const CircuitTrackingManagement = () => {
               No orders with quote items found. Order tracking is automatically created when quotes are approved.
             </div>
           ) : (
-            <div className="space-y-8">
+            <div className="space-y-6">
               {Object.entries(groupedTrackings).map(([orderId, trackings]) => (
-                <Card key={orderId} className="border-l-4 border-l-blue-500">
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <Package className="w-5 h-5" />
-                      Order: {trackings[0]?.order?.order_number || orderId.slice(0, 8)}
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-6">
+                <div key={orderId} className="border border-gray-200 rounded-lg">
+                  <div className="bg-gray-50 px-4 py-2 border-b border-gray-200">
+                    <h3 className="font-semibold">Order: {trackings[0]?.order?.order_number || orderId.slice(0, 8)}</h3>
+                  </div>
+                  
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className="w-[200px]">Item Name</TableHead>
+                        <TableHead className="w-[300px]">Description</TableHead>
+                        <TableHead className="w-[80px]">Qty</TableHead>
+                        <TableHead className="w-[100px]">Unit Price</TableHead>
+                        <TableHead className="w-[100px]">Status</TableHead>
+                        <TableHead className="w-[120px]">Progress</TableHead>
+                        <TableHead className="w-[150px]">Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
                       {trackings.map((circuit) => (
-                        <Card key={circuit.id} className="bg-gray-50">
-                          <CardContent className="pt-6">
-                            <div className="flex justify-between items-start mb-4">
-                              <div className="flex-1">
-                                <h4 className="font-semibold text-lg mb-2">
-                                  {circuit.item_name || circuit.quote_item?.item?.name || circuit.circuit_type.charAt(0).toUpperCase() + circuit.circuit_type.slice(1).replace('_', ' ')}
-                                </h4>
-                                
-                                {/* Item Description - highlighted */}
-                                {(circuit.item_description || circuit.quote_item?.item?.description) && (
-                                  <div className="mb-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                                    <div className="flex items-start gap-2">
-                                      <FileText className="w-4 h-4 text-blue-600 mt-0.5 flex-shrink-0" />
-                                      <div>
-                                        <p className="text-sm font-medium text-blue-900 mb-1">Item Description:</p>
-                                        <p className="text-sm text-blue-800">
-                                          {circuit.item_description || circuit.quote_item?.item?.description}
-                                        </p>
-                                      </div>
-                                    </div>
-                                  </div>
-                                )}
-
-                                <div className="space-y-1 text-sm text-gray-600">
-                                  <p>
-                                    <span className="font-medium">Type:</span> {circuit.circuit_type.charAt(0).toUpperCase() + circuit.circuit_type.slice(1).replace('_', ' ')}
-                                  </p>
-                                  {circuit.quote_item?.address && (
-                                    <p>
-                                      <span className="font-medium">Service Address:</span> {circuit.quote_item.address.street_address}, {circuit.quote_item.address.city}, {circuit.quote_item.address.state}
-                                    </p>
-                                  )}
-                                  {circuit.quote_item && (
-                                    <p>
-                                      <span className="font-medium">Quantity:</span> {circuit.quote_item.quantity} x ${circuit.quote_item.unit_price}
-                                    </p>
-                                  )}
-                                </div>
-                              </div>
-                              <Badge className={getStatusColor(circuit.status)}>
-                                {circuit.status.charAt(0).toUpperCase() + circuit.status.slice(1).replace('_', ' ')}
-                              </Badge>
+                        <TableRow key={circuit.id}>
+                          <TableCell className="font-medium">
+                            {circuit.item_name || circuit.quote_item?.item?.name || circuit.circuit_type}
+                          </TableCell>
+                          <TableCell className="text-sm text-gray-600">
+                            {circuit.item_description || circuit.quote_item?.item?.description || '-'}
+                          </TableCell>
+                          <TableCell>
+                            {circuit.quote_item?.quantity || '-'}
+                          </TableCell>
+                          <TableCell>
+                            ${circuit.quote_item?.unit_price || '0'}
+                          </TableCell>
+                          <TableCell>
+                            <Badge className={getStatusColor(circuit.status)}>
+                              {circuit.status.charAt(0).toUpperCase() + circuit.status.slice(1).replace('_', ' ')}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            <div className="space-y-1">
+                              <Progress value={circuit.progress_percentage} className="h-2" />
+                              <span className="text-xs text-gray-500">{circuit.progress_percentage}%</span>
                             </div>
-                            
-                            <div className="space-y-4">
-                              <div>
-                                <div className="flex justify-between items-center mb-2">
-                                  <Label>Progress</Label>
-                                  <span className="text-sm font-medium">{circuit.progress_percentage}%</span>
-                                </div>
-                                <Progress value={circuit.progress_percentage} className="h-3" />
-                              </div>
-                              
-                              <div className="flex gap-2">
-                                <Input
-                                  type="number"
-                                  min="0"
-                                  max="100"
-                                  placeholder="Update progress %"
-                                  className="flex-1"
-                                  onKeyPress={(e) => {
-                                    if (e.key === 'Enter') {
-                                      const value = parseInt((e.target as HTMLInputElement).value);
-                                      if (value >= 0 && value <= 100) {
-                                        handleProgressUpdate(circuit.id, value);
-                                        (e.target as HTMLInputElement).value = '';
-                                      }
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex gap-1">
+                              <Input
+                                type="number"
+                                min="0"
+                                max="100"
+                                placeholder="%"
+                                className="w-16 h-8 text-xs"
+                                onKeyPress={(e) => {
+                                  if (e.key === 'Enter') {
+                                    const value = parseInt((e.target as HTMLInputElement).value);
+                                    if (value >= 0 && value <= 100) {
+                                      handleProgressUpdate(circuit.id, value);
+                                      (e.target as HTMLInputElement).value = '';
                                     }
-                                  }}
-                                />
-                                
-                                <Dialog>
-                                  <DialogTrigger asChild>
-                                    <Button 
-                                      variant="outline" 
-                                      size="sm"
-                                      onClick={() => setSelectedCircuit(circuit.id)}
-                                    >
-                                      <Plus className="w-4 h-4 mr-1" />
+                                  }
+                                }}
+                              />
+                              
+                              <Dialog>
+                                <DialogTrigger asChild>
+                                  <Button 
+                                    variant="outline" 
+                                    size="sm"
+                                    className="h-8 px-2"
+                                    onClick={() => setSelectedCircuit(circuit.id)}
+                                  >
+                                    <Plus className="w-3 h-3" />
+                                  </Button>
+                                </DialogTrigger>
+                                <DialogContent>
+                                  <DialogHeader>
+                                    <DialogTitle>Add Milestone</DialogTitle>
+                                  </DialogHeader>
+                                  <div className="space-y-4">
+                                    <div>
+                                      <Label htmlFor="milestone-name">Milestone Name</Label>
+                                      <Input
+                                        id="milestone-name"
+                                        value={newMilestone.milestone_name}
+                                        onChange={(e) => setNewMilestone(prev => ({ ...prev, milestone_name: e.target.value }))}
+                                        placeholder="e.g., Site Survey Completed"
+                                      />
+                                    </div>
+                                    <div>
+                                      <Label htmlFor="milestone-description">Description</Label>
+                                      <Textarea
+                                        id="milestone-description"
+                                        value={newMilestone.milestone_description}
+                                        onChange={(e) => setNewMilestone(prev => ({ ...prev, milestone_description: e.target.value }))}
+                                        placeholder="Optional description"
+                                      />
+                                    </div>
+                                    <div>
+                                      <Label htmlFor="target-date">Target Date</Label>
+                                      <Input
+                                        id="target-date"
+                                        type="date"
+                                        value={newMilestone.target_date}
+                                        onChange={(e) => setNewMilestone(prev => ({ ...prev, target_date: e.target.value }))}
+                                      />
+                                    </div>
+                                    <Button onClick={handleAddMilestone} className="w-full">
                                       Add Milestone
                                     </Button>
-                                  </DialogTrigger>
-                                  <DialogContent>
-                                    <DialogHeader>
-                                      <DialogTitle>Add Milestone</DialogTitle>
-                                    </DialogHeader>
-                                    <div className="space-y-4">
-                                      <div>
-                                        <Label htmlFor="milestone-name">Milestone Name</Label>
-                                        <Input
-                                          id="milestone-name"
-                                          value={newMilestone.milestone_name}
-                                          onChange={(e) => setNewMilestone(prev => ({ ...prev, milestone_name: e.target.value }))}
-                                          placeholder="e.g., Site Survey Completed"
-                                        />
-                                      </div>
-                                      <div>
-                                        <Label htmlFor="milestone-description">Description</Label>
-                                        <Textarea
-                                          id="milestone-description"
-                                          value={newMilestone.milestone_description}
-                                          onChange={(e) => setNewMilestone(prev => ({ ...prev, milestone_description: e.target.value }))}
-                                          placeholder="Optional description"
-                                        />
-                                      </div>
-                                      <div>
-                                        <Label htmlFor="target-date">Target Date</Label>
-                                        <Input
-                                          id="target-date"
-                                          type="date"
-                                          value={newMilestone.target_date}
-                                          onChange={(e) => setNewMilestone(prev => ({ ...prev, target_date: e.target.value }))}
-                                        />
-                                      </div>
-                                      <Button onClick={handleAddMilestone} className="w-full">
-                                        Add Milestone
-                                      </Button>
-                                    </div>
-                                  </DialogContent>
-                                </Dialog>
-                              </div>
-                              
-                              {circuit.estimated_completion_date && (
-                                <p className="text-sm text-gray-600">
-                                  Estimated completion: {new Date(circuit.estimated_completion_date).toLocaleDateString()}
-                                </p>
-                              )}
-                              
-                              {circuit.notes && (
-                                <p className="text-sm bg-gray-50 p-3 rounded">{circuit.notes}</p>
-                              )}
+                                  </div>
+                                </DialogContent>
+                              </Dialog>
                             </div>
-                          </CardContent>
-                        </Card>
+                          </TableCell>
+                        </TableRow>
                       ))}
-                    </div>
-                  </CardContent>
-                </Card>
+                    </TableBody>
+                  </Table>
+                </div>
               ))}
             </div>
           )}
