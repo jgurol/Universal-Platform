@@ -23,7 +23,7 @@ export const QuoteTableHeader = ({ sortField, sortDirection, onSort }: QuoteTabl
 
   return (
     <>
-      <th className="font-semibold">
+      <th className="font-semibold text-left">
         <Button 
           variant="ghost" 
           className="h-auto p-0 font-semibold text-left hover:bg-transparent flex items-center"
@@ -33,7 +33,7 @@ export const QuoteTableHeader = ({ sortField, sortDirection, onSort }: QuoteTabl
           {getSortIcon('salesperson')}
         </Button>
       </th>
-      <th className="font-semibold">
+      <th className="font-semibold text-left">
         <Button 
           variant="ghost" 
           className="h-auto p-0 font-semibold text-left hover:bg-transparent flex items-center"
@@ -43,7 +43,7 @@ export const QuoteTableHeader = ({ sortField, sortDirection, onSort }: QuoteTabl
           {getSortIcon('quoteNumber')}
         </Button>
       </th>
-      <th className="font-semibold">
+      <th className="font-semibold text-left">
         <Button 
           variant="ghost" 
           className="h-auto p-0 font-semibold text-left hover:bg-transparent flex items-center"
@@ -53,10 +53,10 @@ export const QuoteTableHeader = ({ sortField, sortDirection, onSort }: QuoteTabl
           {getSortIcon('customerName')}
         </Button>
       </th>
-      <th className="font-semibold">Quote Name</th>
-      <th className="font-semibold text-right">NRC</th>
-      <th className="font-semibold text-right">MRC</th>
-      <th className="font-semibold">
+      <th className="font-semibold text-left">Quote Name</th>
+      <th className="font-semibold text-left">NRC</th>
+      <th className="font-semibold text-left">MRC</th>
+      <th className="font-semibold text-left">
         <Button 
           variant="ghost" 
           className="h-auto p-0 font-semibold text-left hover:bg-transparent flex items-center"
@@ -66,7 +66,7 @@ export const QuoteTableHeader = ({ sortField, sortDirection, onSort }: QuoteTabl
           {getSortIcon('status')}
         </Button>
       </th>
-      <th className="font-semibold text-center">Actions</th>
+      <th className="font-semibold text-left">Actions</th>
     </>
   );
 };
