@@ -15,7 +15,11 @@ export const useQuoteActions = (
     if (!user) return;
     
     try {
-      console.log('[addQuote] Creating quote with data:', newQuote);
+      console.log('[addQuote] Creating quote with data:', {
+        ...newQuote,
+        quoteItemsCount: newQuote.quoteItems?.length || 0
+      });
+      
       await addQuoteToDatabase(newQuote, user.id);
       
       fetchQuotes();

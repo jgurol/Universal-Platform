@@ -1,6 +1,7 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import { Quote } from "@/pages/Index";
+import { QuoteItemData } from "@/types/quoteItems";
 
 export const createQuoteInDatabase = async (
   quote: Omit<Quote, "id">,
@@ -9,10 +10,12 @@ export const createQuoteInDatabase = async (
   console.log('[createQuoteInDatabase] Creating quote with addresses:', {
     billingAddress: quote.billingAddress,
     serviceAddress: quote.serviceAddress,
-    description: quote.description
+    description: quote.description,
+    quoteItems: quote.quoteItems?.length || 0
   });
 
-  const { data, error } = await supabase
+  // Create the quote first
+  const { data: quoteData, error: quoteError } = await supabase
     .from('quotes')
     .insert({
       user_id: userId,
@@ -36,16 +39,64 @@ export const createQuoteInDatabase = async (
     .select()
     .single();
 
-  if (error) {
-    console.error('Error creating quote:', error);
-    throw error;
+  if (quoteError) {
+    console.error('Error creating quote:', quoteError);
+    throw quoteError;
   }
 
-  console.log('[createQuoteInDatabase] Quote created successfully with addresses:', {
-    id: data.id,
+  console.log('[createQuoteInDatabase] Quote created successfully with ID:', quoteData.id);
+
+  // Save quote items if they exist
+  if (quote.quoteItems && quote.quoteItems.length > 0) {
+    console.log('[createQuoteInDatabase] Saving quote items:', quote.quoteItems.length);
+    
+    // First, update items table with any custom names/descriptions
+    for (const quoteItem of quote.quoteItems) {
+      if (quoteItem.name !== quoteItem.item?.name || quoteItem.description !== quoteItem.item?.description) {
+        console.log(`[createQuoteInDatabase] Updating item ${quoteItem.item_id} with custom name/description`);
+        
+        const { error: itemUpdateError } = await supabase
+          .from('items')
+          .update({
+            name: quoteItem.name,
+            description: quoteItem.description
+          })
+          .eq('id', quoteItem.item_id);
+
+        if (itemUpdateError) {
+          console.error('Error updating item with custom description:', itemUpdateError);
+        }
+      }
+    }
+
+    // Insert quote items
+    const itemsToInsert = quote.quoteItems.map(item => ({
+      quote_id: quoteData.id,
+      item_id: item.item_id,
+      quantity: item.quantity,
+      unit_price: item.unit_price,
+      total_price: item.total_price,
+      charge_type: item.charge_type,
+      address_id: item.address_id || null
+    }));
+
+    const { error: itemsError } = await supabase
+      .from('quote_items')
+      .insert(itemsToInsert);
+
+    if (itemsError) {
+      console.error('Error creating quote items:', itemsError);
+      throw itemsError;
+    }
+
+    console.log('[createQuoteInDatabase] Quote items saved successfully');
+  }
+
+  console.log('[createQuoteInDatabase] Quote creation completed successfully with addresses:', {
+    id: quoteData.id,
     billingAddress: quote.billingAddress,
     serviceAddress: quote.serviceAddress
   });
 
-  return data.id;
+  return quoteData.id;
 };
