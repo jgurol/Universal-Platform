@@ -84,16 +84,16 @@ const addMRCItems = (doc: jsPDF, mrcItems: any[], quote: any, yPos: number, colX
     }
     
     doc.setTextColor(0, 0, 0);
-    doc.setFontSize(7);
+    doc.setFontSize(9); // Increased from 7 to 9
     doc.setFont('helvetica', 'normal');
     doc.text(itemName.substring(0, 35), colX.description + 2, yPos);
     
-    doc.setFontSize(6);
+    doc.setFontSize(7); // Increased from 6 to 7
     doc.setTextColor(80, 80, 80);
     doc.text(`Loc: ${addressText}`, colX.description + 4, yPos + 5);
     
     doc.setTextColor(0, 0, 0);
-    doc.setFontSize(7);
+    doc.setFontSize(9); // Increased from 7 to 9
     
     const qtyText = item.quantity.toString();
     const priceText = `$${Number(item.unit_price).toFixed(2)}`;
