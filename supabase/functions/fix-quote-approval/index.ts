@@ -164,6 +164,55 @@ const handler = async (req: Request): Promise<Response> => {
 
     console.log(`Created order ${newOrder.id} with number ${orderNumber}`);
 
+    // Now fetch quote items with circuit category types and create circuit tracking for each
+    const { data: quoteItems, error: quoteItemsError } = await supabase
+      .from('quote_items')
+      .select(`
+        *,
+        item:items(
+          *,
+          category:categories(*)
+        )
+      `)
+      .eq('quote_id', quoteId);
+
+    if (quoteItemsError) {
+      console.error('Error fetching quote items:', quoteItemsError);
+    } else if (quoteItems) {
+      // Filter items that have Circuit category type
+      const circuitItems = quoteItems.filter(item => 
+        item.item?.category?.type === 'Circuit'
+      );
+
+      console.log(`Found ${circuitItems.length} circuit items to track`);
+
+      // Create circuit tracking records for each circuit item
+      for (const circuitItem of circuitItems) {
+        const circuitTrackingData = {
+          order_id: newOrder.id,
+          quote_item_id: circuitItem.id,
+          circuit_type: circuitItem.item?.category?.name || 'Circuit',
+          status: 'ordered',
+          progress_percentage: 0,
+          item_name: circuitItem.item?.name,
+          item_description: circuitItem.item?.description
+        };
+
+        console.log('Creating circuit tracking for item:', circuitItem.id);
+
+        const { error: circuitTrackingError } = await supabase
+          .from('circuit_tracking')
+          .insert(circuitTrackingData);
+
+        if (circuitTrackingError) {
+          console.error('Error creating circuit tracking:', circuitTrackingError);
+          // Don't throw here - continue with other items
+        } else {
+          console.log(`Created circuit tracking for quote item ${circuitItem.id}`);
+        }
+      }
+    }
+
     return new Response(JSON.stringify({ 
       success: true, 
       orderIds: [newOrder.id],
