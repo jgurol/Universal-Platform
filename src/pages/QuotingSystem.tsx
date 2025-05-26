@@ -1,72 +1,96 @@
 
 import { useState } from "react";
-import { useAuth } from "@/context/AuthContext";
-import { QuoteManagementHeader } from "@/components/quoting/QuoteManagementHeader";
-import { QuoteFilters } from "@/components/quoting/QuoteFilters";
-import { QuoteGrid } from "@/components/quoting/QuoteGrid";
-import { QuoteStats } from "@/components/quoting/QuoteStats";
-import { useQuotes } from "@/hooks/useQuotes";
-import { useClients } from "@/hooks/useClients";
-import { useClientInfos } from "@/hooks/useClientInfos";
+import { NavigationBar } from "@/components/NavigationBar";
+import { RecentQuotes } from "@/components/RecentQuotes";
+import { ItemsManagement } from "@/components/ItemsManagement";
+import { CategoriesManagement } from "@/components/CategoriesManagement";
+import { VendorsManagement } from "@/components/VendorsManagement";
+import { OrdersManagement } from "@/components/OrdersManagement";
+import { CircuitTrackingManagement } from "@/components/CircuitTrackingManagement";
+import { useIndexData } from "@/hooks/useIndexData";
+import { useQuoteActions } from "@/hooks/useQuoteActions";
+import { useClientActions } from "@/hooks/useClientActions";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
-export default function QuotingSystem() {
-  const { user, isAdmin } = useAuth();
-  const [searchTerm, setSearchTerm] = useState("");
-  const [statusFilter, setStatusFilter] = useState<string>("all");
-  const [dateRange, setDateRange] = useState<{ from?: Date; to?: Date }>({});
+const QuotingSystem = () => {
+  const {
+    clients,
+    setClients,
+    quotes,
+    setQuotes,
+    clientInfos,
+    setClientInfos,
+    isLoading,
+    associatedAgentId,
+    fetchClients,
+    fetchQuotes,
+    fetchClientInfos
+  } = useIndexData();
 
-  const { 
-    quotes, 
-    isLoading: quotesLoading, 
-    addQuote, 
-    updateQuote, 
-    deleteQuote 
-  } = useQuotes(user?.id);
-  
-  const { clients } = useClients(user?.id);
-  const { clientInfos } = useClientInfos(user?.id);
+  const {
+    addQuote,
+    updateQuote,
+    deleteQuote
+  } = useQuoteActions(clients, fetchQuotes);
 
-  // Filter quotes based on search and filters
-  const filteredQuotes = quotes.filter(quote => {
-    const matchesSearch = searchTerm === "" || 
-      quote.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      quote.quoteNumber?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      quote.clientName?.toLowerCase().includes(searchTerm.toLowerCase());
-
-    const matchesStatus = statusFilter === "all" || quote.status === statusFilter;
-
-    const matchesDateRange = !dateRange.from || !dateRange.to || 
-      (new Date(quote.date) >= dateRange.from && new Date(quote.date) <= dateRange.to);
-
-    return matchesSearch && matchesStatus && matchesDateRange;
-  });
+  const { addClient } = useClientActions(clients, setClients, fetchClients);
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <QuoteManagementHeader />
-      
-      <div className="space-y-6">
-        <QuoteStats quotes={quotes} />
-        
-        <QuoteFilters
-          searchTerm={searchTerm}
-          onSearchChange={setSearchTerm}
-          statusFilter={statusFilter}
-          onStatusFilterChange={setStatusFilter}
-          dateRange={dateRange}
-          onDateRangeChange={setDateRange}
-        />
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
+      <NavigationBar />
+      <div className="container mx-auto px-4 py-8 max-w-7xl">
+        {/* Page Title */}
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">Quoting System</h1>
+          <p className="text-gray-600">Create and manage quotes for your clients</p>
+        </div>
 
-        <QuoteGrid
-          quotes={filteredQuotes}
-          clients={clients}
-          clientInfos={clientInfos}
-          isLoading={quotesLoading}
-          onAddQuote={addQuote}
-          onUpdateQuote={updateQuote}
-          onDeleteQuote={deleteQuote}
-        />
+        {/* Tabs for different sections */}
+        <Tabs defaultValue="quotes" className="w-full">
+          <TabsList className="grid w-full grid-cols-6">
+            <TabsTrigger value="quotes">Quotes</TabsTrigger>
+            <TabsTrigger value="orders">Orders</TabsTrigger>
+            <TabsTrigger value="circuit-tracking">Circuit Tracking</TabsTrigger>
+            <TabsTrigger value="items">Items & Products</TabsTrigger>
+            <TabsTrigger value="categories">Categories</TabsTrigger>
+            <TabsTrigger value="vendors">Vendors</TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="quotes" className="mt-6">
+            <RecentQuotes
+              quotes={quotes}
+              clients={clients}
+              clientInfos={clientInfos}
+              onAddQuote={addQuote}
+              onUpdateQuote={updateQuote}
+              onDeleteQuote={deleteQuote}
+              associatedAgentId={associatedAgentId}
+            />
+          </TabsContent>
+          
+          <TabsContent value="orders" className="mt-6">
+            <OrdersManagement />
+          </TabsContent>
+          
+          <TabsContent value="circuit-tracking" className="mt-6">
+            <CircuitTrackingManagement />
+          </TabsContent>
+          
+          <TabsContent value="items" className="mt-6">
+            <ItemsManagement />
+          </TabsContent>
+          
+          <TabsContent value="categories" className="mt-6">
+            <CategoriesManagement />
+          </TabsContent>
+          
+          <TabsContent value="vendors" className="mt-6">
+            <VendorsManagement />
+          </TabsContent>
+        </Tabs>
       </div>
     </div>
   );
-}
+};
+
+export default QuotingSystem;
