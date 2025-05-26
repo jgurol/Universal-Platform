@@ -72,11 +72,103 @@ const handler = async (req: Request): Promise<Response> => {
 
     if (existingOrders && existingOrders.length > 0) {
       console.log('Orders already exist for quote:', quoteId, 'Count:', existingOrders.length);
+      
+      // Check if we need to fix circuit tracking for existing orders
+      const orderId = existingOrders[0].id;
+      
+      // Check existing circuit tracking for this order
+      const { data: existingCircuitTracking, error: trackingError } = await supabase
+        .from('circuit_tracking')
+        .select('*')
+        .eq('order_id', orderId);
+
+      if (trackingError) {
+        console.error('Error checking existing circuit tracking:', trackingError);
+      }
+
+      // Get quote items to see how many circuit items should exist
+      const { data: quoteItems, error: quoteItemsError } = await supabase
+        .from('quote_items')
+        .select(`
+          *,
+          item:items(
+            *,
+            category:categories(*)
+          )
+        `)
+        .eq('quote_id', quoteId);
+
+      if (quoteItemsError) {
+        console.error('Error fetching quote items for circuit tracking check:', quoteItemsError);
+      } else {
+        // Filter items that have Circuit category type
+        const circuitItems = quoteItems?.filter(item => {
+          const isCircuit = item.item?.category?.type === 'Circuit';
+          console.log(`Item ${item.item?.name} - Category type: ${item.item?.category?.type}, Is Circuit: ${isCircuit}`);
+          return isCircuit;
+        }) || [];
+
+        console.log(`Found ${circuitItems.length} circuit items, existing tracking records: ${existingCircuitTracking?.length || 0}`);
+
+        // If we have circuit items but missing or incomplete tracking records, create them
+        if (circuitItems.length > 0 && (!existingCircuitTracking || existingCircuitTracking.length < circuitItems.length)) {
+          console.log('Creating missing circuit tracking records...');
+          
+          // Delete existing incomplete tracking records for this order
+          if (existingCircuitTracking && existingCircuitTracking.length > 0) {
+            const { error: deleteError } = await supabase
+              .from('circuit_tracking')
+              .delete()
+              .eq('order_id', orderId);
+            
+            if (deleteError) {
+              console.error('Error deleting existing circuit tracking:', deleteError);
+            } else {
+              console.log(`Deleted ${existingCircuitTracking.length} existing circuit tracking records`);
+            }
+          }
+
+          // Create new circuit tracking records for each circuit item
+          for (let i = 0; i < circuitItems.length; i++) {
+            const circuitItem = circuitItems[i];
+            const circuitTrackingData = {
+              order_id: orderId,
+              quote_item_id: circuitItem.id,
+              circuit_type: circuitItem.item?.category?.name || 'Circuit',
+              status: 'ordered',
+              progress_percentage: 0,
+              item_name: circuitItem.item?.name,
+              item_description: circuitItem.item?.description
+            };
+
+            console.log(`Creating circuit tracking ${i + 1}/${circuitItems.length} for quote item:`, {
+              quote_item_id: circuitItem.id,
+              item_name: circuitItem.item?.name,
+              circuit_type: circuitItem.item?.category?.name
+            });
+
+            const { data: newCircuitTracking, error: circuitTrackingError } = await supabase
+              .from('circuit_tracking')
+              .insert(circuitTrackingData)
+              .select()
+              .single();
+
+            if (circuitTrackingError) {
+              console.error(`Error creating circuit tracking for item ${circuitItem.id}:`, circuitTrackingError);
+            } else {
+              console.log(`Successfully created circuit tracking ${newCircuitTracking.id} for quote item ${circuitItem.id}`);
+            }
+          }
+
+          console.log(`Circuit tracking creation completed. Created ${circuitItems.length} tracking records.`);
+        }
+      }
+
       return new Response(JSON.stringify({ 
         success: true, 
         orderIds: existingOrders.map(o => o.id),
         orderNumbers: existingOrders.map(o => o.order_number),
-        message: 'Orders already exist for this quote',
+        message: 'Orders already exist for this quote - circuit tracking updated',
         ordersCount: existingOrders.length
       }), {
         status: 200,
