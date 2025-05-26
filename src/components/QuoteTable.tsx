@@ -29,21 +29,19 @@ export const QuoteTable = ({
   onUnarchiveQuote
 }: QuoteTableProps) => {
   const { agentMapping } = useAgentMapping();
-  const [sortField, setSortField] = useState<SortField | null>(null);
-  const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
+  const [sortField, setSortField] = useState<SortField>('quoteNumber');
+  const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
 
   const handleSort = (field: SortField) => {
     if (sortField === field) {
       setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
     } else {
       setSortField(field);
-      setSortDirection('asc');
+      setSortDirection(field === 'quoteNumber' ? 'desc' : 'asc');
     }
   };
 
   const sortedQuotes = [...quotes].sort((a, b) => {
-    if (!sortField) return 0;
-
     let aValue: string;
     let bValue: string;
 
@@ -55,7 +53,11 @@ export const QuoteTable = ({
       case 'quoteNumber':
         aValue = a.quoteNumber || `Q-${a.id.slice(0, 8)}`;
         bValue = b.quoteNumber || `Q-${b.id.slice(0, 8)}`;
-        break;
+        // For quote numbers, we want to sort numerically if they're numeric
+        const aNum = parseInt(aValue.replace(/\D/g, '')) || 0;
+        const bNum = parseInt(bValue.replace(/\D/g, '')) || 0;
+        const comparison = aNum - bNum;
+        return sortDirection === 'asc' ? comparison : -comparison;
       case 'customerName':
         aValue = clientInfos.find(ci => ci.id === a.clientInfoId)?.company_name || '';
         bValue = clientInfos.find(ci => ci.id === b.clientInfoId)?.company_name || '';
@@ -68,8 +70,13 @@ export const QuoteTable = ({
         return 0;
     }
 
-    const comparison = aValue.localeCompare(bValue);
-    return sortDirection === 'asc' ? comparison : -comparison;
+    // For non-quote number fields, use string comparison
+    if (sortField !== 'quoteNumber') {
+      const comparison = aValue.localeCompare(bValue);
+      return sortDirection === 'asc' ? comparison : -comparison;
+    }
+
+    return 0;
   });
 
   return (
