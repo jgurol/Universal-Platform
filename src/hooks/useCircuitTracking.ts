@@ -68,7 +68,8 @@ export const useCircuitTracking = () => {
         allTrackingItems.push(...trackingData);
       }
 
-      // For each order, ensure all quote items are represented
+      // For each order, ensure all quote items are represented, but only if they don't already exist
+      // and only if they have meaningful item data
       if (ordersData) {
         ordersData.forEach(order => {
           if (order.quote?.quote_items) {
@@ -78,8 +79,14 @@ export const useCircuitTracking = () => {
                 tracking.quote_item_id === quoteItem.id
               );
 
-              // If no existing tracking, create a virtual one for display
-              if (!existingTracking) {
+              // Only create virtual tracking if:
+              // 1. No existing tracking exists
+              // 2. The quote item has an actual item with a name (not just a category)
+              // 3. The item name is not just a generic category name
+              if (!existingTracking && 
+                  quoteItem.item?.name && 
+                  quoteItem.item.name.toLowerCase() !== 'broadband' &&
+                  quoteItem.item.name.toLowerCase() !== quoteItem.item?.category?.name?.toLowerCase()) {
                 allTrackingItems.push({
                   id: `virtual-${quoteItem.id}`,
                   order_id: order.id,
