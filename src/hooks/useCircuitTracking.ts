@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
@@ -37,6 +38,8 @@ export const useCircuitTracking = () => {
 
       if (trackingError) throw trackingError;
 
+      console.log('Existing circuit tracking data:', trackingData);
+
       // Now get all orders and their quote items to ensure we have complete data
       const { data: ordersData, error: ordersError } = await supabase
         .from('orders')
@@ -60,12 +63,40 @@ export const useCircuitTracking = () => {
 
       if (ordersError) throw ordersError;
 
+      console.log('Orders data:', ordersData);
+
       // Create a comprehensive list that includes all quote items for orders
       const allTrackingItems: CircuitTracking[] = [];
 
-      // Add existing circuit tracking records
+      // Filter existing circuit tracking records to exclude unwanted items
       if (trackingData) {
-        allTrackingItems.push(...trackingData);
+        const filteredTrackingData = trackingData.filter(tracking => {
+          const itemName = tracking.item_name || tracking.quote_item?.item?.name;
+          console.log(`Checking existing tracking item: "${itemName}" for order ${tracking.order?.order_number}`);
+          
+          // Skip if it's a generic broadband or category-only item
+          if (!itemName) return false;
+          if (itemName.toLowerCase() === 'broadband') {
+            console.log(`Filtering out existing broadband item for order ${tracking.order?.order_number}`);
+            return false;
+          }
+          if (itemName.toLowerCase() === tracking.quote_item?.item?.category?.name?.toLowerCase()) {
+            console.log(`Filtering out category-only item: ${itemName}`);
+            return false;
+          }
+          if (itemName.toLowerCase().includes('general')) {
+            console.log(`Filtering out general item: ${itemName}`);
+            return false;
+          }
+          if (itemName.trim().length <= 3) {
+            console.log(`Filtering out short item name: ${itemName}`);
+            return false;
+          }
+          
+          return true;
+        });
+        
+        allTrackingItems.push(...filteredTrackingData);
       }
 
       // For each order, ensure all quote items are represented, but only if they don't already exist
@@ -75,9 +106,15 @@ export const useCircuitTracking = () => {
           if (order.quote?.quote_items) {
             order.quote.quote_items.forEach(quoteItem => {
               // Check if this quote item already has a circuit tracking record
-              const existingTracking = trackingData?.find(tracking => 
+              const existingTracking = allTrackingItems.find(tracking => 
                 tracking.quote_item_id === quoteItem.id
               );
+
+              console.log(`Checking quote item for order ${order.order_number}:`, {
+                itemName: quoteItem.item?.name,
+                categoryName: quoteItem.item?.category?.name,
+                hasExistingTracking: !!existingTracking
+              });
 
               // Only create virtual tracking if:
               // 1. No existing tracking exists
@@ -90,6 +127,9 @@ export const useCircuitTracking = () => {
                   quoteItem.item.name.toLowerCase() !== quoteItem.item?.category?.name?.toLowerCase() &&
                   quoteItem.item.name.trim().length > 3 &&
                   !quoteItem.item.name.toLowerCase().includes('general')) {
+                
+                console.log(`Creating virtual tracking for: ${quoteItem.item.name} in order ${order.order_number}`);
+                
                 allTrackingItems.push({
                   id: `virtual-${quoteItem.id}`,
                   order_id: order.id,
@@ -106,12 +146,15 @@ export const useCircuitTracking = () => {
                   },
                   quote_item: quoteItem
                 });
+              } else {
+                console.log(`Skipping virtual tracking for: ${quoteItem.item?.name || 'unnamed'} in order ${order.order_number}`);
               }
             });
           }
         });
       }
 
+      console.log('Final tracking items:', allTrackingItems);
       setCircuitTrackings(allTrackingItems);
     } catch (error) {
       console.error('Error fetching circuit trackings:', error);
