@@ -13,6 +13,7 @@ interface QuoteTableRowProps {
   onDeleteQuote?: (quoteId: string) => void;
   onUpdateQuote?: (quote: Quote) => void;
   onCopyQuote?: (quote: Quote) => void;
+  onUnarchiveQuote?: (quoteId: string) => void;
 }
 
 export const QuoteTableRow = ({
@@ -22,7 +23,8 @@ export const QuoteTableRow = ({
   onEditClick,
   onDeleteQuote,
   onUpdateQuote,
-  onCopyQuote
+  onCopyQuote,
+  onUnarchiveQuote
 }: QuoteTableRowProps) => {
   const [isEmailDialogOpen, setIsEmailDialogOpen] = useState(false);
 
@@ -50,6 +52,7 @@ export const QuoteTableRow = ({
           onCopyQuote={onCopyQuote}
           onEmailClick={() => setIsEmailDialogOpen(true)}
           onStatusUpdate={handleStatusUpdate}
+          onUnarchiveQuote={onUnarchiveQuote}
         />
       </TableRow>
 

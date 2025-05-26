@@ -1,6 +1,7 @@
 
 import { Button } from "@/components/ui/button";
 import { Pencil, Trash2, FileText, Copy } from "lucide-react";
+import { ArchiveRestore } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { Quote, ClientInfo } from "@/pages/Index";
 import { generateQuotePDF } from "@/utils/pdfUtils";
@@ -15,6 +16,7 @@ interface QuoteActionsProps {
   onDeleteQuote?: (quoteId: string) => void;
   onCopyQuote?: (quote: Quote) => void;
   onEmailClick: () => void;
+  onUnarchiveQuote?: (quoteId: string) => void;
 }
 
 export const QuoteActions = ({
@@ -24,7 +26,8 @@ export const QuoteActions = ({
   onEditClick,
   onDeleteQuote,
   onCopyQuote,
-  onEmailClick
+  onEmailClick,
+  onUnarchiveQuote
 }: QuoteActionsProps) => {
   const { isAdmin } = useAuth();
   const { toast } = useToast();
@@ -49,6 +52,8 @@ export const QuoteActions = ({
       });
     }
   };
+
+  const isArchived = (quote as any).archived === true;
 
   return (
     <div className="flex gap-1 justify-center">
@@ -79,7 +84,7 @@ export const QuoteActions = ({
         </Button>
       )}
       
-      {isAdmin && onEditClick && (
+      {isAdmin && onEditClick && !isArchived && (
         <Button 
           variant="ghost" 
           size="sm" 
@@ -91,13 +96,25 @@ export const QuoteActions = ({
         </Button>
       )}
       
-      {isAdmin && onDeleteQuote && (
+      {isAdmin && isArchived && onUnarchiveQuote && (
+        <Button 
+          variant="ghost" 
+          size="sm" 
+          className="h-8 w-8 p-0 text-gray-500 hover:text-green-600"
+          onClick={() => onUnarchiveQuote(quote.id)}
+          title="Restore Quote"
+        >
+          <ArchiveRestore className="w-4 h-4" />
+        </Button>
+      )}
+      
+      {isAdmin && onDeleteQuote && !isArchived && (
         <Button 
           variant="ghost" 
           size="sm" 
           className="h-8 w-8 p-0 text-gray-500 hover:text-red-600"
           onClick={() => onDeleteQuote(quote.id)}
-          title="Delete Quote"
+          title="Archive Quote"
         >
           <Trash2 className="w-4 h-4" />
         </Button>

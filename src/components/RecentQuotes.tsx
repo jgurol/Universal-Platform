@@ -19,6 +19,7 @@ interface RecentQuotesProps {
   onAddQuote: (quote: Omit<Quote, "id">) => void;
   onUpdateQuote: (quote: Quote) => void;
   onDeleteQuote?: (quoteId: string) => void;
+  onUnarchiveQuote?: (quoteId: string) => void;
   associatedAgentId?: string | null;
 }
 
@@ -29,6 +30,7 @@ export const RecentQuotes = ({
   onAddQuote, 
   onUpdateQuote,
   onDeleteQuote,
+  onUnarchiveQuote,
   associatedAgentId
 }: RecentQuotesProps) => {
   const [isAddQuoteOpen, setIsAddQuoteOpen] = useState(false);
@@ -193,6 +195,7 @@ export const RecentQuotes = ({
               onDeleteQuote={onDeleteQuote}
               onUpdateQuote={onUpdateQuote}
               onCopyQuote={isAdmin ? handleCopyQuote : undefined}
+              onUnarchiveQuote={onUnarchiveQuote}
             />
           )}
         </CardContent>

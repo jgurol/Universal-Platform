@@ -2,7 +2,7 @@
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/context/AuthContext";
 import { Quote, Client } from "@/pages/Index";
-import { addQuoteToDatabase, updateQuoteInDatabase, deleteQuoteFromDatabase } from "@/services/quoteService";
+import { addQuoteToDatabase, updateQuoteInDatabase, deleteQuoteFromDatabase, unarchiveQuoteFromDatabase } from "@/services/quoteService";
 
 export const useQuoteActions = (
   clients: Client[],
@@ -70,14 +70,36 @@ export const useQuoteActions = (
       
       fetchQuotes();
       toast({
-        title: "Quote deleted",
-        description: "The quote has been deleted successfully.",
+        title: "Quote archived",
+        description: "The quote has been archived successfully.",
       });
     } catch (error) {
       console.error('[deleteQuote] Error deleting quote:', error);
       toast({
         title: "Error",
-        description: "Failed to delete quote. Please try again.",
+        description: "Failed to archive quote. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const unarchiveQuote = async (quoteId: string) => {
+    if (!user) return;
+    
+    try {
+      console.log('[unarchiveQuote] Unarchiving quote:', quoteId);
+      await unarchiveQuoteFromDatabase(quoteId);
+      
+      fetchQuotes();
+      toast({
+        title: "Quote restored",
+        description: "The quote has been restored successfully.",
+      });
+    } catch (error) {
+      console.error('[unarchiveQuote] Error unarchiving quote:', error);
+      toast({
+        title: "Error",
+        description: "Failed to restore quote. Please try again.",
         variant: "destructive",
       });
     }
@@ -86,6 +108,7 @@ export const useQuoteActions = (
   return {
     addQuote,
     updateQuote,
-    deleteQuote
+    deleteQuote,
+    unarchiveQuote
   };
 };

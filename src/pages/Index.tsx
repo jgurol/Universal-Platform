@@ -105,7 +105,8 @@ const Index = () => {
   const {
     addQuote,
     updateQuote,
-    deleteQuote
+    deleteQuote,
+    unarchiveQuote
   } = useQuoteActions(clients, fetchQuotes);
 
   const { addClient } = useClientActions(clients, setClients, fetchClients);
@@ -122,6 +123,7 @@ const Index = () => {
         onAddQuote={addQuote}
         onUpdateQuote={updateQuote}
         onDeleteQuote={deleteQuote}
+        onUnarchiveQuote={unarchiveQuote}
         onFetchClients={fetchClients}
       />
     </div>

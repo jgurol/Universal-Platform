@@ -13,6 +13,7 @@ interface QuoteTableProps {
   onDeleteQuote?: (quoteId: string) => void;
   onUpdateQuote?: (quote: Quote) => void;
   onCopyQuote?: (quote: Quote) => void;
+  onUnarchiveQuote?: (quoteId: string) => void;
 }
 
 type SortField = 'salesperson' | 'quoteNumber' | 'customerName' | 'status';
@@ -24,7 +25,8 @@ export const QuoteTable = ({
   onEditClick,
   onDeleteQuote,
   onUpdateQuote,
-  onCopyQuote
+  onCopyQuote,
+  onUnarchiveQuote
 }: QuoteTableProps) => {
   const { agentMapping } = useAgentMapping();
   const [sortField, setSortField] = useState<SortField | null>(null);
@@ -93,6 +95,7 @@ export const QuoteTable = ({
               onDeleteQuote={onDeleteQuote}
               onUpdateQuote={onUpdateQuote}
               onCopyQuote={onCopyQuote}
+              onUnarchiveQuote={onUnarchiveQuote}
             />
           ))}
         </TableBody>

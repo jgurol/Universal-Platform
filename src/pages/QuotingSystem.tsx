@@ -30,7 +30,8 @@ const QuotingSystem = () => {
   const {
     addQuote,
     updateQuote,
-    deleteQuote
+    deleteQuote,
+    unarchiveQuote
   } = useQuoteActions(clients, fetchQuotes);
 
   const { addClient } = useClientActions(clients, setClients, fetchClients);
@@ -64,6 +65,7 @@ const QuotingSystem = () => {
               onAddQuote={addQuote}
               onUpdateQuote={updateQuote}
               onDeleteQuote={deleteQuote}
+              onUnarchiveQuote={unarchiveQuote}
               associatedAgentId={associatedAgentId}
             />
           </TabsContent>
