@@ -11,7 +11,7 @@ export const addQuoteItems = (doc: jsPDF, context: PDFGenerationContext, startY:
   doc.setFontSize(14);
   doc.setFont('helvetica', 'bold');
   const quoteTitle = quote.description || (clientInfo?.company_name ? `${clientInfo.company_name} - Service Agreement` : 'Service Agreement');
-  doc.text(quoteTitle, 20, yPos);
+  doc.text(quoteTitle, 10, yPos);
   
   // Items Section
   yPos += 12;
@@ -21,10 +21,10 @@ export const addQuoteItems = (doc: jsPDF, context: PDFGenerationContext, startY:
     const nrcItems = quote.quoteItems.filter(item => item.charge_type === 'NRC');
     
     const colX = {
-      description: 20,
-      qty: 150,
-      price: 165,
-      total: 180
+      description: 10,
+      qty: 140,
+      price: 155,
+      total: 170
     };
     
     // Monthly Fees Section
@@ -44,13 +44,13 @@ export const addQuoteItems = (doc: jsPDF, context: PDFGenerationContext, startY:
 const addMRCItems = (doc: jsPDF, mrcItems: any[], quote: any, yPos: number, colX: any): number => {
   doc.setFontSize(12);
   doc.setFont('helvetica', 'bold');
-  doc.text('Monthly Fees', 20, yPos);
+  doc.text('Monthly Fees', 10, yPos);
   yPos += 10;
   
   doc.setFillColor(240, 240, 240);
-  doc.rect(colX.description, yPos - 6, 175, 8, 'F');
+  doc.rect(colX.description, yPos - 6, 190, 8, 'F');
   doc.setDrawColor(200, 200, 200);
-  doc.rect(colX.description, yPos - 6, 175, 8);
+  doc.rect(colX.description, yPos - 6, 190, 8);
   
   doc.setFontSize(8);
   doc.setFont('helvetica', 'bold');
@@ -80,7 +80,7 @@ const addMRCItems = (doc: jsPDF, mrcItems: any[], quote: any, yPos: number, colX
     
     if (index % 2 === 0) {
       doc.setFillColor(250, 250, 250);
-      doc.rect(colX.description, yPos - 3, 175, rowHeight, 'F');
+      doc.rect(colX.description, yPos - 3, 190, rowHeight, 'F');
     }
     
     doc.setTextColor(0, 0, 0);
@@ -112,7 +112,7 @@ const addMRCItems = (doc: jsPDF, mrcItems: any[], quote: any, yPos: number, colX
   
   yPos += 2;
   doc.setDrawColor(0, 0, 0);
-  doc.line(colX.description, yPos, 195, yPos);
+  doc.line(colX.description, yPos, 200, yPos);
   yPos += 6;
   
   const mrcTotal = mrcItems.reduce((total, item) => total + (Number(item.total_price) || 0), 0);
