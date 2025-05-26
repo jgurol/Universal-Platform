@@ -26,12 +26,44 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
+    console.log('Starting email send process...');
+    
     const { to, cc, subject, message, pdfBase64, fileName, quoteId }: SendQuoteEmailRequest = await req.json();
 
     console.log('Sending email to:', to);
     console.log('CC recipients:', cc);
     console.log('Subject:', subject);
     console.log('Quote ID for tracking:', quoteId);
+
+    // Validate required fields
+    if (!to || !subject || !message || !pdfBase64 || !fileName) {
+      console.error('Missing required fields');
+      return new Response(JSON.stringify({ 
+        success: false, 
+        error: "Missing required fields: to, subject, message, pdfBase64, fileName" 
+      }), {
+        status: 400,
+        headers: {
+          "Content-Type": "application/json",
+          ...corsHeaders,
+        },
+      });
+    }
+
+    // Validate Resend API key
+    if (!Deno.env.get("RESEND_API_KEY")) {
+      console.error('RESEND_API_KEY not configured');
+      return new Response(JSON.stringify({ 
+        success: false, 
+        error: "Email service not configured properly" 
+      }), {
+        status: 500,
+        headers: {
+          "Content-Type": "application/json",
+          ...corsHeaders,
+        },
+      });
+    }
 
     // Prepare email recipients
     const recipients = [to];
@@ -49,6 +81,7 @@ const handler = async (req: Request): Promise<Response> => {
     console.log('Acceptance URL generated:', acceptanceUrl);
 
     // Send email with PDF attachment, tracking pixel, and acceptance button
+    console.log('Calling Resend API...');
     const emailResponse = await resend.emails.send({
       from: "Quotes <onboarding@resend.dev>", // You can customize this
       to: recipients,
@@ -103,10 +136,27 @@ const handler = async (req: Request): Promise<Response> => {
       });
     }
 
+    // Check if we got a successful response
+    if (!emailResponse.data) {
+      console.error("No data returned from Resend API");
+      return new Response(JSON.stringify({ 
+        success: false, 
+        error: "No response data from email service"
+      }), {
+        status: 500,
+        headers: {
+          "Content-Type": "application/json",
+          ...corsHeaders,
+        },
+      });
+    }
+
+    console.log("Email sent successfully, ID:", emailResponse.data.id);
+
     // Email sent successfully
     return new Response(JSON.stringify({ 
       success: true, 
-      messageId: emailResponse.data?.id 
+      messageId: emailResponse.data.id 
     }), {
       status: 200,
       headers: {
@@ -116,10 +166,11 @@ const handler = async (req: Request): Promise<Response> => {
     });
   } catch (error: any) {
     console.error("Error sending quote email:", error);
+    console.error("Error stack:", error.stack);
     return new Response(
       JSON.stringify({ 
         success: false, 
-        error: error.message 
+        error: error.message || "Unknown error occurred"
       }),
       {
         status: 500,
