@@ -38,25 +38,26 @@ serve(async (req) => {
     
     console.log('Processing quote approval for quote:', quoteId)
 
-    // ALWAYS update quote status to approved first - this is critical
-    console.log('Updating quote status to approved...')
-    const { error: quoteUpdateError } = await supabaseServiceRole
+    // Get the quote data first to ensure it exists
+    const { data: quote, error: quoteError } = await supabaseServiceRole
       .from('quotes')
-      .update({
-        status: 'approved',
-        acceptance_status: 'accepted',
-        accepted_at: new Date().toISOString()
-      })
+      .select('*')
       .eq('id', quoteId)
+      .single()
 
-    if (quoteUpdateError) {
-      console.error('Error updating quote status:', quoteUpdateError)
-      throw quoteUpdateError
+    if (quoteError) {
+      console.error('Error fetching quote:', quoteError)
+      throw quoteError
     }
 
-    console.log('Quote status updated to approved successfully')
+    if (!quote) {
+      console.error('Quote not found:', quoteId)
+      throw new Error('Quote not found')
+    }
 
-    // Check if order already exists for this quote
+    console.log('Quote found, processing approval for user:', quote.user_id)
+
+    // Check if order already exists for this quote FIRST
     console.log('Checking for existing orders...')
     const { data: existingOrders, error: orderCheckError } = await supabaseServiceRole
       .from('orders')
@@ -77,28 +78,9 @@ serve(async (req) => {
       orderNumber = existingOrders[0].order_number
       console.log('Using existing order:', orderNumber)
     } else {
-      // No existing order, need to create one
+      // No existing order, create one first BEFORE updating quote status
       console.log('No existing order found, creating new order...')
       
-      // Get the quote data first
-      const { data: quote, error: quoteError } = await supabaseServiceRole
-        .from('quotes')
-        .select('*')
-        .eq('id', quoteId)
-        .single()
-
-      if (quoteError) {
-        console.error('Error fetching quote:', quoteError)
-        throw quoteError
-      }
-
-      if (!quote) {
-        console.error('Quote not found:', quoteId)
-        throw new Error('Quote not found')
-      }
-
-      console.log('Quote found, creating order for user:', quote.user_id)
-
       // Generate truly unique order number using timestamp and random component
       const now = new Date()
       const year = now.getFullYear()
@@ -109,7 +91,7 @@ serve(async (req) => {
       orderNumber = `ORD-${year}-${dayOfYear.toString().padStart(3, '0')}-${timeComponent}${randomComponent}`
       console.log('Generated unique order number:', orderNumber)
 
-      // Create new order using service role client
+      // Create new order using service role client FIRST
       console.log('About to create order with data:', {
         quote_id: quoteId,
         order_number: orderNumber,
@@ -178,6 +160,24 @@ serve(async (req) => {
         console.log('Created new order with ID:', orderId)
       }
     }
+
+    // NOW update quote status to approved AFTER order creation
+    console.log('Updating quote status to approved...')
+    const { error: quoteUpdateError } = await supabaseServiceRole
+      .from('quotes')
+      .update({
+        status: 'approved',
+        acceptance_status: 'accepted',
+        accepted_at: new Date().toISOString()
+      })
+      .eq('id', quoteId)
+
+    if (quoteUpdateError) {
+      console.error('Error updating quote status:', quoteUpdateError)
+      throw quoteUpdateError
+    }
+
+    console.log('Quote status updated to approved successfully')
 
     // Get quote items with circuit-related categories
     const circuitCategories = ['broadband', 'dedicated fiber', 'fixed wireless', '4G/5G']
