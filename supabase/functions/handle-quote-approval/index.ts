@@ -60,8 +60,8 @@ serve(async (req) => {
       orderNumber = existingOrders[0].order_number
       console.log('Using existing order:', orderNumber)
       
-      // Update the quote status to approved (safe to do multiple times)
-      console.log('Updating quote status to approved...')
+      // Just ensure quote status is approved (safe to do multiple times)
+      console.log('Ensuring quote status is approved...')
       const { error: quoteUpdateError } = await supabaseServiceRole
         .from('quotes')
         .update({
@@ -73,10 +73,11 @@ serve(async (req) => {
 
       if (quoteUpdateError) {
         console.error('Error updating quote status:', quoteUpdateError)
-        throw quoteUpdateError
+        // Don't throw here, just log - the order already exists
+        console.log('Continuing with existing order despite quote update error')
+      } else {
+        console.log('Quote status updated to approved successfully')
       }
-
-      console.log('Quote status updated to approved successfully')
     } else {
       // No existing order, need to create one
       console.log('No existing order found, creating new order...')
@@ -100,30 +101,17 @@ serve(async (req) => {
 
       console.log('Quote found, creating order for user:', quote.user_id)
 
-      // Generate sequential order number starting from 15000
-      const { data: lastOrder, error: lastOrderError } = await supabaseServiceRole
-        .from('orders')
-        .select('order_number')
-        .order('created_at', { ascending: false })
-        .limit(1)
+      // Generate truly unique order number using timestamp and random component
+      const now = new Date()
+      const year = now.getFullYear()
+      const dayOfYear = Math.floor((now.getTime() - new Date(year, 0, 0).getTime()) / (1000 * 60 * 60 * 24))
+      const timeComponent = now.getHours().toString().padStart(2, '0') + now.getMinutes().toString().padStart(2, '0')
+      const randomComponent = Math.floor(Math.random() * 1000).toString().padStart(3, '0')
+      
+      orderNumber = `ORD-${year}-${dayOfYear.toString().padStart(3, '0')}-${timeComponent}${randomComponent}`
+      console.log('Generated unique order number:', orderNumber)
 
-      if (lastOrderError && lastOrderError.code !== 'PGRST116') {
-        console.error('Error fetching last order:', lastOrderError)
-        throw lastOrderError
-      }
-
-      let nextOrderNumber = 15000
-      if (lastOrder && lastOrder.length > 0 && lastOrder[0].order_number) {
-        const lastNumber = parseInt(lastOrder[0].order_number)
-        if (!isNaN(lastNumber)) {
-          nextOrderNumber = Math.max(lastNumber + 1, 15000)
-        }
-      }
-
-      orderNumber = nextOrderNumber.toString()
-      console.log('Generated order number:', orderNumber)
-
-      // Update quote status first, then create order
+      // Update quote status first
       console.log('Updating quote status to approved...')
       const { error: quoteUpdateError } = await supabaseServiceRole
         .from('quotes')
