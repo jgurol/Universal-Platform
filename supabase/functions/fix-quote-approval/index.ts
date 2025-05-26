@@ -179,15 +179,50 @@ const handler = async (req: Request): Promise<Response> => {
     if (quoteItemsError) {
       console.error('Error fetching quote items:', quoteItemsError);
     } else if (quoteItems) {
-      // Filter items that have Circuit category type
-      const circuitItems = quoteItems.filter(item => 
-        item.item?.category?.type === 'Circuit'
-      );
+      console.log(`Total quote items fetched: ${quoteItems.length}`);
+      
+      // Log all items and their categories for debugging
+      quoteItems.forEach((item, index) => {
+        console.log(`Item ${index + 1}:`, {
+          id: item.id,
+          item_name: item.item?.name,
+          category_name: item.item?.category?.name,
+          category_type: item.item?.category?.type
+        });
+      });
 
-      console.log(`Found ${circuitItems.length} circuit items to track`);
+      // Filter items that have Circuit category type
+      const circuitItems = quoteItems.filter(item => {
+        const isCircuit = item.item?.category?.type === 'Circuit';
+        console.log(`Item ${item.item?.name} - Category type: ${item.item?.category?.type}, Is Circuit: ${isCircuit}`);
+        return isCircuit;
+      });
+
+      console.log(`Found ${circuitItems.length} circuit items to track out of ${quoteItems.length} total items`);
+
+      if (circuitItems.length === 0) {
+        console.log('No circuit items found - checking for legacy circuit categories');
+        // Also check for legacy circuit categories by name
+        const legacyCircuitItems = quoteItems.filter(item => {
+          const categoryName = item.item?.category?.name?.toLowerCase();
+          const isLegacyCircuit = categoryName && ['broadband', 'dedicated fiber', 'fixed wireless', '4g/5g', 'circuit'].includes(categoryName);
+          if (isLegacyCircuit) {
+            console.log(`Found legacy circuit item: ${item.item?.name} with category: ${categoryName}`);
+          }
+          return isLegacyCircuit;
+        });
+        
+        console.log(`Found ${legacyCircuitItems.length} legacy circuit items`);
+        
+        // Use legacy circuit items if no Circuit type items found
+        if (legacyCircuitItems.length > 0) {
+          circuitItems.push(...legacyCircuitItems);
+        }
+      }
 
       // Create circuit tracking records for each circuit item
-      for (const circuitItem of circuitItems) {
+      for (let i = 0; i < circuitItems.length; i++) {
+        const circuitItem = circuitItems[i];
         const circuitTrackingData = {
           order_id: newOrder.id,
           quote_item_id: circuitItem.id,
@@ -198,19 +233,27 @@ const handler = async (req: Request): Promise<Response> => {
           item_description: circuitItem.item?.description
         };
 
-        console.log('Creating circuit tracking for item:', circuitItem.id);
+        console.log(`Creating circuit tracking ${i + 1}/${circuitItems.length} for item:`, {
+          quote_item_id: circuitItem.id,
+          item_name: circuitItem.item?.name,
+          circuit_type: circuitItem.item?.category?.name
+        });
 
-        const { error: circuitTrackingError } = await supabase
+        const { data: newCircuitTracking, error: circuitTrackingError } = await supabase
           .from('circuit_tracking')
-          .insert(circuitTrackingData);
+          .insert(circuitTrackingData)
+          .select()
+          .single();
 
         if (circuitTrackingError) {
-          console.error('Error creating circuit tracking:', circuitTrackingError);
+          console.error(`Error creating circuit tracking for item ${circuitItem.id}:`, circuitTrackingError);
           // Don't throw here - continue with other items
         } else {
-          console.log(`Created circuit tracking for quote item ${circuitItem.id}`);
+          console.log(`Successfully created circuit tracking ${newCircuitTracking.id} for quote item ${circuitItem.id}`);
         }
       }
+
+      console.log(`Circuit tracking creation completed. Created ${circuitItems.length} tracking records.`);
     }
 
     return new Response(JSON.stringify({ 
