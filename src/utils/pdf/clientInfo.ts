@@ -53,6 +53,6 @@ export const addClientInfo = (doc: jsPDF, context: PDFGenerationContext): number
   renderServiceAddress(doc, context, yPos, serviceAddress, serviceCol);
   renderContactInfo(doc, context, yPos, billingCol, serviceCol);
   
-  console.log('PDF clientInfo.ts - Completed addClientInfo, returning Y position:', 145);
-  return 145; // Reduced from 165 to bring main body closer
+  console.log('PDF clientInfo.ts - Completed addClientInfo, returning Y position:', 125);
+  return 125; // Reduced from 145 to just 2 lines separation
 };
