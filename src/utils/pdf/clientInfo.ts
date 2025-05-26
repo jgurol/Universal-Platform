@@ -22,9 +22,9 @@ export const addClientInfo = (doc: jsPDF, context: PDFGenerationContext): number
     return 105;
   }
   
-  // Column positions - narrower margins
+  // Column positions - narrower margins, more centered service column
   const billingCol = 10;
-  const serviceCol = 105;
+  const serviceCol = 90;
   
   // Section headers
   let yPos = 85;
