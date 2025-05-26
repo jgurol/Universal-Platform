@@ -39,25 +39,8 @@ serve(async (req) => {
     console.log('Processing quote approval for quote:', quoteId)
     console.log('Using service role client for database operations')
 
-    // First, update the quote status to approved using service role
-    console.log('Updating quote status to approved...')
-    const { error: quoteUpdateError } = await supabaseServiceRole
-      .from('quotes')
-      .update({
-        status: 'approved',
-        acceptance_status: 'accepted',
-        accepted_at: new Date().toISOString()
-      })
-      .eq('id', quoteId)
-
-    if (quoteUpdateError) {
-      console.error('Error updating quote status:', quoteUpdateError)
-      throw quoteUpdateError
-    }
-
-    console.log('Quote status updated to approved successfully')
-
-    // Check if order already exists for this quote
+    // Check if order already exists for this quote FIRST
+    console.log('Checking for existing orders...')
     const { data: existingOrders, error: orderCheckError } = await supabaseServiceRole
       .from('orders')
       .select('id, order_number')
@@ -76,8 +59,47 @@ serve(async (req) => {
       orderId = existingOrders[0].id
       orderNumber = existingOrders[0].order_number
       console.log('Using existing order:', orderNumber)
+      
+      // Just update the quote status since order already exists
+      console.log('Updating quote status to approved...')
+      const { error: quoteUpdateError } = await supabaseServiceRole
+        .from('quotes')
+        .update({
+          status: 'approved',
+          acceptance_status: 'accepted',
+          accepted_at: new Date().toISOString()
+        })
+        .eq('id', quoteId)
+
+      if (quoteUpdateError) {
+        console.error('Error updating quote status:', quoteUpdateError)
+        throw quoteUpdateError
+      }
+
+      console.log('Quote status updated to approved successfully')
     } else {
-      // Get the quote data first using service role
+      // No existing order, need to create one
+      console.log('No existing order found, creating new order...')
+      
+      // First, update the quote status to approved
+      console.log('Updating quote status to approved...')
+      const { error: quoteUpdateError } = await supabaseServiceRole
+        .from('quotes')
+        .update({
+          status: 'approved',
+          acceptance_status: 'accepted',
+          accepted_at: new Date().toISOString()
+        })
+        .eq('id', quoteId)
+
+      if (quoteUpdateError) {
+        console.error('Error updating quote status:', quoteUpdateError)
+        throw quoteUpdateError
+      }
+
+      console.log('Quote status updated to approved successfully')
+
+      // Get the quote data
       const { data: quote, error: quoteError } = await supabaseServiceRole
         .from('quotes')
         .select('*')
