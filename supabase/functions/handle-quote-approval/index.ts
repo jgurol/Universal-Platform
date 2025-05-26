@@ -280,6 +280,8 @@ serve(async (req) => {
       }
 
       console.log('Created circuit tracking records:', trackingRecords.length)
+    } else {
+      console.log('No new circuit tracking records needed')
     }
 
     return new Response(
