@@ -35,6 +35,8 @@ export interface CircuitTracking {
     order_number: string;
   };
   quote_item?: {
+    quantity: number;
+    unit_price: number;
     item: {
       name: string;
       description?: string;

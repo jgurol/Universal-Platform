@@ -24,7 +24,8 @@ export const useCircuitTracking = () => {
             quote_id
           ),
           quote_item:quote_items(
-            *,
+            quantity,
+            unit_price,
             item:items(
               *,
               category:categories(name)
@@ -44,7 +45,8 @@ export const useCircuitTracking = () => {
           quote:quotes!inner(
             *,
             quote_items(
-              *,
+              quantity,
+              unit_price,
               item:items(
                 *,
                 category:categories(name)
