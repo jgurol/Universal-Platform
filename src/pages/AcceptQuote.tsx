@@ -340,7 +340,7 @@ const AcceptQuote = () => {
       // Call the edge function to handle order creation and circuit tracking
       try {
         const { data: orderResult, error: orderError } = await supabase.functions
-          .invoke('fix-quote-approval', {
+          .invoke('handle-quote-approval', {
             body: { quoteId: quote.id }
           });
 

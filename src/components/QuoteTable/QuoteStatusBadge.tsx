@@ -77,7 +77,7 @@ export const QuoteStatusBadge = ({ quoteId, status, onStatusUpdate }: QuoteStatu
         // Then handle order creation
         try {
           const { data: orderResult, error: orderError } = await supabase.functions
-            .invoke('fix-quote-approval', {
+            .invoke('handle-quote-approval', {
               body: { quoteId: quoteId }
             });
 

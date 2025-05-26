@@ -18,15 +18,15 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     )
 
-    const { quote_id } = await req.json()
+    const { quoteId } = await req.json()
     
-    console.log('Processing quote approval for quote:', quote_id)
+    console.log('Processing quote approval for quote:', quoteId)
 
     // Check if order already exists for this quote
     const { data: existingOrders, error: orderCheckError } = await supabaseClient
       .from('orders')
       .select('id, order_number')
-      .eq('quote_id', quote_id)
+      .eq('quote_id', quoteId)
 
     if (orderCheckError) {
       console.error('Error checking existing orders:', orderCheckError)
@@ -46,7 +46,7 @@ serve(async (req) => {
       const { data: quote, error: quoteError } = await supabaseClient
         .from('quotes')
         .select('*')
-        .eq('id', quote_id)
+        .eq('id', quoteId)
         .single()
 
       if (quoteError) {
@@ -81,7 +81,7 @@ serve(async (req) => {
       const { data: newOrder, error: orderError } = await supabaseClient
         .from('orders')
         .insert({
-          quote_id: quote_id,
+          quote_id: quoteId,
           order_number: orderNumber,
           user_id: quote.user_id,
           client_id: quote.client_id,
@@ -118,7 +118,7 @@ serve(async (req) => {
           category:categories(name)
         )
       `)
-      .eq('quote_id', quote_id)
+      .eq('quote_id', quoteId)
 
     if (itemsError) {
       console.error('Error fetching quote items:', itemsError)
