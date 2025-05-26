@@ -76,6 +76,11 @@ export const CircuitTrackingManagement = () => {
     }
   };
 
+  const formatLocation = (address: any) => {
+    if (!address) return '-';
+    return `${address.city}, ${address.state}`;
+  };
+
   // Group circuit trackings by order
   const groupedTrackings = circuitTrackings.reduce((acc, tracking) => {
     const orderId = tracking.order_id;
@@ -129,7 +134,7 @@ export const CircuitTrackingManagement = () => {
                       <TableHeader>
                         <TableRow>
                           <TableHead className="w-[200px]">Item Name</TableHead>
-                          <TableHead className="w-[300px]">Description</TableHead>
+                          <TableHead className="w-[200px]">Location</TableHead>
                           <TableHead className="w-[80px]">Qty</TableHead>
                           <TableHead className="w-[100px]">Unit Price</TableHead>
                           <TableHead className="w-[100px]">Status</TableHead>
@@ -144,7 +149,7 @@ export const CircuitTrackingManagement = () => {
                               {circuit.item_name || circuit.quote_item?.item?.name || circuit.circuit_type}
                             </TableCell>
                             <TableCell className="text-sm text-gray-600">
-                              {circuit.item_description || circuit.quote_item?.item?.description || '-'}
+                              {formatLocation(circuit.quote_item?.address)}
                             </TableCell>
                             <TableCell>
                               {circuit.quote_item?.quantity || '-'}
