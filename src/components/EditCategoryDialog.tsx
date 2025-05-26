@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Category } from "@/types/categories";
 
 interface EditCategoryDialogProps {
@@ -17,11 +18,13 @@ interface EditCategoryDialogProps {
 export const EditCategoryDialog = ({ open, onOpenChange, onUpdateCategory, category }: EditCategoryDialogProps) => {
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
+  const [type, setType] = useState<'Circuit' | 'Network' | 'Managed Services' | 'AI'>('Network');
 
   useEffect(() => {
     if (category) {
       setName(category.name);
       setDescription(category.description || "");
+      setType(category.type || 'Network');
     }
   }, [category]);
 
@@ -31,6 +34,7 @@ export const EditCategoryDialog = ({ open, onOpenChange, onUpdateCategory, categ
       onUpdateCategory(category.id, {
         name: name.trim(),
         description: description.trim() || undefined,
+        type,
       });
       
       onOpenChange(false);
@@ -56,6 +60,21 @@ export const EditCategoryDialog = ({ open, onOpenChange, onUpdateCategory, categ
               placeholder="Enter category name"
               required
             />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="edit-category-type">Type *</Label>
+            <Select value={type} onValueChange={(value: 'Circuit' | 'Network' | 'Managed Services' | 'AI') => setType(value)}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select category type" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="Circuit">Circuit</SelectItem>
+                <SelectItem value="Network">Network</SelectItem>
+                <SelectItem value="Managed Services">Managed Services</SelectItem>
+                <SelectItem value="AI">AI</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
 
           <div className="space-y-2">

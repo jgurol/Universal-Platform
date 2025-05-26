@@ -58,6 +58,7 @@ export type Database = {
           id: string
           is_active: boolean
           name: string
+          type: Database["public"]["Enums"]["category_type"] | null
           updated_at: string
           user_id: string
         }
@@ -67,6 +68,7 @@ export type Database = {
           id?: string
           is_active?: boolean
           name: string
+          type?: Database["public"]["Enums"]["category_type"] | null
           updated_at?: string
           user_id: string
         }
@@ -76,6 +78,7 @@ export type Database = {
           id?: string
           is_active?: boolean
           name?: string
+          type?: Database["public"]["Enums"]["category_type"] | null
           updated_at?: string
           user_id?: string
         }
@@ -876,7 +879,7 @@ export type Database = {
       }
     }
     Enums: {
-      [_ in never]: never
+      category_type: "Circuit" | "Network" | "Managed Services" | "AI"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -991,6 +994,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      category_type: ["Circuit", "Network", "Managed Services", "AI"],
+    },
   },
 } as const

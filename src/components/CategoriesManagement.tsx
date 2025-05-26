@@ -31,6 +31,21 @@ export const CategoriesManagement = () => {
     }
   };
 
+  const getTypeColor = (type?: string) => {
+    switch (type) {
+      case 'Circuit':
+        return 'bg-blue-100 text-blue-800';
+      case 'Network':
+        return 'bg-green-100 text-green-800';
+      case 'Managed Services':
+        return 'bg-purple-100 text-purple-800';
+      case 'AI':
+        return 'bg-orange-100 text-orange-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
+    }
+  };
+
   if (isLoading) {
     return (
       <Card>
@@ -77,6 +92,11 @@ export const CategoriesManagement = () => {
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-1">
                       <h4 className="font-medium text-gray-900">{category.name}</h4>
+                      {category.type && (
+                        <Badge className={getTypeColor(category.type)}>
+                          {category.type}
+                        </Badge>
+                      )}
                     </div>
                     {category.description && (
                       <p className="text-sm text-gray-600">{category.description}</p>

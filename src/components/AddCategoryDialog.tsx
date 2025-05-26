@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Category } from "@/types/categories";
 
 interface AddCategoryDialogProps {
@@ -16,6 +17,7 @@ interface AddCategoryDialogProps {
 export const AddCategoryDialog = ({ open, onOpenChange, onAddCategory }: AddCategoryDialogProps) => {
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
+  const [type, setType] = useState<'Circuit' | 'Network' | 'Managed Services' | 'AI'>('Network');
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -23,12 +25,14 @@ export const AddCategoryDialog = ({ open, onOpenChange, onAddCategory }: AddCate
       onAddCategory({
         name: name.trim(),
         description: description.trim() || undefined,
+        type,
         is_active: true
       });
       
       // Reset form
       setName("");
       setDescription("");
+      setType('Network');
       onOpenChange(false);
     }
   };
@@ -52,6 +56,21 @@ export const AddCategoryDialog = ({ open, onOpenChange, onAddCategory }: AddCate
               placeholder="Enter category name"
               required
             />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="category-type">Type *</Label>
+            <Select value={type} onValueChange={(value: 'Circuit' | 'Network' | 'Managed Services' | 'AI') => setType(value)}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select category type" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="Circuit">Circuit</SelectItem>
+                <SelectItem value="Network">Network</SelectItem>
+                <SelectItem value="Managed Services">Managed Services</SelectItem>
+                <SelectItem value="AI">AI</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
 
           <div className="space-y-2">
