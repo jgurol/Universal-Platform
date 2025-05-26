@@ -4,13 +4,15 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Trash2, FileText, Eye, Download } from "lucide-react";
+import { Trash2, FileText, Eye } from "lucide-react";
 import { useOrders } from "@/hooks/useOrders";
 import { useToast } from "@/hooks/use-toast";
 import { formatDateForDisplay } from "@/utils/dateUtils";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { QuoteItemData } from "@/types/quoteItems";
+import { generateQuotePDF } from "@/utils/pdf";
+import { Quote, ClientInfo } from "@/pages/Index";
 
 interface QuoteAcceptance {
   id: string;
@@ -26,12 +28,12 @@ export const OrdersManagement = () => {
   const { orders, isLoading, deleteOrder } = useOrders();
   const { toast } = useToast();
   const [quoteAcceptances, setQuoteAcceptances] = useState<Record<string, QuoteAcceptance>>({});
-  const [quoteItems, setQuoteItems] = useState<Record<string, QuoteItemData[]>>({});
   const [selectedAgreement, setSelectedAgreement] = useState<QuoteAcceptance | null>(null);
-  const [selectedQuoteItems, setSelectedQuoteItems] = useState<QuoteItemData[]>([]);
   const [agreementDialogOpen, setAgreementDialogOpen] = useState(false);
+  const [pdfUrl, setPdfUrl] = useState<string | null>(null);
+  const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
 
-  // Fetch quote acceptances and quote items for orders
+  // Fetch quote acceptances for orders
   useEffect(() => {
     const fetchQuoteData = async () => {
       if (orders.length === 0) return;
@@ -58,43 +60,6 @@ export const OrdersManagement = () => {
           });
           setQuoteAcceptances(acceptancesMap);
         }
-
-        // Fetch quote items for each quote
-        const { data: itemsData, error: itemsError } = await supabase
-          .from('quote_items')
-          .select(`
-            *,
-            item:items(*),
-            address:client_addresses(*)
-          `)
-          .in('quote_id', quoteIds);
-
-        if (itemsError) {
-          console.error('Error fetching quote items:', itemsError);
-        } else if (itemsData) {
-          // Group items by quote_id
-          const itemsMap: Record<string, QuoteItemData[]> = {};
-          itemsData.forEach(item => {
-            if (!itemsMap[item.quote_id]) {
-              itemsMap[item.quote_id] = [];
-            }
-            itemsMap[item.quote_id].push({
-              id: item.id,
-              item_id: item.item_id,
-              quantity: item.quantity,
-              unit_price: item.unit_price,
-              total_price: item.total_price,
-              charge_type: item.charge_type as 'NRC' | 'MRC',
-              address_id: item.address_id,
-              name: item.item?.name || '',
-              description: item.item?.description || '',
-              item: item.item,
-              address: item.address
-            });
-          });
-          setQuoteItems(itemsMap);
-        }
-
       } catch (error) {
         console.error('Error fetching quote data:', error);
       }
@@ -120,50 +85,129 @@ export const OrdersManagement = () => {
     }
   };
 
-  const handleViewAgreement = (quoteId: string) => {
+  const handleViewAgreement = async (quoteId: string) => {
     const acceptance = quoteAcceptances[quoteId];
-    const items = quoteItems[quoteId] || [];
-    if (acceptance) {
-      setSelectedAgreement(acceptance);
-      setSelectedQuoteItems(items);
-      setAgreementDialogOpen(true);
-    }
-  };
+    if (!acceptance) return;
 
-  const handleDownloadSignature = (acceptance: QuoteAcceptance) => {
+    setSelectedAgreement(acceptance);
+    setIsGeneratingPdf(true);
+    setAgreementDialogOpen(true);
+
     try {
-      const link = document.createElement('a');
-      link.href = acceptance.signature_data;
-      link.download = `signature-${acceptance.client_name}-${new Date(acceptance.accepted_at).toDateString()}.png`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      
-      toast({
-        title: "Signature downloaded",
-        description: "The signature has been downloaded to your device.",
-      });
+      // Fetch the full quote data to generate PDF
+      const { data: quoteData, error: quoteError } = await supabase
+        .from('quotes')
+        .select(`
+          *,
+          quote_items (
+            id,
+            item_id,
+            quantity,
+            unit_price,
+            total_price,
+            charge_type,
+            address_id,
+            custom_name,
+            custom_description,
+            items (
+              id,
+              name,
+              description,
+              sku,
+              unit_price
+            ),
+            client_addresses (
+              id,
+              street_address,
+              city,
+              state,
+              zip_code
+            )
+          )
+        `)
+        .eq('id', quoteId)
+        .single();
+
+      if (quoteError) throw quoteError;
+
+      // Fetch client info
+      const { data: clientInfoData } = await supabase
+        .from('client_infos')
+        .select('*')
+        .eq('id', quoteData.client_info_id)
+        .single();
+
+      // Transform the data to match Quote interface
+      const quote: Quote = {
+        id: quoteData.id,
+        clientId: quoteData.user_id,
+        clientName: quoteData.client_name || '',
+        companyName: quoteData.company_name || '',
+        amount: quoteData.amount || 0,
+        date: quoteData.created_at,
+        description: quoteData.description || '',
+        quoteNumber: quoteData.quote_number,
+        status: 'approved', // Since this is an accepted quote
+        clientInfoId: quoteData.client_info_id,
+        quoteItems: quoteData.quote_items?.map((item: any) => ({
+          id: item.id,
+          item_id: item.item_id,
+          quantity: item.quantity,
+          unit_price: item.unit_price,
+          total_price: item.total_price,
+          charge_type: item.charge_type,
+          address_id: item.address_id,
+          name: item.custom_name || item.items?.name || '',
+          description: item.custom_description || item.items?.description || '',
+          item: item.items,
+          address: item.client_addresses
+        })) || [],
+        billingAddress: quoteData.billing_address,
+        serviceAddress: quoteData.service_address,
+        expiresAt: quoteData.expires_at,
+        notes: quoteData.notes
+      };
+
+      const clientInfo: ClientInfo | undefined = clientInfoData ? {
+        id: clientInfoData.id,
+        user_id: clientInfoData.user_id,
+        company_name: clientInfoData.company_name,
+        contact_name: clientInfoData.contact_name,
+        email: clientInfoData.email,
+        phone: clientInfoData.phone,
+        address: clientInfoData.address,
+        notes: clientInfoData.notes,
+        revio_id: clientInfoData.revio_id,
+        agent_id: clientInfoData.agent_id,
+        created_at: clientInfoData.created_at,
+        updated_at: clientInfoData.updated_at
+      } : undefined;
+
+      // Generate PDF using the same function as quotes tab
+      const pdf = await generateQuotePDF(quote, clientInfo, acceptance.client_name);
+      const pdfBlob = pdf.output('blob');
+      const url = URL.createObjectURL(pdfBlob);
+      setPdfUrl(url);
+
     } catch (error) {
-      console.error('Error downloading signature:', error);
+      console.error('Error generating PDF:', error);
       toast({
-        title: "Download failed",
-        description: "Failed to download the signature. Please try again.",
+        title: "Error",
+        description: "Failed to generate agreement PDF. Please try again.",
         variant: "destructive",
       });
+    } finally {
+      setIsGeneratingPdf(false);
     }
   };
 
-  const getMRCTotal = (items: QuoteItemData[]) => {
-    return items
-      .filter(item => item.charge_type === 'MRC')
-      .reduce((total, item) => total + item.total_price, 0);
-  };
-
-  const getNRCTotal = (items: QuoteItemData[]) => {
-    return items
-      .filter(item => item.charge_type === 'NRC')
-      .reduce((total, item) => total + item.total_price, 0);
-  };
+  // Clean up PDF URL when dialog closes
+  useEffect(() => {
+    if (!agreementDialogOpen && pdfUrl) {
+      URL.revokeObjectURL(pdfUrl);
+      setPdfUrl(null);
+    }
+  }, [agreementDialogOpen, pdfUrl]);
 
   if (isLoading) {
     return (
@@ -268,224 +312,36 @@ export const OrdersManagement = () => {
         </CardContent>
       </Card>
 
-      {/* Agreement Viewer Dialog - PDF Style */}
+      {/* PDF Agreement Viewer Dialog */}
       <Dialog open={agreementDialogOpen} onOpenChange={setAgreementDialogOpen}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto bg-white">
-          <DialogHeader className="border-b pb-4">
-            <div className="flex justify-between items-center">
-              <div>
-                <DialogTitle className="text-xl font-normal text-gray-600">Service Agreement</DialogTitle>
-                <DialogDescription className="text-sm text-gray-500 mt-1">
-                  Digitally signed agreement and order details
-                </DialogDescription>
-              </div>
-              <div className="bg-green-100 px-3 py-1 rounded">
-                <span className="text-green-800 font-medium text-sm">APPROVED</span>
-              </div>
-            </div>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden">
+          <DialogHeader>
+            <DialogTitle>Signed Agreement</DialogTitle>
+            <DialogDescription>
+              View the complete signed agreement document
+            </DialogDescription>
           </DialogHeader>
           
-          {selectedAgreement && (
-            <div className="space-y-6 pt-4">
-              {/* Agreement Details Box - PDF Style */}
-              <div className="bg-gray-50 border border-gray-200 p-4 rounded-lg">
-                <div className="grid grid-cols-2 gap-6">
-                  <div className="space-y-3">
-                    <div>
-                      <span className="text-sm font-medium text-gray-700">Agreement:</span>
-                      <div className="text-sm text-gray-900 mt-1">Service Agreement v2</div>
-                    </div>
-                    <div>
-                      <span className="text-sm font-medium text-gray-700">Date:</span>
-                      <div className="text-sm text-gray-900 mt-1">{formatDateForDisplay(selectedAgreement.accepted_at)}</div>
-                    </div>
-                  </div>
-                  <div className="space-y-3">
-                    <div>
-                      <span className="text-sm font-medium text-gray-700">Client:</span>
-                      <div className="text-sm text-gray-900 mt-1">{selectedAgreement.client_name}</div>
-                    </div>
-                    <div>
-                      <span className="text-sm font-medium text-gray-700">Email:</span>
-                      <div className="text-sm text-gray-900 mt-1">{selectedAgreement.client_email}</div>
-                    </div>
-                  </div>
+          <div className="flex-1 min-h-0">
+            {isGeneratingPdf ? (
+              <div className="flex items-center justify-center h-96">
+                <div className="text-center">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+                  <p className="text-gray-600">Generating agreement PDF...</p>
                 </div>
               </div>
-
-              {/* Quote Items Section - PDF Style */}
-              {selectedQuoteItems.length > 0 && (
-                <div className="space-y-6">
-                  <h3 className="text-lg font-medium text-gray-900 border-b pb-2">Service Agreement Items</h3>
-                  
-                  {/* Monthly Fees Section */}
-                  {selectedQuoteItems.filter(item => item.charge_type === 'MRC').length > 0 && (
-                    <div className="space-y-3">
-                      <h4 className="text-md font-medium text-blue-700">Monthly Fees</h4>
-                      <div className="bg-gray-50 rounded-lg overflow-hidden">
-                        <div className="bg-gray-100 px-4 py-2 border-b border-gray-200">
-                          <div className="grid grid-cols-12 gap-2 text-xs font-medium text-gray-700">
-                            <div className="col-span-5">Description</div>
-                            <div className="col-span-1 text-center">Qty</div>
-                            <div className="col-span-2 text-right">Price</div>
-                            <div className="col-span-2 text-right">Total</div>
-                            <div className="col-span-2"></div>
-                          </div>
-                        </div>
-                        <div className="divide-y divide-gray-200">
-                          {selectedQuoteItems
-                            .filter(item => item.charge_type === 'MRC')
-                            .map((item, index) => (
-                              <div key={item.id} className={`px-4 py-3 ${index % 2 === 0 ? 'bg-white' : 'bg-gray-25'}`}>
-                                <div className="grid grid-cols-12 gap-2 items-start">
-                                  <div className="col-span-5">
-                                    <div className="text-sm font-medium text-gray-900">{item.name}</div>
-                                    {item.address && (
-                                      <div className="text-xs text-gray-600 mt-1">
-                                        Location: {item.address.street_address}, {item.address.city}, {item.address.state} {item.address.zip_code}
-                                      </div>
-                                    )}
-                                  </div>
-                                  <div className="col-span-1 text-center text-sm">{item.quantity}</div>
-                                  <div className="col-span-2 text-right text-sm">${item.unit_price.toFixed(2)}</div>
-                                  <div className="col-span-2 text-right text-sm font-medium">${item.total_price.toFixed(2)}</div>
-                                  <div className="col-span-2"></div>
-                                </div>
-                              </div>
-                            ))}
-                        </div>
-                        <div className="bg-gray-100 px-4 py-3 border-t border-gray-200">
-                          <div className="flex justify-end">
-                            <div className="text-sm font-bold">
-                              Total Monthly: ${getMRCTotal(selectedQuoteItems).toFixed(2)} USD
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* One-Time Fees Section */}
-                  {selectedQuoteItems.filter(item => item.charge_type === 'NRC').length > 0 && (
-                    <div className="space-y-3">
-                      <h4 className="text-md font-medium text-green-700">One-Time Setup Fees</h4>
-                      <div className="bg-gray-50 rounded-lg overflow-hidden">
-                        <div className="bg-gray-100 px-4 py-2 border-b border-gray-200">
-                          <div className="grid grid-cols-12 gap-2 text-xs font-medium text-gray-700">
-                            <div className="col-span-5">Description</div>
-                            <div className="col-span-1 text-center">Qty</div>
-                            <div className="col-span-2 text-right">Price</div>
-                            <div className="col-span-2 text-right">Total</div>
-                            <div className="col-span-2"></div>
-                          </div>
-                        </div>
-                        <div className="divide-y divide-gray-200">
-                          {selectedQuoteItems
-                            .filter(item => item.charge_type === 'NRC')
-                            .map((item, index) => (
-                              <div key={item.id} className={`px-4 py-3 ${index % 2 === 0 ? 'bg-white' : 'bg-gray-25'}`}>
-                                <div className="grid grid-cols-12 gap-2 items-start">
-                                  <div className="col-span-5">
-                                    <div className="text-sm font-medium text-gray-900">{item.name}</div>
-                                    {item.address && (
-                                      <div className="text-xs text-gray-600 mt-1">
-                                        Location: {item.address.street_address}, {item.address.city}, {item.address.state} {item.address.zip_code}
-                                      </div>
-                                    )}
-                                  </div>
-                                  <div className="col-span-1 text-center text-sm">{item.quantity}</div>
-                                  <div className="col-span-2 text-right text-sm">${item.unit_price.toFixed(2)}</div>
-                                  <div className="col-span-2 text-right text-sm font-medium">${item.total_price.toFixed(2)}</div>
-                                  <div className="col-span-2"></div>
-                                </div>
-                              </div>
-                            ))}
-                        </div>
-                        <div className="bg-gray-100 px-4 py-3 border-t border-gray-200">
-                          <div className="flex justify-end">
-                            <div className="text-sm font-bold">
-                              One-Time Setup Fees: ${getNRCTotal(selectedQuoteItems).toFixed(2)} USD
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Grand Total Section */}
-                  <div className="border-t pt-4">
-                    <div className="bg-gray-100 p-4 rounded-lg">
-                      <div className="flex justify-between items-center">
-                        <span className="text-lg font-medium text-gray-900">Grand Total:</span>
-                        <span className="text-2xl font-bold text-gray-900">
-                          ${(getMRCTotal(selectedQuoteItems) + getNRCTotal(selectedQuoteItems)).toFixed(2)} USD
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
-              
-              {/* Digital Signature Section - PDF Style */}
-              <div className="space-y-4 border-t pt-6">
-                <h4 className="text-md font-medium text-gray-900">Digital Acceptance Evidence</h4>
-                <div className="bg-gray-50 border border-gray-200 rounded-lg p-6">
-                  <div className="space-y-4">
-                    <div className="grid grid-cols-2 gap-6 text-sm">
-                      <div>
-                        <span className="font-medium text-gray-700">Accepted by:</span>
-                        <div className="text-gray-900 mt-1">{selectedAgreement.client_name}</div>
-                      </div>
-                      <div>
-                        <span className="font-medium text-gray-700">Date & Time:</span>
-                        <div className="text-gray-900 mt-1">{new Date(selectedAgreement.accepted_at).toLocaleString()}</div>
-                      </div>
-                      <div>
-                        <span className="font-medium text-gray-700">IP Address:</span>
-                        <div className="text-gray-900 mt-1 font-mono text-xs">{selectedAgreement.ip_address || 'N/A'}</div>
-                      </div>
-                      <div>
-                        <span className="font-medium text-gray-700">Email:</span>
-                        <div className="text-gray-900 mt-1">{selectedAgreement.client_email}</div>
-                      </div>
-                    </div>
-                    
-                    <div className="pt-4">
-                      <span className="font-medium text-gray-700 text-sm">Digital Signature:</span>
-                      <div className="mt-2 p-4 bg-white border border-gray-200 rounded-lg">
-                        <img 
-                          src={selectedAgreement.signature_data} 
-                          alt="Digital Signature" 
-                          className="max-w-full h-auto max-h-32 border border-gray-100 rounded bg-white"
-                        />
-                      </div>
-                    </div>
-                    
-                    <div className="pt-2 flex justify-end">
-                      <Button 
-                        variant="outline" 
-                        size="sm"
-                        onClick={() => handleDownloadSignature(selectedAgreement)}
-                      >
-                        <Download className="w-4 h-4 mr-2" />
-                        Download Signature
-                      </Button>
-                    </div>
-                  </div>
-                </div>
+            ) : pdfUrl ? (
+              <iframe
+                src={pdfUrl}
+                className="w-full h-96 border border-gray-200 rounded"
+                title="Signed Agreement PDF"
+              />
+            ) : (
+              <div className="flex items-center justify-center h-96 text-gray-500">
+                <p>Unable to load agreement PDF</p>
               </div>
-              
-              {/* Device Information */}
-              {selectedAgreement.user_agent && (
-                <div className="border-t pt-4">
-                  <span className="font-medium text-gray-700 text-sm">Device Information:</span>
-                  <div className="mt-2 p-3 bg-gray-50 border border-gray-200 rounded text-xs text-gray-600 font-mono">
-                    {selectedAgreement.user_agent}
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
+            )}
+          </div>
         </DialogContent>
       </Dialog>
     </>
