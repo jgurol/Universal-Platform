@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
@@ -155,8 +156,7 @@ export const useCircuitTracking = () => {
                   order_id: order.id,
                   quote_item_id: quoteItem.id,
                   circuit_type: quoteItem.item?.category?.name || 'Circuit',
-                  status: 'ordered',
-                  stage: 'Hold',
+                  stage: 'Ready to Order',
                   progress_percentage: 0,
                   created_at: order.created_at,
                   updated_at: order.updated_at,
@@ -209,7 +209,6 @@ export const useCircuitTracking = () => {
               order_id: virtualItem.order_id,
               quote_item_id: quoteItemId,
               circuit_type: virtualItem.circuit_type,
-              status: 'in_progress',
               stage: stage,
               progress_percentage: 0,
               item_name: virtualItem.item_name,
@@ -253,7 +252,7 @@ export const useCircuitTracking = () => {
               order_id: virtualItem.order_id,
               quote_item_id: quoteItemId,
               circuit_type: virtualItem.circuit_type,
-              status: status || 'in_progress',
+              stage: virtualItem.stage || 'Ready to Order',
               progress_percentage: progress,
               item_name: virtualItem.item_name,
               item_description: virtualItem.item_description
@@ -270,7 +269,6 @@ export const useCircuitTracking = () => {
 
       // Update existing tracking record
       const updates: any = { progress_percentage: progress };
-      if (status) updates.status = status;
       
       const { error } = await supabase
         .from('circuit_tracking')
@@ -299,7 +297,7 @@ export const useCircuitTracking = () => {
               order_id: virtualItem.order_id,
               quote_item_id: quoteItemId,
               circuit_type: virtualItem.circuit_type,
-              status: 'in_progress',
+              stage: virtualItem.stage || 'Ready to Order',
               progress_percentage: 0,
               item_name: virtualItem.item_name,
               item_description: virtualItem.item_description

@@ -1,6 +1,5 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -8,13 +7,13 @@ import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Progress } from "@/components/ui/progress";
 import { useCircuitTracking } from "@/hooks/useCircuitTracking";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { Plus, Zap } from "lucide-react";
 
 const STAGES = [
-  'Hold',
   'Ready to Order',
   'Ordered',
   'Order Acknowledged',
@@ -33,6 +32,12 @@ const STAGES = [
   'Ready for Billing',
   'Billed'
 ];
+
+const getProgressFromStage = (stage: string): number => {
+  const index = STAGES.indexOf(stage);
+  if (index === -1) return 0;
+  return Math.round((index / (STAGES.length - 1)) * 100);
+};
 
 export const CircuitTrackingManagement = () => {
   const { circuitTrackings, isLoading, updateCircuitStage, addMilestone } = useCircuitTracking();
@@ -82,18 +87,6 @@ export const CircuitTrackingManagement = () => {
         description: "Failed to add milestone. Please try again.",
         variant: "destructive",
       });
-    }
-  };
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'ordered': return 'bg-blue-100 text-blue-800';
-      case 'in_progress': return 'bg-orange-100 text-orange-800';
-      case 'installation': return 'bg-purple-100 text-purple-800';
-      case 'testing': return 'bg-yellow-100 text-yellow-800';
-      case 'completed': return 'bg-green-100 text-green-800';
-      case 'on_hold': return 'bg-red-100 text-red-800';
-      default: return 'bg-gray-100 text-gray-800';
     }
   };
 
@@ -159,104 +152,108 @@ export const CircuitTrackingManagement = () => {
                       <TableHeader>
                         <TableRow>
                           <TableHead className="w-[200px]">Item Name</TableHead>
-                          <TableHead className="w-[200px]">Location</TableHead>
+                          <TableHead className="w-[250px]">Location</TableHead>
                           <TableHead className="w-[80px]">Qty</TableHead>
                           <TableHead className="w-[100px]">Unit Price</TableHead>
-                          <TableHead className="w-[100px]">Status</TableHead>
+                          <TableHead className="w-[150px]">Progress</TableHead>
                           <TableHead className="w-[150px]">Stage</TableHead>
                           <TableHead className="w-[100px]">Actions</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {trackings.map((circuit) => (
-                          <TableRow key={circuit.id}>
-                            <TableCell className="font-medium">
-                              {circuit.item_name || circuit.quote_item?.item?.name || circuit.circuit_type}
-                            </TableCell>
-                            <TableCell className="text-sm text-gray-600">
-                              {formatLocation(circuit.quote_item?.address)}
-                            </TableCell>
-                            <TableCell>
-                              {circuit.quote_item?.quantity || '-'}
-                            </TableCell>
-                            <TableCell>
-                              ${circuit.quote_item?.unit_price || '0'}
-                            </TableCell>
-                            <TableCell>
-                              <Badge className={getStatusColor(circuit.status)}>
-                                {circuit.status.charAt(0).toUpperCase() + circuit.status.slice(1).replace('_', ' ')}
-                              </Badge>
-                            </TableCell>
-                            <TableCell>
-                              <Select
-                                value={circuit.stage || 'Hold'}
-                                onValueChange={(value) => handleStageUpdate(circuit.id, value)}
-                              >
-                                <SelectTrigger className="w-full">
-                                  <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  {STAGES.map((stage) => (
-                                    <SelectItem key={stage} value={stage}>
-                                      {stage}
-                                    </SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
-                            </TableCell>
-                            <TableCell>
-                              <Dialog>
-                                <DialogTrigger asChild>
-                                  <Button 
-                                    variant="outline" 
-                                    size="sm"
-                                    className="h-8 px-2"
-                                    onClick={() => setSelectedCircuit(circuit.id)}
-                                  >
-                                    <Plus className="w-3 h-3" />
-                                  </Button>
-                                </DialogTrigger>
-                                <DialogContent>
-                                  <DialogHeader>
-                                    <DialogTitle>Add Milestone</DialogTitle>
-                                  </DialogHeader>
-                                  <div className="space-y-4">
-                                    <div>
-                                      <Label htmlFor="milestone-name">Milestone Name</Label>
-                                      <Input
-                                        id="milestone-name"
-                                        value={newMilestone.milestone_name}
-                                        onChange={(e) => setNewMilestone(prev => ({ ...prev, milestone_name: e.target.value }))}
-                                        placeholder="e.g., Site Survey Completed"
-                                      />
-                                    </div>
-                                    <div>
-                                      <Label htmlFor="milestone-description">Description</Label>
-                                      <Textarea
-                                        id="milestone-description"
-                                        value={newMilestone.milestone_description}
-                                        onChange={(e) => setNewMilestone(prev => ({ ...prev, milestone_description: e.target.value }))}
-                                        placeholder="Optional description"
-                                      />
-                                    </div>
-                                    <div>
-                                      <Label htmlFor="target-date">Target Date</Label>
-                                      <Input
-                                        id="target-date"
-                                        type="date"
-                                        value={newMilestone.target_date}
-                                        onChange={(e) => setNewMilestone(prev => ({ ...prev, target_date: e.target.value }))}
-                                      />
-                                    </div>
-                                    <Button onClick={handleAddMilestone} className="w-full">
-                                      Add Milestone
+                        {trackings.map((circuit) => {
+                          const progress = getProgressFromStage(circuit.stage || 'Ready to Order');
+                          return (
+                            <TableRow key={circuit.id}>
+                              <TableCell className="font-medium">
+                                {circuit.item_name || circuit.quote_item?.item?.name || circuit.circuit_type}
+                              </TableCell>
+                              <TableCell className="text-sm text-gray-600">
+                                {formatLocation(circuit.quote_item?.address)}
+                              </TableCell>
+                              <TableCell>
+                                {circuit.quote_item?.quantity || '-'}
+                              </TableCell>
+                              <TableCell>
+                                ${circuit.quote_item?.unit_price || '0'}
+                              </TableCell>
+                              <TableCell>
+                                <div className="space-y-1">
+                                  <Progress value={progress} className="h-2" />
+                                  <span className="text-xs text-gray-500">{progress}%</span>
+                                </div>
+                              </TableCell>
+                              <TableCell>
+                                <Select
+                                  value={circuit.stage || 'Ready to Order'}
+                                  onValueChange={(value) => handleStageUpdate(circuit.id, value)}
+                                >
+                                  <SelectTrigger className="w-full">
+                                    <SelectValue />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    {STAGES.map((stage) => (
+                                      <SelectItem key={stage} value={stage}>
+                                        {stage}
+                                      </SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                              </TableCell>
+                              <TableCell>
+                                <Dialog>
+                                  <DialogTrigger asChild>
+                                    <Button 
+                                      variant="outline" 
+                                      size="sm"
+                                      className="h-8 px-2"
+                                      onClick={() => setSelectedCircuit(circuit.id)}
+                                    >
+                                      <Plus className="w-3 h-3" />
                                     </Button>
-                                  </div>
-                                </DialogContent>
-                              </Dialog>
-                            </TableCell>
-                          </TableRow>
-                        ))}
+                                  </DialogTrigger>
+                                  <DialogContent>
+                                    <DialogHeader>
+                                      <DialogTitle>Add Milestone</DialogTitle>
+                                    </DialogHeader>
+                                    <div className="space-y-4">
+                                      <div>
+                                        <Label htmlFor="milestone-name">Milestone Name</Label>
+                                        <Input
+                                          id="milestone-name"
+                                          value={newMilestone.milestone_name}
+                                          onChange={(e) => setNewMilestone(prev => ({ ...prev, milestone_name: e.target.value }))}
+                                          placeholder="e.g., Site Survey Completed"
+                                        />
+                                      </div>
+                                      <div>
+                                        <Label htmlFor="milestone-description">Description</Label>
+                                        <Textarea
+                                          id="milestone-description"
+                                          value={newMilestone.milestone_description}
+                                          onChange={(e) => setNewMilestone(prev => ({ ...prev, milestone_description: e.target.value }))}
+                                          placeholder="Optional description"
+                                        />
+                                      </div>
+                                      <div>
+                                        <Label htmlFor="target-date">Target Date</Label>
+                                        <Input
+                                          id="target-date"
+                                          type="date"
+                                          value={newMilestone.target_date}
+                                          onChange={(e) => setNewMilestone(prev => ({ ...prev, target_date: e.target.value }))}
+                                        />
+                                      </div>
+                                      <Button onClick={handleAddMilestone} className="w-full">
+                                        Add Milestone
+                                      </Button>
+                                    </div>
+                                  </DialogContent>
+                                </Dialog>
+                              </TableCell>
+                            </TableRow>
+                          );
+                        })}
                       </TableBody>
                     </Table>
                   </div>
