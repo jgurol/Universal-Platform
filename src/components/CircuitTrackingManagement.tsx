@@ -10,7 +10,7 @@ import { Progress } from "@/components/ui/progress";
 import { useCircuitTracking } from "@/hooks/useCircuitTracking";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Zap } from "lucide-react";
+import { Plus, Zap, ToggleLeft, ToggleRight } from "lucide-react";
 
 const STAGES = [
   'Ready to Order',
@@ -59,6 +59,7 @@ export const CircuitTrackingManagement = () => {
   const { circuitTrackings, isLoading, updateCircuitStage, addMilestone } = useCircuitTracking();
   const { toast } = useToast();
   const [selectedCircuit, setSelectedCircuit] = useState<string | null>(null);
+  const [groupByStage, setGroupByStage] = useState(false);
   const [newMilestone, setNewMilestone] = useState({
     milestone_name: '',
     milestone_description: '',
@@ -115,13 +116,16 @@ export const CircuitTrackingManagement = () => {
     return parts.join(', ');
   };
 
-  // Group circuit trackings by order
+  // Group circuit trackings by order or by stage
   const groupedTrackings = circuitTrackings.reduce((acc, tracking) => {
-    const orderId = tracking.order_id;
-    if (!acc[orderId]) {
-      acc[orderId] = [];
+    const groupKey = groupByStage 
+      ? (tracking.stage || 'Ready to Order')
+      : tracking.order_id;
+    
+    if (!acc[groupKey]) {
+      acc[groupKey] = [];
     }
-    acc[orderId].push(tracking);
+    acc[groupKey].push(tracking);
     return acc;
   }, {} as Record<string, typeof circuitTrackings>);
 
@@ -137,6 +141,18 @@ export const CircuitTrackingManagement = () => {
             <Zap className="w-5 h-5" />
             Circuit Progress Tracking
           </CardTitle>
+          <div className="flex items-center gap-4">
+            <span className="text-sm text-gray-600">Group by:</span>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setGroupByStage(!groupByStage)}
+              className="flex items-center gap-2"
+            >
+              {groupByStage ? <ToggleRight className="w-4 h-4" /> : <ToggleLeft className="w-4 h-4" />}
+              {groupByStage ? "Stage" : "Order Number"}
+            </Button>
+          </div>
         </CardHeader>
         <CardContent>
           {circuitTrackings.length === 0 ? (
@@ -145,22 +161,28 @@ export const CircuitTrackingManagement = () => {
             </div>
           ) : (
             <div className="space-y-6">
-              {Object.entries(groupedTrackings).map(([orderId, trackings]) => {
-                // Get customer name and quote number from the first tracking item's quote data
-                const firstTracking = trackings[0];
-                const customerName = firstTracking?.quote_item?.quote?.client_info?.company_name || 
-                                   firstTracking?.quote_item?.quote?.accepted_by || 
-                                   'Unknown Customer';
-                const quoteNumber = firstTracking?.quote_item?.quote?.quote_number || 
-                                  `Q-${firstTracking?.quote_item?.quote?.id?.slice(0, 8) || 'Unknown'}`;
+              {Object.entries(groupedTrackings).map(([groupKey, trackings]) => {
+                // Get group header info
+                const getGroupHeader = () => {
+                  if (groupByStage) {
+                    return `Stage: ${groupKey} (${trackings.length} item${trackings.length > 1 ? 's' : ''})`;
+                  } else {
+                    // Group by order - use existing logic
+                    const firstTracking = trackings[0];
+                    const customerName = firstTracking?.quote_item?.quote?.client_info?.company_name || 
+                                       firstTracking?.quote_item?.quote?.accepted_by || 
+                                       'Unknown Customer';
+                    const quoteNumber = firstTracking?.quote_item?.quote?.quote_number || 
+                                      `Q-${firstTracking?.quote_item?.quote?.id?.slice(0, 8) || 'Unknown'}`;
+                    return `Order: ${trackings[0]?.order?.order_number || groupKey.slice(0, 8)} | Customer: ${customerName} | Quote: ${quoteNumber}`;
+                  }
+                };
                 
                 return (
-                  <div key={orderId} className="border border-gray-200 rounded-lg">
+                  <div key={groupKey} className="border border-gray-200 rounded-lg">
                     <div className="bg-gray-50 px-4 py-2 border-b border-gray-200">
                       <h3 className="font-semibold">
-                        Order: {trackings[0]?.order?.order_number || orderId.slice(0, 8)} | 
-                        Customer: {customerName} | 
-                        Quote: {quoteNumber}
+                        {getGroupHeader()}
                       </h3>
                     </div>
                     
@@ -169,10 +191,11 @@ export const CircuitTrackingManagement = () => {
                         <TableRow>
                           <TableHead className="w-[200px]">Item Name</TableHead>
                           <TableHead className="w-[250px]">Location</TableHead>
-                          <TableHead className="w-[80px]">Qty</TableHead>
-                          <TableHead className="w-[100px]">Unit Price</TableHead>
+                          {!groupByStage && <TableHead className="w-[80px]">Qty</TableHead>}
+                          {!groupByStage && <TableHead className="w-[100px]">Unit Price</TableHead>}
+                          {groupByStage && <TableHead className="w-[150px]">Order</TableHead>}
                           <TableHead className="w-[150px]">Progress</TableHead>
-                          <TableHead className="w-[150px]">Stage</TableHead>
+                          {!groupByStage && <TableHead className="w-[150px]">Stage</TableHead>}
                           <TableHead className="w-[100px]">Actions</TableHead>
                         </TableRow>
                       </TableHeader>
@@ -188,35 +211,46 @@ export const CircuitTrackingManagement = () => {
                               <TableCell className="text-sm text-gray-600">
                                 {formatLocation(circuit.quote_item?.address)}
                               </TableCell>
-                              <TableCell>
-                                {circuit.quote_item?.quantity || '-'}
-                              </TableCell>
-                              <TableCell>
-                                ${circuit.quote_item?.unit_price || '0'}
-                              </TableCell>
+                              {!groupByStage && (
+                                <TableCell>
+                                  {circuit.quote_item?.quantity || '-'}
+                                </TableCell>
+                              )}
+                              {!groupByStage && (
+                                <TableCell>
+                                  ${circuit.quote_item?.unit_price || '0'}
+                                </TableCell>
+                              )}
+                              {groupByStage && (
+                                <TableCell className="text-sm text-gray-600">
+                                  {circuit.order?.order_number || circuit.order_id.slice(0, 8)}
+                                </TableCell>
+                              )}
                               <TableCell>
                                 <div className="space-y-1">
                                   <Progress value={progress} className={progressBarClass} />
                                   <span className="text-xs text-gray-500">{progress}%</span>
                                 </div>
                               </TableCell>
-                              <TableCell>
-                                <Select
-                                  value={circuit.stage || 'Ready to Order'}
-                                  onValueChange={(value) => handleStageUpdate(circuit.id, value)}
-                                >
-                                  <SelectTrigger className="w-full">
-                                    <SelectValue />
-                                  </SelectTrigger>
-                                  <SelectContent>
-                                    {STAGES.map((stage) => (
-                                      <SelectItem key={stage} value={stage}>
-                                        {stage}
-                                      </SelectItem>
-                                    ))}
-                                  </SelectContent>
-                                </Select>
-                              </TableCell>
+                              {!groupByStage && (
+                                <TableCell>
+                                  <Select
+                                    value={circuit.stage || 'Ready to Order'}
+                                    onValueChange={(value) => handleStageUpdate(circuit.id, value)}
+                                  >
+                                    <SelectTrigger className="w-full">
+                                      <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      {STAGES.map((stage) => (
+                                        <SelectItem key={stage} value={stage}>
+                                          {stage}
+                                        </SelectItem>
+                                      ))}
+                                    </SelectContent>
+                                  </Select>
+                                </TableCell>
+                              )}
                               <TableCell>
                                 <Dialog>
                                   <DialogTrigger asChild>
