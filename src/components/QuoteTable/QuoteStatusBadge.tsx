@@ -1,3 +1,4 @@
+
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
@@ -58,51 +59,35 @@ export const QuoteStatusBadge = ({ quoteId, status, onStatusUpdate }: QuoteStatu
         });
 
       } else if (newStatus === 'approved') {
-        // For approval, first update the quote status
-        const { error: quoteUpdateError } = await supabase
-          .from('quotes')
-          .update({ status: newStatus })
-          .eq('id', quoteId);
+        // For approval, call the edge function to handle everything
+        console.log('Calling edge function to handle quote approval and order creation...');
+        
+        const { data: orderResult, error: orderError } = await supabase.functions
+          .invoke('handle-quote-approval', {
+            body: { quoteId: quoteId }
+          });
 
-        if (quoteUpdateError) {
-          console.error('Error updating quote status:', quoteUpdateError);
+        if (orderError) {
+          console.error('Error in order creation:', orderError);
           toast({
-            title: "Failed to update status",
-            description: quoteUpdateError.message,
+            title: "Failed to approve quote",
+            description: orderError.message,
             variant: "destructive"
           });
           return;
         }
 
-        // Then handle order creation
-        try {
-          const { data: orderResult, error: orderError } = await supabase.functions
-            .invoke('handle-quote-approval', {
-              body: { quoteId: quoteId }
-            });
+        console.log('Quote approval and order creation completed:', orderResult);
+        
+        toast({
+          title: "Quote approved successfully",
+          description: `Quote approved and ${orderResult?.ordersCount || 0} order(s) processed.`,
+        });
 
-          if (orderError) {
-            console.error('Error in order creation:', orderError);
-            toast({
-              title: "Status updated with warning",
-              description: "Quote approved but there was an issue with order creation. Please check the orders manually.",
-              variant: "default"
-            });
-          } else {
-            console.log('Order creation result:', orderResult);
-            const ordersCount = orderResult?.ordersCount || 0;
-            toast({
-              title: "Quote approved",
-              description: `Quote approved successfully. ${ordersCount} order(s) processed.`,
-            });
-          }
-        } catch (orderErr) {
-          console.error('Order creation failed:', orderErr);
-          toast({
-            title: "Quote approved",
-            description: "Quote approved successfully. Orders may already exist or will be created separately.",
-          });
-        }
+        // Force a page refresh to ensure all data is up to date
+        setTimeout(() => {
+          window.location.reload();
+        }, 1000);
 
       } else {
         // For other status changes, just update the status

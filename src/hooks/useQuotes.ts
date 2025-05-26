@@ -47,37 +47,31 @@ export const useQuotes = (
 
       console.info('[fetchQuotes] Raw quotesData from database:', quotesData);
       
-      // Log address values specifically from database
-      if (quotesData) {
-        quotesData.forEach((quote, index) => {
-          console.log(`[fetchQuotes] Quote ${index} - ID: ${quote.id}, Description: "${quote.description}", Billing: "${quote.billing_address}", Service: "${quote.service_address}"`);
-        });
-      }
-
       if (quotesData) {
         const mappedQuotes = quotesData.map(quote => {
           const mapped = mapQuoteData(quote, clients, clientInfos);
-          console.log(`[fetchQuotes] Mapped quote ${quote.id} - Description: "${mapped.description}", Billing: "${mapped.billingAddress}", Service: "${mapped.serviceAddress}"`);
+          console.log(`[fetchQuotes] Mapped quote ${quote.id} - Status: "${mapped.status}", Description: "${mapped.description}"`);
           return mapped;
         });
         
         setQuotes(mappedQuotes);
         console.info('[fetchQuotes] Final mapped quotes count:', mappedQuotes.length);
-        console.info('[fetchQuotes] Final quotes with addresses:', mappedQuotes.map(q => ({ 
-          id: q.id, 
-          description: q.description,
-          billingAddress: q.billingAddress,
-          serviceAddress: q.serviceAddress
-        })));
       }
     } catch (err) {
       console.error('Error in fetchQuotes:', err);
     }
   };
 
+  // Add a function to manually refresh quotes (useful after quote acceptance)
+  const refreshQuotes = () => {
+    console.log('[useQuotes] Manually refreshing quotes...');
+    fetchQuotes();
+  };
+
   return {
     quotes,
     setQuotes,
-    fetchQuotes
+    fetchQuotes,
+    refreshQuotes
   };
 };

@@ -37,9 +37,26 @@ serve(async (req) => {
     }
     
     console.log('Processing quote approval for quote:', quoteId)
-    console.log('Using service role client for database operations')
 
-    // Check if order already exists for this quote FIRST
+    // ALWAYS update quote status to approved first - this is critical
+    console.log('Updating quote status to approved...')
+    const { error: quoteUpdateError } = await supabaseServiceRole
+      .from('quotes')
+      .update({
+        status: 'approved',
+        acceptance_status: 'accepted',
+        accepted_at: new Date().toISOString()
+      })
+      .eq('id', quoteId)
+
+    if (quoteUpdateError) {
+      console.error('Error updating quote status:', quoteUpdateError)
+      throw quoteUpdateError
+    }
+
+    console.log('Quote status updated to approved successfully')
+
+    // Check if order already exists for this quote
     console.log('Checking for existing orders...')
     const { data: existingOrders, error: orderCheckError } = await supabaseServiceRole
       .from('orders')
@@ -59,25 +76,6 @@ serve(async (req) => {
       orderId = existingOrders[0].id
       orderNumber = existingOrders[0].order_number
       console.log('Using existing order:', orderNumber)
-      
-      // Just ensure quote status is approved (safe to do multiple times)
-      console.log('Ensuring quote status is approved...')
-      const { error: quoteUpdateError } = await supabaseServiceRole
-        .from('quotes')
-        .update({
-          status: 'approved',
-          acceptance_status: 'accepted',
-          accepted_at: new Date().toISOString()
-        })
-        .eq('id', quoteId)
-
-      if (quoteUpdateError) {
-        console.error('Error updating quote status:', quoteUpdateError)
-        // Don't throw here, just log - the order already exists
-        console.log('Continuing with existing order despite quote update error')
-      } else {
-        console.log('Quote status updated to approved successfully')
-      }
     } else {
       // No existing order, need to create one
       console.log('No existing order found, creating new order...')
@@ -110,24 +108,6 @@ serve(async (req) => {
       
       orderNumber = `ORD-${year}-${dayOfYear.toString().padStart(3, '0')}-${timeComponent}${randomComponent}`
       console.log('Generated unique order number:', orderNumber)
-
-      // Update quote status first
-      console.log('Updating quote status to approved...')
-      const { error: quoteUpdateError } = await supabaseServiceRole
-        .from('quotes')
-        .update({
-          status: 'approved',
-          acceptance_status: 'accepted',
-          accepted_at: new Date().toISOString()
-        })
-        .eq('id', quoteId)
-
-      if (quoteUpdateError) {
-        console.error('Error updating quote status:', quoteUpdateError)
-        throw quoteUpdateError
-      }
-
-      console.log('Quote status updated to approved successfully')
 
       // Create new order using service role client
       console.log('About to create order with data:', {
@@ -287,7 +267,8 @@ serve(async (req) => {
         orderNumbers: [orderNumber],
         message: existingOrders && existingOrders.length > 0 ? 'Order already exists for this quote' : 'Order created successfully',
         ordersCount: 1,
-        circuitTrackingCreated: circuitRelatedItems.length > 0 && !existingTracking ? 1 : 0
+        circuitTrackingCreated: circuitRelatedItems.length > 0 && !existingTracking ? 1 : 0,
+        quoteUpdated: true
       }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
