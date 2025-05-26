@@ -18,7 +18,16 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     )
 
-    const { quoteId } = await req.json()
+    const requestBody = await req.json()
+    console.log('Request body received:', requestBody)
+    
+    // Handle both possible parameter names for backwards compatibility
+    const quoteId = requestBody.quoteId || requestBody.quote_id
+    
+    if (!quoteId) {
+      console.error('No quote ID provided in request')
+      throw new Error('Quote ID is required')
+    }
     
     console.log('Processing quote approval for quote:', quoteId)
 
@@ -52,6 +61,11 @@ serve(async (req) => {
       if (quoteError) {
         console.error('Error fetching quote:', quoteError)
         throw quoteError
+      }
+
+      if (!quote) {
+        console.error('Quote not found:', quoteId)
+        throw new Error('Quote not found')
       }
 
       // Generate sequential order number starting from 15000
@@ -199,7 +213,10 @@ serve(async (req) => {
   } catch (error) {
     console.error('Error in handle-quote-approval:', error)
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ 
+        error: error.message,
+        stack: error.stack 
+      }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 400,
