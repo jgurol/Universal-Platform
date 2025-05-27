@@ -47,14 +47,6 @@ export function NavigationBar() {
             </NavigationMenuItem>
 
             <NavigationMenuItem>
-              <Link to="/circuit-tracking">
-                <NavigationMenuLink className={navigationMenuTriggerStyle()}>
-                  Circuit Tracking
-                </NavigationMenuLink>
-              </Link>
-            </NavigationMenuItem>
-
-            <NavigationMenuItem>
               <NavigationMenuTrigger>System Settings</NavigationMenuTrigger>
               <NavigationMenuContent>
                 <ul className="grid w-[300px] gap-3 p-4">
