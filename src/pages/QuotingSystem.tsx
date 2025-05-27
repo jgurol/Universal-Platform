@@ -6,7 +6,6 @@ import { ItemsManagement } from "@/components/ItemsManagement";
 import { CategoriesManagement } from "@/components/CategoriesManagement";
 import { VendorsManagement } from "@/components/VendorsManagement";
 import { OrdersManagement } from "@/components/OrdersManagement";
-import { CircuitTrackingManagement } from "@/components/CircuitTrackingManagement";
 import { useIndexData } from "@/hooks/useIndexData";
 import { useQuoteActions } from "@/hooks/useQuoteActions";
 import { useClientActions } from "@/hooks/useClientActions";
@@ -48,10 +47,9 @@ const QuotingSystem = () => {
 
         {/* Tabs for different sections */}
         <Tabs defaultValue="quotes" className="w-full">
-          <TabsList className="grid w-full grid-cols-6">
+          <TabsList className="grid w-full grid-cols-5">
             <TabsTrigger value="quotes">Quotes</TabsTrigger>
             <TabsTrigger value="orders">Orders</TabsTrigger>
-            <TabsTrigger value="circuit-tracking">Circuit Tracking</TabsTrigger>
             <TabsTrigger value="items">Items & Products</TabsTrigger>
             <TabsTrigger value="categories">Categories</TabsTrigger>
             <TabsTrigger value="vendors">Vendors</TabsTrigger>
@@ -72,10 +70,6 @@ const QuotingSystem = () => {
           
           <TabsContent value="orders" className="mt-6">
             <OrdersManagement />
-          </TabsContent>
-          
-          <TabsContent value="circuit-tracking" className="mt-6">
-            <CircuitTrackingManagement />
           </TabsContent>
           
           <TabsContent value="items" className="mt-6">

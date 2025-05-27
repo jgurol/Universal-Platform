@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
@@ -12,7 +11,7 @@ import {
   navigationMenuTriggerStyle,
 } from "@/components/ui/navigation-menu";
 import { cn } from "@/lib/utils";
-import { Settings, Users, FileText, Home, UserPlus, Building, UserCog, CreditCard } from 'lucide-react';
+import { Settings, Users, FileText, Home, UserPlus, Building, UserCog, CreditCard, Zap } from 'lucide-react';
 
 export function NavigationBar() {
   const { isAdmin } = useAuth();
@@ -35,6 +34,22 @@ export function NavigationBar() {
               <Link to="/">
                 <NavigationMenuLink className={navigationMenuTriggerStyle()}>
                   Dashboard
+                </NavigationMenuLink>
+              </Link>
+            </NavigationMenuItem>
+
+            <NavigationMenuItem>
+              <Link to="/quoting-system">
+                <NavigationMenuLink className={navigationMenuTriggerStyle()}>
+                  Quoting System
+                </NavigationMenuLink>
+              </Link>
+            </NavigationMenuItem>
+
+            <NavigationMenuItem>
+              <Link to="/circuit-tracking">
+                <NavigationMenuLink className={navigationMenuTriggerStyle()}>
+                  Circuit Tracking
                 </NavigationMenuLink>
               </Link>
             </NavigationMenuItem>
