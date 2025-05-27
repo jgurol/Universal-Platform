@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -32,6 +33,7 @@ export const AddQuoteDialog = ({ open, onOpenChange, onAddQuote, clients, client
   const [quoteNumber, setQuoteNumber] = useState("");
   const [quoteMonth, setQuoteMonth] = useState("");
   const [quoteYear, setQuoteYear] = useState("");
+  const [term, setTerm] = useState("36 Months");
   const [expiresAt, setExpiresAt] = useState("");
   const [notes, setNotes] = useState("");
   const [commissionOverride, setCommissionOverride] = useState("");
@@ -210,6 +212,7 @@ export const AddQuoteDialog = ({ open, onOpenChange, onAddQuote, clients, client
           quoteNumber: quoteNumber || undefined,
           quoteMonth: quoteMonth || undefined,
           quoteYear: quoteYear || undefined,
+          term: term,
           status: "pending", // Always set to pending instead of using state
           clientInfoId: clientInfoId,
           clientCompanyName: selectedClientInfo.company_name,
@@ -239,6 +242,7 @@ export const AddQuoteDialog = ({ open, onOpenChange, onAddQuote, clients, client
         setQuoteNumber("");
         setQuoteMonth("");
         setQuoteYear("");
+        setTerm("36 Months");
         setNotes("");
         setCommissionOverride("");
         setQuoteItems([]);
@@ -343,6 +347,22 @@ export const AddQuoteDialog = ({ open, onOpenChange, onAddQuote, clients, client
                     </SelectItem>
                   ))
                 )}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Term Selection */}
+          <div className="space-y-2">
+            <Label htmlFor="term">Term</Label>
+            <Select value={term} onValueChange={setTerm}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select term" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="Month to Month">Month to Month</SelectItem>
+                <SelectItem value="12 Months">12 Months</SelectItem>
+                <SelectItem value="24 Months">24 Months</SelectItem>
+                <SelectItem value="36 Months">36 Months</SelectItem>
               </SelectContent>
             </Select>
           </div>
