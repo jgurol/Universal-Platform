@@ -1,34 +1,35 @@
 
-import { Quote, ClientInfo } from "@/pages/Index";
-import { Table, TableBody, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { useAgentMapping } from "@/hooks/useAgentMapping";
 import { useState } from "react";
+import { Table, TableBody, TableHeader, TableRow } from "@/components/ui/table";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { QuoteTableHeader } from "./QuoteTable/QuoteTableHeader";
 import { QuoteTableRow } from "./QuoteTable/QuoteTableRow";
-
-interface QuoteTableProps {
-  quotes: Quote[];
-  clientInfos: ClientInfo[];
-  onEditClick?: (quote: Quote) => void;
-  onDeleteQuote?: (quoteId: string) => void;
-  onUpdateQuote?: (quote: Quote) => void;
-  onCopyQuote?: (quote: Quote) => void;
-  onUnarchiveQuote?: (quoteId: string) => void;
-}
+import { Quote, Client, ClientInfo } from "@/pages/Index";
 
 type SortField = 'salesperson' | 'quoteNumber' | 'customerName' | 'status' | 'dateApproved';
 type SortDirection = 'asc' | 'desc';
 
-export const QuoteTable = ({
-  quotes,
-  clientInfos,
-  onEditClick,
+interface QuoteTableProps {
+  quotes: Quote[];
+  clients: Client[];
+  clientInfos: ClientInfo[];
+  onEditQuote?: (quote: Quote) => void;
+  onDeleteQuote?: (quoteId: string) => void;
+  onUnarchiveQuote?: (quoteId: string) => void;
+  onEmailQuote?: (quote: Quote) => void;
+  showArchived?: boolean;
+}
+
+export const QuoteTable = ({ 
+  quotes, 
+  clients, 
+  clientInfos, 
+  onEditQuote, 
   onDeleteQuote,
-  onUpdateQuote,
-  onCopyQuote,
-  onUnarchiveQuote
+  onUnarchiveQuote,
+  onEmailQuote,
+  showArchived = false
 }: QuoteTableProps) => {
-  const { agentMapping } = useAgentMapping();
   const [sortField, setSortField] = useState<SortField>('quoteNumber');
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
 
@@ -37,60 +38,73 @@ export const QuoteTable = ({
       setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
     } else {
       setSortField(field);
-      setSortDirection(field === 'quoteNumber' ? 'desc' : 'asc');
+      setSortDirection('asc');
     }
   };
 
   const sortedQuotes = [...quotes].sort((a, b) => {
-    let aValue: string;
-    let bValue: string;
+    let aValue: string | number;
+    let bValue: string | number;
 
     switch (sortField) {
       case 'salesperson':
-        aValue = agentMapping[a.clientId] || a.clientName || '';
-        bValue = agentMapping[b.clientId] || b.clientName || '';
+        const aClient = clients.find(c => c.id === a.clientId);
+        const bClient = clients.find(c => c.id === b.clientId);
+        aValue = aClient?.name || '';
+        bValue = bClient?.name || '';
         break;
       case 'quoteNumber':
-        aValue = a.quoteNumber || `Q-${a.id.slice(0, 8)}`;
-        bValue = b.quoteNumber || `Q-${b.id.slice(0, 8)}`;
-        // For quote numbers, we want to sort numerically if they're numeric
-        const aNum = parseInt(aValue.replace(/\D/g, '')) || 0;
-        const bNum = parseInt(bValue.replace(/\D/g, '')) || 0;
-        const comparison = aNum - bNum;
-        return sortDirection === 'asc' ? comparison : -comparison;
+        aValue = a.quoteNumber || '';
+        bValue = b.quoteNumber || '';
+        break;
       case 'customerName':
-        aValue = clientInfos.find(ci => ci.id === a.clientInfoId)?.company_name || '';
-        bValue = clientInfos.find(ci => ci.id === b.clientInfoId)?.company_name || '';
+        const aClientInfo = clientInfos.find(ci => ci.id === a.clientInfoId);
+        const bClientInfo = clientInfos.find(ci => ci.id === b.clientInfoId);
+        aValue = aClientInfo?.company_name || '';
+        bValue = bClientInfo?.company_name || '';
         break;
       case 'status':
-        aValue = a.status || 'pending';
-        bValue = b.status || 'pending';
+        aValue = a.status || '';
+        bValue = b.status || '';
         break;
       case 'dateApproved':
-        // Sort by date approved, handling empty dates
-        const aDate = a.acceptedAt ? new Date(a.acceptedAt).getTime() : 0;
-        const bDate = b.acceptedAt ? new Date(b.acceptedAt).getTime() : 0;
-        const dateComparison = aDate - bDate;
-        return sortDirection === 'asc' ? dateComparison : -dateComparison;
+        aValue = a.acceptedAt || '';
+        bValue = b.acceptedAt || '';
+        break;
       default:
-        return 0;
+        aValue = '';
+        bValue = '';
     }
 
-    // For string-based fields (not quote number and not date), use string comparison
-    if (sortField !== 'quoteNumber' && sortField !== 'dateApproved') {
-      const stringComparison = aValue.localeCompare(bValue);
-      return sortDirection === 'asc' ? stringComparison : -stringComparison;
+    if (typeof aValue === 'string' && typeof bValue === 'string') {
+      const comparison = aValue.localeCompare(bValue);
+      return sortDirection === 'asc' ? comparison : -comparison;
     }
-    
+
+    if (aValue < bValue) return sortDirection === 'asc' ? -1 : 1;
+    if (aValue > bValue) return sortDirection === 'asc' ? 1 : -1;
     return 0;
   });
 
+  // Filter based on whether we're showing archived quotes
+  const filteredQuotes = sortedQuotes.filter(quote => 
+    showArchived ? quote.status === 'archived' : quote.status !== 'archived'
+  );
+
+  if (filteredQuotes.length === 0) {
+    return (
+      <div className="text-center text-muted-foreground py-8">
+        {showArchived ? 'No archived quotes found.' : 'No quotes found.'}
+      </div>
+    );
+  }
+
   return (
-    <div className="border rounded-lg">
+    <ScrollArea className="h-[600px]">
       <Table>
         <TableHeader>
           <TableRow className="bg-gray-50">
-            <QuoteTableHeader
+            <QuoteTableHeader 
               sortField={sortField}
               sortDirection={sortDirection}
               onSort={handleSort}
@@ -98,21 +112,21 @@ export const QuoteTable = ({
           </TableRow>
         </TableHeader>
         <TableBody>
-          {sortedQuotes.map((quote) => (
+          {filteredQuotes.map((quote) => (
             <QuoteTableRow
               key={quote.id}
               quote={quote}
+              clients={clients}
               clientInfos={clientInfos}
-              agentMapping={agentMapping}
-              onEditClick={onEditClick}
+              onEditQuote={onEditQuote}
               onDeleteQuote={onDeleteQuote}
-              onUpdateQuote={onUpdateQuote}
-              onCopyQuote={onCopyQuote}
               onUnarchiveQuote={onUnarchiveQuote}
+              onEmailQuote={onEmailQuote}
+              showArchived={showArchived}
             />
           ))}
         </TableBody>
       </Table>
-    </div>
+    </ScrollArea>
   );
 };

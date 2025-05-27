@@ -74,7 +74,7 @@ export const AddQuoteDialog = ({ open, onOpenChange, onAddQuote, clients, client
     }
   }, [date]);
 
-  // Reset form when dialog opens to ensure service address is blank
+  // Reset form when dialog opens - ensure service address starts blank
   useEffect(() => {
     if (open) {
       setServiceAddress("");
@@ -223,14 +223,14 @@ export const AddQuoteDialog = ({ open, onOpenChange, onAddQuote, clients, client
             address_id: selectedBillingAddressId || selectedServiceAddressId || undefined
           })),
           billingAddress: billingAddress || undefined,
-          serviceAddress: serviceAddress || undefined, // This will be blank/undefined unless explicitly set
+          serviceAddress: serviceAddress || undefined, // Keep this blank unless explicitly set
           templateId: selectedTemplateId !== "none" ? selectedTemplateId : undefined
         };
         
         console.log('[AddQuoteDialog] Calling onAddQuote with data:', quoteData);
         onAddQuote(quoteData);
         
-        // Reset form
+        // Reset form - ensure service address is reset to blank
         setSelectedTemplateId("none");
         setClientId("");
         setClientInfoId("");
@@ -248,7 +248,7 @@ export const AddQuoteDialog = ({ open, onOpenChange, onAddQuote, clients, client
         setSelectedBillingAddressId(null);
         setBillingAddress("");
         setSelectedServiceAddressId(null);
-        setServiceAddress(""); // Ensure service address is reset to blank
+        setServiceAddress(""); // Explicitly reset to blank
         onOpenChange(false);
       }
     }
