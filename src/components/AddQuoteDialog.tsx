@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -72,6 +73,14 @@ export const AddQuoteDialog = ({ open, onOpenChange, onAddQuote, clients, client
       setExpiresAt(calculateExpirationDate(date));
     }
   }, [date]);
+
+  // Reset form when dialog opens to ensure service address is blank
+  useEffect(() => {
+    if (open) {
+      setServiceAddress("");
+      setSelectedServiceAddressId(null);
+    }
+  }, [open]);
 
   // Generate next quote number when dialog opens - starting from 3500
   useEffect(() => {
@@ -214,7 +223,7 @@ export const AddQuoteDialog = ({ open, onOpenChange, onAddQuote, clients, client
             address_id: selectedBillingAddressId || selectedServiceAddressId || undefined
           })),
           billingAddress: billingAddress || undefined,
-          serviceAddress: serviceAddress || undefined,
+          serviceAddress: serviceAddress || undefined, // This will be blank/undefined unless explicitly set
           templateId: selectedTemplateId !== "none" ? selectedTemplateId : undefined
         };
         
@@ -239,7 +248,7 @@ export const AddQuoteDialog = ({ open, onOpenChange, onAddQuote, clients, client
         setSelectedBillingAddressId(null);
         setBillingAddress("");
         setSelectedServiceAddressId(null);
-        setServiceAddress("");
+        setServiceAddress(""); // Ensure service address is reset to blank
         onOpenChange(false);
       }
     }
@@ -349,12 +358,12 @@ export const AddQuoteDialog = ({ open, onOpenChange, onAddQuote, clients, client
             label="Billing Address"
           />
 
-          {/* Service Address Selection */}
+          {/* Service Address Selection - Made optional and starts blank */}
           <AddressSelector
             clientInfoId={clientInfoId !== "none" ? clientInfoId : null}
             selectedAddressId={selectedServiceAddressId || undefined}
             onAddressChange={handleServiceAddressChange}
-            label="Service Address"
+            label="Service Address (Optional)"
           />
 
           {/* Salesperson Display */}

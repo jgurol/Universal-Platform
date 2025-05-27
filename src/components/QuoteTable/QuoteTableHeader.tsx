@@ -1,6 +1,7 @@
 
-import { TableCell, TableHead } from "@/components/ui/table";
-import { ChevronDown, ChevronUp } from "lucide-react";
+import { TableHead } from "@/components/ui/table";
+import { Button } from "@/components/ui/button";
+import { ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
 
 type SortField = 'salesperson' | 'quoteNumber' | 'customerName' | 'status' | 'dateApproved';
 type SortDirection = 'asc' | 'desc';
@@ -12,64 +13,69 @@ interface QuoteTableHeaderProps {
 }
 
 export const QuoteTableHeader = ({ sortField, sortDirection, onSort }: QuoteTableHeaderProps) => {
-  const SortIcon = ({ field }: { field: SortField }) => {
-    if (sortField !== field) return null;
+  const getSortIcon = (field: SortField) => {
+    if (sortField !== field) {
+      return <ArrowUpDown className="ml-2 h-4 w-4" />;
+    }
     return sortDirection === 'asc' ? 
-      <ChevronUp className="w-4 h-4 inline ml-1" /> : 
-      <ChevronDown className="w-4 h-4 inline ml-1" />;
+      <ArrowUp className="ml-2 h-4 w-4" /> : 
+      <ArrowDown className="ml-2 h-4 w-4" />;
   };
 
   return (
     <>
-      <TableHead className="w-16">
-        <button
-          onClick={() => onSort('salesperson')}
-          className="flex items-center hover:text-gray-900 font-medium"
-        >
-          Agent
-          <SortIcon field="salesperson" />
-        </button>
-      </TableHead>
       <TableHead>
-        <button
+        <Button
+          variant="ghost"
           onClick={() => onSort('quoteNumber')}
-          className="flex items-center hover:text-gray-900 font-medium"
+          className="h-auto p-0 font-medium text-left justify-start"
         >
           Quote #
-          <SortIcon field="quoteNumber" />
-        </button>
+          {getSortIcon('quoteNumber')}
+        </Button>
       </TableHead>
       <TableHead>
-        <button
+        <Button
+          variant="ghost"
           onClick={() => onSort('customerName')}
-          className="flex items-center hover:text-gray-900 font-medium"
+          className="h-auto p-0 font-medium text-left justify-start"
         >
           Customer
-          <SortIcon field="customerName" />
-        </button>
+          {getSortIcon('customerName')}
+        </Button>
       </TableHead>
-      <TableHead>Description</TableHead>
-      <TableHead className="text-right">NRC Total</TableHead>
-      <TableHead className="text-right">MRC Total</TableHead>
       <TableHead>
-        <button
+        <Button
+          variant="ghost"
+          onClick={() => onSort('salesperson')}
+          className="h-auto p-0 font-medium text-left justify-start"
+        >
+          Salesperson
+          {getSortIcon('salesperson')}
+        </Button>
+      </TableHead>
+      <TableHead>Amount</TableHead>
+      <TableHead>
+        <Button
+          variant="ghost"
           onClick={() => onSort('status')}
-          className="flex items-center hover:text-gray-900 font-medium"
+          className="h-auto p-0 font-medium text-left justify-start"
         >
           Status
-          <SortIcon field="status" />
-        </button>
+          {getSortIcon('status')}
+        </Button>
       </TableHead>
-      <TableHead className="text-center">
-        <button
+      <TableHead>
+        <Button
+          variant="ghost"
           onClick={() => onSort('dateApproved')}
-          className="flex items-center hover:text-gray-900 font-medium"
+          className="h-auto p-0 font-medium text-left justify-start"
         >
           Date Approved
-          <SortIcon field="dateApproved" />
-        </button>
+          {getSortIcon('dateApproved')}
+        </Button>
       </TableHead>
-      <TableHead className="text-center">Actions</TableHead>
+      <TableHead>Actions</TableHead>
     </>
   );
 };
