@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
@@ -42,6 +43,14 @@ export function NavigationBar() {
               <Link to="/quoting-system">
                 <NavigationMenuLink className={navigationMenuTriggerStyle()}>
                   Quoting System
+                </NavigationMenuLink>
+              </Link>
+            </NavigationMenuItem>
+
+            <NavigationMenuItem>
+              <Link to="/orders">
+                <NavigationMenuLink className={navigationMenuTriggerStyle()}>
+                  Orders
                 </NavigationMenuLink>
               </Link>
             </NavigationMenuItem>
