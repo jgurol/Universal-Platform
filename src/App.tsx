@@ -17,7 +17,6 @@ import Billing from "./pages/Billing";
 import FixAccount from "./pages/FixAccount";
 import AcceptQuote from "./pages/AcceptQuote";
 import CircuitTracking from "./pages/CircuitTracking";
-import Orders from "./pages/Orders";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -42,7 +41,6 @@ const App = () => (
             <Route path="/fix-account" element={<FixAccount />} />
             <Route path="/accept-quote/:quoteId" element={<AcceptQuote />} />
             <Route path="/circuit-tracking" element={<CircuitTracking />} />
-            <Route path="/orders" element={<Orders />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </TooltipProvider>

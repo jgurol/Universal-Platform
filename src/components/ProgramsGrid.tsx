@@ -1,16 +1,88 @@
 
-import { OrdersCard } from "@/components/OrdersCard";
-import { CircuitTrackingCard } from "@/components/CircuitTrackingCard";
-import { SettingsCard } from "@/components/SettingsCard";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { FileText, BarChart3, Phone, Zap, Network } from "lucide-react";
+import { Link } from "react-router-dom";
+
+interface Program {
+  id: string;
+  title: string;
+  description: string;
+  icon: React.ComponentType<{ className?: string }>;
+  route: string;
+  color: string;
+}
+
+const programs: Program[] = [
+  {
+    id: "quoting",
+    title: "Quoting System",
+    description: "Create and manage quotes for clients",
+    icon: FileText,
+    route: "/quoting-system",
+    color: "bg-blue-500 hover:bg-blue-600"
+  },
+  {
+    id: "kpi",
+    title: "KPI Management",
+    description: "Track and analyze key performance indicators",
+    icon: BarChart3,
+    route: "/kpi-management",
+    color: "bg-green-500 hover:bg-green-600"
+  },
+  {
+    id: "did",
+    title: "DID Number Management",
+    description: "Manage direct inward dialing numbers",
+    icon: Phone,
+    route: "/did-management",
+    color: "bg-purple-500 hover:bg-purple-600"
+  },
+  {
+    id: "circuit",
+    title: "Circuit Progress Tracking",
+    description: "Monitor circuit installation and progress",
+    icon: Zap,
+    route: "/circuit-tracking",
+    color: "bg-orange-500 hover:bg-orange-600"
+  },
+  {
+    id: "network",
+    title: "Network Management Progress",
+    description: "Track network management and operations",
+    icon: Network,
+    route: "/network-management",
+    color: "bg-red-500 hover:bg-red-600"
+  }
+];
 
 export const ProgramsGrid = () => {
   return (
-    <div className="mt-8">
-      <h2 className="text-2xl font-bold text-gray-900 mb-6">Applications</h2>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        <OrdersCard />
-        <CircuitTrackingCard />
-        <SettingsCard />
+    <div className="mb-8">
+      <h2 className="text-2xl font-bold text-gray-900 mb-6">Programs & Applications</h2>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6">
+        {programs.map((program) => {
+          const IconComponent = program.icon;
+          
+          return (
+            <Link key={program.id} to={program.route} className="group">
+              <Card className="bg-white shadow-lg border-0 hover:shadow-xl transition-all duration-300 cursor-pointer transform hover:scale-105 h-full">
+                <CardHeader className="text-center pb-4">
+                  <div className={`w-16 h-16 mx-auto rounded-full ${program.color} flex items-center justify-center mb-4 transition-all duration-300 group-hover:scale-110`}>
+                    <IconComponent className="h-8 w-8 text-white" />
+                  </div>
+                  <CardTitle className="text-lg font-semibold text-gray-900 group-hover:text-blue-600 transition-colors">
+                    {program.title}
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="pt-0">
+                  <CardDescription className="text-center text-gray-600 text-sm">
+                    {program.description}
+                  </CardDescription>
+                </CardContent>
+              </Card>
+            </Link>
+          );
+        })}
       </div>
     </div>
   );

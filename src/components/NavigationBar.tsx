@@ -47,14 +47,6 @@ export function NavigationBar() {
             </NavigationMenuItem>
 
             <NavigationMenuItem>
-              <Link to="/orders">
-                <NavigationMenuLink className={navigationMenuTriggerStyle()}>
-                  Orders
-                </NavigationMenuLink>
-              </Link>
-            </NavigationMenuItem>
-
-            <NavigationMenuItem>
               <Link to="/circuit-tracking">
                 <NavigationMenuLink className={navigationMenuTriggerStyle()}>
                   Circuit Tracking
