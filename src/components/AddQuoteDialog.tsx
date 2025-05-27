@@ -356,6 +356,7 @@ export const AddQuoteDialog = ({ open, onOpenChange, onAddQuote, clients, client
             selectedAddressId={selectedBillingAddressId || undefined}
             onAddressChange={handleBillingAddressChange}
             label="Billing Address"
+            autoSelectPrimary={true}
           />
 
           {/* Service Address Selection - Made optional and starts blank */}
@@ -364,6 +365,7 @@ export const AddQuoteDialog = ({ open, onOpenChange, onAddQuote, clients, client
             selectedAddressId={selectedServiceAddressId || undefined}
             onAddressChange={handleServiceAddressChange}
             label="Service Address (Optional)"
+            autoSelectPrimary={false}
           />
 
           {/* Salesperson Display */}

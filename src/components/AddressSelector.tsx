@@ -13,13 +13,15 @@ interface AddressSelectorProps {
   selectedAddressId?: string;
   onAddressChange: (addressId: string | null, customAddress?: string) => void;
   label?: string;
+  autoSelectPrimary?: boolean; // New prop to control auto-selection
 }
 
 export const AddressSelector = ({ 
   clientInfoId, 
   selectedAddressId, 
   onAddressChange,
-  label = "Address"
+  label = "Address",
+  autoSelectPrimary = true // Default to true for billing address backward compatibility
 }: AddressSelectorProps) => {
   const { addresses, isLoading } = useClientAddresses(clientInfoId);
   const [addressMode, setAddressMode] = useState<'existing' | 'custom'>('existing');
@@ -30,23 +32,28 @@ export const AddressSelector = ({
     return `${address.street_address}, ${address.city}, ${address.state} ${address.zip_code}`;
   };
 
-  // Find the primary/billing address on load and format it properly
+  // Only auto-select primary address if autoSelectPrimary is true
   useEffect(() => {
-    if (addresses.length > 0 && !selectedAddressId) {
+    if (addresses.length > 0 && !selectedAddressId && autoSelectPrimary) {
       const primaryAddress = addresses.find(addr => addr.is_primary) || addresses[0];
       const formattedAddress = formatAddress(primaryAddress);
       console.log('Setting primary address:', formattedAddress);
       onAddressChange(primaryAddress.id, formattedAddress);
     }
-  }, [addresses, selectedAddressId, onAddressChange]);
+  }, [addresses, selectedAddressId, onAddressChange, autoSelectPrimary]);
 
   const handleAddressModeChange = (mode: 'existing' | 'custom') => {
     setAddressMode(mode);
     if (mode === 'existing') {
-      const primaryAddress = addresses.find(addr => addr.is_primary) || addresses[0];
-      if (primaryAddress) {
-        const formattedAddress = formatAddress(primaryAddress);
-        onAddressChange(primaryAddress.id, formattedAddress);
+      if (autoSelectPrimary) {
+        const primaryAddress = addresses.find(addr => addr.is_primary) || addresses[0];
+        if (primaryAddress) {
+          const formattedAddress = formatAddress(primaryAddress);
+          onAddressChange(primaryAddress.id, formattedAddress);
+        }
+      } else {
+        // Don't auto-select anything, let user choose
+        onAddressChange(null, '');
       }
     } else {
       onAddressChange(null, customAddress);
