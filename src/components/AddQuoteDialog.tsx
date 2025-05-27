@@ -47,6 +47,31 @@ export const AddQuoteDialog = ({ open, onOpenChange, onAddQuote, clients, client
   const [templates, setTemplates] = useState<QuoteTemplate[]>([]);
   const { user } = useAuth();
   
+  // Function to reset all form fields
+  const resetForm = () => {
+    setClientId("");
+    setClientInfoId("");
+    setDescription("");
+    setQuoteNumber("");
+    setQuoteMonth("");
+    setQuoteYear("");
+    setTerm("36 Months");
+    setNotes("");
+    setCommissionOverride("");
+    setQuoteItems([]);
+    setSelectedAddressId(null);
+    setBillingAddress("");
+    setSelectedBillingAddressId(null);
+    setServiceAddress("");
+    setSelectedServiceAddressId(null);
+    setSelectedTemplateId("none");
+    
+    // Reset dates
+    const todayDate = getTodayInTimezone();
+    setDate(todayDate);
+    setExpiresAt(calculateExpirationDate(todayDate));
+  };
+  
   // Function to calculate expiration date (+60 days from quote date)
   const calculateExpirationDate = (quoteDate: string): string => {
     if (!quoteDate) return "";
@@ -74,11 +99,10 @@ export const AddQuoteDialog = ({ open, onOpenChange, onAddQuote, clients, client
     }
   }, [date]);
 
-  // Reset form when dialog opens - ensure service address starts blank
+  // Reset form when dialog opens or closes
   useEffect(() => {
     if (open) {
-      setServiceAddress("");
-      setSelectedServiceAddressId(null);
+      resetForm();
     }
   }, [open]);
 
@@ -231,25 +255,8 @@ export const AddQuoteDialog = ({ open, onOpenChange, onAddQuote, clients, client
         console.log('[AddQuoteDialog] Calling onAddQuote with data:', quoteData);
         onAddQuote(quoteData);
         
-        // Reset form - ensure service address is reset to blank
-        setSelectedTemplateId("none");
-        setClientId("");
-        setClientInfoId("");
-        const todayDate = getTodayInTimezone();
-        setDate(todayDate);
-        setExpiresAt(calculateExpirationDate(todayDate));
-        setDescription("");
-        setQuoteNumber("");
-        setQuoteMonth("");
-        setQuoteYear("");
-        setTerm("36 Months");
-        setNotes("");
-        setCommissionOverride("");
-        setQuoteItems([]);
-        setSelectedBillingAddressId(null);
-        setBillingAddress("");
-        setSelectedServiceAddressId(null);
-        setServiceAddress(""); // Explicitly reset to blank
+        // Reset form after successful submission
+        resetForm();
         onOpenChange(false);
       }
     }
@@ -328,7 +335,6 @@ export const AddQuoteDialog = ({ open, onOpenChange, onAddQuote, clients, client
             />
           </div>
 
-          {/* Client Selection */}
           <div className="space-y-2">
             <Label htmlFor="clientInfo">Client Company (Required)</Label>
             <Select value={clientInfoId} onValueChange={setClientInfoId} required>
@@ -351,7 +357,6 @@ export const AddQuoteDialog = ({ open, onOpenChange, onAddQuote, clients, client
             </Select>
           </div>
 
-          {/* Term Selection */}
           <div className="space-y-2">
             <Label htmlFor="term">Term</Label>
             <Select value={term} onValueChange={setTerm}>
@@ -367,7 +372,6 @@ export const AddQuoteDialog = ({ open, onOpenChange, onAddQuote, clients, client
             </Select>
           </div>
 
-          {/* Billing Address Selection */}
           <AddressSelector
             clientInfoId={clientInfoId !== "none" ? clientInfoId : null}
             selectedAddressId={selectedBillingAddressId || undefined}
@@ -376,7 +380,6 @@ export const AddQuoteDialog = ({ open, onOpenChange, onAddQuote, clients, client
             autoSelectPrimary={true}
           />
 
-          {/* Service Address Selection - Made optional and starts blank */}
           <AddressSelector
             clientInfoId={clientInfoId !== "none" ? clientInfoId : null}
             selectedAddressId={selectedServiceAddressId || undefined}
@@ -385,7 +388,6 @@ export const AddQuoteDialog = ({ open, onOpenChange, onAddQuote, clients, client
             autoSelectPrimary={false}
           />
 
-          {/* Salesperson Display */}
           {selectedSalesperson && (
             <div className="space-y-2">
               <Label>Associated Salesperson</Label>
