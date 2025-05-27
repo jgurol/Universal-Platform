@@ -24,20 +24,6 @@ const getInitials = (name: string): string => {
     .join('');
 };
 
-const formatDate = (dateString?: string): string => {
-  if (!dateString) return '-';
-  try {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric'
-    });
-  } catch {
-    return '-';
-  }
-};
-
 export const QuoteTableCells = ({
   quote,
   clientInfo,
@@ -86,11 +72,6 @@ export const QuoteTableCells = ({
           status={quote.status || 'pending'}
           onStatusUpdate={onStatusUpdate}
         />
-      </TableCell>
-      <TableCell className="text-center">
-        <span className="text-sm text-gray-600">
-          {formatDate(quote.acceptedAt)}
-        </span>
       </TableCell>
       <TableCell className="text-center">
         <QuoteActions

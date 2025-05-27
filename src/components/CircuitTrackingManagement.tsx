@@ -62,20 +62,6 @@ const getProgressBarClassName = (stage: string): string => {
   return "h-2";
 };
 
-const formatDate = (dateString?: string): string => {
-  if (!dateString) return '-';
-  try {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric'
-    });
-  } catch {
-    return '-';
-  }
-};
-
 export const CircuitTrackingManagement = () => {
   const { circuitTrackings, isLoading, updateCircuitStage, addMilestone } = useCircuitTracking();
   const { toast } = useToast();
@@ -87,16 +73,6 @@ export const CircuitTrackingManagement = () => {
     milestone_description: '',
     target_date: '',
     status: 'pending' as const
-  });
-
-  // Add debug logging to see what data we're getting
-  console.log('Circuit trackings data:', circuitTrackings);
-  circuitTrackings.forEach(circuit => {
-    console.log(`Circuit ${circuit.id} quote data:`, {
-      quote: circuit.quote_item?.quote,
-      accepted_at: circuit.quote_item?.quote?.accepted_at,
-      quote_number: circuit.quote_item?.quote?.quote_number
-    });
   });
 
   const handleStageUpdate = async (circuitId: string, newStage: string) => {
@@ -251,7 +227,6 @@ export const CircuitTrackingManagement = () => {
                                       <TableHead className="w-[200px]">Item Name</TableHead>
                                       <TableHead className="w-[250px]">Location</TableHead>
                                       <TableHead className="w-[150px]">Order</TableHead>
-                                      <TableHead className="w-[120px]">Quote Approved</TableHead>
                                       <TableHead className="w-[150px]">Progress</TableHead>
                                       <TableHead className="w-[100px]">Actions</TableHead>
                                     </TableRow>
@@ -260,8 +235,6 @@ export const CircuitTrackingManagement = () => {
                                     {(trackings as any[]).map((circuit) => {
                                       const progress = getProgressFromStage(circuit.stage || 'Ready to Order');
                                       const progressBarClass = getProgressBarClassName(circuit.stage || 'Ready to Order');
-                                      const approvedDate = circuit.quote_item?.quote?.accepted_at;
-                                      
                                       return (
                                         <TableRow key={circuit.id}>
                                           <TableCell className="font-medium">
@@ -272,9 +245,6 @@ export const CircuitTrackingManagement = () => {
                                           </TableCell>
                                           <TableCell className="text-sm text-gray-600">
                                             {circuit.order?.order_number || circuit.order_id.slice(0, 8)}
-                                          </TableCell>
-                                          <TableCell className="text-sm text-gray-600">
-                                            {formatDate(approvedDate)}
                                           </TableCell>
                                           <TableCell>
                                             <div className="space-y-1">
@@ -379,7 +349,6 @@ export const CircuitTrackingManagement = () => {
                             {groupBy === 'order' && <TableHead className="w-[80px]">Qty</TableHead>}
                             {groupBy === 'order' && <TableHead className="w-[100px]">Unit Price</TableHead>}
                             {groupBy === 'customer' && <TableHead className="w-[150px]">Order</TableHead>}
-                            <TableHead className="w-[120px]">Quote Approved</TableHead>
                             <TableHead className="w-[150px]">Progress</TableHead>
                             <TableHead className="w-[150px]">Stage</TableHead>
                             <TableHead className="w-[100px]">Actions</TableHead>
@@ -389,8 +358,6 @@ export const CircuitTrackingManagement = () => {
                           {trackings.map((circuit) => {
                             const progress = getProgressFromStage(circuit.stage || 'Ready to Order');
                             const progressBarClass = getProgressBarClassName(circuit.stage || 'Ready to Order');
-                            const approvedDate = circuit.quote_item?.quote?.accepted_at;
-                            
                             return (
                               <TableRow key={circuit.id}>
                                 <TableCell className="font-medium">
@@ -414,9 +381,6 @@ export const CircuitTrackingManagement = () => {
                                     {circuit.order?.order_number || circuit.order_id.slice(0, 8)}
                                   </TableCell>
                                 )}
-                                <TableCell className="text-sm text-gray-600">
-                                  {formatDate(approvedDate)}
-                                </TableCell>
                                 <TableCell>
                                   <div className="space-y-1">
                                     <Progress value={progress} className={progressBarClass} />

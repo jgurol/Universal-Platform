@@ -53,7 +53,6 @@ export interface CircuitTracking {
     quote?: {
       id: string;
       quote_number: string;
-      accepted_at?: string;
       client_info?: {
         company_name: string;
       };

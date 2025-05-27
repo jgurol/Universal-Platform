@@ -16,7 +16,7 @@ interface QuoteTableProps {
   onUnarchiveQuote?: (quoteId: string) => void;
 }
 
-type SortField = 'salesperson' | 'quoteNumber' | 'customerName' | 'status' | 'dateApproved';
+type SortField = 'salesperson' | 'quoteNumber' | 'customerName' | 'status';
 type SortDirection = 'asc' | 'desc';
 
 export const QuoteTable = ({
@@ -66,23 +66,13 @@ export const QuoteTable = ({
         aValue = a.status || 'pending';
         bValue = b.status || 'pending';
         break;
-      case 'dateApproved':
-        // Sort by date approved, handling empty dates
-        const aDate = a.acceptedAt ? new Date(a.acceptedAt).getTime() : 0;
-        const bDate = b.acceptedAt ? new Date(b.acceptedAt).getTime() : 0;
-        const dateComparison = aDate - bDate;
-        return sortDirection === 'asc' ? dateComparison : -dateComparison;
       default:
         return 0;
     }
 
-    // For string-based fields (not quote number and not date), use string comparison
-    if (sortField !== 'quoteNumber' && sortField !== 'dateApproved') {
-      const stringComparison = aValue.localeCompare(bValue);
-      return sortDirection === 'asc' ? stringComparison : -stringComparison;
-    }
-    
-    return 0;
+    // For non-quote number fields, use string comparison
+    const stringComparison = aValue.localeCompare(bValue);
+    return sortDirection === 'asc' ? stringComparison : -stringComparison;
   });
 
   return (
