@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -33,7 +32,6 @@ export const AddQuoteDialog = ({ open, onOpenChange, onAddQuote, clients, client
   const [quoteNumber, setQuoteNumber] = useState("");
   const [quoteMonth, setQuoteMonth] = useState("");
   const [quoteYear, setQuoteYear] = useState("");
-  const [status, setStatus] = useState("pending");
   const [expiresAt, setExpiresAt] = useState("");
   const [notes, setNotes] = useState("");
   const [commissionOverride, setCommissionOverride] = useState("");
@@ -212,7 +210,7 @@ export const AddQuoteDialog = ({ open, onOpenChange, onAddQuote, clients, client
           quoteNumber: quoteNumber || undefined,
           quoteMonth: quoteMonth || undefined,
           quoteYear: quoteYear || undefined,
-          status,
+          status: "pending", // Always set to pending instead of using state
           clientInfoId: clientInfoId,
           clientCompanyName: selectedClientInfo.company_name,
           commissionOverride: commissionOverride ? parseFloat(commissionOverride) : undefined,
@@ -241,7 +239,6 @@ export const AddQuoteDialog = ({ open, onOpenChange, onAddQuote, clients, client
         setQuoteNumber("");
         setQuoteMonth("");
         setQuoteYear("");
-        setStatus("pending");
         setNotes("");
         setCommissionOverride("");
         setQuoteItems([]);
@@ -383,20 +380,6 @@ export const AddQuoteDialog = ({ open, onOpenChange, onAddQuote, clients, client
             onItemsChange={setQuoteItems}
             clientInfoId={clientInfoId !== "none" ? clientInfoId : undefined}
           />
-
-          <div className="space-y-2">
-            <Label htmlFor="status">Status</Label>
-            <Select value={status} onValueChange={setStatus}>
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="pending">Pending</SelectItem>
-                <SelectItem value="approved">Approved</SelectItem>
-                <SelectItem value="rejected">Rejected</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
 
           <div className="space-y-2">
             <Label htmlFor="templateId">Quote Template (Optional)</Label>
