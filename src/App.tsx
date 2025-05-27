@@ -9,7 +9,6 @@ import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import Admin from "./pages/Admin";
 import QuotingSystem from "./pages/QuotingSystem";
-import Orders from "./pages/Orders";
 import AgentManagement from "./pages/AgentManagement";
 import ClientManagement from "./pages/ClientManagement";
 import SystemSettings from "./pages/SystemSettings";
@@ -34,7 +33,6 @@ const App = () => (
             <Route path="/auth" element={<Auth />} />
             <Route path="/admin" element={<Admin />} />
             <Route path="/quoting-system" element={<QuotingSystem />} />
-            <Route path="/orders" element={<Orders />} />
             <Route path="/agent-management" element={<AgentManagement />} />
             <Route path="/client-management" element={<ClientManagement />} />
             <Route path="/system-settings" element={<SystemSettings />} />
