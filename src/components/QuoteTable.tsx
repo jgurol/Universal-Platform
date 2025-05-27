@@ -17,6 +17,8 @@ interface QuoteTableProps {
   onDeleteQuote?: (quoteId: string) => void;
   onUnarchiveQuote?: (quoteId: string) => void;
   onEmailQuote?: (quote: Quote) => void;
+  onUpdateQuote?: (quote: Quote) => void;
+  onCopyQuote?: (quote: Quote) => void;
   showArchived?: boolean;
 }
 
@@ -28,10 +30,18 @@ export const QuoteTable = ({
   onDeleteQuote,
   onUnarchiveQuote,
   onEmailQuote,
+  onUpdateQuote,
+  onCopyQuote,
   showArchived = false
 }: QuoteTableProps) => {
   const [sortField, setSortField] = useState<SortField>('quoteNumber');
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
+
+  // Create agent mapping from clients array
+  const agentMapping = clients.reduce((acc, client) => {
+    acc[client.id] = client.name;
+    return acc;
+  }, {} as Record<string, string>);
 
   const handleSort = (field: SortField) => {
     if (sortField === field) {
@@ -116,13 +126,13 @@ export const QuoteTable = ({
             <QuoteTableRow
               key={quote.id}
               quote={quote}
-              clients={clients}
               clientInfos={clientInfos}
-              onEditQuote={onEditQuote}
+              agentMapping={agentMapping}
+              onEditClick={onEditQuote}
               onDeleteQuote={onDeleteQuote}
               onUnarchiveQuote={onUnarchiveQuote}
-              onEmailQuote={onEmailQuote}
-              showArchived={showArchived}
+              onUpdateQuote={onUpdateQuote}
+              onCopyQuote={onCopyQuote}
             />
           ))}
         </TableBody>

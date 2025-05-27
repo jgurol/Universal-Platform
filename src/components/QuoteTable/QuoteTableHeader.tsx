@@ -24,6 +24,7 @@ export const QuoteTableHeader = ({ sortField, sortDirection, onSort }: QuoteTabl
 
   return (
     <>
+      <TableHead>Salesperson</TableHead>
       <TableHead>
         <Button
           variant="ghost"
@@ -44,17 +45,9 @@ export const QuoteTableHeader = ({ sortField, sortDirection, onSort }: QuoteTabl
           {getSortIcon('customerName')}
         </Button>
       </TableHead>
-      <TableHead>
-        <Button
-          variant="ghost"
-          onClick={() => onSort('salesperson')}
-          className="h-auto p-0 font-medium text-left justify-start"
-        >
-          Salesperson
-          {getSortIcon('salesperson')}
-        </Button>
-      </TableHead>
-      <TableHead>Amount</TableHead>
+      <TableHead>Description</TableHead>
+      <TableHead>NRC</TableHead>
+      <TableHead>MRC</TableHead>
       <TableHead>
         <Button
           variant="ghost"
