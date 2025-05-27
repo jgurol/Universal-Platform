@@ -11,7 +11,7 @@ type SortDirection = 'asc' | 'desc';
 
 interface QuoteTableProps {
   quotes: Quote[];
-  clients: Client[];
+  clients?: Client[];
   clientInfos: ClientInfo[];
   onEditQuote?: (quote: Quote) => void;
   onDeleteQuote?: (quoteId: string) => void;
@@ -24,7 +24,7 @@ interface QuoteTableProps {
 
 export const QuoteTable = ({ 
   quotes, 
-  clients, 
+  clients = [], 
   clientInfos, 
   onEditQuote, 
   onDeleteQuote,
@@ -37,8 +37,8 @@ export const QuoteTable = ({
   const [sortField, setSortField] = useState<SortField>('quoteNumber');
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
 
-  // Create agent mapping from clients array
-  const agentMapping = clients.reduce((acc, client) => {
+  // Create agent mapping from clients array - ensure clients is always an array
+  const agentMapping = (clients || []).reduce((acc, client) => {
     acc[client.id] = client.name;
     return acc;
   }, {} as Record<string, string>);

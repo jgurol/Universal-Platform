@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -190,8 +189,9 @@ export const RecentQuotes = ({
           ) : (
             <QuoteTable
               quotes={filteredQuotes}
+              clients={clients}
               clientInfos={clientInfos}
-              onEditClick={isAdmin ? handleEditClick : undefined}
+              onEditQuote={isAdmin ? handleEditClick : undefined}
               onDeleteQuote={onDeleteQuote}
               onUpdateQuote={onUpdateQuote}
               onCopyQuote={isAdmin ? handleCopyQuote : undefined}
