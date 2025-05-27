@@ -1,7 +1,9 @@
+
 import { useState } from "react";
 import { Header } from "@/components/Header";
 import { ProgramsGrid } from "@/components/ProgramsGrid";
 import { AddClientDialog } from "@/components/AddClientDialog";
+import { CircuitTrackingCard } from "@/components/CircuitTrackingCard";
 import { Client, Quote, ClientInfo } from "@/pages/Index";
 import { useAuth } from "@/context/AuthContext";
 
@@ -41,6 +43,11 @@ export const IndexPageLayout = ({
 
         {/* Programs Grid */}
         <ProgramsGrid />
+
+        {/* Circuit Tracking Card */}
+        <div className="mt-8">
+          <CircuitTrackingCard />
+        </div>
 
         {/* Welcome Message */}
         <div className="mt-12 text-center">

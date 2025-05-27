@@ -1,4 +1,3 @@
-
 import { Quote, ClientInfo } from "@/pages/Index";
 import { Table, TableBody, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useAgentMapping } from "@/hooks/useAgentMapping";
@@ -16,7 +15,7 @@ interface QuoteTableProps {
   onUnarchiveQuote?: (quoteId: string) => void;
 }
 
-type SortField = 'salesperson' | 'quoteNumber' | 'customerName' | 'status';
+type SortField = 'salesperson' | 'quoteNumber' | 'customerName' | 'status' | 'dateApproved';
 type SortDirection = 'asc' | 'desc';
 
 export const QuoteTable = ({

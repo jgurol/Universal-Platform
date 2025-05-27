@@ -2,7 +2,7 @@
 import { Button } from "@/components/ui/button";
 import { ArrowUpDown, ChevronUp, ChevronDown } from "lucide-react";
 
-type SortField = 'salesperson' | 'quoteNumber' | 'customerName' | 'status';
+type SortField = 'salesperson' | 'quoteNumber' | 'customerName' | 'status' | 'dateApproved';
 type SortDirection = 'asc' | 'desc';
 
 interface QuoteTableHeaderProps {
