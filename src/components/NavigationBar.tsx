@@ -39,14 +39,6 @@ export function NavigationBar() {
             </NavigationMenuItem>
 
             <NavigationMenuItem>
-              <Link to="/quoting-system">
-                <NavigationMenuLink className={navigationMenuTriggerStyle()}>
-                  Quoting System
-                </NavigationMenuLink>
-              </Link>
-            </NavigationMenuItem>
-
-            <NavigationMenuItem>
               <NavigationMenuTrigger>System Settings</NavigationMenuTrigger>
               <NavigationMenuContent>
                 <ul className="grid w-[300px] gap-3 p-4">
