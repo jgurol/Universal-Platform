@@ -61,7 +61,7 @@ export const QuoteGrid = ({
         <QuoteTable
           quotes={quotes}
           clientInfos={clientInfos}
-          onEditClick={onEditClick}
+          onEditQuote={onEditClick}
           onDeleteQuote={onDeleteQuote}
           onUpdateQuote={onUpdateQuote}
           onCopyQuote={onCopyQuote}
