@@ -1,8 +1,7 @@
 
-import { Button } from "@/components/ui/button";
+import { useEffect } from "react";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus } from "lucide-react";
 import { Item } from "@/types/items";
 
 interface QuoteItemFormProps {
@@ -22,6 +21,13 @@ export const QuoteItemForm = ({
   onAddItem,
   disabled
 }: QuoteItemFormProps) => {
+  // Auto-add item when selected
+  useEffect(() => {
+    if (selectedItemId && selectedItemId !== "") {
+      onAddItem();
+    }
+  }, [selectedItemId, onAddItem]);
+
   return (
     <>
       <div className="flex items-end gap-2">
@@ -46,14 +52,6 @@ export const QuoteItemForm = ({
             </SelectContent>
           </Select>
         </div>
-        <Button 
-          type="button" 
-          onClick={onAddItem} 
-          disabled={disabled}
-          className="bg-blue-600 hover:bg-blue-700"
-        >
-          <Plus className="w-4 h-4" />
-        </Button>
       </div>
 
       {disabled && (
