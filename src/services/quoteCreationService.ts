@@ -50,26 +50,7 @@ export const createQuoteInDatabase = async (
   if (quote.quoteItems && quote.quoteItems.length > 0) {
     console.log('[createQuoteInDatabase] Saving quote items:', quote.quoteItems.length);
     
-    // First, update items table with any custom names/descriptions
-    for (const quoteItem of quote.quoteItems) {
-      if (quoteItem.name !== quoteItem.item?.name || quoteItem.description !== quoteItem.item?.description) {
-        console.log(`[createQuoteInDatabase] Updating item ${quoteItem.item_id} with custom name/description`);
-        
-        const { error: itemUpdateError } = await supabase
-          .from('items')
-          .update({
-            name: quoteItem.name,
-            description: quoteItem.description
-          })
-          .eq('id', quoteItem.item_id);
-
-        if (itemUpdateError) {
-          console.error('Error updating item with custom description:', itemUpdateError);
-        }
-      }
-    }
-
-    // Insert quote items
+    // Insert quote items - no need to update items table since we already created them
     const itemsToInsert = quote.quoteItems.map(item => ({
       quote_id: quoteData.id,
       item_id: item.item_id,
