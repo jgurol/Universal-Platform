@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -62,7 +61,7 @@ export const AddQuoteDialog = ({ open, onOpenChange, onAddQuote, clients, client
     setSelectedAddressId(null);
     setBillingAddress("");
     setSelectedBillingAddressId(null);
-    setServiceAddress("");
+    setServiceAddress(""); // Reset to empty, don't auto-populate
     setSelectedServiceAddressId(null);
     setSelectedTemplateId("none");
     
@@ -203,7 +202,7 @@ export const AddQuoteDialog = ({ open, onOpenChange, onAddQuote, clients, client
   const handleServiceAddressChange = (addressId: string | null, customAddr?: string) => {
     console.log('AddQuoteDialog - Service address changed:', { addressId, customAddr });
     setSelectedServiceAddressId(addressId);
-    setServiceAddress(customAddr || "");
+    setServiceAddress(customAddr || ""); // Don't auto-populate with billing address
   };
 
   const calculateTotalAmount = () => {
@@ -213,7 +212,7 @@ export const AddQuoteDialog = ({ open, onOpenChange, onAddQuote, clients, client
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    console.log('[AddQuoteDialog] Form submitted with addresses:', { 
+    console.log('[AddQuoteDialog] Form submitted with addresses (no auto-population):', { 
       billing: billingAddress, 
       service: serviceAddress 
     });
@@ -248,11 +247,11 @@ export const AddQuoteDialog = ({ open, onOpenChange, onAddQuote, clients, client
             address_id: selectedBillingAddressId || selectedServiceAddressId || undefined
           })),
           billingAddress: billingAddress || undefined,
-          serviceAddress: serviceAddress || undefined, // Keep this blank unless explicitly set
+          serviceAddress: serviceAddress || undefined, // Keep blank if user left it blank - no auto-population
           templateId: selectedTemplateId !== "none" ? selectedTemplateId : undefined
         };
         
-        console.log('[AddQuoteDialog] Calling onAddQuote with data:', quoteData);
+        console.log('[AddQuoteDialog] Calling onAddQuote with data (service address may be blank):', quoteData);
         onAddQuote(quoteData);
         
         // Reset form after successful submission

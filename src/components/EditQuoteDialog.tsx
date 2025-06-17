@@ -1,3 +1,4 @@
+
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -66,12 +67,13 @@ export const EditQuoteDialog = ({
   const [templates, setTemplates] = useState<QuoteTemplate[]>([]);
   const { user } = useAuth();
 
-  // Initialize addresses from quote
+  // Initialize addresses from quote - don't auto-populate service address
   useEffect(() => {
     if (quote && open) {
       setBillingAddress(quote.billingAddress || "");
+      // Only set service address if it actually exists in the quote
       setServiceAddress(quote.serviceAddress || "");
-      console.log('EditQuoteDialog - Initialized addresses:', { 
+      console.log('EditQuoteDialog - Initialized addresses (no auto-population):', { 
         billing: quote.billingAddress, 
         service: quote.serviceAddress 
       });
@@ -142,7 +144,7 @@ export const EditQuoteDialog = ({
         // Update quote items in database with address information and custom descriptions
         await updateQuoteItems(quote.id, quoteItems);
 
-        console.log('EditQuoteDialog - Updating quote with addresses:', { 
+        console.log('EditQuoteDialog - Updating quote with addresses (no auto-population):', { 
           billing: billingAddress, 
           service: serviceAddress 
         });
@@ -162,8 +164,9 @@ export const EditQuoteDialog = ({
           commissionOverride: commissionOverride ? parseFloat(commissionOverride) : undefined,
           expiresAt: expiresAt || undefined,
           notes: notes || undefined,
+          // Only set addresses if they have actual values, don't auto-populate
           billingAddress: billingAddress || undefined,
-          serviceAddress: serviceAddress || undefined,
+          serviceAddress: serviceAddress || undefined, // Keep blank if user left it blank
           templateId: selectedTemplateId !== "none" ? selectedTemplateId : undefined
         } as Quote);
         
