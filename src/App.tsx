@@ -17,6 +17,7 @@ import Billing from "./pages/Billing";
 import FixAccount from "./pages/FixAccount";
 import AcceptQuote from "./pages/AcceptQuote";
 import CircuitTracking from "./pages/CircuitTracking";
+import CircuitQuotes from "./pages/CircuitQuotes";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -41,6 +42,7 @@ const App = () => (
             <Route path="/fix-account" element={<FixAccount />} />
             <Route path="/accept-quote/:quoteId" element={<AcceptQuote />} />
             <Route path="/circuit-tracking" element={<CircuitTracking />} />
+            <Route path="/circuit-quotes" element={<CircuitQuotes />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </TooltipProvider>
