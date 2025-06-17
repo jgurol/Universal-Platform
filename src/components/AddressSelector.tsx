@@ -170,7 +170,7 @@ export const AddressSelector = ({
             <SelectItem value="none">-- No Address --</SelectItem>
             {addresses.map((address) => (
               <SelectItem key={address.id} value={address.id}>
-                <div className="flex flex-col">
+                <div className="flex flex-col text-left">
                   <span className="font-medium">
                     {address.address_type} {address.is_primary && "(Primary)"}
                   </span>
