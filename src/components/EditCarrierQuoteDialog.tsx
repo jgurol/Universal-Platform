@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { CarrierQuote } from "@/components/CircuitQuotesManagement";
+import { useCarrierOptions } from "@/hooks/useCarrierOptions";
 
 interface EditCarrierQuoteDialogProps {
   open: boolean;
@@ -15,68 +16,59 @@ interface EditCarrierQuoteDialogProps {
   onUpdateCarrier: (carrier: CarrierQuote) => void;
 }
 
-const carrierOptions = [
-  { value: "frontier", label: "Frontier", color: "bg-green-100 text-green-800" },
-  { value: "geolinks", label: "Geolinks", color: "bg-purple-100 text-purple-800" },
-  { value: "verizon", label: "Verizon", color: "bg-red-100 text-red-800" },
-  { value: "att", label: "AT&T", color: "bg-blue-100 text-blue-800" },
-  { value: "spectrum", label: "Spectrum", color: "bg-yellow-100 text-yellow-800" },
-  { value: "lumen", label: "Lumen", color: "bg-indigo-100 text-indigo-800" },
-  { value: "other", label: "Other", color: "bg-gray-100 text-gray-800" }
-];
-
-const typeOptions = [
-  "Broadband",
-  "Fiber",
-  "Fixed Wireless",
-  "Cable",
-  "DSL",
-  "Ethernet",
-  "T1",
-  "Other"
+const carrierColors = [
+  { name: "Gray", value: "bg-gray-100 text-gray-800" },
+  { name: "Blue", value: "bg-blue-100 text-blue-800" },
+  { name: "Green", value: "bg-green-100 text-green-800" },
+  { name: "Yellow", value: "bg-yellow-100 text-yellow-800" },
+  { name: "Red", value: "bg-red-100 text-red-800" },
+  { name: "Purple", value: "bg-purple-100 text-purple-800" },
+  { name: "Orange", value: "bg-orange-100 text-orange-800" },
 ];
 
 export const EditCarrierQuoteDialog = ({ open, onOpenChange, carrier, onUpdateCarrier }: EditCarrierQuoteDialogProps) => {
-  const [carrierValue, setCarrierValue] = useState("");
-  const [type, setType] = useState("");
+  const [carrierId, setCarrierId] = useState("");
+  const [typeId, setTypeId] = useState("");
   const [speed, setSpeed] = useState("");
   const [price, setPrice] = useState("");
   const [term, setTerm] = useState("");
   const [notes, setNotes] = useState("");
+  const [color, setColor] = useState("bg-gray-100 text-gray-800");
+
+  const { carriers, circuitTypes, loading } = useCarrierOptions();
 
   useEffect(() => {
-    if (carrier) {
-      // Find the carrier value from the label
-      const carrierOption = carrierOptions.find(opt => opt.label === carrier.carrier);
-      setCarrierValue(carrierOption?.value || "other");
-      setType(carrier.type);
+    if (carrier && carriers.length > 0 && circuitTypes.length > 0) {
+      // Find the carrier and type IDs based on the current names
+      const foundCarrier = carriers.find(c => c.name === carrier.carrier);
+      const foundType = circuitTypes.find(t => t.name === carrier.type);
+      
+      setCarrierId(foundCarrier?.id || "");
+      setTypeId(foundType?.id || "");
       setSpeed(carrier.speed);
       setPrice(carrier.price.toString());
       setTerm(carrier.term);
       setNotes(carrier.notes);
+      setColor(carrier.color);
     }
-  }, [carrier]);
-
-  const getCarrierColor = (carrierValue: string) => {
-    const option = carrierOptions.find(opt => opt.value === carrierValue);
-    return option?.color || "bg-gray-100 text-gray-800";
-  };
+  }, [carrier, carriers, circuitTypes]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (carrierValue && type && speed && price) {
-      const selectedCarrier = carrierOptions.find(opt => opt.value === carrierValue);
+    if (carrierId && typeId && speed && price) {
+      const selectedCarrier = carriers.find(c => c.id === carrierId);
+      const selectedType = circuitTypes.find(t => t.id === typeId);
       
       onUpdateCarrier({
         ...carrier,
-        carrier: selectedCarrier?.label || carrierValue,
-        type,
+        carrier: selectedCarrier?.name || "",
+        type: selectedType?.name || "",
         speed,
         price: parseFloat(price),
         term,
         notes,
-        color: getCarrierColor(carrierValue)
+        color
       });
       
       onOpenChange(false);
@@ -96,14 +88,14 @@ export const EditCarrierQuoteDialog = ({ open, onOpenChange, carrier, onUpdateCa
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="carrier">Carrier (Required)</Label>
-            <Select value={carrierValue} onValueChange={setCarrierValue} required>
+            <Select value={carrierId} onValueChange={setCarrierId} required>
               <SelectTrigger>
-                <SelectValue placeholder="Select carrier" />
+                <SelectValue placeholder={loading ? "Loading carriers..." : "Select carrier"} />
               </SelectTrigger>
               <SelectContent className="bg-white z-50">
-                {carrierOptions.map((option) => (
-                  <SelectItem key={option.value} value={option.value}>
-                    {option.label}
+                {carriers.map((carrierOption) => (
+                  <SelectItem key={carrierOption.id} value={carrierOption.id}>
+                    {carrierOption.name}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -111,15 +103,15 @@ export const EditCarrierQuoteDialog = ({ open, onOpenChange, carrier, onUpdateCa
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="type">Connection Type (Required)</Label>
-            <Select value={type} onValueChange={setType} required>
+            <Label htmlFor="type">Circuit Type (Required)</Label>
+            <Select value={typeId} onValueChange={setTypeId} required>
               <SelectTrigger>
-                <SelectValue placeholder="Select connection type" />
+                <SelectValue placeholder={loading ? "Loading types..." : "Select circuit type"} />
               </SelectTrigger>
               <SelectContent className="bg-white z-50">
-                {typeOptions.map((option) => (
-                  <SelectItem key={option} value={option}>
-                    {option}
+                {circuitTypes.map((type) => (
+                  <SelectItem key={type.id} value={type.id}>
+                    {type.name}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -167,6 +159,25 @@ export const EditCarrierQuoteDialog = ({ open, onOpenChange, carrier, onUpdateCa
           </div>
 
           <div className="space-y-2">
+            <Label htmlFor="color">Badge Color</Label>
+            <Select value={color} onValueChange={setColor}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select color" />
+              </SelectTrigger>
+              <SelectContent className="bg-white z-50">
+                {carrierColors.map((colorOption) => (
+                  <SelectItem key={colorOption.value} value={colorOption.value}>
+                    <div className="flex items-center gap-2">
+                      <div className={`w-4 h-4 rounded ${colorOption.value}`}></div>
+                      {colorOption.name}
+                    </div>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-2">
             <Label htmlFor="notes">Notes</Label>
             <Textarea
               id="notes"
@@ -181,7 +192,11 @@ export const EditCarrierQuoteDialog = ({ open, onOpenChange, carrier, onUpdateCa
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               Cancel
             </Button>
-            <Button type="submit" className="bg-purple-600 hover:bg-purple-700">
+            <Button 
+              type="submit" 
+              className="bg-purple-600 hover:bg-purple-700"
+              disabled={!carrierId || !typeId || !speed || !price || loading}
+            >
               Update Carrier Quote
             </Button>
           </div>

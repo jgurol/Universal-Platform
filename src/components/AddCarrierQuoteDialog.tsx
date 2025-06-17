@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useCarrierOptions } from "@/hooks/useCarrierOptions";
 
 interface AddCarrierQuoteDialogProps {
   open: boolean;
@@ -31,17 +32,19 @@ const carrierColors = [
 ];
 
 export const AddCarrierQuoteDialog = ({ open, onOpenChange, onAddCarrier }: AddCarrierQuoteDialogProps) => {
-  const [carrier, setCarrier] = useState("");
-  const [type, setType] = useState("");
+  const [carrierId, setCarrierId] = useState("");
+  const [typeId, setTypeId] = useState("");
   const [speed, setSpeed] = useState("");
   const [price, setPrice] = useState("");
   const [term, setTerm] = useState("");
   const [notes, setNotes] = useState("");
   const [color, setColor] = useState("bg-gray-100 text-gray-800");
 
+  const { carriers, circuitTypes, loading } = useCarrierOptions();
+
   const resetForm = () => {
-    setCarrier("");
-    setType("");
+    setCarrierId("");
+    setTypeId("");
     setSpeed("");
     setPrice("");
     setTerm("");
@@ -52,10 +55,13 @@ export const AddCarrierQuoteDialog = ({ open, onOpenChange, onAddCarrier }: AddC
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (carrier && type && speed && price) {
+    if (carrierId && typeId && speed && price) {
+      const selectedCarrier = carriers.find(c => c.id === carrierId);
+      const selectedType = circuitTypes.find(t => t.id === typeId);
+      
       onAddCarrier({
-        carrier,
-        type,
+        carrier: selectedCarrier?.name || "",
+        type: selectedType?.name || "",
         speed,
         price: parseFloat(price),
         term,
@@ -82,24 +88,34 @@ export const AddCarrierQuoteDialog = ({ open, onOpenChange, onAddCarrier }: AddC
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="carrier">Carrier (Required)</Label>
-              <Input
-                id="carrier"
-                value={carrier}
-                onChange={(e) => setCarrier(e.target.value)}
-                placeholder="e.g., Verizon, AT&T"
-                required
-              />
+              <Select value={carrierId} onValueChange={setCarrierId} required>
+                <SelectTrigger>
+                  <SelectValue placeholder={loading ? "Loading carriers..." : "Select a carrier"} />
+                </SelectTrigger>
+                <SelectContent className="bg-white z-50">
+                  {carriers.map((carrier) => (
+                    <SelectItem key={carrier.id} value={carrier.id}>
+                      {carrier.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="type">Type (Required)</Label>
-              <Input
-                id="type"
-                value={type}
-                onChange={(e) => setType(e.target.value)}
-                placeholder="e.g., Fiber, Copper"
-                required
-              />
+              <Label htmlFor="type">Circuit Type (Required)</Label>
+              <Select value={typeId} onValueChange={setTypeId} required>
+                <SelectTrigger>
+                  <SelectValue placeholder={loading ? "Loading types..." : "Select circuit type"} />
+                </SelectTrigger>
+                <SelectContent className="bg-white z-50">
+                  {circuitTypes.map((type) => (
+                    <SelectItem key={type.id} value={type.id}>
+                      {type.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           </div>
 
@@ -173,7 +189,11 @@ export const AddCarrierQuoteDialog = ({ open, onOpenChange, onAddCarrier }: AddC
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               Cancel
             </Button>
-            <Button type="submit" className="bg-purple-600 hover:bg-purple-700">
+            <Button 
+              type="submit" 
+              className="bg-purple-600 hover:bg-purple-700"
+              disabled={!carrierId || !typeId || !speed || !price || loading}
+            >
               Add Carrier Quote
             </Button>
           </div>
