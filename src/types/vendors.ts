@@ -7,7 +7,7 @@ export interface Vendor {
   rep_name?: string;
   email?: string;
   phone?: string;
-  sales_model?: 'agent' | 'partner' | 'wholesale';
+  sales_model?: string; // Changed from union type to string to match database
   color?: string;
   is_active: boolean;
   created_at: string;
