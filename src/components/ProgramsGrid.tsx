@@ -1,5 +1,5 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { FileText, Zap, Network } from "lucide-react";
+import { FileText, Zap } from "lucide-react";
 import { Link } from "react-router-dom";
 
 interface Program {
@@ -27,14 +27,6 @@ const programs: Program[] = [
     icon: Zap,
     route: "/circuit-tracking",
     color: "bg-orange-500 hover:bg-orange-600"
-  },
-  {
-    id: "network",
-    title: "Network Management Progress",
-    description: "Track network management and operations",
-    icon: Network,
-    route: "/network-management",
-    color: "bg-red-500 hover:bg-red-600"
   }
 ];
 
