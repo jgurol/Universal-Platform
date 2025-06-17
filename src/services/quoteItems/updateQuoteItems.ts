@@ -6,6 +6,13 @@ export const updateQuoteItems = async (quoteId: string, items: QuoteItemData[]):
   console.log('[updateQuoteItems] Starting update for quote:', quoteId, 'with items:', items.length);
   
   try {
+    // Get current user
+    const { data: { user }, error: userError } = await supabase.auth.getUser();
+    if (userError || !user) {
+      console.error('[updateQuoteItems] Error getting user:', userError);
+      throw new Error('User not authenticated');
+    }
+
     // First, delete all existing quote items for this quote
     const { error: deleteError } = await supabase
       .from('quote_items')
@@ -39,6 +46,7 @@ export const updateQuoteItems = async (quoteId: string, items: QuoteItemData[]):
         const { data: newItem, error: itemError } = await supabase
           .from('items')
           .insert({
+            user_id: user.id,
             name: item.name || 'Carrier Quote Item',
             description: item.description || '',
             price: item.unit_price,
