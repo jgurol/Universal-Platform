@@ -28,34 +28,6 @@ export const QuoteItemForm = ({
 }: QuoteItemFormProps) => {
   const { carrierQuoteItems, loading: carrierLoading } = useCarrierQuoteItems(clientInfoId || null);
 
-  const handleAddItem = () => {
-    if (selectedItemId.startsWith('carrier-')) {
-      // Handle carrier quote item selection
-      const carrierQuoteId = selectedItemId.replace('carrier-', '');
-      const carrierItem = carrierQuoteItems.find(item => item.id === carrierQuoteId);
-      
-      if (carrierItem) {
-        // Create a temporary item from carrier quote data
-        const tempItem = {
-          id: `carrier-temp-${Date.now()}`,
-          name: `${carrierItem.carrier} - ${carrierItem.type} - ${carrierItem.speed}`,
-          description: `${carrierItem.term ? `Term: ${carrierItem.term}` : ''}${carrierItem.notes ? ` | Notes: ${carrierItem.notes}` : ''}`,
-          price: carrierItem.price,
-          cost: carrierItem.price * 0.7, // Assume 30% margin
-          charge_type: 'MRC'
-        };
-        
-        // Add to available items temporarily and select it
-        onSelectedItemIdChange(tempItem.id);
-        // Trigger add with the temp item
-        setTimeout(() => onAddItem(), 0);
-      }
-    } else {
-      onAddItem();
-    }
-  };
-
-  const isCarrierItem = selectedItemId.startsWith('carrier-');
   const hasCarrierItems = carrierQuoteItems.length > 0;
 
   return (
@@ -122,7 +94,7 @@ export const QuoteItemForm = ({
           </Select>
           
           <Button
-            onClick={handleAddItem}
+            onClick={onAddItem}
             disabled={disabled || !selectedItemId || isLoading || carrierLoading}
             className="bg-blue-600 hover:bg-blue-700"
           >

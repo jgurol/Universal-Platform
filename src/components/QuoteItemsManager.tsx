@@ -1,9 +1,9 @@
-
 import { useState } from "react";
 import { Label } from "@/components/ui/label";
 import { QuoteItemData } from "@/types/quoteItems";
 import { useItems } from "@/hooks/useItems";
 import { useClientAddresses } from "@/hooks/useClientAddresses";
+import { useCarrierQuoteItems } from "@/hooks/useCarrierQuoteItems";
 import { QuoteItemForm } from "@/components/QuoteItemForm";
 import { QuoteItemRow } from "@/components/QuoteItemRow";
 import { QuoteItemTotals } from "@/components/QuoteItemTotals";
@@ -18,33 +18,37 @@ interface QuoteItemsManagerProps {
 export const QuoteItemsManager = ({ items, onItemsChange, clientInfoId }: QuoteItemsManagerProps) => {
   const { items: availableItems, isLoading } = useItems();
   const { addresses } = useClientAddresses(clientInfoId || null);
+  const { carrierQuoteItems } = useCarrierQuoteItems(clientInfoId || null);
   const [selectedItemId, setSelectedItemId] = useState("");
 
   const addItem = () => {
     if (!selectedItemId) return;
     
     // Handle carrier quote items
-    if (selectedItemId.startsWith('carrier-temp-')) {
-      // This is a temporary item created from carrier quote data
-      // Find the item in the form component's temp items
-      const tempItemData = {
-        id: selectedItemId,
-        item_id: selectedItemId,
-        quantity: 1,
-        unit_price: 0, // Will be set by the form
-        cost_override: 0,
-        total_price: 0,
-        charge_type: 'MRC' as 'NRC' | 'MRC',
-        address_id: addresses.length > 0 ? addresses[0].id : undefined,
-        name: "Carrier Quote Item", // Will be updated
-        description: "",
-        item: undefined,
-        address: addresses.length > 0 ? addresses[0] : undefined
-      };
+    if (selectedItemId.startsWith('carrier-')) {
+      const carrierQuoteId = selectedItemId.replace('carrier-', '');
+      const carrierItem = carrierQuoteItems.find(item => item.id === carrierQuoteId);
+      
+      if (carrierItem) {
+        const newItem: QuoteItemData = {
+          id: `temp-${Date.now()}`,
+          item_id: `carrier-${carrierItem.id}`,
+          quantity: 1,
+          unit_price: carrierItem.price,
+          cost_override: carrierItem.price * 0.7, // Assume 30% margin
+          total_price: carrierItem.price,
+          charge_type: 'MRC',
+          address_id: addresses.length > 0 ? addresses[0].id : undefined,
+          name: `${carrierItem.carrier} - ${carrierItem.type} - ${carrierItem.speed}`,
+          description: `${carrierItem.term ? `Term: ${carrierItem.term}` : ''}${carrierItem.notes ? ` | Notes: ${carrierItem.notes}` : ''}`,
+          item: undefined,
+          address: addresses.length > 0 ? addresses[0] : undefined
+        };
 
-      onItemsChange([...items, tempItemData]);
-      setSelectedItemId("");
-      return;
+        onItemsChange([...items, newItem]);
+        setSelectedItemId("");
+        return;
+      }
     }
     
     // Handle regular items
