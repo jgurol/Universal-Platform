@@ -1,5 +1,6 @@
+
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { FileText, Zap } from "lucide-react";
+import { FileText, Zap, Search } from "lucide-react";
 import { Link } from "react-router-dom";
 
 interface Program {
@@ -12,6 +13,14 @@ interface Program {
 }
 
 const programs: Program[] = [
+  {
+    id: "circuit-quotes",
+    title: "Circuit Quotes",
+    description: "Research and compare carrier pricing before quoting",
+    icon: Search,
+    route: "/circuit-quotes",
+    color: "bg-purple-500 hover:bg-purple-600"
+  },
   {
     id: "quoting",
     title: "Quoting System",
