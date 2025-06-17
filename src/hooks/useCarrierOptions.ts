@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
 import { useToast } from "@/hooks/use-toast";
+import { Category } from "@/types/categories";
 
 export interface CarrierOption {
   id: string;
@@ -10,15 +11,9 @@ export interface CarrierOption {
   is_active: boolean;
 }
 
-export interface CircuitTypeOption {
-  id: string;
-  name: string;
-  is_active: boolean;
-}
-
 export const useCarrierOptions = () => {
   const [carriers, setCarriers] = useState<CarrierOption[]>([]);
-  const [circuitTypes, setCircuitTypes] = useState<CircuitTypeOption[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const { user } = useAuth();
   const { toast } = useToast();
@@ -46,30 +41,30 @@ export const useCarrierOptions = () => {
         return;
       }
 
-      // Fetch circuit type options
-      const { data: circuitTypeData, error: circuitTypeError } = await supabase
-        .from('circuit_type_options')
-        .select('id, name, is_active')
+      // Fetch categories (circuit types)
+      const { data: categoryData, error: categoryError } = await supabase
+        .from('categories')
+        .select('id, name, description, type, is_active, user_id, created_at, updated_at')
         .eq('is_active', true)
         .order('name', { ascending: true });
 
-      if (circuitTypeError) {
-        console.error('Error fetching circuit type options:', circuitTypeError);
+      if (categoryError) {
+        console.error('Error fetching categories:', categoryError);
         toast({
-          title: "Error fetching circuit types",
-          description: circuitTypeError.message,
+          title: "Error fetching categories",
+          description: categoryError.message,
           variant: "destructive"
         });
         return;
       }
 
       setCarriers(carrierData || []);
-      setCircuitTypes(circuitTypeData || []);
+      setCategories(categoryData || []);
     } catch (error) {
       console.error('Error in fetchOptions:', error);
       toast({
         title: "Error",
-        description: "Failed to fetch carrier and circuit type options",
+        description: "Failed to fetch carrier and category options",
         variant: "destructive"
       });
     } finally {
@@ -85,7 +80,7 @@ export const useCarrierOptions = () => {
 
   return {
     carriers,
-    circuitTypes,
+    categories,
     loading,
     refetchOptions: fetchOptions
   };

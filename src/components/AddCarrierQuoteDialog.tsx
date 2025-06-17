@@ -33,18 +33,18 @@ const carrierColors = [
 
 export const AddCarrierQuoteDialog = ({ open, onOpenChange, onAddCarrier }: AddCarrierQuoteDialogProps) => {
   const [carrierId, setCarrierId] = useState("");
-  const [typeId, setTypeId] = useState("");
+  const [categoryId, setCategoryId] = useState("");
   const [speed, setSpeed] = useState("");
   const [price, setPrice] = useState("");
   const [term, setTerm] = useState("");
   const [notes, setNotes] = useState("");
   const [color, setColor] = useState("bg-gray-100 text-gray-800");
 
-  const { carriers, circuitTypes, loading } = useCarrierOptions();
+  const { carriers, categories, loading } = useCarrierOptions();
 
   const resetForm = () => {
     setCarrierId("");
-    setTypeId("");
+    setCategoryId("");
     setSpeed("");
     setPrice("");
     setTerm("");
@@ -55,13 +55,13 @@ export const AddCarrierQuoteDialog = ({ open, onOpenChange, onAddCarrier }: AddC
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (carrierId && typeId && speed && price) {
+    if (carrierId && categoryId && speed && price) {
       const selectedCarrier = carriers.find(c => c.id === carrierId);
-      const selectedType = circuitTypes.find(t => t.id === typeId);
+      const selectedCategory = categories.find(c => c.id === categoryId);
       
       onAddCarrier({
         carrier: selectedCarrier?.name || "",
-        type: selectedType?.name || "",
+        type: selectedCategory?.name || "",
         speed,
         price: parseFloat(price),
         term,
@@ -103,15 +103,15 @@ export const AddCarrierQuoteDialog = ({ open, onOpenChange, onAddCarrier }: AddC
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="type">Circuit Type (Required)</Label>
-              <Select value={typeId} onValueChange={setTypeId} required>
+              <Label htmlFor="category">Circuit Type (Required)</Label>
+              <Select value={categoryId} onValueChange={setCategoryId} required>
                 <SelectTrigger>
                   <SelectValue placeholder={loading ? "Loading types..." : "Select circuit type"} />
                 </SelectTrigger>
                 <SelectContent className="bg-white z-50">
-                  {circuitTypes.map((type) => (
-                    <SelectItem key={type.id} value={type.id}>
-                      {type.name}
+                  {categories.map((category) => (
+                    <SelectItem key={category.id} value={category.id}>
+                      {category.name}
                     </SelectItem>
                   ))}
                 </SelectContent>
