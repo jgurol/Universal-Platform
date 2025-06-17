@@ -17,6 +17,7 @@ interface CircuitQuoteCardProps {
   onAddCarrier?: (carrierQuote: Omit<CarrierQuote, "id" | "circuit_quote_id">) => void;
   onUpdateCarrier?: (carrier: CarrierQuote) => void;
   onDeleteCarrier?: (carrierId: string) => void;
+  onDeleteQuote?: (quoteId: string) => void;
 }
 
 export const CircuitQuoteCard = ({ 
@@ -24,7 +25,8 @@ export const CircuitQuoteCard = ({
   onUpdate, 
   onAddCarrier, 
   onUpdateCarrier, 
-  onDeleteCarrier 
+  onDeleteCarrier,
+  onDeleteQuote
 }: CircuitQuoteCardProps) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const [isAddCarrierDialogOpen, setIsAddCarrierDialogOpen] = useState(false);
@@ -37,6 +39,12 @@ export const CircuitQuoteCard = ({
       status: newStatus as 'new_pricing' | 'researching' | 'completed' | 'ready_for_review' | 'sent_to_customer'
     };
     onUpdate(updatedQuote);
+  };
+
+  const handleDeleteQuote = () => {
+    if (onDeleteQuote) {
+      onDeleteQuote(quote.id);
+    }
   };
 
   const addCarrierQuote = (carrierQuote: Omit<CarrierQuote, "id" | "circuit_quote_id">) => {
@@ -142,7 +150,7 @@ export const CircuitQuoteCard = ({
                 )}
               </div>
             </div>
-            <div>
+            <div className="flex items-center gap-2">
               <Select value={quote.status} onValueChange={handleStatusChange}>
                 <SelectTrigger className="w-[140px] h-8 text-xs">
                   <SelectValue />
@@ -155,6 +163,17 @@ export const CircuitQuoteCard = ({
                   <SelectItem value="sent_to_customer">Sent to Customer</SelectItem>
                 </SelectContent>
               </Select>
+              {onDeleteQuote && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleDeleteQuote}
+                  className="h-8 w-8 p-0 text-red-600 hover:text-red-700"
+                  title="Delete Quote"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              )}
             </div>
           </div>
         </div>

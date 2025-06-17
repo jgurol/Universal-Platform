@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -18,6 +17,7 @@ export const CircuitQuotesManagement = () => {
     loading, 
     addQuote, 
     updateQuote, 
+    deleteQuote,
     addCarrierQuote, 
     updateCarrierQuote, 
     deleteCarrierQuote 
@@ -50,6 +50,10 @@ export const CircuitQuotesManagement = () => {
 
   const handleUpdateCarrier = (carrierData: any) => {
     updateCarrierQuote(carrierData);
+  };
+
+  const handleDeleteQuote = (quoteId: string) => {
+    deleteQuote(quoteId);
   };
 
   if (loading) {
@@ -190,6 +194,7 @@ export const CircuitQuotesManagement = () => {
               onAddCarrier={(carrierData) => handleAddCarrier(quote.id, carrierData)}
               onUpdateCarrier={handleUpdateCarrier}
               onDeleteCarrier={deleteCarrierQuote}
+              onDeleteQuote={handleDeleteQuote}
             />
           ))
         )}

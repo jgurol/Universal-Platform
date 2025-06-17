@@ -166,6 +166,41 @@ export const useCircuitQuotes = () => {
     }
   };
 
+  const deleteQuote = async (quoteId: string) => {
+    try {
+      // Delete the circuit quote - carrier quotes will be deleted automatically due to CASCADE
+      const { error } = await supabase
+        .from('circuit_quotes')
+        .delete()
+        .eq('id', quoteId);
+
+      if (error) {
+        console.error('Error deleting circuit quote:', error);
+        toast({
+          title: "Error",
+          description: error.message,
+          variant: "destructive"
+        });
+        return;
+      }
+
+      // Update local state
+      setQuotes(prev => prev.filter(q => q.id !== quoteId));
+      
+      toast({
+        title: "Success",
+        description: "Circuit quote deleted successfully"
+      });
+    } catch (error) {
+      console.error('Error in deleteQuote:', error);
+      toast({
+        title: "Error",
+        description: "Failed to delete circuit quote",
+        variant: "destructive"
+      });
+    }
+  };
+
   const addCarrierQuote = async (circuitQuoteId: string, carrierQuote: Omit<CarrierQuote, "id" | "circuit_quote_id">) => {
     try {
       const { data, error } = await supabase
@@ -299,6 +334,7 @@ export const useCircuitQuotes = () => {
     fetchQuotes,
     addQuote,
     updateQuote,
+    deleteQuote,
     addCarrierQuote,
     updateCarrierQuote,
     deleteCarrierQuote
