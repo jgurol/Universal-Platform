@@ -46,13 +46,19 @@ export const QuoteItemForm = ({
               <SelectTrigger className="flex-1">
                 <SelectValue placeholder={isLoading ? "Loading catalog items..." : "Select from catalog"} />
               </SelectTrigger>
-              <SelectContent className="bg-white z-50">
+              <SelectContent className="bg-white z-50 min-w-[500px]">
                 {availableItems.length > 0 ? (
                   availableItems.map((item) => (
                     <SelectItem key={item.id} value={item.id}>
-                      <div className="flex flex-col">
-                        <span>{item.name}</span>
-                        <span className="text-sm text-gray-500">${item.price}</span>
+                      <div className="flex items-center gap-3 w-full min-w-0">
+                        <span className="font-medium text-sm">{item.name}</span>
+                        <span className="text-xs text-gray-600">•</span>
+                        <span className="text-xs text-gray-600">{item.charge_type}</span>
+                        <span className="text-xs text-gray-600">•</span>
+                        <span className="text-xs text-green-600 font-medium">${item.price}</span>
+                        <Badge variant="outline" className="text-xs whitespace-nowrap ml-auto">
+                          Catalog
+                        </Badge>
                       </div>
                     </SelectItem>
                   ))
