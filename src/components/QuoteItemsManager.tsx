@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Label } from "@/components/ui/label";
 import { QuoteItemData } from "@/types/quoteItems";
@@ -91,43 +90,46 @@ export const QuoteItemsManager = ({ items, onItemsChange, clientInfoId }: QuoteI
         const carrierItem = carrierQuoteItems.find(item => item.id === carrierQuoteId);
         
         if (carrierItem && clientInfoId) {
+          console.log('[QuoteItemsManager] Processing carrier item:', carrierItem);
+          
           // Parse the location into address components
           const parsedAddress = parseLocationToAddress(carrierItem.location);
+          console.log('[QuoteItemsManager] Parsed address from location:', parsedAddress);
           
-          // Check if a similar address already exists
-          let matchingAddress = addresses.find(addr => 
-            addr.city.toLowerCase() === parsedAddress.city.toLowerCase() &&
-            addr.state.toLowerCase() === parsedAddress.state.toLowerCase()
-          );
+          // Look for an existing address that matches the carrier quote location
+          let matchingAddress = addresses.find(addr => {
+            const addressString = `${addr.street_address}${addr.street_address_2 ? `, ${addr.street_address_2}` : ''}, ${addr.city}, ${addr.state} ${addr.zip_code}`;
+            return addressString.toLowerCase().includes(carrierItem.location.toLowerCase()) ||
+                   carrierItem.location.toLowerCase().includes(addressString.toLowerCase()) ||
+                   (addr.city.toLowerCase() === parsedAddress.city.toLowerCase() && 
+                    addr.state.toLowerCase() === parsedAddress.state.toLowerCase());
+          });
 
-          // If address doesn't exist, create a new one with parsed components
+          // If no matching address exists, create one specifically for this carrier quote location
           if (!matchingAddress && carrierItem.location.trim()) {
             try {
               const newAddressData = {
                 client_info_id: clientInfoId,
                 address_type: 'service',
-                street_address: parsedAddress.street_address || carrierItem.location,
+                street_address: parsedAddress.street_address || carrierItem.location.split(',')[0] || carrierItem.location,
                 city: parsedAddress.city,
                 state: parsedAddress.state,
                 zip_code: parsedAddress.zip_code,
                 country: 'United States',
-                is_primary: addresses.length === 0 // Make it primary if it's the first address
+                is_primary: false // Don't make carrier locations primary
               };
 
-              console.log('[QuoteItemsManager] Creating new address with parsed components:', newAddressData);
+              console.log('[QuoteItemsManager] Creating new address for carrier location:', newAddressData);
               const newAddress = await addAddress(newAddressData);
               matchingAddress = newAddress;
-              console.log('[QuoteItemsManager] Address creation completed, new address:', newAddress);
+              console.log('[QuoteItemsManager] Created address for carrier location:', newAddress);
             } catch (error) {
               console.error('Error creating address for carrier location:', error);
-              // Continue without address if creation fails
+              // Continue without creating address if it fails
             }
           }
 
-          // If still no matching address, use the first available address
-          if (!matchingAddress && addresses.length > 0) {
-            matchingAddress = addresses[0];
-          }
+          console.log('[QuoteItemsManager] Final matching address for carrier item:', matchingAddress);
 
           // Create a temporary quote item for the carrier quote
           const descriptionParts = [];
@@ -158,13 +160,14 @@ export const QuoteItemsManager = ({ items, onItemsChange, clientInfoId }: QuoteI
               created_at: new Date().toISOString(),
               updated_at: new Date().toISOString()
             },
-            address: matchingAddress // Ensure the address object is properly set
+            address: matchingAddress // This should be the address that matches the carrier location
           };
 
-          console.log('[QuoteItemsManager] Adding carrier item with address:', {
+          console.log('[QuoteItemsManager] Adding carrier item with specific location address:', {
             itemName: quoteItem.name,
+            carrierLocation: carrierItem.location,
             addressId: quoteItem.address_id,
-            address: quoteItem.address
+            addressDetails: quoteItem.address
           });
 
           // Add to items list
@@ -180,7 +183,7 @@ export const QuoteItemsManager = ({ items, onItemsChange, clientInfoId }: QuoteI
       return;
     }
     
-    // Handle regular items
+    // Handle regular items - use first available address or none
     const selectedItem = availableItems.find(item => item.id === selectedItemId);
     if (!selectedItem) return;
 
