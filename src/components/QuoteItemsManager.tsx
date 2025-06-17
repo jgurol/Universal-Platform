@@ -117,6 +117,15 @@ export const QuoteItemsManager = ({ items, onItemsChange, clientInfoId }: QuoteI
         }
 
         // Create a temporary quote item for the carrier quote (no database item needed)
+        // Build description without location
+        const descriptionParts = [];
+        if (carrierItem.term) {
+          descriptionParts.push(`Term: ${carrierItem.term}`);
+        }
+        if (carrierItem.notes) {
+          descriptionParts.push(`Notes: ${carrierItem.notes}`);
+        }
+
         const quoteItem: QuoteItemData = {
           id: `temp-carrier-${Date.now()}`,
           item_id: `carrier-${carrierItem.id}`, // Use a special ID format for carrier items
@@ -127,12 +136,12 @@ export const QuoteItemsManager = ({ items, onItemsChange, clientInfoId }: QuoteI
           charge_type: 'MRC',
           address_id: matchingAddress?.id,
           name: `${carrierItem.carrier} - ${carrierItem.type} - ${carrierItem.speed}`,
-          description: `Location: ${carrierItem.location}${carrierItem.term ? ` | Term: ${carrierItem.term}` : ''}${carrierItem.notes ? ` | Notes: ${carrierItem.notes}` : ''}`,
+          description: descriptionParts.join(' | '), // Don't include location in description
           item: {
             id: `carrier-${carrierItem.id}`,
             user_id: '',
             name: `${carrierItem.carrier} - ${carrierItem.type} - ${carrierItem.speed}`,
-            description: `Location: ${carrierItem.location}${carrierItem.term ? ` | Term: ${carrierItem.term}` : ''}${carrierItem.notes ? ` | Notes: ${carrierItem.notes}` : ''}`,
+            description: descriptionParts.join(' | '), // Don't include location in description
             price: 0,
             cost: carrierItem.price,
             charge_type: 'MRC',

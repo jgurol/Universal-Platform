@@ -57,12 +57,27 @@ export const createQuoteInDatabase = async (
       if (item.item_id.startsWith('carrier-')) {
         console.log('[createQuoteInDatabase] Creating temporary item for carrier quote item:', item.name);
         
+        // Build description without location
+        const descriptionParts = [];
+        if (item.description) {
+          // If description exists, use it but ensure location is not included
+          const cleanDescription = item.description
+            .replace(/Location: [^|]+\s*\|\s*?/g, '') // Remove "Location: xxx |"
+            .replace(/\|\s*Location: [^|]+/g, '') // Remove "| Location: xxx"
+            .replace(/^Location: [^|]+$/g, '') // Remove standalone "Location: xxx"
+            .trim();
+          
+          if (cleanDescription) {
+            descriptionParts.push(cleanDescription);
+          }
+        }
+        
         const { data: newItem, error: itemError } = await supabase
           .from('items')
           .insert({
             user_id: userId,
             name: item.name || 'Carrier Quote Item',
-            description: item.description || '',
+            description: descriptionParts.join(' | '), // Clean description without location
             price: item.unit_price,
             cost: item.cost_override || 0,
             charge_type: item.charge_type,

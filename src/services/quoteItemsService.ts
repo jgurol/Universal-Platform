@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { QuoteItemData } from "@/types/quoteItems";
 
@@ -102,13 +101,28 @@ export const updateQuoteItems = async (quoteId: string, items: QuoteItemData[]) 
       // First, create temporary items in the items table for carrier quotes
       const temporaryItems = await Promise.all(
         carrierItems.map(async (carrierItem) => {
+          // Build description without location
+          const descriptionParts = [];
+          if (carrierItem.description) {
+            // Clean description to remove location information
+            const cleanDescription = carrierItem.description
+              .replace(/Location: [^|]+\s*\|\s*?/g, '') // Remove "Location: xxx |"
+              .replace(/\|\s*Location: [^|]+/g, '') // Remove "| Location: xxx"
+              .replace(/^Location: [^|]+$/g, '') // Remove standalone "Location: xxx"
+              .trim();
+            
+            if (cleanDescription) {
+              descriptionParts.push(cleanDescription);
+            }
+          }
+
           // Create a temporary item in the items table that won't appear in catalog
           const { data: newItem, error: itemError } = await supabase
             .from('items')
             .insert({
               user_id: (await supabase.auth.getUser()).data.user?.id,
               name: carrierItem.name,
-              description: carrierItem.description || '',
+              description: descriptionParts.join(' | '), // Clean description without location
               price: carrierItem.unit_price,
               cost: carrierItem.cost_override || 0,
               charge_type: carrierItem.charge_type,
