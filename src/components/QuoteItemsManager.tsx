@@ -15,6 +15,53 @@ interface QuoteItemsManagerProps {
   clientInfoId?: string;
 }
 
+// Helper function to parse location string into address components
+const parseLocationToAddress = (location: string) => {
+  // Basic parsing logic for common address formats
+  const parts = location.split(',').map(part => part.trim());
+  
+  if (parts.length >= 3) {
+    // Format: "123 Main St, City, State ZIP" or similar
+    const streetAddress = parts[0];
+    const city = parts[1];
+    const stateZip = parts[2];
+    
+    // Try to extract state and zip from the last part
+    const stateZipMatch = stateZip.match(/^(.+?)\s+(\d{5}(?:-\d{4})?)$/);
+    if (stateZipMatch) {
+      return {
+        street_address: streetAddress,
+        city: city,
+        state: stateZipMatch[1],
+        zip_code: stateZipMatch[2]
+      };
+    } else {
+      return {
+        street_address: streetAddress,
+        city: city,
+        state: stateZip,
+        zip_code: '00000'
+      };
+    }
+  } else if (parts.length === 2) {
+    // Format: "City, State" or "Address, City"
+    return {
+      street_address: parts[0],
+      city: parts[1],
+      state: 'Unknown',
+      zip_code: '00000'
+    };
+  } else {
+    // Single part - treat as city
+    return {
+      street_address: '',
+      city: location,
+      state: 'Unknown',
+      zip_code: '00000'
+    };
+  }
+};
+
 export const QuoteItemsManager = ({ items, onItemsChange, clientInfoId }: QuoteItemsManagerProps) => {
   const { items: availableItems, isLoading } = useItems();
   const { addresses, addAddress } = useClientAddresses(clientInfoId || null);
@@ -30,39 +77,43 @@ export const QuoteItemsManager = ({ items, onItemsChange, clientInfoId }: QuoteI
       const carrierItem = carrierQuoteItems.find(item => item.id === carrierQuoteId);
       
       if (carrierItem && clientInfoId) {
-        // Check if location already exists in client addresses
-        const locationExists = addresses.some(addr => 
-          addr.street_address.toLowerCase().includes(carrierItem.location.toLowerCase()) ||
-          addr.city.toLowerCase() === carrierItem.location.toLowerCase()
+        // Parse the location into address components
+        const parsedAddress = parseLocationToAddress(carrierItem.location);
+        
+        // Check if a similar address already exists
+        const addressExists = addresses.some(addr => 
+          addr.city.toLowerCase() === parsedAddress.city.toLowerCase() &&
+          addr.state.toLowerCase() === parsedAddress.state.toLowerCase()
         );
 
         let matchingAddress = addresses.find(addr => 
-          addr.city.toLowerCase().includes(carrierItem.location.toLowerCase()) ||
-          addr.street_address.toLowerCase().includes(carrierItem.location.toLowerCase())
+          addr.city.toLowerCase() === parsedAddress.city.toLowerCase() &&
+          addr.state.toLowerCase() === parsedAddress.state.toLowerCase()
         );
 
-        // If location doesn't exist, create a new address
-        if (!locationExists && carrierItem.location.trim()) {
+        // If address doesn't exist, create a new one with parsed components
+        if (!addressExists && carrierItem.location.trim()) {
           try {
             const newAddressData = {
               client_info_id: clientInfoId,
               address_type: 'service',
-              street_address: carrierItem.location,
-              city: carrierItem.location,
-              state: 'Unknown', // Default state since we don't have this info
-              zip_code: '00000', // Default zip since we don't have this info
+              street_address: parsedAddress.street_address || carrierItem.location,
+              city: parsedAddress.city,
+              state: parsedAddress.state,
+              zip_code: parsedAddress.zip_code,
               country: 'United States',
               is_primary: addresses.length === 0 // Make it primary if it's the first address
             };
 
-            console.log('[QuoteItemsManager] Creating new address for location:', carrierItem.location);
+            console.log('[QuoteItemsManager] Creating new address with parsed components:', newAddressData);
             await addAddress(newAddressData);
             
             // Refresh addresses to get the newly created one
             // The useClientAddresses hook should automatically refresh, but we'll find it after creation
             setTimeout(() => {
               const newAddress = addresses.find(addr => 
-                addr.street_address === carrierItem.location
+                addr.city.toLowerCase() === parsedAddress.city.toLowerCase() &&
+                addr.state.toLowerCase() === parsedAddress.state.toLowerCase()
               );
               matchingAddress = newAddress;
             }, 100);
