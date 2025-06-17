@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -69,9 +70,9 @@ export const AddCircuitQuoteDialog = ({ open, onOpenChange, onAddQuote }: AddCir
 
   const handleAddressSelect = (address: AddressData) => {
     setValidatedAddress(address);
-    // Format the address for display
-    const formattedLocation = `${address.city}, ${address.state}`;
-    setLocation(formattedLocation);
+    // Format the full address for storage
+    const fullAddress = `${address.street_address}, ${address.city}, ${address.state} ${address.zip_code}`;
+    setLocation(fullAddress);
   };
 
   const resetForm = () => {
@@ -133,14 +134,14 @@ export const AddCircuitQuoteDialog = ({ open, onOpenChange, onAddQuote }: AddCir
 
           <div className="space-y-2">
             <AddressAutocomplete
-              label="Location (Required)"
-              placeholder="Start typing a city and state..."
+              label="Address (Required)"
+              placeholder="Start typing a street address..."
               onAddressSelect={handleAddressSelect}
               required
             />
             {!validatedAddress && location && (
               <p className="text-sm text-orange-600">
-                Please select a valid location from the dropdown suggestions.
+                Please select a valid address from the dropdown suggestions.
               </p>
             )}
           </div>
