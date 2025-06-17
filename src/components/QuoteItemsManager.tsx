@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Label } from "@/components/ui/label";
 import { QuoteItemData } from "@/types/quoteItems";
@@ -154,11 +153,11 @@ export const QuoteItemsManager = ({ items, onItemsChange, clientInfoId }: QuoteI
             address: matchingAddress
           };
 
-          // Add to items list without triggering unwanted side effects
+          // Add to items list
           const newItems = [...items, quoteItem];
           onItemsChange(newItems);
           setSelectedItemId("");
-          console.log('[QuoteItemsManager] Successfully added carrier item without triggering save');
+          console.log('[QuoteItemsManager] Successfully added carrier item with address:', quoteItem);
         }
       } catch (error) {
         console.error('[QuoteItemsManager] Error adding carrier item:', error);
