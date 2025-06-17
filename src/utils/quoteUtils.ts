@@ -13,6 +13,9 @@ export const mapQuoteData = (
   const client = clients.find(c => c.id === quoteData.client_id);
   const clientInfo = clientInfos.find(ci => ci.id === quoteData.client_info_id);
   
+  // Handle null service address properly - don't convert "null" string to actual value
+  const serviceAddress = quoteData.service_address === "null" || quoteData.service_address === null ? undefined : quoteData.service_address;
+  
   const mapped: Quote & { archived?: boolean } = {
     id: quoteData.id,
     clientId: quoteData.client_id || "",
@@ -33,7 +36,7 @@ export const mapQuoteData = (
     notes: quoteData.notes,
     quoteItems: quoteData.quote_items || [],
     billingAddress: quoteData.billing_address,
-    serviceAddress: quoteData.service_address,
+    serviceAddress: serviceAddress, // Properly handle null/undefined service address
     templateId: quoteData.template_id,
     acceptanceStatus: quoteData.acceptance_status,
     acceptedAt: quoteData.accepted_at,

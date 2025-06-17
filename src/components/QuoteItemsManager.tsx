@@ -70,6 +70,15 @@ export const QuoteItemsManager = ({ items, onItemsChange, clientInfoId }: QuoteI
   const [selectedItemId, setSelectedItemId] = useState("");
   const [isAddingCarrierItem, setIsAddingCarrierItem] = useState(false);
 
+  // Debug logging for addresses and items
+  console.log('[QuoteItemsManager] Current addresses:', addresses);
+  console.log('[QuoteItemsManager] Current items with addresses:', items.map(item => ({
+    id: item.id,
+    name: item.name,
+    address_id: item.address_id,
+    address: item.address
+  })));
+
   const addItem = async () => {
     if (!selectedItemId) return;
     
@@ -106,7 +115,6 @@ export const QuoteItemsManager = ({ items, onItemsChange, clientInfoId }: QuoteI
               };
 
               console.log('[QuoteItemsManager] Creating new address with parsed components:', newAddressData);
-              // Await the address creation and use the returned address
               const newAddress = await addAddress(newAddressData);
               matchingAddress = newAddress;
               console.log('[QuoteItemsManager] Address creation completed, new address:', newAddress);
@@ -121,8 +129,7 @@ export const QuoteItemsManager = ({ items, onItemsChange, clientInfoId }: QuoteI
             matchingAddress = addresses[0];
           }
 
-          // Create a temporary quote item for the carrier quote (no database item needed)
-          // Build description without location or term - only include notes
+          // Create a temporary quote item for the carrier quote
           const descriptionParts = [];
           if (carrierItem.notes) {
             descriptionParts.push(`Notes: ${carrierItem.notes}`);
@@ -130,20 +137,20 @@ export const QuoteItemsManager = ({ items, onItemsChange, clientInfoId }: QuoteI
 
           const quoteItem: QuoteItemData = {
             id: `temp-carrier-${Date.now()}`,
-            item_id: `carrier-${carrierItem.id}`, // Use a special ID format for carrier items
+            item_id: `carrier-${carrierItem.id}`,
             quantity: 1,
-            unit_price: 0, // Leave sell price blank
-            cost_override: carrierItem.price, // Populate cost with carrier price
-            total_price: 0, // Will be 0 since unit_price is 0
+            unit_price: 0,
+            cost_override: carrierItem.price,
+            total_price: 0,
             charge_type: 'MRC',
             address_id: matchingAddress?.id,
             name: `${carrierItem.carrier} - ${carrierItem.type} - ${carrierItem.speed}`,
-            description: descriptionParts.join(' | '), // Only include notes, no location or term
+            description: descriptionParts.join(' | '),
             item: {
               id: `carrier-${carrierItem.id}`,
               user_id: '',
               name: `${carrierItem.carrier} - ${carrierItem.type} - ${carrierItem.speed}`,
-              description: descriptionParts.join(' | '), // Only include notes, no location or term
+              description: descriptionParts.join(' | '),
               price: 0,
               cost: carrierItem.price,
               charge_type: 'MRC',
@@ -151,14 +158,19 @@ export const QuoteItemsManager = ({ items, onItemsChange, clientInfoId }: QuoteI
               created_at: new Date().toISOString(),
               updated_at: new Date().toISOString()
             },
-            address: matchingAddress
+            address: matchingAddress // Ensure the address object is properly set
           };
+
+          console.log('[QuoteItemsManager] Adding carrier item with address:', {
+            itemName: quoteItem.name,
+            addressId: quoteItem.address_id,
+            address: quoteItem.address
+          });
 
           // Add to items list
           const newItems = [...items, quoteItem];
           onItemsChange(newItems);
           setSelectedItemId("");
-          console.log('[QuoteItemsManager] Successfully added carrier item with address:', quoteItem);
         }
       } catch (error) {
         console.error('[QuoteItemsManager] Error adding carrier item:', error);
@@ -201,7 +213,12 @@ export const QuoteItemsManager = ({ items, onItemsChange, clientInfoId }: QuoteI
         if (field === 'address_id') {
           const selectedAddress = addresses.find(addr => addr.id === value);
           updatedItem.address = selectedAddress;
-          console.log('[QuoteItemsManager] Updated item address:', { itemId, addressId: value, address: selectedAddress });
+          console.log('[QuoteItemsManager] Updated item address:', { 
+            itemId, 
+            addressId: value, 
+            address: selectedAddress,
+            itemName: updatedItem.name 
+          });
         }
         
         // Recalculate total price when quantity or unit price changes
