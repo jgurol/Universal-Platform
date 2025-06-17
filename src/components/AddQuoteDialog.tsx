@@ -1,14 +1,16 @@
-import { useState, useEffect } from "react";
+
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { useState, useEffect } from "react";
 import { Quote, Client, ClientInfo } from "@/pages/Index";
 import { AddressSelector } from "@/components/AddressSelector";
 import { QuoteItemsManager } from "@/components/QuoteItemsManager";
-import { QuoteDetailsSection } from "@/components/QuoteDetailsSection";
+import { QuoteItemData } from "@/types/quoteItems";
+import { useQuoteItems } from "@/hooks/useQuoteItems";
 import { calculateTotalsByChargeType } from "@/services/quoteItemsService";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
@@ -19,30 +21,36 @@ type QuoteTemplate = Database['public']['Tables']['quote_templates']['Row'];
 interface AddQuoteDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onAddQuote: (quote: Omit<Quote, 'id'>) => void;
+  onAddQuote: (quote: Omit<Quote, "id">) => void;
   clients: Client[];
   clientInfos: ClientInfo[];
 }
 
 export const AddQuoteDialog = ({ open, onOpenChange, onAddQuote, clients, clientInfos }: AddQuoteDialogProps) => {
-  const [clientId, setClientId] = useState<string>("");
-  const [clientInfoId, setClientInfoId] = useState<string>("none");
-  const [date, setDate] = useState<string>(new Date().toISOString().split('T')[0]);
-  const [description, setDescription] = useState<string>("");
-  const [quoteNumber, setQuoteNumber] = useState<string>("");
-  const [status, setStatus] = useState<string>("pending");
-  const [expiresAt, setExpiresAt] = useState<string>("");
-  const [notes, setNotes] = useState<string>("");
-  const [commissionOverride, setCommissionOverride] = useState<string>("");
-  const [quoteItems, setQuoteItems] = useState<any[]>([]);
+  const [clientId, setClientId] = useState("");
+  const [clientInfoId, setClientInfoId] = useState("");
+  const [date, setDate] = useState("");
+  const [description, setDescription] = useState("");
+  const [quoteNumber, setQuoteNumber] = useState("");
+  const [quoteMonth, setQuoteMonth] = useState("");
+  const [quoteYear, setQuoteYear] = useState("");
+  const [status, setStatus] = useState("pending");
+  const [expiresAt, setExpiresAt] = useState("");
+  const [notes, setNotes] = useState("");
+  const [commissionOverride, setCommissionOverride] = useState("");
+
   const [selectedBillingAddressId, setSelectedBillingAddressId] = useState<string | null>(null);
   const [billingAddress, setBillingAddress] = useState<string>("");
   const [selectedServiceAddressId, setSelectedServiceAddressId] = useState<string | null>(null);
   const [serviceAddress, setServiceAddress] = useState<string>("");
+
   const [selectedTemplateId, setSelectedTemplateId] = useState<string>("none");
   const [templates, setTemplates] = useState<QuoteTemplate[]>([]);
   const { user } = useAuth();
 
+  const { quoteItems, setQuoteItems } = useQuoteItems(null, open);
+
+  // Load templates when dialog opens
   useEffect(() => {
     const fetchTemplates = async () => {
       if (open && user) {
@@ -79,11 +87,11 @@ export const AddQuoteDialog = ({ open, onOpenChange, onAddQuote, clients, client
     if (clientId && date) {
       const selectedClient = clients.find(client => client.id === clientId);
       const selectedClientInfo = clientInfoId && clientInfoId !== "none" ? clientInfos.find(info => info.id === clientInfoId) : null;
-
+      
       if (selectedClient) {
         const { totalAmount } = calculateTotalsByChargeType(quoteItems);
-
-        const newQuote: Omit<Quote, 'id'> = {
+        
+        onAddQuote({
           clientId,
           clientName: selectedClient.name,
           companyName: selectedClient.companyName || selectedClient.name,
@@ -91,9 +99,9 @@ export const AddQuoteDialog = ({ open, onOpenChange, onAddQuote, clients, client
           date,
           description: description || "",
           quoteNumber: quoteNumber || undefined,
+          quoteMonth: quoteMonth || undefined,
+          quoteYear: quoteYear || undefined,
           status,
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
           clientInfoId: clientInfoId !== "none" ? clientInfoId : undefined,
           clientCompanyName: selectedClientInfo?.company_name,
           commissionOverride: commissionOverride ? parseFloat(commissionOverride) : undefined,
@@ -101,12 +109,27 @@ export const AddQuoteDialog = ({ open, onOpenChange, onAddQuote, clients, client
           notes: notes || undefined,
           billingAddress: billingAddress || undefined,
           serviceAddress: serviceAddress || undefined,
-          templateId: selectedTemplateId !== "none" ? selectedTemplateId : undefined,
-          versionNumber: 1,
-          isArchived: false
-        };
-
-        onAddQuote(newQuote);
+          templateId: selectedTemplateId !== "none" ? selectedTemplateId : undefined
+        } as Omit<Quote, "id">);
+        
+        // Reset form
+        setClientId("");
+        setClientInfoId("");
+        setDate("");
+        setDescription("");
+        setQuoteNumber("");
+        setQuoteMonth("");
+        setQuoteYear("");
+        setStatus("pending");
+        setExpiresAt("");
+        setNotes("");
+        setCommissionOverride("");
+        setBillingAddress("");
+        setServiceAddress("");
+        setSelectedBillingAddressId(null);
+        setSelectedServiceAddressId(null);
+        setSelectedTemplateId("none");
+        setQuoteItems([]);
         onOpenChange(false);
       }
     }
@@ -118,22 +141,11 @@ export const AddQuoteDialog = ({ open, onOpenChange, onAddQuote, clients, client
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[1400px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <div className="flex justify-between items-start">
-            <div>
-              <DialogTitle>Add New Quote</DialogTitle>
-              <DialogDescription>
-                Create a new quote for your client. Fill in the details below.
-              </DialogDescription>
-            </div>
-            
-            <QuoteDetailsSection
-              quoteNumber={quoteNumber}
-              onQuoteNumberChange={setQuoteNumber}
-              date={date}
-              onDateChange={setDate}
-              expiresAt={expiresAt}
-              onExpiresAtChange={setExpiresAt}
-            />
+          <div className="bg-muted/30 p-4 rounded-lg -mx-6 -mt-6 mb-6">
+            <DialogTitle>Add New Quote</DialogTitle>
+            <DialogDescription>
+              Create a new quote by filling out the details below.
+            </DialogDescription>
           </div>
         </DialogHeader>
         
@@ -142,6 +154,28 @@ export const AddQuoteDialog = ({ open, onOpenChange, onAddQuote, clients, client
           <div className="bg-muted/30 p-4 rounded-lg space-y-4">
             <h3 className="font-medium text-sm text-muted-foreground uppercase tracking-wide">Basic Information</h3>
             
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="date">Date</Label>
+                <Input
+                  id="date"
+                  type="date"
+                  value={date}
+                  onChange={(e) => setDate(e.target.value)}
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="expiresAt">Expires At</Label>
+                <Input
+                  id="expiresAt"
+                  type="date"
+                  value={expiresAt}
+                  onChange={(e) => setExpiresAt(e.target.value)}
+                />
+              </div>
+            </div>
+
             <div className="space-y-2">
               <Label htmlFor="description">Quote Name</Label>
               <Input
@@ -229,7 +263,7 @@ export const AddQuoteDialog = ({ open, onOpenChange, onAddQuote, clients, client
               selectedAddressId={selectedBillingAddressId || undefined}
               onAddressChange={handleBillingAddressChange}
               label="Billing Address"
-              autoSelectPrimary={true}
+              autoSelectPrimary={false}
             />
 
             <AddressSelector

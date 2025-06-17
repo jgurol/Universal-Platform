@@ -154,7 +154,9 @@ export const EditQuoteDialog = ({
   // Initialize template selection from quote
   useEffect(() => {
     if (quote && open) {
-      setSelectedTemplateId((quote as any).templateId || "none");
+      const templateId = (quote as any).templateId || "none";
+      console.log('EditQuoteDialog - Setting template ID:', templateId);
+      setSelectedTemplateId(templateId);
     }
   }, [quote, open]);
 
