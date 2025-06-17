@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Plus, Building2, Edit, Trash2, Globe, Mail, Phone } from "lucide-react";
+import { Plus, Building2, Edit, Trash2, Mail, Phone } from "lucide-react";
 import { useVendors } from "@/hooks/useVendors";
 import { AddVendorDialog } from "@/components/AddVendorDialog";
 import { EditVendorDialog } from "@/components/EditVendorDialog";
@@ -23,6 +23,19 @@ export const VendorsManagement = () => {
   const handleUpdateVendor = (vendorId: string, updates: Partial<Vendor>) => {
     updateVendor(vendorId, updates);
     setSelectedVendor(null);
+  };
+
+  const getSalesModelBadgeColor = (salesModel?: string) => {
+    switch (salesModel) {
+      case 'agent':
+        return 'bg-blue-100 text-blue-800';
+      case 'partner':
+        return 'bg-green-100 text-green-800';
+      case 'wholesale':
+        return 'bg-purple-100 text-purple-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
+    }
   };
 
   if (isLoading) {
@@ -71,9 +84,14 @@ export const VendorsManagement = () => {
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-1">
                       <h4 className="font-medium text-gray-900">{vendor.name}</h4>
-                      {vendor.contact_name && (
+                      {vendor.rep_name && (
                         <Badge variant="outline" className="text-xs">
-                          Contact: {vendor.contact_name}
+                          Rep: {vendor.rep_name}
+                        </Badge>
+                      )}
+                      {vendor.sales_model && (
+                        <Badge variant="outline" className={`text-xs ${getSalesModelBadgeColor(vendor.sales_model)}`}>
+                          {vendor.sales_model.charAt(0).toUpperCase() + vendor.sales_model.slice(1)}
                         </Badge>
                       )}
                     </div>
@@ -91,12 +109,6 @@ export const VendorsManagement = () => {
                         <div className="flex items-center gap-1">
                           <Phone className="h-3 w-3" />
                           {vendor.phone}
-                        </div>
-                      )}
-                      {vendor.website && (
-                        <div className="flex items-center gap-1">
-                          <Globe className="h-3 w-3" />
-                          {vendor.website}
                         </div>
                       )}
                     </div>

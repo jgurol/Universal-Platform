@@ -4,11 +4,10 @@ export interface Vendor {
   user_id: string;
   name: string;
   description?: string;
-  contact_name?: string;
+  rep_name?: string;
   email?: string;
   phone?: string;
-  address?: string;
-  website?: string;
+  sales_model?: 'agent' | 'partner' | 'wholesale';
   is_active: boolean;
   created_at: string;
   updated_at: string;

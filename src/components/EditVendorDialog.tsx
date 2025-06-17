@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Vendor } from "@/types/vendors";
 
 interface EditVendorDialogProps {
@@ -17,21 +18,19 @@ interface EditVendorDialogProps {
 export const EditVendorDialog = ({ open, onOpenChange, onUpdateVendor, vendor }: EditVendorDialogProps) => {
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
-  const [contactName, setContactName] = useState("");
+  const [repName, setRepName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
-  const [address, setAddress] = useState("");
-  const [website, setWebsite] = useState("");
+  const [salesModel, setSalesModel] = useState<'agent' | 'partner' | 'wholesale'>('agent');
 
   useEffect(() => {
     if (vendor) {
       setName(vendor.name);
       setDescription(vendor.description || "");
-      setContactName(vendor.contact_name || "");
+      setRepName(vendor.rep_name || "");
       setEmail(vendor.email || "");
       setPhone(vendor.phone || "");
-      setAddress(vendor.address || "");
-      setWebsite(vendor.website || "");
+      setSalesModel(vendor.sales_model || 'agent');
     }
   }, [vendor]);
 
@@ -41,11 +40,10 @@ export const EditVendorDialog = ({ open, onOpenChange, onUpdateVendor, vendor }:
       onUpdateVendor(vendor.id, {
         name,
         description: description || undefined,
-        contact_name: contactName || undefined,
+        rep_name: repName || undefined,
         email: email || undefined,
         phone: phone || undefined,
-        address: address || undefined,
-        website: website || undefined,
+        sales_model: salesModel,
       });
       
       onOpenChange(false);
@@ -90,12 +88,12 @@ export const EditVendorDialog = ({ open, onOpenChange, onUpdateVendor, vendor }:
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="edit-contactName">Contact Name</Label>
+              <Label htmlFor="edit-repName">Rep Name</Label>
               <Input
-                id="edit-contactName"
-                value={contactName}
-                onChange={(e) => setContactName(e.target.value)}
-                placeholder="Contact person"
+                id="edit-repName"
+                value={repName}
+                onChange={(e) => setRepName(e.target.value)}
+                placeholder="Representative name"
               />
             </div>
 
@@ -123,25 +121,18 @@ export const EditVendorDialog = ({ open, onOpenChange, onUpdateVendor, vendor }:
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="edit-website">Website</Label>
-              <Input
-                id="edit-website"
-                value={website}
-                onChange={(e) => setWebsite(e.target.value)}
-                placeholder="https://example.com"
-              />
+              <Label htmlFor="edit-salesModel">Sales Model</Label>
+              <Select value={salesModel} onValueChange={(value: 'agent' | 'partner' | 'wholesale') => setSalesModel(value)}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select sales model" />
+                </SelectTrigger>
+                <SelectContent className="bg-white z-50">
+                  <SelectItem value="agent">Agent</SelectItem>
+                  <SelectItem value="partner">Partner</SelectItem>
+                  <SelectItem value="wholesale">Wholesale</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="edit-address">Address</Label>
-            <Textarea
-              id="edit-address"
-              value={address}
-              onChange={(e) => setAddress(e.target.value)}
-              placeholder="Vendor address"
-              rows={2}
-            />
           </div>
           
           <div className="flex justify-end space-x-2 mt-6">

@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Vendor } from "@/types/vendors";
 
 interface AddVendorDialogProps {
@@ -16,11 +17,10 @@ interface AddVendorDialogProps {
 export const AddVendorDialog = ({ open, onOpenChange, onAddVendor }: AddVendorDialogProps) => {
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
-  const [contactName, setContactName] = useState("");
+  const [repName, setRepName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
-  const [address, setAddress] = useState("");
-  const [website, setWebsite] = useState("");
+  const [salesModel, setSalesModel] = useState<'agent' | 'partner' | 'wholesale'>('agent');
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -28,22 +28,20 @@ export const AddVendorDialog = ({ open, onOpenChange, onAddVendor }: AddVendorDi
       onAddVendor({
         name,
         description: description || undefined,
-        contact_name: contactName || undefined,
+        rep_name: repName || undefined,
         email: email || undefined,
         phone: phone || undefined,
-        address: address || undefined,
-        website: website || undefined,
+        sales_model: salesModel,
         is_active: true
       });
       
       // Reset form
       setName("");
       setDescription("");
-      setContactName("");
+      setRepName("");
       setEmail("");
       setPhone("");
-      setAddress("");
-      setWebsite("");
+      setSalesModel('agent');
       onOpenChange(false);
     }
   };
@@ -82,12 +80,12 @@ export const AddVendorDialog = ({ open, onOpenChange, onAddVendor }: AddVendorDi
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="contactName">Contact Name</Label>
+              <Label htmlFor="repName">Rep Name</Label>
               <Input
-                id="contactName"
-                value={contactName}
-                onChange={(e) => setContactName(e.target.value)}
-                placeholder="Contact person"
+                id="repName"
+                value={repName}
+                onChange={(e) => setRepName(e.target.value)}
+                placeholder="Representative name"
               />
             </div>
 
@@ -115,25 +113,18 @@ export const AddVendorDialog = ({ open, onOpenChange, onAddVendor }: AddVendorDi
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="website">Website</Label>
-              <Input
-                id="website"
-                value={website}
-                onChange={(e) => setWebsite(e.target.value)}
-                placeholder="https://example.com"
-              />
+              <Label htmlFor="salesModel">Sales Model</Label>
+              <Select value={salesModel} onValueChange={(value: 'agent' | 'partner' | 'wholesale') => setSalesModel(value)}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select sales model" />
+                </SelectTrigger>
+                <SelectContent className="bg-white z-50">
+                  <SelectItem value="agent">Agent</SelectItem>
+                  <SelectItem value="partner">Partner</SelectItem>
+                  <SelectItem value="wholesale">Wholesale</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="address">Address</Label>
-            <Textarea
-              id="address"
-              value={address}
-              onChange={(e) => setAddress(e.target.value)}
-              placeholder="Vendor address"
-              rows={2}
-            />
           </div>
           
           <div className="flex justify-end space-x-2 mt-6">
