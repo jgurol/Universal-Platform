@@ -40,7 +40,7 @@ export const EditVendorDialog = ({ open, onOpenChange, onUpdateVendor, vendor }:
   const [repName, setRepName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
-  const [salesModel, setSalesModel] = useState<'agent' | 'partner' | 'wholesale'>('agent');
+  const [salesModel, setSalesModel] = useState<string>('agent');
   const [color, setColor] = useState('#3B82F6');
 
   useEffect(() => {
@@ -144,7 +144,7 @@ export const EditVendorDialog = ({ open, onOpenChange, onUpdateVendor, vendor }:
 
             <div className="space-y-2">
               <Label htmlFor="edit-salesModel">Sales Model</Label>
-              <Select value={salesModel} onValueChange={(value: 'agent' | 'partner' | 'wholesale') => setSalesModel(value)}>
+              <Select value={salesModel} onValueChange={(value: string) => setSalesModel(value)}>
                 <SelectTrigger>
                   <SelectValue placeholder="Select sales model" />
                 </SelectTrigger>

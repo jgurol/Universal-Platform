@@ -39,7 +39,7 @@ export const AddVendorDialog = ({ open, onOpenChange, onAddVendor }: AddVendorDi
   const [repName, setRepName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
-  const [salesModel, setSalesModel] = useState<'agent' | 'partner' | 'wholesale'>('agent');
+  const [salesModel, setSalesModel] = useState<string>('agent');
   const [color, setColor] = useState('#3B82F6');
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -136,7 +136,7 @@ export const AddVendorDialog = ({ open, onOpenChange, onAddVendor }: AddVendorDi
 
             <div className="space-y-2">
               <Label htmlFor="salesModel">Sales Model</Label>
-              <Select value={salesModel} onValueChange={(value: 'agent' | 'partner' | 'wholesale') => setSalesModel(value)}>
+              <Select value={salesModel} onValueChange={(value: string) => setSalesModel(value)}>
                 <SelectTrigger>
                   <SelectValue placeholder="Select sales model" />
                 </SelectTrigger>
