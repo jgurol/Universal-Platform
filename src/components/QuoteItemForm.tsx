@@ -55,7 +55,7 @@ export const QuoteItemForm = ({
                         <span className="text-xs text-gray-600">•</span>
                         <span className="text-xs text-gray-600">{item.charge_type}</span>
                         <span className="text-xs text-gray-600">•</span>
-                        <span className="text-xs text-green-600 font-medium">${item.price}</span>
+                        <span className="text-xs text-green-600 font-medium">${item.cost}</span>
                         <Badge variant="outline" className="text-xs whitespace-nowrap ml-auto">
                           Catalog
                         </Badge>
@@ -92,11 +92,11 @@ export const QuoteItemForm = ({
                         : "Select from carrier quotes"
                 } />
               </SelectTrigger>
-              <SelectContent className="bg-white z-50 min-w-[500px]">
+              <SelectContent className="bg-white z-50 min-w-[600px]">
                 {hasCarrierItems ? (
                   carrierQuoteItems.map((carrierItem) => (
                     <SelectItem key={`carrier-${carrierItem.id}`} value={`carrier-${carrierItem.id}`}>
-                      <div className="flex items-center gap-3 w-full min-w-0">
+                      <div className="flex items-center gap-3 w-full min-w-0 whitespace-nowrap">
                         <span className="font-medium text-sm">{carrierItem.carrier}</span>
                         <span className="text-xs text-gray-600">•</span>
                         <span className="text-xs text-gray-600">{carrierItem.type}</span>
