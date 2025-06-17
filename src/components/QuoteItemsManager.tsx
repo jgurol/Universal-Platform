@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Label } from "@/components/ui/label";
 import { QuoteItemData } from "@/types/quoteItems";
@@ -67,93 +68,104 @@ export const QuoteItemsManager = ({ items, onItemsChange, clientInfoId }: QuoteI
   const { addresses, addAddress } = useClientAddresses(clientInfoId || null);
   const { carrierQuoteItems } = useCarrierQuoteItems(clientInfoId || null);
   const [selectedItemId, setSelectedItemId] = useState("");
+  const [isAddingCarrierItem, setIsAddingCarrierItem] = useState(false);
 
   const addItem = async () => {
     if (!selectedItemId) return;
     
     // Handle carrier quote items
     if (selectedItemId.startsWith('carrier-')) {
-      const carrierQuoteId = selectedItemId.replace('carrier-', '');
-      const carrierItem = carrierQuoteItems.find(item => item.id === carrierQuoteId);
+      setIsAddingCarrierItem(true);
       
-      if (carrierItem && clientInfoId) {
-        // Parse the location into address components
-        const parsedAddress = parseLocationToAddress(carrierItem.location);
+      try {
+        const carrierQuoteId = selectedItemId.replace('carrier-', '');
+        const carrierItem = carrierQuoteItems.find(item => item.id === carrierQuoteId);
         
-        // Check if a similar address already exists
-        let matchingAddress = addresses.find(addr => 
-          addr.city.toLowerCase() === parsedAddress.city.toLowerCase() &&
-          addr.state.toLowerCase() === parsedAddress.state.toLowerCase()
-        );
+        if (carrierItem && clientInfoId) {
+          // Parse the location into address components
+          const parsedAddress = parseLocationToAddress(carrierItem.location);
+          
+          // Check if a similar address already exists
+          let matchingAddress = addresses.find(addr => 
+            addr.city.toLowerCase() === parsedAddress.city.toLowerCase() &&
+            addr.state.toLowerCase() === parsedAddress.state.toLowerCase()
+          );
 
-        // If address doesn't exist, create a new one with parsed components
-        if (!matchingAddress && carrierItem.location.trim()) {
-          try {
-            const newAddressData = {
-              client_info_id: clientInfoId,
-              address_type: 'service',
-              street_address: parsedAddress.street_address || carrierItem.location,
-              city: parsedAddress.city,
-              state: parsedAddress.state,
-              zip_code: parsedAddress.zip_code,
-              country: 'United States',
-              is_primary: addresses.length === 0 // Make it primary if it's the first address
-            };
+          // If address doesn't exist, create a new one with parsed components
+          if (!matchingAddress && carrierItem.location.trim()) {
+            try {
+              const newAddressData = {
+                client_info_id: clientInfoId,
+                address_type: 'service',
+                street_address: parsedAddress.street_address || carrierItem.location,
+                city: parsedAddress.city,
+                state: parsedAddress.state,
+                zip_code: parsedAddress.zip_code,
+                country: 'United States',
+                is_primary: addresses.length === 0 // Make it primary if it's the first address
+              };
 
-            console.log('[QuoteItemsManager] Creating new address with parsed components:', newAddressData);
-            // Await the address creation and use the returned address
-            const newAddress = await addAddress(newAddressData);
-            matchingAddress = newAddress;
-            console.log('[QuoteItemsManager] Address creation completed, new address:', newAddress);
-          } catch (error) {
-            console.error('Error creating address for carrier location:', error);
-            // Continue without address if creation fails
+              console.log('[QuoteItemsManager] Creating new address with parsed components:', newAddressData);
+              // Await the address creation and use the returned address
+              const newAddress = await addAddress(newAddressData);
+              matchingAddress = newAddress;
+              console.log('[QuoteItemsManager] Address creation completed, new address:', newAddress);
+            } catch (error) {
+              console.error('Error creating address for carrier location:', error);
+              // Continue without address if creation fails
+            }
           }
-        }
 
-        // If still no matching address, use the first available address
-        if (!matchingAddress && addresses.length > 0) {
-          matchingAddress = addresses[0];
-        }
+          // If still no matching address, use the first available address
+          if (!matchingAddress && addresses.length > 0) {
+            matchingAddress = addresses[0];
+          }
 
-        // Create a temporary quote item for the carrier quote (no database item needed)
-        // Build description without location or term - only include notes
-        const descriptionParts = [];
-        if (carrierItem.notes) {
-          descriptionParts.push(`Notes: ${carrierItem.notes}`);
-        }
+          // Create a temporary quote item for the carrier quote (no database item needed)
+          // Build description without location or term - only include notes
+          const descriptionParts = [];
+          if (carrierItem.notes) {
+            descriptionParts.push(`Notes: ${carrierItem.notes}`);
+          }
 
-        const quoteItem: QuoteItemData = {
-          id: `temp-carrier-${Date.now()}`,
-          item_id: `carrier-${carrierItem.id}`, // Use a special ID format for carrier items
-          quantity: 1,
-          unit_price: 0, // Leave sell price blank
-          cost_override: carrierItem.price, // Populate cost with carrier price
-          total_price: 0, // Will be 0 since unit_price is 0
-          charge_type: 'MRC',
-          address_id: matchingAddress?.id,
-          name: `${carrierItem.carrier} - ${carrierItem.type} - ${carrierItem.speed}`,
-          description: descriptionParts.join(' | '), // Only include notes, no location or term
-          item: {
-            id: `carrier-${carrierItem.id}`,
-            user_id: '',
+          const quoteItem: QuoteItemData = {
+            id: `temp-carrier-${Date.now()}`,
+            item_id: `carrier-${carrierItem.id}`, // Use a special ID format for carrier items
+            quantity: 1,
+            unit_price: 0, // Leave sell price blank
+            cost_override: carrierItem.price, // Populate cost with carrier price
+            total_price: 0, // Will be 0 since unit_price is 0
+            charge_type: 'MRC',
+            address_id: matchingAddress?.id,
             name: `${carrierItem.carrier} - ${carrierItem.type} - ${carrierItem.speed}`,
             description: descriptionParts.join(' | '), // Only include notes, no location or term
-            price: 0,
-            cost: carrierItem.price,
-            charge_type: 'MRC',
-            is_active: true,
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString()
-          },
-          address: matchingAddress
-        };
+            item: {
+              id: `carrier-${carrierItem.id}`,
+              user_id: '',
+              name: `${carrierItem.carrier} - ${carrierItem.type} - ${carrierItem.speed}`,
+              description: descriptionParts.join(' | '), // Only include notes, no location or term
+              price: 0,
+              cost: carrierItem.price,
+              charge_type: 'MRC',
+              is_active: true,
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString()
+            },
+            address: matchingAddress
+          };
 
-        // Just add to the items list, don't trigger any save
-        onItemsChange([...items, quoteItem]);
-        setSelectedItemId("");
-        return;
+          // Add to items list without triggering unwanted side effects
+          const newItems = [...items, quoteItem];
+          onItemsChange(newItems);
+          setSelectedItemId("");
+          console.log('[QuoteItemsManager] Successfully added carrier item without triggering save');
+        }
+      } catch (error) {
+        console.error('[QuoteItemsManager] Error adding carrier item:', error);
+      } finally {
+        setIsAddingCarrierItem(false);
       }
+      return;
     }
     
     // Handle regular items
@@ -175,7 +187,7 @@ export const QuoteItemsManager = ({ items, onItemsChange, clientInfoId }: QuoteI
       address: addresses.length > 0 ? addresses[0] : undefined
     };
 
-    // Just add to the items list, don't trigger any save
+    // Add to the items list
     onItemsChange([...items, newItem]);
     setSelectedItemId("");
   };
@@ -224,9 +236,9 @@ export const QuoteItemsManager = ({ items, onItemsChange, clientInfoId }: QuoteI
         selectedItemId={selectedItemId}
         onSelectedItemIdChange={setSelectedItemId}
         availableItems={availableItems}
-        isLoading={isLoading}
+        isLoading={isLoading || isAddingCarrierItem}
         onAddItem={addItem}
-        disabled={!selectedItemId || !clientInfoId}
+        disabled={!selectedItemId || !clientInfoId || isAddingCarrierItem}
         clientInfoId={clientInfoId}
       />
 
