@@ -1,10 +1,10 @@
-
 import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { AddressAutocomplete } from "@/components/AddressAutocomplete";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
 
@@ -20,6 +20,14 @@ interface ClientOption {
   contact_name: string | null;
 }
 
+interface AddressData {
+  street_address: string;
+  city: string;
+  state: string;
+  zip_code: string;
+  country: string;
+}
+
 export const AddCircuitQuoteDialog = ({ open, onOpenChange, onAddQuote }: AddCircuitQuoteDialogProps) => {
   const [clientId, setClientId] = useState("");
   const [location, setLocation] = useState("");
@@ -27,6 +35,7 @@ export const AddCircuitQuoteDialog = ({ open, onOpenChange, onAddQuote }: AddCir
   const [status, setStatus] = useState<"new_pricing" | "researching" | "completed" | "ready_for_review" | "sent_to_customer">("new_pricing");
   const [clients, setClients] = useState<ClientOption[]>([]);
   const [isLoadingClients, setIsLoadingClients] = useState(false);
+  const [validatedAddress, setValidatedAddress] = useState<AddressData | null>(null);
   const { user } = useAuth();
 
   useEffect(() => {
@@ -58,17 +67,25 @@ export const AddCircuitQuoteDialog = ({ open, onOpenChange, onAddQuote }: AddCir
     }
   };
 
+  const handleAddressSelect = (address: AddressData) => {
+    setValidatedAddress(address);
+    // Format the address for display
+    const formattedLocation = `${address.city}, ${address.state}`;
+    setLocation(formattedLocation);
+  };
+
   const resetForm = () => {
     setClientId("");
     setLocation("");
     setSuite("");
     setStatus("new_pricing");
+    setValidatedAddress(null);
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (clientId && location) {
+    if (clientId && location && validatedAddress) {
       const selectedClient = clients.find(c => c.id === clientId);
       const clientName = selectedClient ? 
         (selectedClient.company_name || selectedClient.contact_name) : 
@@ -115,14 +132,17 @@ export const AddCircuitQuoteDialog = ({ open, onOpenChange, onAddQuote }: AddCir
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="location">Location (Required)</Label>
-            <Input
-              id="location"
-              value={location}
-              onChange={(e) => setLocation(e.target.value)}
-              placeholder="Enter location (e.g., City, State)"
+            <AddressAutocomplete
+              label="Location (Required)"
+              placeholder="Start typing a city and state..."
+              onAddressSelect={handleAddressSelect}
               required
             />
+            {!validatedAddress && location && (
+              <p className="text-sm text-orange-600">
+                Please select a valid location from the dropdown suggestions.
+              </p>
+            )}
           </div>
 
           <div className="space-y-2">
@@ -155,7 +175,11 @@ export const AddCircuitQuoteDialog = ({ open, onOpenChange, onAddQuote }: AddCir
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               Cancel
             </Button>
-            <Button type="submit" className="bg-purple-600 hover:bg-purple-700">
+            <Button 
+              type="submit" 
+              className="bg-purple-600 hover:bg-purple-700"
+              disabled={!clientId || !location || !validatedAddress}
+            >
               Create Quote
             </Button>
           </div>
