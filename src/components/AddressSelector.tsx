@@ -24,20 +24,28 @@ export const AddressSelector = ({
   const { addresses } = useClientAddresses(clientInfoId);
   const [useCustom, setUseCustom] = useState(false);
   const [customAddress, setCustomAddress] = useState("");
-  const [localSelectedId, setLocalSelectedId] = useState<string | null>(null);
+  const [internalSelectedId, setInternalSelectedId] = useState<string | null>(null);
 
-  // Initialize local state from props
+  // Sync internal state with external props
   useEffect(() => {
-    setLocalSelectedId(selectedAddressId || null);
-  }, [selectedAddressId]);
+    if (selectedAddressId && selectedAddressId !== internalSelectedId) {
+      setInternalSelectedId(selectedAddressId);
+      setUseCustom(false);
+      console.log('AddressSelector - Synced with external selectedAddressId:', { 
+        label, 
+        selectedAddressId,
+        internalSelectedId 
+      });
+    }
+  }, [selectedAddressId, internalSelectedId, label]);
 
   // Auto-select primary address only when explicitly requested AND when addresses load
   useEffect(() => {
-    if (autoSelectPrimary && addresses.length > 0 && !localSelectedId && !useCustom) {
+    if (autoSelectPrimary && addresses.length > 0 && !internalSelectedId && !useCustom && !selectedAddressId) {
       const primaryAddress = addresses.find(addr => addr.is_primary);
       if (primaryAddress) {
         const formattedAddress = `${primaryAddress.street_address}${primaryAddress.street_address_2 ? `, ${primaryAddress.street_address_2}` : ''}, ${primaryAddress.city}, ${primaryAddress.state} ${primaryAddress.zip_code}`;
-        setLocalSelectedId(primaryAddress.id);
+        setInternalSelectedId(primaryAddress.id);
         onAddressChange(primaryAddress.id, formattedAddress);
         console.log('AddressSelector - Auto-selected primary address:', { 
           label, 
@@ -46,22 +54,24 @@ export const AddressSelector = ({
         });
       }
     }
-  }, [addresses, autoSelectPrimary, localSelectedId, useCustom, onAddressChange, label]);
+  }, [addresses, autoSelectPrimary, internalSelectedId, useCustom, selectedAddressId, onAddressChange, label]);
 
   const handleAddressSelect = (addressId: string) => {
+    console.log('AddressSelector - Address selected:', { label, addressId });
+    
     if (addressId === "custom") {
       setUseCustom(true);
-      setLocalSelectedId(null);
+      setInternalSelectedId(null);
       onAddressChange(null, "");
     } else if (addressId === "none") {
       setUseCustom(false);
       setCustomAddress("");
-      setLocalSelectedId(null);
+      setInternalSelectedId(null);
       onAddressChange(null, "");
       console.log('AddressSelector - Cleared address:', { label });
     } else {
       setUseCustom(false);
-      setLocalSelectedId(addressId);
+      setInternalSelectedId(addressId);
       const selectedAddress = addresses.find(addr => addr.id === addressId);
       if (selectedAddress) {
         const formattedAddress = `${selectedAddress.street_address}${selectedAddress.street_address_2 ? `, ${selectedAddress.street_address_2}` : ''}, ${selectedAddress.city}, ${selectedAddress.state} ${selectedAddress.zip_code}`;
@@ -69,7 +79,8 @@ export const AddressSelector = ({
         console.log('AddressSelector - Selected address:', { 
           label, 
           addressId, 
-          address: formattedAddress 
+          address: formattedAddress,
+          internalSelectedId: addressId
         });
       }
     }
@@ -84,9 +95,25 @@ export const AddressSelector = ({
   // Get the current display value for the select
   const getSelectValue = () => {
     if (useCustom) return "custom";
-    if (localSelectedId && addresses.find(addr => addr.id === localSelectedId)) {
-      return localSelectedId;
+    
+    // Use the internal selected ID or fall back to the prop
+    const currentSelectedId = internalSelectedId || selectedAddressId;
+    
+    if (currentSelectedId && addresses.find(addr => addr.id === currentSelectedId)) {
+      console.log('AddressSelector - Returning select value:', { 
+        label, 
+        currentSelectedId, 
+        internalSelectedId, 
+        selectedAddressId 
+      });
+      return currentSelectedId;
     }
+    
+    console.log('AddressSelector - No address selected, returning "none":', { 
+      label, 
+      currentSelectedId, 
+      addressesCount: addresses.length 
+    });
     return "none";
   };
 
@@ -98,6 +125,9 @@ export const AddressSelector = ({
       </div>
     );
   }
+
+  const selectValue = getSelectValue();
+  console.log('AddressSelector - Rendering with value:', { label, selectValue, addresses: addresses.length });
 
   return (
     <div className="space-y-2">
@@ -111,7 +141,7 @@ export const AddressSelector = ({
           onClick={() => {
             setUseCustom(false);
             setCustomAddress("");
-            if (!localSelectedId) {
+            if (!internalSelectedId && !selectedAddressId) {
               onAddressChange(null, "");
             }
           }}
@@ -130,7 +160,7 @@ export const AddressSelector = ({
 
       {!useCustom ? (
         <Select 
-          value={getSelectValue()} 
+          value={selectValue} 
           onValueChange={handleAddressSelect}
         >
           <SelectTrigger>
