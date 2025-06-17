@@ -6,6 +6,7 @@ import { Plus, Building2, Edit, Trash2, Mail, Phone } from "lucide-react";
 import { useVendors } from "@/hooks/useVendors";
 import { AddVendorDialog } from "@/components/AddVendorDialog";
 import { EditVendorDialog } from "@/components/EditVendorDialog";
+import { VendorPriceSheetsList } from "@/components/VendorPriceSheetsList";
 import { Badge } from "@/components/ui/badge";
 import { Vendor } from "@/types/vendors";
 
@@ -49,7 +50,7 @@ export const VendorsManagement = () => {
   }
 
   return (
-    <>
+    <div className="space-y-6">
       <Card>
         <CardHeader>
           <div className="flex items-center justify-between">
@@ -134,6 +135,8 @@ export const VendorsManagement = () => {
         </CardContent>
       </Card>
 
+      <VendorPriceSheetsList />
+
       <AddVendorDialog
         open={isAddVendorOpen}
         onOpenChange={setIsAddVendorOpen}
@@ -146,6 +149,6 @@ export const VendorsManagement = () => {
         onUpdateVendor={handleUpdateVendor}
         vendor={selectedVendor}
       />
-    </>
+    </div>
   );
 };

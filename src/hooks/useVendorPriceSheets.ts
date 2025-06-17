@@ -1,0 +1,179 @@
+
+import { useState, useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/context/AuthContext";
+import { useToast } from "@/hooks/use-toast";
+import { VendorPriceSheet } from "@/types/vendorPriceSheets";
+
+export const useVendorPriceSheets = () => {
+  const [priceSheets, setPriceSheets] = useState<VendorPriceSheet[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const { user } = useAuth();
+  const { toast } = useToast();
+
+  const fetchPriceSheets = async () => {
+    if (!user) return;
+    
+    try {
+      setIsLoading(true);
+      const { data, error } = await supabase
+        .from('vendor_price_sheets')
+        .select('*')
+        .order('uploaded_at', { ascending: false });
+
+      if (error) {
+        console.error('Error fetching price sheets:', error);
+        toast({
+          title: "Error",
+          description: "Failed to fetch price sheets",
+          variant: "destructive"
+        });
+      } else {
+        setPriceSheets(data || []);
+      }
+    } catch (err) {
+      console.error('Error in fetchPriceSheets:', err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const uploadPriceSheet = async (file: File, name: string, vendorId?: string) => {
+    if (!user) return;
+
+    try {
+      // Create file path with user ID folder
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${Date.now()}.${fileExt}`;
+      const filePath = `${user.id}/${fileName}`;
+
+      // Upload file to storage
+      const { error: uploadError } = await supabase.storage
+        .from('vendor-price-sheets')
+        .upload(filePath, file);
+
+      if (uploadError) {
+        throw uploadError;
+      }
+
+      // Save metadata to database
+      const { data, error: dbError } = await supabase
+        .from('vendor_price_sheets')
+        .insert({
+          user_id: user.id,
+          vendor_id: vendorId || null,
+          name,
+          file_name: file.name,
+          file_path: filePath,
+          file_size: file.size,
+          file_type: file.type
+        })
+        .select('*')
+        .single();
+
+      if (dbError) {
+        throw dbError;
+      }
+
+      setPriceSheets(prev => [data, ...prev]);
+      toast({
+        title: "Price sheet uploaded",
+        description: `${name} has been uploaded successfully.`,
+      });
+
+      return data;
+    } catch (error) {
+      console.error('Error uploading price sheet:', error);
+      toast({
+        title: "Upload failed",
+        description: "Failed to upload price sheet",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const deletePriceSheet = async (priceSheetId: string) => {
+    if (!user) return;
+
+    try {
+      const priceSheet = priceSheets.find(ps => ps.id === priceSheetId);
+      if (!priceSheet) return;
+
+      // Delete file from storage
+      const { error: storageError } = await supabase.storage
+        .from('vendor-price-sheets')
+        .remove([priceSheet.file_path]);
+
+      if (storageError) {
+        console.error('Storage deletion error:', storageError);
+      }
+
+      // Delete metadata from database
+      const { error: dbError } = await supabase
+        .from('vendor_price_sheets')
+        .delete()
+        .eq('id', priceSheetId);
+
+      if (dbError) {
+        throw dbError;
+      }
+
+      setPriceSheets(prev => prev.filter(ps => ps.id !== priceSheetId));
+      toast({
+        title: "Price sheet deleted",
+        description: "Price sheet has been deleted successfully.",
+      });
+    } catch (error) {
+      console.error('Error deleting price sheet:', error);
+      toast({
+        title: "Delete failed",
+        description: "Failed to delete price sheet",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const downloadPriceSheet = async (priceSheet: VendorPriceSheet) => {
+    try {
+      const { data, error } = await supabase.storage
+        .from('vendor-price-sheets')
+        .download(priceSheet.file_path);
+
+      if (error) {
+        throw error;
+      }
+
+      // Create download link
+      const url = window.URL.createObjectURL(data);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = priceSheet.file_name;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+    } catch (error) {
+      console.error('Error downloading price sheet:', error);
+      toast({
+        title: "Download failed",
+        description: "Failed to download price sheet",
+        variant: "destructive"
+      });
+    }
+  };
+
+  useEffect(() => {
+    if (user) {
+      fetchPriceSheets();
+    }
+  }, [user]);
+
+  return {
+    priceSheets,
+    isLoading,
+    uploadPriceSheet,
+    deletePriceSheet,
+    downloadPriceSheet,
+    fetchPriceSheets
+  };
+};
