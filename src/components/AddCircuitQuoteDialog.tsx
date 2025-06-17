@@ -5,20 +5,19 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { CircuitQuote } from "@/components/CircuitQuotesManagement";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
 
 interface AddCircuitQuoteDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onAddQuote: (quote: Omit<CircuitQuote, "id">) => void;
+  onAddQuote: (quote: any) => void;
 }
 
 interface ClientOption {
   id: string;
-  name: string;
-  companyName: string | null;
+  company_name: string;
+  contact_name: string | null;
 }
 
 export const AddCircuitQuoteDialog = ({ open, onOpenChange, onAddQuote }: AddCircuitQuoteDialogProps) => {
@@ -28,7 +27,7 @@ export const AddCircuitQuoteDialog = ({ open, onOpenChange, onAddQuote }: AddCir
   const [status, setStatus] = useState<"researching" | "quoted" | "published">("researching");
   const [clients, setClients] = useState<ClientOption[]>([]);
   const [isLoadingClients, setIsLoadingClients] = useState(false);
-  const { user, isAdmin } = useAuth();
+  const { user } = useAuth();
 
   useEffect(() => {
     if (open) {
@@ -41,7 +40,6 @@ export const AddCircuitQuoteDialog = ({ open, onOpenChange, onAddQuote }: AddCir
     
     setIsLoadingClients(true);
     try {
-      // Fetch from client_info table for actual clients
       const { data: clientInfoData, error: clientInfoError } = await supabase
         .from('client_info')
         .select('id, company_name, contact_name')
@@ -52,14 +50,7 @@ export const AddCircuitQuoteDialog = ({ open, onOpenChange, onAddQuote }: AddCir
         return;
       }
 
-      // Map client_info data to ClientOption format
-      const clientOptions: ClientOption[] = (clientInfoData || []).map(client => ({
-        id: client.id,
-        name: client.contact_name || client.company_name,
-        companyName: client.company_name
-      }));
-
-      setClients(clientOptions);
+      setClients(clientInfoData || []);
     } catch (error) {
       console.error('Error fetching clients:', error);
     } finally {
@@ -80,20 +71,15 @@ export const AddCircuitQuoteDialog = ({ open, onOpenChange, onAddQuote }: AddCir
     if (clientId && location) {
       const selectedClient = clients.find(c => c.id === clientId);
       const clientName = selectedClient ? 
-        (selectedClient.companyName || selectedClient.name) : 
+        (selectedClient.company_name || selectedClient.contact_name) : 
         "Unknown Client";
 
       onAddQuote({
-        client: clientName,
+        client_info_id: clientId,
+        client_name: clientName,
         location,
         suite,
-        creationDate: new Date().toLocaleDateString('en-US', { 
-          year: 'numeric', 
-          month: 'short', 
-          day: 'numeric' 
-        }),
-        status,
-        carriers: []
+        status
       });
       
       resetForm();
@@ -121,7 +107,7 @@ export const AddCircuitQuoteDialog = ({ open, onOpenChange, onAddQuote }: AddCir
               <SelectContent className="bg-white z-50">
                 {clients.map((client) => (
                   <SelectItem key={client.id} value={client.id}>
-                    {client.companyName || client.name}
+                    {client.company_name || client.contact_name}
                   </SelectItem>
                 ))}
               </SelectContent>

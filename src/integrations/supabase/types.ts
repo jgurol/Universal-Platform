@@ -51,6 +51,56 @@ export type Database = {
         }
         Relationships: []
       }
+      carrier_quotes: {
+        Row: {
+          carrier: string
+          circuit_quote_id: string
+          color: string
+          created_at: string
+          id: string
+          notes: string | null
+          price: number
+          speed: string
+          term: string | null
+          type: string
+          updated_at: string
+        }
+        Insert: {
+          carrier: string
+          circuit_quote_id: string
+          color?: string
+          created_at?: string
+          id?: string
+          notes?: string | null
+          price: number
+          speed: string
+          term?: string | null
+          type: string
+          updated_at?: string
+        }
+        Update: {
+          carrier?: string
+          circuit_quote_id?: string
+          color?: string
+          created_at?: string
+          id?: string
+          notes?: string | null
+          price?: number
+          speed?: string
+          term?: string | null
+          type?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "carrier_quotes_circuit_quote_id_fkey"
+            columns: ["circuit_quote_id"]
+            isOneToOne: false
+            referencedRelation: "circuit_quotes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       categories: {
         Row: {
           created_at: string
@@ -127,6 +177,50 @@ export type Database = {
             columns: ["circuit_tracking_id"]
             isOneToOne: false
             referencedRelation: "circuit_tracking"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      circuit_quotes: {
+        Row: {
+          client_info_id: string | null
+          client_name: string
+          created_at: string
+          id: string
+          location: string
+          status: string
+          suite: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          client_info_id?: string | null
+          client_name: string
+          created_at?: string
+          id?: string
+          location: string
+          status?: string
+          suite?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          client_info_id?: string | null
+          client_name?: string
+          created_at?: string
+          id?: string
+          location?: string
+          status?: string
+          suite?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "circuit_quotes_client_info_id_fkey"
+            columns: ["client_info_id"]
+            isOneToOne: false
+            referencedRelation: "client_info"
             referencedColumns: ["id"]
           },
         ]

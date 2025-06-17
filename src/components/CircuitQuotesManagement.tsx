@@ -1,123 +1,65 @@
 
-import { useState, useEffect } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { useState } from "react";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Badge } from "@/components/ui/badge";
-import { Plus, Search, Building, MapPin, Zap, DollarSign } from "lucide-react";
+import { Plus, Search, Building, DollarSign, Zap, Loader2 } from "lucide-react";
 import { AddCircuitQuoteDialog } from "@/components/AddCircuitQuoteDialog";
 import { CircuitQuoteCard } from "@/components/CircuitQuoteCard";
+import { useCircuitQuotes } from "@/hooks/useCircuitQuotes";
 
-export interface CircuitQuote {
-  id: string;
-  client: string;
-  location: string;
-  suite: string;
-  creationDate: string;
-  carriers: CarrierQuote[];
-  status: 'researching' | 'quoted' | 'published';
-}
-
-export interface CarrierQuote {
-  id: string;
-  carrier: string;
-  type: string;
-  speed: string;
-  price: number;
-  notes: string;
-  term: string;
-  color: string;
-}
+// Re-export interfaces for backward compatibility
+export type { CircuitQuote, CarrierQuote } from "@/hooks/useCircuitQuotes";
 
 export const CircuitQuotesManagement = () => {
-  const [quotes, setQuotes] = useState<CircuitQuote[]>([]);
+  const { 
+    quotes, 
+    loading, 
+    addQuote, 
+    updateQuote, 
+    addCarrierQuote, 
+    updateCarrierQuote, 
+    deleteCarrierQuote 
+  } = useCircuitQuotes();
+  
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
 
-  // Sample data similar to the Monday.com structure shown in the image
-  useEffect(() => {
-    const sampleQuotes: CircuitQuote[] = [
-      {
-        id: "1",
-        client: "Valley Eye Center Surgical Medical Group",
-        location: "Westlake Village, CA",
-        suite: "120",
-        creationDate: "May 13, 2025",
-        status: "researching",
-        carriers: [
-          {
-            id: "1",
-            carrier: "Frontier",
-            type: "Broadband",
-            speed: "2Gx2G",
-            price: 143.99,
-            notes: "36 months; Pricing includes 5 static IP",
-            term: "36 months",
-            color: "bg-green-100 text-green-800"
-          },
-          {
-            id: "2",
-            carrier: "Frontier",
-            type: "Fiber",
-            speed: "50x50M",
-            price: 340,
-            notes: "36 Months",
-            term: "36 months",
-            color: "bg-green-100 text-green-800"
-          },
-          {
-            id: "3",
-            carrier: "Frontier",
-            type: "Fiber",
-            speed: "100x100M",
-            price: 400,
-            notes: "36 Months",
-            term: "36 months",
-            color: "bg-green-100 text-green-800"
-          },
-          {
-            id: "4",
-            carrier: "Geolinks",
-            type: "Fixed Wireless",
-            speed: "30x30M",
-            price: 310,
-            notes: "36 mo; Includes 1 static IP",
-            term: "36 months",
-            color: "bg-purple-100 text-purple-800"
-          },
-          {
-            id: "5",
-            carrier: "Geolinks",
-            type: "Fixed Wireless",
-            speed: "50x50M",
-            price: 325,
-            notes: "36 mo; Includes 1 static IP",
-            term: "36 months",
-            color: "bg-purple-100 text-purple-800"
-          }
-        ]
-      }
-    ];
-    setQuotes(sampleQuotes);
-  }, []);
-
   const filteredQuotes = quotes.filter(quote => {
-    const matchesSearch = quote.client.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    const matchesSearch = quote.client_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          quote.location.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = statusFilter === "all" || quote.status === statusFilter;
     return matchesSearch && matchesStatus;
   });
 
-  const addQuote = (newQuote: Omit<CircuitQuote, "id">) => {
-    const quote: CircuitQuote = {
-      ...newQuote,
-      id: Date.now().toString()
+  const handleUpdateQuote = (updatedQuote: any) => {
+    // Transform the quote to match database format
+    const quoteForUpdate = {
+      ...updatedQuote,
+      client_name: updatedQuote.client || updatedQuote.client_name,
+      created_at: updatedQuote.creationDate || updatedQuote.created_at
     };
-    setQuotes(prev => [quote, ...prev]);
+    updateQuote(quoteForUpdate);
   };
+
+  const handleAddCarrier = (quoteId: string, carrierData: any) => {
+    addCarrierQuote(quoteId, carrierData);
+  };
+
+  const handleUpdateCarrier = (carrierData: any) => {
+    updateCarrierQuote(carrierData);
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-8">
+        <Loader2 className="h-8 w-8 animate-spin" />
+        <span className="ml-2">Loading circuit quotes...</span>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -225,10 +167,15 @@ export const CircuitQuotesManagement = () => {
           filteredQuotes.map((quote) => (
             <CircuitQuoteCard
               key={quote.id}
-              quote={quote}
-              onUpdate={(updatedQuote) => {
-                setQuotes(prev => prev.map(q => q.id === updatedQuote.id ? updatedQuote : q));
+              quote={{
+                ...quote,
+                client: quote.client_name,
+                creationDate: quote.created_at
               }}
+              onUpdate={handleUpdateQuote}
+              onAddCarrier={(carrierData) => handleAddCarrier(quote.id, carrierData)}
+              onUpdateCarrier={handleUpdateCarrier}
+              onDeleteCarrier={deleteCarrierQuote}
             />
           ))
         )}

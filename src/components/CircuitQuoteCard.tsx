@@ -4,16 +4,28 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ChevronDown, ChevronRight, MapPin, Building, Calendar, Plus, Edit, Trash2 } from "lucide-react";
-import { CircuitQuote, CarrierQuote } from "@/components/CircuitQuotesManagement";
 import { AddCarrierQuoteDialog } from "@/components/AddCarrierQuoteDialog";
 import { EditCarrierQuoteDialog } from "@/components/EditCarrierQuoteDialog";
+import type { CircuitQuote, CarrierQuote } from "@/hooks/useCircuitQuotes";
 
 interface CircuitQuoteCardProps {
-  quote: CircuitQuote;
-  onUpdate: (quote: CircuitQuote) => void;
+  quote: CircuitQuote & {
+    client?: string;
+    creationDate?: string;
+  };
+  onUpdate: (quote: any) => void;
+  onAddCarrier?: (carrierQuote: Omit<CarrierQuote, "id" | "circuit_quote_id">) => void;
+  onUpdateCarrier?: (carrier: CarrierQuote) => void;
+  onDeleteCarrier?: (carrierId: string) => void;
 }
 
-export const CircuitQuoteCard = ({ quote, onUpdate }: CircuitQuoteCardProps) => {
+export const CircuitQuoteCard = ({ 
+  quote, 
+  onUpdate, 
+  onAddCarrier, 
+  onUpdateCarrier, 
+  onDeleteCarrier 
+}: CircuitQuoteCardProps) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const [isAddCarrierDialogOpen, setIsAddCarrierDialogOpen] = useState(false);
   const [isEditCarrierDialogOpen, setIsEditCarrierDialogOpen] = useState(false);
@@ -32,44 +44,64 @@ export const CircuitQuoteCard = ({ quote, onUpdate }: CircuitQuoteCardProps) => 
     }
   };
 
-  const addCarrierQuote = (carrierQuote: Omit<CarrierQuote, "id">) => {
-    const newCarrierQuote: CarrierQuote = {
-      ...carrierQuote,
-      id: Date.now().toString()
-    };
-    
-    const updatedQuote: CircuitQuote = {
-      ...quote,
-      carriers: [...quote.carriers, newCarrierQuote]
-    };
-    
-    onUpdate(updatedQuote);
+  const addCarrierQuote = (carrierQuote: Omit<CarrierQuote, "id" | "circuit_quote_id">) => {
+    if (onAddCarrier) {
+      onAddCarrier(carrierQuote);
+    } else {
+      // Fallback for backward compatibility
+      const newCarrierQuote: CarrierQuote = {
+        ...carrierQuote,
+        id: Date.now().toString(),
+        circuit_quote_id: quote.id
+      };
+      
+      const updatedQuote = {
+        ...quote,
+        carriers: [...quote.carriers, newCarrierQuote]
+      };
+      
+      onUpdate(updatedQuote);
+    }
   };
 
   const editCarrierQuote = (updatedCarrier: CarrierQuote) => {
-    const updatedQuote: CircuitQuote = {
-      ...quote,
-      carriers: quote.carriers.map(carrier => 
-        carrier.id === updatedCarrier.id ? updatedCarrier : carrier
-      )
-    };
-    
-    onUpdate(updatedQuote);
+    if (onUpdateCarrier) {
+      onUpdateCarrier(updatedCarrier);
+    } else {
+      // Fallback for backward compatibility
+      const updatedQuote = {
+        ...quote,
+        carriers: quote.carriers.map(carrier => 
+          carrier.id === updatedCarrier.id ? updatedCarrier : carrier
+        )
+      };
+      
+      onUpdate(updatedQuote);
+    }
   };
 
   const deleteCarrierQuote = (carrierId: string) => {
-    const updatedQuote: CircuitQuote = {
-      ...quote,
-      carriers: quote.carriers.filter(carrier => carrier.id !== carrierId)
-    };
-    
-    onUpdate(updatedQuote);
+    if (onDeleteCarrier) {
+      onDeleteCarrier(carrierId);
+    } else {
+      // Fallback for backward compatibility
+      const updatedQuote = {
+        ...quote,
+        carriers: quote.carriers.filter(carrier => carrier.id !== carrierId)
+      };
+      
+      onUpdate(updatedQuote);
+    }
   };
 
   const handleEditCarrier = (carrier: CarrierQuote) => {
     setEditingCarrier(carrier);
     setIsEditCarrierDialogOpen(true);
   };
+
+  // Support both client_name and client for backward compatibility
+  const clientName = quote.client_name || quote.client || 'Unknown Client';
+  const creationDate = quote.created_at || quote.creationDate || 'Unknown Date';
 
   return (
     <Card className="border-l-4 border-l-purple-500">
@@ -85,7 +117,7 @@ export const CircuitQuoteCard = ({ quote, onUpdate }: CircuitQuoteCardProps) => 
               {isExpanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
             </Button>
             <div>
-              <CardTitle className="text-lg">{quote.client}</CardTitle>
+              <CardTitle className="text-lg">{clientName}</CardTitle>
               <div className="flex items-center gap-4 text-sm text-gray-600 mt-1">
                 <div className="flex items-center gap-1">
                   <MapPin className="h-4 w-4" />
@@ -97,7 +129,7 @@ export const CircuitQuoteCard = ({ quote, onUpdate }: CircuitQuoteCardProps) => 
                 </div>
                 <div className="flex items-center gap-1">
                   <Calendar className="h-4 w-4" />
-                  {quote.creationDate}
+                  {creationDate}
                 </div>
               </div>
             </div>
