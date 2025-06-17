@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -9,6 +10,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { FileText, ExternalLink } from "lucide-react";
 import { useCarrierOptions } from "@/hooks/useCarrierOptions";
 import { useVendorPriceSheets } from "@/hooks/useVendorPriceSheets";
+import { useSpeeds } from "@/hooks/useSpeeds";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
@@ -29,13 +31,15 @@ interface AddCarrierQuoteDialogProps {
 export const AddCarrierQuoteDialog = ({ open, onOpenChange, onAddCarrier }: AddCarrierQuoteDialogProps) => {
   const [vendorId, setVendorId] = useState("");
   const [categoryId, setCategoryId] = useState("");
-  const [speed, setSpeed] = useState("");
+  const [speedId, setSpeedId] = useState("");
+  const [customSpeed, setCustomSpeed] = useState("");
   const [price, setPrice] = useState("");
   const [term, setTerm] = useState("");
   const [notes, setNotes] = useState("");
 
   const { vendors, categories, loading } = useCarrierOptions();
   const { priceSheets } = useVendorPriceSheets();
+  const { speeds, loading: speedsLoading } = useSpeeds();
   const { toast } = useToast();
 
   // Filter price sheets for the selected vendor
@@ -84,7 +88,9 @@ export const AddCarrierQuoteDialog = ({ open, onOpenChange, onAddCarrier }: AddC
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (vendorId && categoryId && speed) {
+    const selectedSpeed = speedId === "custom" ? customSpeed : speeds.find(s => s.id === speedId)?.name;
+    
+    if (vendorId && categoryId && selectedSpeed) {
       const selectedVendor = vendors.find(v => v.id === vendorId);
       const selectedCategory = categories.find(c => c.id === categoryId);
       
@@ -94,7 +100,7 @@ export const AddCarrierQuoteDialog = ({ open, onOpenChange, onAddCarrier }: AddC
       onAddCarrier({
         carrier: selectedVendor?.name || "",
         type: selectedCategory?.name || "",
-        speed,
+        speed: selectedSpeed,
         price: price ? parseFloat(price) : 0,
         term,
         notes,
@@ -104,7 +110,8 @@ export const AddCarrierQuoteDialog = ({ open, onOpenChange, onAddCarrier }: AddC
       // Reset form
       setVendorId("");
       setCategoryId("");
-      setSpeed("");
+      setSpeedId("");
+      setCustomSpeed("");
       setPrice("");
       setTerm("");
       setNotes("");
@@ -188,13 +195,33 @@ export const AddCarrierQuoteDialog = ({ open, onOpenChange, onAddCarrier }: AddC
 
           <div className="space-y-2">
             <Label htmlFor="speed">Speed (Required)</Label>
-            <Input
-              id="speed"
-              value={speed}
-              onChange={(e) => setSpeed(e.target.value)}
-              placeholder="e.g., 100x100M, 1Gx1G"
-              required
-            />
+            <Select value={speedId} onValueChange={setSpeedId} required>
+              <SelectTrigger>
+                <SelectValue placeholder={speedsLoading ? "Loading speeds..." : "Select speed"} />
+              </SelectTrigger>
+              <SelectContent className="bg-white z-50">
+                {speeds.map((speed) => (
+                  <SelectItem key={speed.id} value={speed.id}>
+                    <div className="flex flex-col">
+                      <span>{speed.name}</span>
+                      {speed.description && (
+                        <span className="text-xs text-gray-500">{speed.description}</span>
+                      )}
+                    </div>
+                  </SelectItem>
+                ))}
+                <SelectItem value="custom">Custom Speed</SelectItem>
+              </SelectContent>
+            </Select>
+            
+            {speedId === "custom" && (
+              <Input
+                value={customSpeed}
+                onChange={(e) => setCustomSpeed(e.target.value)}
+                placeholder="Enter custom speed (e.g., 250x250M)"
+                required
+              />
+            )}
           </div>
 
           <div className="space-y-2">
@@ -243,7 +270,7 @@ export const AddCarrierQuoteDialog = ({ open, onOpenChange, onAddCarrier }: AddC
             <Button 
               type="submit" 
               className="bg-purple-600 hover:bg-purple-700"
-              disabled={!vendorId || !categoryId || !speed || loading}
+              disabled={!vendorId || !categoryId || !speedId || loading || speedsLoading || (speedId === "custom" && !customSpeed)}
             >
               Add Carrier Quote
             </Button>

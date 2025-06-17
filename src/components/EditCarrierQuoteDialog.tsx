@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -10,6 +11,7 @@ import { FileText, ExternalLink } from "lucide-react";
 import { CarrierQuote } from "@/hooks/useCircuitQuotes";
 import { useCarrierOptions } from "@/hooks/useCarrierOptions";
 import { useVendorPriceSheets } from "@/hooks/useVendorPriceSheets";
+import { useSpeeds } from "@/hooks/useSpeeds";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
@@ -23,13 +25,15 @@ interface EditCarrierQuoteDialogProps {
 export const EditCarrierQuoteDialog = ({ open, onOpenChange, carrier, onUpdateCarrier }: EditCarrierQuoteDialogProps) => {
   const [vendorId, setVendorId] = useState("");
   const [categoryId, setCategoryId] = useState("");
-  const [speed, setSpeed] = useState("");
+  const [speedId, setSpeedId] = useState("");
+  const [customSpeed, setCustomSpeed] = useState("");
   const [price, setPrice] = useState("");
   const [term, setTerm] = useState("");
   const [notes, setNotes] = useState("");
 
   const { vendors, categories, loading } = useCarrierOptions();
   const { priceSheets } = useVendorPriceSheets();
+  const { speeds, loading: speedsLoading } = useSpeeds();
   const { toast } = useToast();
 
   // Filter price sheets for the selected vendor
@@ -76,24 +80,36 @@ export const EditCarrierQuoteDialog = ({ open, onOpenChange, carrier, onUpdateCa
   };
 
   useEffect(() => {
-    if (carrier && vendors.length > 0 && categories.length > 0) {
+    if (carrier && vendors.length > 0 && categories.length > 0 && speeds.length > 0) {
       // Find the vendor and category IDs based on the current names
       const foundVendor = vendors.find(v => v.name === carrier.carrier);
       const foundCategory = categories.find(c => c.name === carrier.type);
+      const foundSpeed = speeds.find(s => s.name === carrier.speed);
       
       setVendorId(foundVendor?.id || "");
       setCategoryId(foundCategory?.id || "");
-      setSpeed(carrier.speed);
+      
+      if (foundSpeed) {
+        setSpeedId(foundSpeed.id);
+        setCustomSpeed("");
+      } else {
+        // If speed is not in predefined options, treat as custom
+        setSpeedId("custom");
+        setCustomSpeed(carrier.speed);
+      }
+      
       setPrice(carrier.price > 0 ? carrier.price.toString() : "");
       setTerm(carrier.term);
       setNotes(carrier.notes);
     }
-  }, [carrier, vendors, categories]);
+  }, [carrier, vendors, categories, speeds]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (vendorId && categoryId && speed) {
+    const selectedSpeed = speedId === "custom" ? customSpeed : speeds.find(s => s.id === speedId)?.name;
+    
+    if (vendorId && categoryId && selectedSpeed) {
       const selectedVendor = vendors.find(v => v.id === vendorId);
       const selectedCategory = categories.find(c => c.id === categoryId);
       
@@ -104,7 +120,7 @@ export const EditCarrierQuoteDialog = ({ open, onOpenChange, carrier, onUpdateCa
         ...carrier,
         carrier: selectedVendor?.name || "",
         type: selectedCategory?.name || "",
-        speed,
+        speed: selectedSpeed,
         price: price ? parseFloat(price) : 0,
         term,
         notes,
@@ -190,13 +206,33 @@ export const EditCarrierQuoteDialog = ({ open, onOpenChange, carrier, onUpdateCa
 
           <div className="space-y-2">
             <Label htmlFor="speed">Speed (Required)</Label>
-            <Input
-              id="speed"
-              value={speed}
-              onChange={(e) => setSpeed(e.target.value)}
-              placeholder="e.g., 100x100M, 1Gx1G"
-              required
-            />
+            <Select value={speedId} onValueChange={setSpeedId} required>
+              <SelectTrigger>
+                <SelectValue placeholder={speedsLoading ? "Loading speeds..." : "Select speed"} />
+              </SelectTrigger>
+              <SelectContent className="bg-white z-50">
+                {speeds.map((speed) => (
+                  <SelectItem key={speed.id} value={speed.id}>
+                    <div className="flex flex-col">
+                      <span>{speed.name}</span>
+                      {speed.description && (
+                        <span className="text-xs text-gray-500">{speed.description}</span>
+                      )}
+                    </div>
+                  </SelectItem>
+                ))}
+                <SelectItem value="custom">Custom Speed</SelectItem>
+              </SelectContent>
+            </Select>
+            
+            {speedId === "custom" && (
+              <Input
+                value={customSpeed}
+                onChange={(e) => setCustomSpeed(e.target.value)}
+                placeholder="Enter custom speed (e.g., 250x250M)"
+                required
+              />
+            )}
           </div>
 
           <div className="space-y-2">
@@ -245,7 +281,7 @@ export const EditCarrierQuoteDialog = ({ open, onOpenChange, carrier, onUpdateCa
             <Button 
               type="submit" 
               className="bg-purple-600 hover:bg-purple-700"
-              disabled={!vendorId || !categoryId || !speed || loading}
+              disabled={!vendorId || !categoryId || !speedId || loading || speedsLoading || (speedId === "custom" && !customSpeed)}
             >
               Update Carrier Quote
             </Button>
