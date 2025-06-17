@@ -3,139 +3,240 @@ import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { FileText, Download, Trash2, Upload } from "lucide-react";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { FileText, Download, Trash2, Upload, Calendar, HardDrive } from "lucide-react";
 import { useVendorPriceSheets } from "@/hooks/useVendorPriceSheets";
-import { useVendors } from "@/hooks/useVendors";
 import { UploadPriceSheetDialog } from "@/components/UploadPriceSheetDialog";
-import { formatDistanceToNow } from "date-fns";
+import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
-export const VendorPriceSheetsList = () => {
+interface VendorPriceSheetsListProps {
+  vendorId?: string;
+  vendorName?: string;
+}
+
+export const VendorPriceSheetsList = ({ vendorId, vendorName }: VendorPriceSheetsListProps) => {
+  const { priceSheets, loading, uploadPriceSheet, deletePriceSheet } = useVendorPriceSheets(vendorId);
   const [isUploadDialogOpen, setIsUploadDialogOpen] = useState(false);
-  const { priceSheets, isLoading, uploadPriceSheet, deletePriceSheet, downloadPriceSheet } = useVendorPriceSheets();
-  const { vendors } = useVendors();
+  const { toast } = useToast();
 
-  const formatFileSize = (bytes?: number) => {
-    if (!bytes) return 'Unknown size';
+  const formatFileSize = (bytes: number | null): string => {
+    if (!bytes) return "Unknown size";
     const sizes = ['Bytes', 'KB', 'MB', 'GB'];
     if (bytes === 0) return '0 Bytes';
     const i = Math.floor(Math.log(bytes) / Math.log(1024));
     return Math.round(bytes / Math.pow(1024, i) * 100) / 100 + ' ' + sizes[i];
   };
 
-  const getVendorName = (vendorId?: string) => {
-    if (!vendorId) return null;
-    const vendor = vendors.find(v => v.id === vendorId);
-    return vendor?.name;
+  const formatDate = (dateString: string): string => {
+    return new Date(dateString).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
   };
 
-  const getVendorColor = (vendorId?: string) => {
-    if (!vendorId) return '#6B7280';
-    const vendor = vendors.find(v => v.id === vendorId);
-    return vendor?.color || '#6B7280';
+  const handleDownload = async (priceSheet: any) => {
+    try {
+      const { data, error } = await supabase.storage
+        .from('vendor-price-sheets')
+        .download(priceSheet.file_path);
+
+      if (error) {
+        console.error('Error downloading file:', error);
+        toast({
+          title: "Download failed",
+          description: error.message,
+          variant: "destructive"
+        });
+        return;
+      }
+
+      // Create a download link
+      const url = URL.createObjectURL(data);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = priceSheet.file_name;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+
+      toast({
+        title: "Download started",
+        description: `${priceSheet.name} is being downloaded.`
+      });
+    } catch (error) {
+      console.error('Error downloading price sheet:', error);
+      toast({
+        title: "Download failed",
+        description: "Failed to download the price sheet",
+        variant: "destructive"
+      });
+    }
   };
 
-  if (isLoading) {
+  const handleUpload = async (file: File, name: string, selectedVendorId?: string) => {
+    try {
+      await uploadPriceSheet(file, name, selectedVendorId);
+      setIsUploadDialogOpen(false);
+    } catch (error) {
+      console.error('Upload failed:', error);
+    }
+  };
+
+  const handleDelete = async (id: string) => {
+    try {
+      await deletePriceSheet(id);
+      toast({
+        title: "Success",
+        description: "Price sheet deleted successfully"
+      });
+    } catch (error) {
+      console.error('Delete failed:', error);
+      toast({
+        title: "Error",
+        description: "Failed to delete price sheet",
+        variant: "destructive"
+      });
+    }
+  };
+
+  if (loading) {
     return (
       <Card>
-        <CardContent className="p-6">
-          <div className="text-center">Loading price sheets...</div>
+        <CardContent className="flex items-center justify-center py-8">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600 mx-auto mb-4"></div>
+            <p className="text-sm text-gray-600">Loading price sheets...</p>
+          </div>
         </CardContent>
       </Card>
     );
   }
 
   return (
-    <>
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <FileText className="h-5 w-5 text-blue-600" />
-              <CardTitle>Price Sheets</CardTitle>
-              <Badge variant="outline" className="ml-2">
-                {priceSheets.length} files
-              </Badge>
-            </div>
-            <Button onClick={() => setIsUploadDialogOpen(true)} className="bg-blue-600 hover:bg-blue-700">
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <div>
+          <h3 className="text-lg font-semibold">Price Sheets</h3>
+          <p className="text-sm text-gray-600">
+            {vendorName ? `Price sheets for ${vendorName}` : "All uploaded price sheets"}
+          </p>
+        </div>
+        <Button 
+          onClick={() => setIsUploadDialogOpen(true)}
+          className="bg-purple-600 hover:bg-purple-700"
+        >
+          <Upload className="h-4 w-4 mr-2" />
+          Upload Price Sheet
+        </Button>
+      </div>
+
+      {priceSheets.length === 0 ? (
+        <Card>
+          <CardContent className="text-center py-8">
+            <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+            <h3 className="text-lg font-medium text-gray-900 mb-2">No price sheets uploaded</h3>
+            <p className="text-gray-600 mb-4">
+              Upload vendor price sheets to keep them organized and easily accessible.
+            </p>
+            <Button 
+              onClick={() => setIsUploadDialogOpen(true)}
+              className="bg-purple-600 hover:bg-purple-700"
+            >
               <Upload className="h-4 w-4 mr-2" />
-              Upload Price Sheet
+              Upload First Price Sheet
             </Button>
-          </div>
-        </CardHeader>
-        <CardContent>
-          {priceSheets.length === 0 ? (
-            <div className="text-center py-8 text-gray-500">
-              <FileText className="h-12 w-12 mx-auto mb-4 text-gray-300" />
-              <p className="text-lg font-medium mb-2">No price sheets yet</p>
-              <p className="text-sm mb-4">Upload vendor price sheets for easy reference</p>
-              <Button onClick={() => setIsUploadDialogOpen(true)} variant="outline">
-                <Upload className="h-4 w-4 mr-2" />
-                Upload Your First Price Sheet
-              </Button>
-            </div>
-          ) : (
-            <div className="space-y-3">
-              {priceSheets.map((priceSheet) => {
-                const vendorName = getVendorName(priceSheet.vendor_id);
-                const vendorColor = getVendorColor(priceSheet.vendor_id);
-                
-                return (
-                  <div key={priceSheet.id} className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50">
-                    <div className="flex items-center gap-3">
-                      <FileText className="h-8 w-8 text-blue-600" />
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-1">
-                          <h4 className="font-medium text-gray-900">{priceSheet.name}</h4>
-                          {vendorName && (
-                            <Badge 
-                              variant="outline" 
-                              className="text-xs text-white border-0"
-                              style={{ backgroundColor: vendorColor }}
-                            >
-                              {vendorName}
-                            </Badge>
-                          )}
+          </CardContent>
+        </Card>
+      ) : (
+        <div className="grid gap-4">
+          {priceSheets.map((priceSheet) => (
+            <Card key={priceSheet.id} className="hover:shadow-md transition-shadow">
+              <CardContent className="p-6">
+                <div className="flex items-start justify-between">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-2">
+                      <FileText className="h-5 w-5 text-purple-600" />
+                      <h4 className="font-medium text-gray-900">{priceSheet.name}</h4>
+                      {priceSheet.vendor_id && (
+                        <Badge variant="outline" className="ml-2">
+                          Vendor Sheet
+                        </Badge>
+                      )}
+                    </div>
+                    
+                    <div className="text-sm text-gray-600 space-y-1">
+                      <p><strong>File:</strong> {priceSheet.file_name}</p>
+                      <div className="flex items-center gap-4">
+                        <div className="flex items-center gap-1">
+                          <HardDrive className="h-4 w-4" />
+                          {formatFileSize(priceSheet.file_size)}
                         </div>
-                        <div className="flex items-center gap-4 text-xs text-gray-500">
-                          <span>{priceSheet.file_name}</span>
-                          <span>{formatFileSize(priceSheet.file_size)}</span>
-                          <span>Uploaded {formatDistanceToNow(new Date(priceSheet.uploaded_at))} ago</span>
+                        <div className="flex items-center gap-1">
+                          <Calendar className="h-4 w-4" />
+                          {formatDate(priceSheet.uploaded_at)}
                         </div>
                       </div>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <Button 
-                        variant="ghost" 
-                        size="sm" 
-                        onClick={() => downloadPriceSheet(priceSheet)}
-                        title="Download"
-                      >
-                        <Download className="h-4 w-4" />
-                      </Button>
-                      <Button 
-                        variant="ghost" 
-                        size="sm" 
-                        onClick={() => deletePriceSheet(priceSheet.id)}
-                        className="text-red-600 hover:text-red-700"
-                        title="Delete"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
                   </div>
-                );
-              })}
-            </div>
-          )}
-        </CardContent>
-      </Card>
+                  
+                  <div className="flex items-center gap-2 ml-4">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleDownload(priceSheet)}
+                      className="flex items-center gap-1"
+                    >
+                      <Download className="h-4 w-4" />
+                      Download
+                    </Button>
+                    
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Delete Price Sheet</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            Are you sure you want to delete "{priceSheet.name}"? This action cannot be undone.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancel</AlertDialogCancel>
+                          <AlertDialogAction
+                            onClick={() => handleDelete(priceSheet.id)}
+                            className="bg-red-600 hover:bg-red-700"
+                          >
+                            Delete
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
 
       <UploadPriceSheetDialog
         open={isUploadDialogOpen}
         onOpenChange={setIsUploadDialogOpen}
-        onUpload={uploadPriceSheet}
-        vendors={vendors}
+        onUpload={handleUpload}
+        preselectedVendorId={vendorId}
       />
-    </>
+    </div>
   );
 };

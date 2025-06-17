@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -88,7 +89,6 @@ export const CircuitQuotesManagement = () => {
               <SelectItem value="new_pricing">New Pricing</SelectItem>
               <SelectItem value="researching">Researching</SelectItem>
               <SelectItem value="completed">Completed</SelectItem>
-              <SelectItem value="ready_for_review">Ready for Review</SelectItem>
               <SelectItem value="sent_to_customer">Sent to Customer</SelectItem>
             </SelectContent>
           </Select>

@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -33,7 +32,7 @@ export const AddCircuitQuoteDialog = ({ open, onOpenChange, onAddQuote }: AddCir
   const [clientId, setClientId] = useState("");
   const [location, setLocation] = useState("");
   const [suite, setSuite] = useState("");
-  const [status, setStatus] = useState<"new_pricing" | "researching" | "completed" | "ready_for_review" | "sent_to_customer">("new_pricing");
+  const [status, setStatus] = useState<"new_pricing" | "researching" | "completed" | "sent_to_customer">("new_pricing");
   const [clients, setClients] = useState<ClientOption[]>([]);
   const [isLoadingClients, setIsLoadingClients] = useState(false);
   const [validatedAddress, setValidatedAddress] = useState<AddressData | null>(null);
@@ -158,7 +157,7 @@ export const AddCircuitQuoteDialog = ({ open, onOpenChange, onAddQuote }: AddCir
 
           <div className="space-y-2">
             <Label htmlFor="status">Status</Label>
-            <Select value={status} onValueChange={(value: "new_pricing" | "researching" | "completed" | "ready_for_review" | "sent_to_customer") => setStatus(value)}>
+            <Select value={status} onValueChange={(value: "new_pricing" | "researching" | "completed" | "sent_to_customer") => setStatus(value)}>
               <SelectTrigger>
                 <SelectValue placeholder="Select status" />
               </SelectTrigger>
@@ -166,7 +165,6 @@ export const AddCircuitQuoteDialog = ({ open, onOpenChange, onAddQuote }: AddCir
                 <SelectItem value="new_pricing">New Pricing</SelectItem>
                 <SelectItem value="researching">Researching</SelectItem>
                 <SelectItem value="completed">Completed</SelectItem>
-                <SelectItem value="ready_for_review">Ready for Review</SelectItem>
                 <SelectItem value="sent_to_customer">Sent to Customer</SelectItem>
               </SelectContent>
             </Select>
