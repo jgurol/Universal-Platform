@@ -86,23 +86,21 @@ export const QuoteItemForm = ({
                         : "Select from carrier quotes"
                 } />
               </SelectTrigger>
-              <SelectContent className="bg-white z-50 max-w-[400px]">
+              <SelectContent className="bg-white z-50 min-w-[500px]">
                 {hasCarrierItems ? (
                   carrierQuoteItems.map((carrierItem) => (
                     <SelectItem key={`carrier-${carrierItem.id}`} value={`carrier-${carrierItem.id}`}>
-                      <div className="flex flex-col w-full min-w-0">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <span className="font-medium text-sm truncate">{carrierItem.carrier}</span>
-                          <Badge variant="outline" className="text-xs whitespace-nowrap">
-                            Circuit Quote
-                          </Badge>
-                        </div>
-                        <div className="text-xs text-gray-600 truncate">
-                          {carrierItem.type} - {carrierItem.speed}
-                        </div>
-                        <span className="text-xs text-green-600 font-medium">
-                          ${carrierItem.price.toFixed(2)}/month
-                        </span>
+                      <div className="flex items-center gap-3 w-full min-w-0">
+                        <span className="font-medium text-sm">{carrierItem.carrier}</span>
+                        <span className="text-xs text-gray-600">•</span>
+                        <span className="text-xs text-gray-600">{carrierItem.type}</span>
+                        <span className="text-xs text-gray-600">•</span>
+                        <span className="text-xs text-gray-600">{carrierItem.speed}</span>
+                        <span className="text-xs text-gray-600">•</span>
+                        <span className="text-xs text-green-600 font-medium">${carrierItem.price.toFixed(2)}/month</span>
+                        <Badge variant="outline" className="text-xs whitespace-nowrap ml-auto">
+                          Circuit Quote
+                        </Badge>
                       </div>
                     </SelectItem>
                   ))
