@@ -40,7 +40,7 @@ export const createQuoteInDatabase = async (
     .single();
 
   if (quoteError) {
-    console.error('Error creating quote:', quoteError);
+    console.error('[createQuoteInDatabase] Error creating quote:', quoteError);
     throw quoteError;
   }
 
@@ -51,6 +51,15 @@ export const createQuoteInDatabase = async (
     console.log('[createQuoteInDatabase] Saving quote items:', quote.quoteItems.length);
     
     for (const item of quote.quoteItems) {
+      console.log('[createQuoteInDatabase] Processing item:', {
+        name: item.name,
+        item_id: item.item_id,
+        address_id: item.address_id,
+        quantity: item.quantity,
+        unit_price: item.unit_price,
+        total_price: item.total_price
+      });
+
       let itemId = item.item_id;
       
       // Handle carrier quote items - create temporary items for them that won't appear in catalog
@@ -90,7 +99,7 @@ export const createQuoteInDatabase = async (
           .single();
 
         if (itemError) {
-          console.error('Error creating temporary item for carrier quote:', itemError);
+          console.error('[createQuoteInDatabase] Error creating temporary item for carrier quote:', itemError);
           throw itemError;
         }
         
@@ -112,9 +121,11 @@ export const createQuoteInDatabase = async (
         });
 
       if (quoteItemError) {
-        console.error('Error creating quote item:', quoteItemError);
+        console.error('[createQuoteInDatabase] Error creating quote item:', quoteItemError);
         throw quoteItemError;
       }
+
+      console.log('[createQuoteInDatabase] Successfully inserted quote item for:', item.name);
     }
 
     console.log('[createQuoteInDatabase] Quote items saved successfully');
