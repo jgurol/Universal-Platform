@@ -1,4 +1,3 @@
-
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,6 +14,7 @@ import { calculateTotalsByChargeType } from "@/services/quoteItemsService";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
 import type { Database } from "@/integrations/supabase/types";
+import { getTodayInTimezone } from "@/utils/dateUtils";
 
 type QuoteTemplate = Database['public']['Tables']['quote_templates']['Row'];
 
@@ -49,6 +49,23 @@ export const AddQuoteDialog = ({ open, onOpenChange, onAddQuote, clients, client
   const { user } = useAuth();
 
   const { quoteItems, setQuoteItems } = useQuoteItems(null, open);
+
+  // Auto-populate dates when dialog opens
+  useEffect(() => {
+    if (open) {
+      const today = getTodayInTimezone();
+      setDate(today);
+      
+      // Set expires at to 30 days from today
+      const expirationDate = new Date();
+      expirationDate.setDate(expirationDate.getDate() + 30);
+      const year = expirationDate.getFullYear();
+      const month = String(expirationDate.getMonth() + 1).padStart(2, '0');
+      const day = String(expirationDate.getDate()).padStart(2, '0');
+      const expiresAtFormatted = `${year}-${month}-${day}`;
+      setExpiresAt(expiresAtFormatted);
+    }
+  }, [open]);
 
   // Load templates when dialog opens
   useEffect(() => {
