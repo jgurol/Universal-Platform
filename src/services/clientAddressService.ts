@@ -92,24 +92,50 @@ export const clientAddressService = {
       throw addressError;
     }
 
-    // Create a search pattern for the address text
-    const addressText = `${addressDetails.street_address}, ${addressDetails.city}, ${addressDetails.state} ${addressDetails.zip_code}`;
+    // Create escaped search patterns for the address text components
+    const streetPattern = addressDetails.street_address.replace(/[%_]/g, '\\$&');
+    const cityPattern = addressDetails.city.replace(/[%_]/g, '\\$&');
+    const statePattern = addressDetails.state.replace(/[%_]/g, '\\$&');
+    const zipPattern = addressDetails.zip_code.replace(/[%_]/g, '\\$&');
     
     // Check if this address text is used in quotes' billing_address or service_address fields
-    const { data: quotesUsingAddress, error: quotesError } = await supabase
+    // Using separate queries to avoid complex OR parsing issues
+    const { data: billingQuotes, error: billingError } = await supabase
       .from('quotes')
-      .select('id, quote_number, billing_address, service_address')
-      .or(`billing_address.ilike.%${addressText}%,service_address.ilike.%${addressText}%`);
+      .select('id, quote_number, billing_address')
+      .ilike('billing_address', `%${streetPattern}%`)
+      .ilike('billing_address', `%${cityPattern}%`)
+      .ilike('billing_address', `%${statePattern}%`)
+      .ilike('billing_address', `%${zipPattern}%`);
 
-    if (quotesError) {
-      console.error('Error checking quotes references:', quotesError);
-      throw quotesError;
+    if (billingError) {
+      console.error('Error checking billing address references:', billingError);
+      throw billingError;
     }
 
-    console.log('[clientAddressService] Quotes using this address in billing/service fields:', quotesUsingAddress);
+    const { data: serviceQuotes, error: serviceError } = await supabase
+      .from('quotes')
+      .select('id, quote_number, service_address')
+      .ilike('service_address', `%${streetPattern}%`)
+      .ilike('service_address', `%${cityPattern}%`)
+      .ilike('service_address', `%${statePattern}%`)
+      .ilike('service_address', `%${zipPattern}%`);
+
+    if (serviceError) {
+      console.error('Error checking service address references:', serviceError);
+      throw serviceError;
+    }
+
+    // Combine billing and service quotes, remove duplicates
+    const allQuotesUsingAddress = [...(billingQuotes || []), ...(serviceQuotes || [])]
+      .filter((quote, index, self) => 
+        index === self.findIndex(q => q.id === quote.id)
+      );
+
+    console.log('[clientAddressService] Quotes using this address in billing/service fields:', allQuotesUsingAddress);
 
     // If there are any references, provide detailed error message with quote numbers
-    if ((quoteItems && quoteItems.length > 0) || (quotesUsingAddress && quotesUsingAddress.length > 0)) {
+    if ((quoteItems && quoteItems.length > 0) || (allQuotesUsingAddress && allQuotesUsingAddress.length > 0)) {
       let errorMessage = 'This address cannot be deleted because it is being used in existing quotes:';
       
       if (quoteItems && quoteItems.length > 0) {
@@ -119,8 +145,8 @@ export const clientAddressService = {
         errorMessage += `\n- Referenced in ${quoteItems.length} quote item(s) in: ${quoteNumbers.join(', ')}`;
       }
       
-      if (quotesUsingAddress && quotesUsingAddress.length > 0) {
-        const quoteNumbers = quotesUsingAddress.map(quote => quote.quote_number || `Quote ${quote.id}`);
+      if (allQuotesUsingAddress && allQuotesUsingAddress.length > 0) {
+        const quoteNumbers = allQuotesUsingAddress.map(quote => quote.quote_number || `Quote ${quote.id}`);
         errorMessage += `\n- Used as billing/service address in: ${quoteNumbers.join(', ')}`;
       }
       
