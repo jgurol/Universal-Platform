@@ -26,7 +26,7 @@ const carrierColors = [
 ];
 
 export const EditCarrierQuoteDialog = ({ open, onOpenChange, carrier, onUpdateCarrier }: EditCarrierQuoteDialogProps) => {
-  const [carrierId, setCarrierId] = useState("");
+  const [vendorId, setVendorId] = useState("");
   const [categoryId, setCategoryId] = useState("");
   const [speed, setSpeed] = useState("");
   const [price, setPrice] = useState("");
@@ -34,15 +34,15 @@ export const EditCarrierQuoteDialog = ({ open, onOpenChange, carrier, onUpdateCa
   const [notes, setNotes] = useState("");
   const [color, setColor] = useState("bg-gray-100 text-gray-800");
 
-  const { carriers, categories, loading } = useCarrierOptions();
+  const { vendors, categories, loading } = useCarrierOptions();
 
   useEffect(() => {
-    if (carrier && carriers.length > 0 && categories.length > 0) {
-      // Find the carrier and category IDs based on the current names
-      const foundCarrier = carriers.find(c => c.name === carrier.carrier);
+    if (carrier && vendors.length > 0 && categories.length > 0) {
+      // Find the vendor and category IDs based on the current names
+      const foundVendor = vendors.find(v => v.name === carrier.carrier);
       const foundCategory = categories.find(c => c.name === carrier.type);
       
-      setCarrierId(foundCarrier?.id || "");
+      setVendorId(foundVendor?.id || "");
       setCategoryId(foundCategory?.id || "");
       setSpeed(carrier.speed);
       setPrice(carrier.price.toString());
@@ -50,18 +50,18 @@ export const EditCarrierQuoteDialog = ({ open, onOpenChange, carrier, onUpdateCa
       setNotes(carrier.notes);
       setColor(carrier.color);
     }
-  }, [carrier, carriers, categories]);
+  }, [carrier, vendors, categories]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (carrierId && categoryId && speed && price) {
-      const selectedCarrier = carriers.find(c => c.id === carrierId);
+    if (vendorId && categoryId && speed && price) {
+      const selectedVendor = vendors.find(v => v.id === vendorId);
       const selectedCategory = categories.find(c => c.id === categoryId);
       
       onUpdateCarrier({
         ...carrier,
-        carrier: selectedCarrier?.name || "",
+        carrier: selectedVendor?.name || "",
         type: selectedCategory?.name || "",
         speed,
         price: parseFloat(price),
@@ -86,15 +86,15 @@ export const EditCarrierQuoteDialog = ({ open, onOpenChange, carrier, onUpdateCa
         
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="carrier">Carrier (Required)</Label>
-            <Select value={carrierId} onValueChange={setCarrierId} required>
+            <Label htmlFor="vendor">Carrier (Required)</Label>
+            <Select value={vendorId} onValueChange={setVendorId} required>
               <SelectTrigger>
-                <SelectValue placeholder={loading ? "Loading carriers..." : "Select carrier"} />
+                <SelectValue placeholder={loading ? "Loading vendors..." : "Select vendor"} />
               </SelectTrigger>
               <SelectContent className="bg-white z-50">
-                {carriers.map((carrierOption) => (
-                  <SelectItem key={carrierOption.id} value={carrierOption.id}>
-                    {carrierOption.name}
+                {vendors.map((vendor) => (
+                  <SelectItem key={vendor.id} value={vendor.id}>
+                    {vendor.name}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -194,7 +194,7 @@ export const EditCarrierQuoteDialog = ({ open, onOpenChange, carrier, onUpdateCa
             <Button 
               type="submit" 
               className="bg-purple-600 hover:bg-purple-700"
-              disabled={!carrierId || !categoryId || !speed || !price || loading}
+              disabled={!vendorId || !categoryId || !speed || !price || loading}
             >
               Update Carrier Quote
             </Button>

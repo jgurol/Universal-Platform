@@ -4,15 +4,10 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { Category } from "@/types/categories";
-
-export interface CarrierOption {
-  id: string;
-  name: string;
-  is_active: boolean;
-}
+import { Vendor } from "@/types/vendors";
 
 export const useCarrierOptions = () => {
-  const [carriers, setCarriers] = useState<CarrierOption[]>([]);
+  const [vendors, setVendors] = useState<Vendor[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const { user } = useAuth();
@@ -24,18 +19,18 @@ export const useCarrierOptions = () => {
     try {
       setLoading(true);
       
-      // Fetch carrier options
-      const { data: carrierData, error: carrierError } = await supabase
-        .from('carrier_options')
+      // Fetch vendors
+      const { data: vendorData, error: vendorError } = await supabase
+        .from('vendors')
         .select('id, name, is_active')
         .eq('is_active', true)
         .order('name', { ascending: true });
 
-      if (carrierError) {
-        console.error('Error fetching carrier options:', carrierError);
+      if (vendorError) {
+        console.error('Error fetching vendors:', vendorError);
         toast({
-          title: "Error fetching carriers",
-          description: carrierError.message,
+          title: "Error fetching vendors",
+          description: vendorError.message,
           variant: "destructive"
         });
         return;
@@ -58,13 +53,13 @@ export const useCarrierOptions = () => {
         return;
       }
 
-      setCarriers(carrierData || []);
+      setVendors(vendorData || []);
       setCategories(categoryData || []);
     } catch (error) {
       console.error('Error in fetchOptions:', error);
       toast({
         title: "Error",
-        description: "Failed to fetch carrier and category options",
+        description: "Failed to fetch vendor and category options",
         variant: "destructive"
       });
     } finally {
@@ -79,7 +74,7 @@ export const useCarrierOptions = () => {
   }, [user]);
 
   return {
-    carriers,
+    vendors,
     categories,
     loading,
     refetchOptions: fetchOptions

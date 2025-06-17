@@ -31,7 +31,7 @@ const carrierColors = [
 ];
 
 export const AddCarrierQuoteDialog = ({ open, onOpenChange, onAddCarrier }: AddCarrierQuoteDialogProps) => {
-  const [carrierId, setCarrierId] = useState("");
+  const [vendorId, setVendorId] = useState("");
   const [categoryId, setCategoryId] = useState("");
   const [speed, setSpeed] = useState("");
   const [price, setPrice] = useState("");
@@ -39,10 +39,10 @@ export const AddCarrierQuoteDialog = ({ open, onOpenChange, onAddCarrier }: AddC
   const [notes, setNotes] = useState("");
   const [color, setColor] = useState("bg-gray-100 text-gray-800");
 
-  const { carriers, categories, loading } = useCarrierOptions();
+  const { vendors, categories, loading } = useCarrierOptions();
 
   const resetForm = () => {
-    setCarrierId("");
+    setVendorId("");
     setCategoryId("");
     setSpeed("");
     setPrice("");
@@ -54,12 +54,12 @@ export const AddCarrierQuoteDialog = ({ open, onOpenChange, onAddCarrier }: AddC
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (carrierId && categoryId && speed && price) {
-      const selectedCarrier = carriers.find(c => c.id === carrierId);
+    if (vendorId && categoryId && speed && price) {
+      const selectedVendor = vendors.find(v => v.id === vendorId);
       const selectedCategory = categories.find(c => c.id === categoryId);
       
       onAddCarrier({
-        carrier: selectedCarrier?.name || "",
+        carrier: selectedVendor?.name || "",
         type: selectedCategory?.name || "",
         speed,
         price: parseFloat(price),
@@ -86,15 +86,15 @@ export const AddCarrierQuoteDialog = ({ open, onOpenChange, onAddCarrier }: AddC
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="carrier">Carrier (Required)</Label>
-              <Select value={carrierId} onValueChange={setCarrierId} required>
+              <Label htmlFor="vendor">Carrier (Required)</Label>
+              <Select value={vendorId} onValueChange={setVendorId} required>
                 <SelectTrigger>
-                  <SelectValue placeholder={loading ? "Loading carriers..." : "Select a carrier"} />
+                  <SelectValue placeholder={loading ? "Loading vendors..." : "Select a vendor"} />
                 </SelectTrigger>
                 <SelectContent className="bg-white z-50">
-                  {carriers.map((carrier) => (
-                    <SelectItem key={carrier.id} value={carrier.id}>
-                      {carrier.name}
+                  {vendors.map((vendor) => (
+                    <SelectItem key={vendor.id} value={vendor.id}>
+                      {vendor.name}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -191,7 +191,7 @@ export const AddCarrierQuoteDialog = ({ open, onOpenChange, onAddCarrier }: AddC
             <Button 
               type="submit" 
               className="bg-purple-600 hover:bg-purple-700"
-              disabled={!carrierId || !categoryId || !speed || !price || loading}
+              disabled={!vendorId || !categoryId || !speed || !price || loading}
             >
               Add Carrier Quote
             </Button>
