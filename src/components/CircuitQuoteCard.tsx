@@ -1,8 +1,9 @@
+
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { ChevronDown, ChevronRight, MapPin, Building, Calendar, Plus, Edit, Trash2 } from "lucide-react";
+import { ChevronDown, ChevronRight, MapPin, Calendar, Plus, Edit, Trash2 } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { AddCarrierQuoteDialog } from "@/components/AddCarrierQuoteDialog";
 import { EditCarrierQuoteDialog } from "@/components/EditCarrierQuoteDialog";
@@ -106,6 +107,11 @@ export const CircuitQuoteCard = ({
   const clientName = quote.client_name || quote.client || 'Unknown Client';
   const creationDate = quote.created_at || quote.creationDate || 'Unknown Date';
 
+  // Format the full address
+  const fullAddress = quote.suite 
+    ? `${quote.location}, Suite ${quote.suite}`
+    : quote.location;
+
   return (
     <Card className="border-l-4 border-l-purple-500">
       <CardHeader>
@@ -124,11 +130,7 @@ export const CircuitQuoteCard = ({
               <div className="flex items-center gap-4 text-sm text-gray-600 mt-1">
                 <div className="flex items-center gap-1">
                   <MapPin className="h-4 w-4" />
-                  {quote.location}
-                </div>
-                <div className="flex items-center gap-1">
-                  <Building className="h-4 w-4" />
-                  Suite {quote.suite}
+                  {fullAddress}
                 </div>
                 <div className="flex items-center gap-1">
                   <Calendar className="h-4 w-4" />
