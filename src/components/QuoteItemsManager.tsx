@@ -17,7 +17,7 @@ interface QuoteItemsManagerProps {
 
 export const QuoteItemsManager = ({ items, onItemsChange, clientInfoId }: QuoteItemsManagerProps) => {
   const { items: availableItems, isLoading } = useItems();
-  const { addresses } = useClientAddresses(clientInfoId || null);
+  const { addresses, addAddress } = useClientAddresses(clientInfoId || null);
   const { carrierQuoteItems } = useCarrierQuoteItems(clientInfoId || null);
   const [selectedItemId, setSelectedItemId] = useState("");
 
@@ -29,14 +29,50 @@ export const QuoteItemsManager = ({ items, onItemsChange, clientInfoId }: QuoteI
       const carrierQuoteId = selectedItemId.replace('carrier-', '');
       const carrierItem = carrierQuoteItems.find(item => item.id === carrierQuoteId);
       
-      if (carrierItem) {
-        // Find matching address based on circuit quote location
+      if (carrierItem && clientInfoId) {
+        // Check if location already exists in client addresses
+        const locationExists = addresses.some(addr => 
+          addr.street_address.toLowerCase().includes(carrierItem.location.toLowerCase()) ||
+          addr.city.toLowerCase() === carrierItem.location.toLowerCase()
+        );
+
         let matchingAddress = addresses.find(addr => 
           addr.city.toLowerCase().includes(carrierItem.location.toLowerCase()) ||
           addr.street_address.toLowerCase().includes(carrierItem.location.toLowerCase())
         );
-        
-        // If no matching address found, use the first available address
+
+        // If location doesn't exist, create a new address
+        if (!locationExists && carrierItem.location.trim()) {
+          try {
+            const newAddressData = {
+              client_info_id: clientInfoId,
+              address_type: 'service',
+              street_address: carrierItem.location,
+              city: carrierItem.location,
+              state: 'Unknown', // Default state since we don't have this info
+              zip_code: '00000', // Default zip since we don't have this info
+              country: 'United States',
+              is_primary: addresses.length === 0 // Make it primary if it's the first address
+            };
+
+            console.log('[QuoteItemsManager] Creating new address for location:', carrierItem.location);
+            await addAddress(newAddressData);
+            
+            // Refresh addresses to get the newly created one
+            // The useClientAddresses hook should automatically refresh, but we'll find it after creation
+            setTimeout(() => {
+              const newAddress = addresses.find(addr => 
+                addr.street_address === carrierItem.location
+              );
+              matchingAddress = newAddress;
+            }, 100);
+          } catch (error) {
+            console.error('Error creating address for carrier location:', error);
+            // Continue without address if creation fails
+          }
+        }
+
+        // If still no matching address, use the first available address
         if (!matchingAddress && addresses.length > 0) {
           matchingAddress = addresses[0];
         }
