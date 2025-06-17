@@ -38,12 +38,14 @@ export const useClientAddresses = (clientInfoId: string | null) => {
   const addAddress = async (addressData: AddClientAddressData) => {
     try {
       const newAddress = await clientAddressService.addClientAddress(addressData);
-      setAddresses([...addresses, newAddress]);
+      // Immediately update the state with the new address
+      setAddresses(prevAddresses => [...prevAddresses, newAddress]);
       toast({
         title: "Address added",
         description: "The address has been added successfully.",
         variant: "default"
       });
+      return newAddress; // Return the new address for immediate use
     } catch (err) {
       console.error('Error adding address:', err);
       toast({

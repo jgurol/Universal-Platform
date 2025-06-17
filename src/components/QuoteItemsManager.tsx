@@ -81,18 +81,13 @@ export const QuoteItemsManager = ({ items, onItemsChange, clientInfoId }: QuoteI
         const parsedAddress = parseLocationToAddress(carrierItem.location);
         
         // Check if a similar address already exists
-        const addressExists = addresses.some(addr => 
-          addr.city.toLowerCase() === parsedAddress.city.toLowerCase() &&
-          addr.state.toLowerCase() === parsedAddress.state.toLowerCase()
-        );
-
         let matchingAddress = addresses.find(addr => 
           addr.city.toLowerCase() === parsedAddress.city.toLowerCase() &&
           addr.state.toLowerCase() === parsedAddress.state.toLowerCase()
         );
 
         // If address doesn't exist, create a new one with parsed components
-        if (!addressExists && carrierItem.location.trim()) {
+        if (!matchingAddress && carrierItem.location.trim()) {
           try {
             const newAddressData = {
               client_info_id: clientInfoId,
@@ -106,23 +101,10 @@ export const QuoteItemsManager = ({ items, onItemsChange, clientInfoId }: QuoteI
             };
 
             console.log('[QuoteItemsManager] Creating new address with parsed components:', newAddressData);
-            await addAddress(newAddressData);
-            
-            // Find the newly created address in the addresses array
-            // Wait a bit for the state to update, then find the address
-            setTimeout(() => {
-              const newAddress = addresses.find(addr => 
-                addr.city.toLowerCase() === parsedAddress.city.toLowerCase() &&
-                addr.state.toLowerCase() === parsedAddress.state.toLowerCase() &&
-                addr.street_address === parsedAddress.street_address
-              );
-              if (newAddress) {
-                matchingAddress = newAddress;
-                console.log('[QuoteItemsManager] Found newly created address:', newAddress);
-              }
-            }, 100);
-            
-            console.log('[QuoteItemsManager] Address creation completed');
+            // Await the address creation and use the returned address
+            const newAddress = await addAddress(newAddressData);
+            matchingAddress = newAddress;
+            console.log('[QuoteItemsManager] Address creation completed, new address:', newAddress);
           } catch (error) {
             console.error('Error creating address for carrier location:', error);
             // Continue without address if creation fails
