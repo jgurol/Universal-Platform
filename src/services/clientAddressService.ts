@@ -66,7 +66,11 @@ export const clientAddressService = {
     // Check if this address is referenced by any quote items
     const { data: quoteItems, error: quoteItemsError } = await supabase
       .from('quote_items')
-      .select('id, quote_id')
+      .select(`
+        id, 
+        quote_id,
+        quote:quotes(quote_number)
+      `)
       .eq('address_id', addressId);
 
     if (quoteItemsError) {
@@ -76,11 +80,26 @@ export const clientAddressService = {
 
     console.log('[clientAddressService] Quote items using this address:', quoteItems);
 
-    // Check if this address is used in quotes' billing_address or service_address fields
+    // Get the address details to check for text-based references in quotes
+    const { data: addressDetails, error: addressError } = await supabase
+      .from('client_addresses')
+      .select('*')
+      .eq('id', addressId)
+      .single();
+
+    if (addressError) {
+      console.error('Error fetching address details:', addressError);
+      throw addressError;
+    }
+
+    // Create a search pattern for the address text
+    const addressText = `${addressDetails.street_address}, ${addressDetails.city}, ${addressDetails.state} ${addressDetails.zip_code}`;
+    
+    // Check if this address text is used in quotes' billing_address or service_address fields
     const { data: quotesUsingAddress, error: quotesError } = await supabase
       .from('quotes')
-      .select('id, billing_address, service_address')
-      .or(`billing_address.ilike.%${addressId}%,service_address.ilike.%${addressId}%`);
+      .select('id, quote_number, billing_address, service_address')
+      .or(`billing_address.ilike.%${addressText}%,service_address.ilike.%${addressText}%`);
 
     if (quotesError) {
       console.error('Error checking quotes references:', quotesError);
@@ -89,17 +108,20 @@ export const clientAddressService = {
 
     console.log('[clientAddressService] Quotes using this address in billing/service fields:', quotesUsingAddress);
 
-    // If there are any references, provide detailed error message
+    // If there are any references, provide detailed error message with quote numbers
     if ((quoteItems && quoteItems.length > 0) || (quotesUsingAddress && quotesUsingAddress.length > 0)) {
       let errorMessage = 'This address cannot be deleted because it is being used in existing quotes:';
       
       if (quoteItems && quoteItems.length > 0) {
-        const quoteIds = [...new Set(quoteItems.map(item => item.quote_id))];
-        errorMessage += `\n- Referenced in ${quoteItems.length} quote item(s) across ${quoteIds.length} quote(s)`;
+        const quoteNumbers = quoteItems
+          .map(item => item.quote?.quote_number || `Quote ${item.quote_id}`)
+          .filter((value, index, self) => self.indexOf(value) === index); // Remove duplicates
+        errorMessage += `\n- Referenced in ${quoteItems.length} quote item(s) in: ${quoteNumbers.join(', ')}`;
       }
       
       if (quotesUsingAddress && quotesUsingAddress.length > 0) {
-        errorMessage += `\n- Used as billing/service address in ${quotesUsingAddress.length} quote(s)`;
+        const quoteNumbers = quotesUsingAddress.map(quote => quote.quote_number || `Quote ${quote.id}`);
+        errorMessage += `\n- Used as billing/service address in: ${quoteNumbers.join(', ')}`;
       }
       
       errorMessage += '\n\nPlease remove these references first before deleting the address.';
