@@ -15,6 +15,25 @@ interface EditVendorDialogProps {
   vendor: Vendor | null;
 }
 
+const colorOptions = [
+  { value: '#3B82F6', label: 'Blue', class: 'bg-blue-500' },
+  { value: '#EF4444', label: 'Red', class: 'bg-red-500' },
+  { value: '#10B981', label: 'Green', class: 'bg-green-500' },
+  { value: '#F59E0B', label: 'Yellow', class: 'bg-yellow-500' },
+  { value: '#8B5CF6', label: 'Purple', class: 'bg-purple-500' },
+  { value: '#EC4899', label: 'Pink', class: 'bg-pink-500' },
+  { value: '#06B6D4', label: 'Cyan', class: 'bg-cyan-500' },
+  { value: '#84CC16', label: 'Lime', class: 'bg-lime-500' },
+  { value: '#F97316', label: 'Orange', class: 'bg-orange-500' },
+  { value: '#6366F1', label: 'Indigo', class: 'bg-indigo-500' },
+  { value: '#14B8A6', label: 'Teal', class: 'bg-teal-500' },
+  { value: '#F43F5E', label: 'Rose', class: 'bg-rose-500' },
+  { value: '#6B7280', label: 'Gray', class: 'bg-gray-500' },
+  { value: '#64748B', label: 'Slate', class: 'bg-slate-500' },
+  { value: '#78716C', label: 'Stone', class: 'bg-stone-500' },
+  { value: '#525252', label: 'Neutral', class: 'bg-neutral-500' }
+];
+
 export const EditVendorDialog = ({ open, onOpenChange, onUpdateVendor, vendor }: EditVendorDialogProps) => {
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
@@ -22,6 +41,7 @@ export const EditVendorDialog = ({ open, onOpenChange, onUpdateVendor, vendor }:
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [salesModel, setSalesModel] = useState<'agent' | 'partner' | 'wholesale'>('agent');
+  const [color, setColor] = useState('#3B82F6');
 
   useEffect(() => {
     if (vendor) {
@@ -31,6 +51,7 @@ export const EditVendorDialog = ({ open, onOpenChange, onUpdateVendor, vendor }:
       setEmail(vendor.email || "");
       setPhone(vendor.phone || "");
       setSalesModel(vendor.sales_model || 'agent');
+      setColor(vendor.color || '#3B82F6');
     }
   }, [vendor]);
 
@@ -44,6 +65,7 @@ export const EditVendorDialog = ({ open, onOpenChange, onUpdateVendor, vendor }:
         email: email || undefined,
         phone: phone || undefined,
         sales_model: salesModel,
+        color,
       });
       
       onOpenChange(false);
@@ -132,6 +154,25 @@ export const EditVendorDialog = ({ open, onOpenChange, onUpdateVendor, vendor }:
                   <SelectItem value="wholesale">Wholesale</SelectItem>
                 </SelectContent>
               </Select>
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="edit-color">Color</Label>
+            <div className="grid grid-cols-8 gap-2 p-3 border border-gray-200 rounded-lg">
+              {colorOptions.map((colorOption) => (
+                <button
+                  key={colorOption.value}
+                  type="button"
+                  className={`w-8 h-8 rounded-full border-2 transition-all ${
+                    color === colorOption.value 
+                      ? 'border-gray-900 scale-110' 
+                      : 'border-gray-300 hover:border-gray-500'
+                  } ${colorOption.class}`}
+                  onClick={() => setColor(colorOption.value)}
+                  title={colorOption.label}
+                />
+              ))}
             </div>
           </div>
           

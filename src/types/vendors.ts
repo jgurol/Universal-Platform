@@ -8,6 +8,7 @@ export interface Vendor {
   email?: string;
   phone?: string;
   sales_model?: 'agent' | 'partner' | 'wholesale';
+  color?: string;
   is_active: boolean;
   created_at: string;
   updated_at: string;

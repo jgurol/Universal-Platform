@@ -81,36 +81,42 @@ export const VendorsManagement = () => {
             <div className="space-y-3">
               {vendors.map((vendor) => (
                 <div key={vendor.id} className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-1">
-                      <h4 className="font-medium text-gray-900">{vendor.name}</h4>
-                      {vendor.rep_name && (
-                        <Badge variant="outline" className="text-xs">
-                          Rep: {vendor.rep_name}
-                        </Badge>
+                  <div className="flex items-center gap-3">
+                    <div 
+                      className="w-4 h-4 rounded-full border border-gray-300"
+                      style={{ backgroundColor: vendor.color || '#3B82F6' }}
+                    />
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-1">
+                        <h4 className="font-medium text-gray-900">{vendor.name}</h4>
+                        {vendor.rep_name && (
+                          <Badge variant="outline" className="text-xs">
+                            Rep: {vendor.rep_name}
+                          </Badge>
+                        )}
+                        {vendor.sales_model && (
+                          <Badge variant="outline" className={`text-xs ${getSalesModelBadgeColor(vendor.sales_model)}`}>
+                            {vendor.sales_model.charAt(0).toUpperCase() + vendor.sales_model.slice(1)}
+                          </Badge>
+                        )}
+                      </div>
+                      {vendor.description && (
+                        <p className="text-sm text-gray-600 mb-2">{vendor.description}</p>
                       )}
-                      {vendor.sales_model && (
-                        <Badge variant="outline" className={`text-xs ${getSalesModelBadgeColor(vendor.sales_model)}`}>
-                          {vendor.sales_model.charAt(0).toUpperCase() + vendor.sales_model.slice(1)}
-                        </Badge>
-                      )}
-                    </div>
-                    {vendor.description && (
-                      <p className="text-sm text-gray-600 mb-2">{vendor.description}</p>
-                    )}
-                    <div className="flex items-center gap-4 text-xs text-gray-500">
-                      {vendor.email && (
-                        <div className="flex items-center gap-1">
-                          <Mail className="h-3 w-3" />
-                          {vendor.email}
-                        </div>
-                      )}
-                      {vendor.phone && (
-                        <div className="flex items-center gap-1">
-                          <Phone className="h-3 w-3" />
-                          {vendor.phone}
-                        </div>
-                      )}
+                      <div className="flex items-center gap-4 text-xs text-gray-500">
+                        {vendor.email && (
+                          <div className="flex items-center gap-1">
+                            <Mail className="h-3 w-3" />
+                            {vendor.email}
+                          </div>
+                        )}
+                        {vendor.phone && (
+                          <div className="flex items-center gap-1">
+                            <Phone className="h-3 w-3" />
+                            {vendor.phone}
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
