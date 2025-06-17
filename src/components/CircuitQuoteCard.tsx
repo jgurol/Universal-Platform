@@ -201,9 +201,12 @@ export const CircuitQuoteCard = ({
                 <div key={carrier.id} className="border rounded-lg p-4 bg-gray-50">
                   <div className="grid grid-cols-1 md:grid-cols-7 gap-4 items-center">
                     <div>
-                      <Badge className={carrier.color}>
+                      <div 
+                        className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium text-white"
+                        style={{ backgroundColor: carrier.color || '#3B82F6' }}
+                      >
                         {carrier.carrier}
-                      </Badge>
+                      </div>
                     </div>
                     <div>
                       <div className="font-medium">{carrier.type}</div>

@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -15,16 +16,6 @@ interface EditCarrierQuoteDialogProps {
   onUpdateCarrier: (carrier: CarrierQuote) => void;
 }
 
-const carrierColors = [
-  { name: "Gray", value: "bg-gray-100 text-gray-800" },
-  { name: "Blue", value: "bg-blue-100 text-blue-800" },
-  { name: "Green", value: "bg-green-100 text-green-800" },
-  { name: "Yellow", value: "bg-yellow-100 text-yellow-800" },
-  { name: "Red", value: "bg-red-100 text-red-800" },
-  { name: "Purple", value: "bg-purple-100 text-purple-800" },
-  { name: "Orange", value: "bg-orange-100 text-orange-800" },
-];
-
 export const EditCarrierQuoteDialog = ({ open, onOpenChange, carrier, onUpdateCarrier }: EditCarrierQuoteDialogProps) => {
   const [vendorId, setVendorId] = useState("");
   const [categoryId, setCategoryId] = useState("");
@@ -32,7 +23,6 @@ export const EditCarrierQuoteDialog = ({ open, onOpenChange, carrier, onUpdateCa
   const [price, setPrice] = useState("");
   const [term, setTerm] = useState("");
   const [notes, setNotes] = useState("");
-  const [color, setColor] = useState("bg-gray-100 text-gray-800");
 
   const { vendors, categories, loading } = useCarrierOptions();
 
@@ -48,7 +38,6 @@ export const EditCarrierQuoteDialog = ({ open, onOpenChange, carrier, onUpdateCa
       setPrice(carrier.price.toString());
       setTerm(carrier.term);
       setNotes(carrier.notes);
-      setColor(carrier.color);
     }
   }, [carrier, vendors, categories]);
 
@@ -59,6 +48,9 @@ export const EditCarrierQuoteDialog = ({ open, onOpenChange, carrier, onUpdateCa
       const selectedVendor = vendors.find(v => v.id === vendorId);
       const selectedCategory = categories.find(c => c.id === categoryId);
       
+      // Use vendor's color or default to blue
+      const vendorColor = selectedVendor?.color || '#3B82F6';
+      
       onUpdateCarrier({
         ...carrier,
         carrier: selectedVendor?.name || "",
@@ -67,7 +59,7 @@ export const EditCarrierQuoteDialog = ({ open, onOpenChange, carrier, onUpdateCa
         price: parseFloat(price),
         term,
         notes,
-        color
+        color: vendorColor
       });
       
       onOpenChange(false);
@@ -94,7 +86,13 @@ export const EditCarrierQuoteDialog = ({ open, onOpenChange, carrier, onUpdateCa
               <SelectContent className="bg-white z-50">
                 {vendors.map((vendor) => (
                   <SelectItem key={vendor.id} value={vendor.id}>
-                    {vendor.name}
+                    <div className="flex items-center gap-2">
+                      <div 
+                        className="w-3 h-3 rounded-full" 
+                        style={{ backgroundColor: vendor.color || '#3B82F6' }}
+                      />
+                      {vendor.name}
+                    </div>
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -153,25 +151,6 @@ export const EditCarrierQuoteDialog = ({ open, onOpenChange, carrier, onUpdateCa
                 <SelectItem value="24 months">24 months</SelectItem>
                 <SelectItem value="36 months">36 months</SelectItem>
                 <SelectItem value="60 months">60 months</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="color">Badge Color</Label>
-            <Select value={color} onValueChange={setColor}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select color" />
-              </SelectTrigger>
-              <SelectContent className="bg-white z-50">
-                {carrierColors.map((colorOption) => (
-                  <SelectItem key={colorOption.value} value={colorOption.value}>
-                    <div className="flex items-center gap-2">
-                      <div className={`w-4 h-4 rounded ${colorOption.value}`}></div>
-                      {colorOption.name}
-                    </div>
-                  </SelectItem>
-                ))}
               </SelectContent>
             </Select>
           </div>
