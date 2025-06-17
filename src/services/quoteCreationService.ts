@@ -2,6 +2,7 @@
 import { supabase } from "@/integrations/supabase/client";
 import { Quote } from "@/pages/Index";
 import { QuoteItemData } from "@/types/quoteItems";
+import { updateQuoteItems } from "./quoteItems/updateQuoteItems";
 
 export const createQuoteInDatabase = async (
   quote: Omit<Quote, "id">,
@@ -46,89 +47,17 @@ export const createQuoteInDatabase = async (
 
   console.log('[createQuoteInDatabase] Quote created successfully with ID:', quoteData.id);
 
-  // Save quote items if they exist
+  // Save quote items if they exist using the updateQuoteItems function
   if (quote.quoteItems && quote.quoteItems.length > 0) {
-    console.log('[createQuoteInDatabase] Saving quote items:', quote.quoteItems.length);
+    console.log('[createQuoteInDatabase] Saving quote items using updateQuoteItems:', quote.quoteItems.length);
     
-    for (const item of quote.quoteItems) {
-      console.log('[createQuoteInDatabase] Processing item:', {
-        name: item.name,
-        item_id: item.item_id,
-        address_id: item.address_id,
-        quantity: item.quantity,
-        unit_price: item.unit_price,
-        total_price: item.total_price
-      });
-
-      let itemId = item.item_id;
-      
-      // Handle carrier quote items - create temporary items for them that won't appear in catalog
-      if (item.item_id.startsWith('carrier-')) {
-        console.log('[createQuoteInDatabase] Creating temporary item for carrier quote item:', item.name);
-        
-        // Build description without location or term - only include notes
-        const descriptionParts = [];
-        if (item.description) {
-          // Clean description to remove location and term information
-          const cleanDescription = item.description
-            .replace(/Location: [^|]+\s*\|\s*?/g, '') // Remove "Location: xxx |"
-            .replace(/\|\s*Location: [^|]+/g, '') // Remove "| Location: xxx"
-            .replace(/^Location: [^|]+$/g, '') // Remove standalone "Location: xxx"
-            .replace(/Term: [^|]+\s*\|\s*?/g, '') // Remove "Term: xxx |"
-            .replace(/\|\s*Term: [^|]+/g, '') // Remove "| Term: xxx"
-            .replace(/^Term: [^|]+$/g, '') // Remove standalone "Term: xxx"
-            .trim();
-          
-          if (cleanDescription) {
-            descriptionParts.push(cleanDescription);
-          }
-        }
-        
-        const { data: newItem, error: itemError } = await supabase
-          .from('items')
-          .insert({
-            user_id: userId,
-            name: item.name || 'Carrier Quote Item',
-            description: descriptionParts.join(' | '), // Clean description without location or term
-            price: item.unit_price,
-            cost: item.cost_override || 0,
-            charge_type: item.charge_type,
-            is_active: false // Set to false so it doesn't appear in the catalog
-          })
-          .select()
-          .single();
-
-        if (itemError) {
-          console.error('[createQuoteInDatabase] Error creating temporary item for carrier quote:', itemError);
-          throw itemError;
-        }
-        
-        itemId = newItem.id;
-        console.log('[createQuoteInDatabase] Created temporary item with ID:', itemId);
-      }
-      
-      // Insert quote item with the correct item_id
-      const { error: quoteItemError } = await supabase
-        .from('quote_items')
-        .insert({
-          quote_id: quoteData.id,
-          item_id: itemId,
-          quantity: item.quantity,
-          unit_price: item.unit_price,
-          total_price: item.total_price,
-          charge_type: item.charge_type,
-          address_id: item.address_id || null
-        });
-
-      if (quoteItemError) {
-        console.error('[createQuoteInDatabase] Error creating quote item:', quoteItemError);
-        throw quoteItemError;
-      }
-
-      console.log('[createQuoteInDatabase] Successfully inserted quote item for:', item.name);
+    try {
+      await updateQuoteItems(quoteData.id, quote.quoteItems);
+      console.log('[createQuoteInDatabase] Quote items saved successfully using updateQuoteItems');
+    } catch (error) {
+      console.error('[createQuoteInDatabase] Error saving quote items:', error);
+      throw error;
     }
-
-    console.log('[createQuoteInDatabase] Quote items saved successfully');
   }
 
   console.log('[createQuoteInDatabase] Quote creation completed successfully with addresses:', {
