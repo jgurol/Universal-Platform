@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Loader2 } from "lucide-react";
 import { AddCircuitQuoteDialog } from "@/components/AddCircuitQuoteDialog";
 import { CircuitQuotesHeader } from "@/components/CircuitQuotes/CircuitQuotesHeader";
@@ -19,19 +19,12 @@ export const CircuitQuotesManagement = () => {
     deleteQuote,
     addCarrierQuote, 
     updateCarrierQuote, 
-    deleteCarrierQuote,
-    fetchQuotes
+    deleteCarrierQuote
   } = useCircuitQuotes();
   
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
-
-  // Add additional fetch after component mounts
-  useEffect(() => {
-    console.log('[CircuitQuotesManagement] Component mounted, triggering data fetch');
-    fetchQuotes();
-  }, [fetchQuotes]);
 
   const handleUpdateQuote = (updatedQuote: any) => {
     // Transform the quote to match database format

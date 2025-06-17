@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
 import { useToast } from "@/hooks/use-toast";
@@ -32,7 +32,7 @@ export const useCircuitQuotes = () => {
   const { user } = useAuth();
   const { toast } = useToast();
 
-  const fetchQuotes = async () => {
+  const fetchQuotes = useCallback(async () => {
     try {
       setLoading(true);
       console.log('[useCircuitQuotes] Starting fetch with user:', user?.id);
@@ -86,7 +86,7 @@ export const useCircuitQuotes = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [user?.id, toast]);
 
   const addQuote = async (newQuote: Omit<CircuitQuote, "id" | "created_at" | "carriers">) => {
     if (!user) {
@@ -333,7 +333,7 @@ export const useCircuitQuotes = () => {
   useEffect(() => {
     // Fetch quotes on initial load, even if user is not yet available
     fetchQuotes();
-  }, []);
+  }, [fetchQuotes]);
 
   return {
     quotes,
