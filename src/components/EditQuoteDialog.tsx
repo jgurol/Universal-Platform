@@ -1,4 +1,3 @@
-
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -71,9 +70,11 @@ export const EditQuoteDialog = ({
   useEffect(() => {
     if (quote && open) {
       setBillingAddress(quote.billingAddress || "");
-      // Only set service address if it actually exists in the quote
+      // Only set service address if it actually exists in the quote - never auto-populate
       setServiceAddress(quote.serviceAddress || "");
-      console.log('EditQuoteDialog - Initialized addresses (no auto-population):', { 
+      setSelectedBillingAddressId(null);
+      setSelectedServiceAddressId(null);
+      console.log('EditQuoteDialog - Initialized addresses (strict no auto-population):', { 
         billing: quote.billingAddress, 
         service: quote.serviceAddress 
       });
@@ -112,17 +113,14 @@ export const EditQuoteDialog = ({
   const handleBillingAddressChange = (addressId: string | null, customAddr?: string) => {
     console.log('EditQuoteDialog - Billing address changed:', { addressId, customAddr });
     setSelectedBillingAddressId(addressId);
-    if (customAddr !== undefined) {
-      setBillingAddress(customAddr);
-    }
+    setBillingAddress(customAddr || "");
   };
 
   const handleServiceAddressChange = (addressId: string | null, customAddr?: string) => {
-    console.log('EditQuoteDialog - Service address changed:', { addressId, customAddr });
+    console.log('EditQuoteDialog - Service address changed (no auto-population):', { addressId, customAddr });
     setSelectedServiceAddressId(addressId);
-    if (customAddr !== undefined) {
-      setServiceAddress(customAddr);
-    }
+    // Only set if there's an actual custom address, otherwise keep empty
+    setServiceAddress(customAddr || "");
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -238,14 +236,16 @@ export const EditQuoteDialog = ({
             selectedAddressId={selectedBillingAddressId || undefined}
             onAddressChange={handleBillingAddressChange}
             label="Billing Address"
+            autoSelectPrimary={false}
           />
 
-          {/* Service Address Selection */}
+          {/* Service Address Selection - NO auto-selection */}
           <AddressSelector
             clientInfoId={clientInfoId !== "none" ? clientInfoId : null}
             selectedAddressId={selectedServiceAddressId || undefined}
             onAddressChange={handleServiceAddressChange}
             label="Service Address"
+            autoSelectPrimary={false}
           />
 
           {/* Salesperson Display */}

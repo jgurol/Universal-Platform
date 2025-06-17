@@ -2,120 +2,131 @@
 import { useState, useEffect } from "react";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Plus } from "lucide-react";
-import { ClientAddress } from "@/types/clientAddress";
+import { Textarea } from "@/components/ui/textarea";
 import { useClientAddresses } from "@/hooks/useClientAddresses";
 
 interface AddressSelectorProps {
   clientInfoId: string | null;
   selectedAddressId?: string;
   onAddressChange: (addressId: string | null, customAddress?: string) => void;
-  label?: string;
-  autoSelectPrimary?: boolean; // New prop to control auto-selection
+  label: string;
+  autoSelectPrimary?: boolean;
 }
 
 export const AddressSelector = ({ 
   clientInfoId, 
   selectedAddressId, 
-  onAddressChange,
-  label = "Address",
-  autoSelectPrimary = true // Default to true for billing address backward compatibility
+  onAddressChange, 
+  label,
+  autoSelectPrimary = false
 }: AddressSelectorProps) => {
-  const { addresses, isLoading } = useClientAddresses(clientInfoId);
-  const [addressMode, setAddressMode] = useState<'existing' | 'custom'>('existing');
-  const [customAddress, setCustomAddress] = useState('');
+  const { addresses } = useClientAddresses(clientInfoId);
+  const [useCustom, setUseCustom] = useState(false);
+  const [customAddress, setCustomAddress] = useState("");
 
-  // Move formatAddress function to the top before it's used
-  const formatAddress = (address: ClientAddress) => {
-    return `${address.street_address}, ${address.city}, ${address.state} ${address.zip_code}`;
-  };
-
-  // Only auto-select primary address if autoSelectPrimary is true
+  // Only auto-select primary address if explicitly requested AND no address is currently selected
   useEffect(() => {
-    if (addresses.length > 0 && !selectedAddressId && autoSelectPrimary) {
-      const primaryAddress = addresses.find(addr => addr.is_primary) || addresses[0];
-      const formattedAddress = formatAddress(primaryAddress);
-      console.log('Setting primary address:', formattedAddress);
-      onAddressChange(primaryAddress.id, formattedAddress);
-    }
-  }, [addresses, selectedAddressId, onAddressChange, autoSelectPrimary]);
-
-  const handleAddressModeChange = (mode: 'existing' | 'custom') => {
-    setAddressMode(mode);
-    if (mode === 'existing') {
-      if (autoSelectPrimary) {
-        const primaryAddress = addresses.find(addr => addr.is_primary) || addresses[0];
-        if (primaryAddress) {
-          const formattedAddress = formatAddress(primaryAddress);
-          onAddressChange(primaryAddress.id, formattedAddress);
-        }
-      } else {
-        // Don't auto-select anything, let user choose
-        onAddressChange(null, '');
+    if (autoSelectPrimary && addresses.length > 0 && !selectedAddressId) {
+      const primaryAddress = addresses.find(addr => addr.is_primary);
+      if (primaryAddress) {
+        const formattedAddress = `${primaryAddress.street_address}${primaryAddress.street_address_2 ? `, ${primaryAddress.street_address_2}` : ''}, ${primaryAddress.city}, ${primaryAddress.state} ${primaryAddress.zip_code}`;
+        onAddressChange(primaryAddress.id, formattedAddress);
+        console.log('AddressSelector - Auto-selected primary address:', { 
+          label, 
+          addressId: primaryAddress.id, 
+          address: formattedAddress 
+        });
       }
-    } else {
-      onAddressChange(null, customAddress);
     }
-  };
+  }, [addresses, autoSelectPrimary, selectedAddressId, onAddressChange, label]);
 
-  const handleExistingAddressChange = (addressId: string) => {
-    const selectedAddress = addresses.find(addr => addr.id === addressId);
-    if (selectedAddress) {
-      const formattedAddress = formatAddress(selectedAddress);
-      console.log('Selected existing address:', formattedAddress);
-      onAddressChange(addressId, formattedAddress);
+  const handleAddressSelect = (addressId: string) => {
+    if (addressId === "custom") {
+      setUseCustom(true);
+      onAddressChange(null, "");
+    } else if (addressId === "none") {
+      setUseCustom(false);
+      setCustomAddress("");
+      onAddressChange(null, "");
+      console.log('AddressSelector - Cleared address:', { label });
+    } else {
+      setUseCustom(false);
+      const selectedAddress = addresses.find(addr => addr.id === addressId);
+      if (selectedAddress) {
+        const formattedAddress = `${selectedAddress.street_address}${selectedAddress.street_address_2 ? `, ${selectedAddress.street_address_2}` : ''}, ${selectedAddress.city}, ${selectedAddress.state} ${selectedAddress.zip_code}`;
+        onAddressChange(addressId, formattedAddress);
+        console.log('AddressSelector - Selected address:', { 
+          label, 
+          addressId, 
+          address: formattedAddress 
+        });
+      }
     }
   };
 
   const handleCustomAddressChange = (value: string) => {
     setCustomAddress(value);
     onAddressChange(null, value);
+    console.log('AddressSelector - Custom address changed:', { label, customAddress: value });
   };
 
   if (!clientInfoId) {
-    return null;
+    return (
+      <div className="space-y-2">
+        <Label>{label}</Label>
+        <div className="text-sm text-gray-500">Select a client first</div>
+      </div>
+    );
   }
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-2">
       <Label>{label}</Label>
       
-      <div className="flex gap-2 mb-2">
+      <div className="flex gap-2">
         <Button
           type="button"
-          variant={addressMode === 'existing' ? 'default' : 'outline'}
+          variant={!useCustom ? "default" : "outline"}
           size="sm"
-          onClick={() => handleAddressModeChange('existing')}
-          disabled={isLoading || addresses.length === 0}
+          onClick={() => {
+            setUseCustom(false);
+            setCustomAddress("");
+            if (!selectedAddressId) {
+              onAddressChange(null, "");
+            }
+          }}
         >
           Use Existing Address
         </Button>
         <Button
           type="button"
-          variant={addressMode === 'custom' ? 'default' : 'outline'}
+          variant={useCustom ? "default" : "outline"}
           size="sm"
-          onClick={() => handleAddressModeChange('custom')}
+          onClick={() => handleAddressSelect("custom")}
         >
           Enter Custom Address
         </Button>
       </div>
 
-      {addressMode === 'existing' ? (
-        <Select value={selectedAddressId || ''} onValueChange={handleExistingAddressChange}>
+      {!useCustom ? (
+        <Select 
+          value={selectedAddressId || "none"} 
+          onValueChange={handleAddressSelect}
+        >
           <SelectTrigger>
-            <SelectValue placeholder={isLoading ? "Loading addresses..." : "Select an address"} />
+            <SelectValue placeholder={`Select ${label.toLowerCase()}`} />
           </SelectTrigger>
           <SelectContent>
+            <SelectItem value="none">-- No Address --</SelectItem>
             {addresses.map((address) => (
               <SelectItem key={address.id} value={address.id}>
                 <div className="flex flex-col">
                   <span className="font-medium">
-                    {address.address_type} {address.is_primary && '(Primary)'}
+                    {address.address_type} {address.is_primary && "(Primary)"}
                   </span>
-                  <span className="text-sm text-muted-foreground">
-                    {formatAddress(address)}
+                  <span className="text-sm text-gray-600">
+                    {address.street_address}{address.street_address_2 && `, ${address.street_address_2}`}, {address.city}, {address.state} {address.zip_code}
                   </span>
                 </div>
               </SelectItem>
@@ -123,18 +134,12 @@ export const AddressSelector = ({
           </SelectContent>
         </Select>
       ) : (
-        <Input
+        <Textarea
           value={customAddress}
           onChange={(e) => handleCustomAddressChange(e.target.value)}
-          placeholder="Enter custom address..."
-          className="min-h-[60px]"
+          placeholder={`Enter custom ${label.toLowerCase()}`}
+          rows={3}
         />
-      )}
-
-      {addresses.length === 0 && !isLoading && (
-        <p className="text-sm text-muted-foreground">
-          No addresses found for this client. You can enter a custom address above.
-        </p>
       )}
     </div>
   );

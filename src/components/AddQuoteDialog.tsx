@@ -200,9 +200,10 @@ export const AddQuoteDialog = ({ open, onOpenChange, onAddQuote, clients, client
   };
 
   const handleServiceAddressChange = (addressId: string | null, customAddr?: string) => {
-    console.log('AddQuoteDialog - Service address changed:', { addressId, customAddr });
+    console.log('AddQuoteDialog - Service address changed (strict no auto-population):', { addressId, customAddr });
     setSelectedServiceAddressId(addressId);
-    setServiceAddress(customAddr || ""); // Don't auto-populate with billing address
+    // Only set if there's an actual custom address, otherwise keep empty
+    setServiceAddress(customAddr || "");
   };
 
   const calculateTotalAmount = () => {
@@ -379,6 +380,7 @@ export const AddQuoteDialog = ({ open, onOpenChange, onAddQuote, clients, client
             autoSelectPrimary={true}
           />
 
+          {/* Service Address Selection - NO auto-selection */}
           <AddressSelector
             clientInfoId={clientInfoId !== "none" ? clientInfoId : null}
             selectedAddressId={selectedServiceAddressId || undefined}
