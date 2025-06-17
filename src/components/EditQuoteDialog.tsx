@@ -235,7 +235,7 @@ export const EditQuoteDialog = ({
           onExpiresAtChange={setExpiresAt}
         />
         
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-6">
           <EditQuoteFormFields
             description={description}
             onDescriptionChange={setDescription}
@@ -259,11 +259,14 @@ export const EditQuoteDialog = ({
             onServiceAddressChange={handleServiceAddressChange}
           />
 
-          <QuoteItemsManager
-            items={quoteItems}
-            onItemsChange={setQuoteItems}
-            clientInfoId={clientInfoId !== "none" ? clientInfoId : undefined}
-          />
+          <div className="bg-muted/30 p-4 rounded-lg">
+            <h3 className="font-medium text-sm text-muted-foreground uppercase tracking-wide mb-4">Quote Items</h3>
+            <QuoteItemsManager
+              items={quoteItems}
+              onItemsChange={setQuoteItems}
+              clientInfoId={clientInfoId !== "none" ? clientInfoId : undefined}
+            />
+          </div>
 
           <EditQuoteTemplateSection
             selectedTemplateId={selectedTemplateId}

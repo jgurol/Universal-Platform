@@ -1,18 +1,17 @@
-
 import { useState, useEffect } from "react";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Quote, Client, ClientInfo } from "@/pages/Index";
-import { getTodayInTimezone } from "@/utils/dateUtils";
+import { AddressSelector } from "@/components/AddressSelector";
+import { QuoteItemsManager } from "@/components/QuoteItemsManager";
+import { QuoteDetailsSection } from "@/components/QuoteDetailsSection";
+import { calculateTotalsByChargeType } from "@/services/quoteItemsService";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
-import { QuoteItemsManager } from "@/components/QuoteItemsManager";
-import { QuoteItemData } from "@/types/quoteItems";
-import { AddressSelector } from "@/components/AddressSelector";
 import type { Database } from "@/integrations/supabase/types";
 
 type QuoteTemplate = Database['public']['Tables']['quote_templates']['Row'];
@@ -20,129 +19,30 @@ type QuoteTemplate = Database['public']['Tables']['quote_templates']['Row'];
 interface AddQuoteDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onAddQuote: (quote: Omit<Quote, "id">) => void;
+  onAddQuote: (quote: Omit<Quote, 'id'>) => void;
   clients: Client[];
-  clientInfos: ClientInfo[]; 
+  clientInfos: ClientInfo[];
 }
 
 export const AddQuoteDialog = ({ open, onOpenChange, onAddQuote, clients, clientInfos }: AddQuoteDialogProps) => {
-  const [clientId, setClientId] = useState("");
-  const [clientInfoId, setClientInfoId] = useState("");
-  const [date, setDate] = useState("");
-  const [description, setDescription] = useState("");
-  const [quoteNumber, setQuoteNumber] = useState("");
-  const [quoteMonth, setQuoteMonth] = useState("");
-  const [quoteYear, setQuoteYear] = useState("");
-  const [term, setTerm] = useState("36 Months");
-  const [expiresAt, setExpiresAt] = useState("");
-  const [notes, setNotes] = useState("");
-  const [commissionOverride, setCommissionOverride] = useState("");
-  const [quoteItems, setQuoteItems] = useState<QuoteItemData[]>([]);
-  const [billingAddress, setBillingAddress] = useState<string>("");
+  const [clientId, setClientId] = useState<string>("");
+  const [clientInfoId, setClientInfoId] = useState<string>("none");
+  const [date, setDate] = useState<string>(new Date().toISOString().split('T')[0]);
+  const [description, setDescription] = useState<string>("");
+  const [quoteNumber, setQuoteNumber] = useState<string>("");
+  const [status, setStatus] = useState<string>("pending");
+  const [expiresAt, setExpiresAt] = useState<string>("");
+  const [notes, setNotes] = useState<string>("");
+  const [commissionOverride, setCommissionOverride] = useState<string>("");
+  const [quoteItems, setQuoteItems] = useState<any[]>([]);
   const [selectedBillingAddressId, setSelectedBillingAddressId] = useState<string | null>(null);
-  const [serviceAddress, setServiceAddress] = useState<string>("");
+  const [billingAddress, setBillingAddress] = useState<string>("");
   const [selectedServiceAddressId, setSelectedServiceAddressId] = useState<string | null>(null);
+  const [serviceAddress, setServiceAddress] = useState<string>("");
   const [selectedTemplateId, setSelectedTemplateId] = useState<string>("none");
   const [templates, setTemplates] = useState<QuoteTemplate[]>([]);
   const { user } = useAuth();
-  
-  // Function to reset all form fields
-  const resetForm = () => {
-    setClientId("");
-    setClientInfoId("");
-    setDescription("");
-    setQuoteNumber("");
-    setQuoteMonth("");
-    setQuoteYear("");
-    setTerm("36 Months");
-    setNotes("");
-    setCommissionOverride("");
-    setQuoteItems([]);
-    setBillingAddress("");
-    setSelectedBillingAddressId(null);
-    setServiceAddress("");
-    setSelectedServiceAddressId(null);
-    setSelectedTemplateId("none");
-    
-    // Reset dates
-    const todayDate = getTodayInTimezone();
-    setDate(todayDate);
-    setExpiresAt(calculateExpirationDate(todayDate));
-  };
-  
-  // Function to calculate expiration date (+60 days from quote date)
-  const calculateExpirationDate = (quoteDate: string): string => {
-    if (!quoteDate) return "";
-    
-    const date = new Date(quoteDate);
-    date.setDate(date.getDate() + 60);
-    
-    // Format as YYYY-MM-DD for input
-    return date.toISOString().split('T')[0];
-  };
-  
-  // Initialize date with today's date in the configured timezone
-  useEffect(() => {
-    if (!date) {
-      const todayDate = getTodayInTimezone();
-      setDate(todayDate);
-      setExpiresAt(calculateExpirationDate(todayDate));
-    }
-  }, []);
 
-  // Update expiration date when quote date changes
-  useEffect(() => {
-    if (date) {
-      setExpiresAt(calculateExpirationDate(date));
-    }
-  }, [date]);
-
-  // Reset form when dialog opens or closes
-  useEffect(() => {
-    if (open) {
-      resetForm();
-    }
-  }, [open]);
-
-  // Generate next quote number when dialog opens - starting from 3500
-  useEffect(() => {
-    const generateNextQuoteNumber = async () => {
-      if (open && user) {
-        try {
-          const { data, error } = await supabase
-            .from('quotes')
-            .select('quote_number')
-            .eq('user_id', user.id)
-            .not('quote_number', 'is', null)
-            .order('created_at', { ascending: false })
-            .limit(1);
-
-          if (error) {
-            console.error('Error fetching last quote number:', error);
-            setQuoteNumber("3500");
-            return;
-          }
-
-          let nextNumber = 3500; // Start from 3500 instead of 1
-          if (data && data.length > 0 && data[0].quote_number) {
-            const lastNumber = parseInt(data[0].quote_number);
-            if (!isNaN(lastNumber)) {
-              nextNumber = Math.max(lastNumber + 1, 3500); // Ensure we never go below 3500
-            }
-          }
-          
-          setQuoteNumber(nextNumber.toString());
-        } catch (err) {
-          console.error('Error generating quote number:', err);
-          setQuoteNumber("3500");
-        }
-      }
-    };
-
-    generateNextQuoteNumber();
-  }, [open, user]);
-  
-  // Load templates when dialog opens
   useEffect(() => {
     const fetchTemplates = async () => {
       if (open && user) {
@@ -154,14 +54,7 @@ export const AddQuoteDialog = ({ open, onOpenChange, onAddQuote, clients, client
             .order('name');
 
           if (error) throw error;
-          
           setTemplates(data || []);
-          
-          // Auto-select default template if available
-          const defaultTemplate = data?.find(t => t.is_default);
-          if (defaultTemplate) {
-            setSelectedTemplateId(defaultTemplate.id);
-          }
         } catch (error) {
           console.error('Error loading templates:', error);
         }
@@ -171,91 +64,55 @@ export const AddQuoteDialog = ({ open, onOpenChange, onAddQuote, clients, client
     fetchTemplates();
   }, [open, user]);
 
-  // Handle client selection - auto-select salesperson based on client's agent_id
-  useEffect(() => {
-    if (clientInfoId && clientInfoId !== "none") {
-      const selectedClient = clientInfos.find(info => info.id === clientInfoId);
-      
-      if (selectedClient && selectedClient.agent_id) {
-        setClientId(selectedClient.agent_id);
-      } else {
-        setClientId("");
-      }
-    } else {
-      setClientId("");
-    }
-  }, [clientInfoId, clientInfos]);
-
   const handleBillingAddressChange = (addressId: string | null, customAddr?: string) => {
-    console.log('AddQuoteDialog - Billing address changed:', { addressId, customAddr });
     setSelectedBillingAddressId(addressId);
     setBillingAddress(customAddr || "");
   };
 
   const handleServiceAddressChange = (addressId: string | null, customAddr?: string) => {
-    console.log('AddQuoteDialog - Service address changed:', { addressId, customAddr });
     setSelectedServiceAddressId(addressId);
     setServiceAddress(customAddr || "");
   };
 
-  const calculateTotalAmount = () => {
-    return quoteItems.reduce((total, item) => total + item.total_price, 0);
-  };
-
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    console.log('[AddQuoteDialog] Form submitted with addresses:', { 
-      billing: billingAddress, 
-      service: serviceAddress 
-    });
-    
-    const totalAmount = calculateTotalAmount();
-    
-    // Check for clientInfoId instead of clientId, since clientId can be empty if no salesperson is associated
-    if (clientInfoId && clientInfoId !== "none" && date) {
-      const selectedClient = clientId ? clients.find(client => client.id === clientId) : null;
-      const selectedClientInfo = clientInfos.find(info => info.id === clientInfoId);
-      
-      if (selectedClientInfo) {
-        const quoteData = {
-          clientId: clientId || "", // Allow empty clientId if no salesperson is associated
-          clientName: selectedClient?.name || "No Salesperson Assigned",
-          companyName: selectedClientInfo.company_name,
+    if (clientId && date) {
+      const selectedClient = clients.find(client => client.id === clientId);
+      const selectedClientInfo = clientInfoId && clientInfoId !== "none" ? clientInfos.find(info => info.id === clientInfoId) : null;
+
+      if (selectedClient) {
+        const { totalAmount } = calculateTotalsByChargeType(quoteItems);
+
+        const newQuote: Omit<Quote, 'id'> = {
+          clientId,
+          clientName: selectedClient.name,
+          companyName: selectedClient.companyName || selectedClient.name,
           amount: totalAmount,
           date,
-          description: description,
+          description: description || "",
           quoteNumber: quoteNumber || undefined,
-          quoteMonth: quoteMonth || undefined,
-          quoteYear: quoteYear || undefined,
-          term: term,
-          status: "pending", // Always set to pending instead of using state
-          clientInfoId: clientInfoId,
-          clientCompanyName: selectedClientInfo.company_name,
+          status,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+          clientInfoId: clientInfoId !== "none" ? clientInfoId : undefined,
+          clientCompanyName: selectedClientInfo?.company_name,
           commissionOverride: commissionOverride ? parseFloat(commissionOverride) : undefined,
           expiresAt: expiresAt || undefined,
           notes: notes || undefined,
-          quoteItems: quoteItems,
           billingAddress: billingAddress || undefined,
           serviceAddress: serviceAddress || undefined,
-          templateId: selectedTemplateId !== "none" ? selectedTemplateId : undefined
+          templateId: selectedTemplateId !== "none" ? selectedTemplateId : undefined,
+          versionNumber: 1,
+          isArchived: false
         };
-        
-        console.log('[AddQuoteDialog] Calling onAddQuote with data:', quoteData);
-        onAddQuote(quoteData);
-        
-        // Reset form after successful submission
-        resetForm();
+
+        onAddQuote(newQuote);
         onOpenChange(false);
       }
     }
   };
 
   const selectedSalesperson = clientId ? clients.find(c => c.id === clientId) : null;
-  const selectedClientInfo = clientInfoId && clientInfoId !== "none" ? clientInfos.find(info => info.id === clientInfoId) : null;
-
-  // Check if form is valid for submission
-  const isFormValid = clientInfoId && clientInfoId !== "none" && quoteItems.length > 0;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -263,182 +120,164 @@ export const AddQuoteDialog = ({ open, onOpenChange, onAddQuote, clients, client
         <DialogHeader>
           <div className="flex justify-between items-start">
             <div>
-              <DialogTitle>Add Quote</DialogTitle>
+              <DialogTitle>Add New Quote</DialogTitle>
               <DialogDescription>
-                Create a new quote for a client.
+                Create a new quote for your client. Fill in the details below.
               </DialogDescription>
             </div>
             
-            {/* Quote Details - Top Right */}
-            <div className="grid grid-cols-1 gap-3 min-w-[280px]">
-              <div className="space-y-2">
-                <Label htmlFor="quoteNumber" className="text-sm">Quote Number</Label>
-                <Input
-                  id="quoteNumber"
-                  value={quoteNumber}
-                  onChange={(e) => setQuoteNumber(e.target.value)}
-                  placeholder="Auto-generated"
-                  disabled
-                  className="h-8"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="date" className="text-sm">Quote Date</Label>
-                <Input
-                  id="date"
-                  type="date"
-                  value={date}
-                  onChange={(e) => setDate(e.target.value)}
-                  required
-                  className="h-8"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="expiresAt" className="text-sm">Expiration Date (Auto +60 days)</Label>
-                <Input
-                  id="expiresAt"
-                  type="date"
-                  value={expiresAt}
-                  onChange={(e) => setExpiresAt(e.target.value)}
-                  className="h-8"
-                />
-              </div>
-            </div>
+            <QuoteDetailsSection
+              quoteNumber={quoteNumber}
+              onQuoteNumberChange={setQuoteNumber}
+              date={date}
+              onDateChange={setDate}
+              expiresAt={expiresAt}
+              onExpiresAtChange={setExpiresAt}
+            />
           </div>
         </DialogHeader>
         
-        <form onSubmit={handleSubmit} className="space-y-4">
-          {/* Quote Name - Moved to top */}
-          <div className="space-y-2">
-            <Label htmlFor="description">Quote Name</Label>
-            <Input
-              id="description"
-              value={description}
-              onChange={(e) => {
-                console.log('[AddQuoteDialog] Description changed to:', e.target.value);
-                setDescription(e.target.value);
-              }}
-              placeholder="Enter quote name"
-            />
-          </div>
+        <form onSubmit={handleSubmit} className="space-y-6">
+          {/* Basic Information Section */}
+          <div className="bg-muted/30 p-4 rounded-lg space-y-4">
+            <h3 className="font-medium text-sm text-muted-foreground uppercase tracking-wide">Basic Information</h3>
+            
+            <div className="space-y-2">
+              <Label htmlFor="description">Quote Name</Label>
+              <Input
+                id="description"
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                placeholder="Enter quote name"
+              />
+            </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="clientInfo">Client Company (Required)</Label>
-            <Select value={clientInfoId} onValueChange={setClientInfoId} required>
-              <SelectTrigger>
-                <SelectValue placeholder="Select a client company" />
-              </SelectTrigger>
-              <SelectContent>
-                {clientInfos.length === 0 ? (
-                  <SelectItem value="no-clients" disabled>
-                    No clients available - Add clients first
-                  </SelectItem>
-                ) : (
-                  clientInfos.map((clientInfo) => (
+            <div className="space-y-2">
+              <Label htmlFor="clientInfo">Client Company</Label>
+              <Select value={clientInfoId} onValueChange={setClientInfoId}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select a client company" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">No client selected</SelectItem>
+                  {clientInfos.map((clientInfo) => (
                     <SelectItem key={clientInfo.id} value={clientInfo.id}>
                       {clientInfo.company_name}
                     </SelectItem>
-                  ))
-                )}
-              </SelectContent>
-            </Select>
-          </div>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="term">Term</Label>
-            <Select value={term} onValueChange={setTerm}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select term" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="Month to Month">Month to Month</SelectItem>
-                <SelectItem value="12 Months">12 Months</SelectItem>
-                <SelectItem value="24 Months">24 Months</SelectItem>
-                <SelectItem value="36 Months">36 Months</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+            {selectedSalesperson && (
+              <div className="space-y-2">
+                <Label>Associated Salesperson</Label>
+                <div className="border rounded-md px-3 py-2 bg-muted text-muted-foreground">
+                  {selectedSalesperson.name} {selectedSalesperson.companyName && `(${selectedSalesperson.companyName})`}
+                </div>
+              </div>
+            )}
 
-          <AddressSelector
-            clientInfoId={clientInfoId !== "none" ? clientInfoId : null}
-            selectedAddressId={selectedBillingAddressId || undefined}
-            onAddressChange={handleBillingAddressChange}
-            label="Billing Address"
-            autoSelectPrimary={true}
-          />
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="status">Status</Label>
+                <Select value={status} onValueChange={setStatus}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="pending">Pending</SelectItem>
+                    <SelectItem value="approved">Approved</SelectItem>
+                    <SelectItem value="rejected">Rejected</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
 
-          <AddressSelector
-            clientInfoId={clientInfoId !== "none" ? clientInfoId : null}
-            selectedAddressId={selectedServiceAddressId || undefined}
-            onAddressChange={handleServiceAddressChange}
-            label="Service Address (Optional)"
-            autoSelectPrimary={false}
-          />
-
-          {selectedSalesperson && (
-            <div className="space-y-2">
-              <Label>Associated Salesperson</Label>
-              <div className="border rounded-md px-3 py-2 bg-muted text-muted-foreground">
-                {selectedSalesperson.name} {selectedSalesperson.companyName && `(${selectedSalesperson.companyName})`}
+              <div className="space-y-2">
+                <Label htmlFor="commissionOverride">Commission Override (%)</Label>
+                <Input
+                  id="commissionOverride"
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  max="100"
+                  value={commissionOverride}
+                  onChange={(e) => setCommissionOverride(e.target.value)}
+                  placeholder="Optional commission override"
+                />
               </div>
             </div>
-          )}
 
-          <QuoteItemsManager 
-            items={quoteItems}
-            onItemsChange={setQuoteItems}
-            clientInfoId={clientInfoId !== "none" ? clientInfoId : undefined}
-          />
-
-          <div className="space-y-2">
-            <Label htmlFor="templateId">Quote Template (Optional)</Label>
-            <Select value={selectedTemplateId} onValueChange={setSelectedTemplateId}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select a template to include" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="none">No template</SelectItem>
-                {templates.map((template) => (
-                  <SelectItem key={template.id} value={template.id}>
-                    {template.name} {template.is_default && "(Default)"}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            {templates.length === 0 && (
-              <p className="text-sm text-gray-500">
-                No templates available. Create templates in System Settings.
-              </p>
-            )}
+            <div className="space-y-2">
+              <Label htmlFor="notes">Notes</Label>
+              <Textarea
+                id="notes"
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                placeholder="Additional notes about the quote"
+                rows={3}
+              />
+            </div>
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="commissionOverride">Commission Override (%)</Label>
-            <Input
-              id="commissionOverride"
-              type="number"
-              step="0.01"
-              min="0"
-              max="100"
-              value={commissionOverride}
-              onChange={(e) => setCommissionOverride(e.target.value)}
-              placeholder="Optional commission override"
+          {/* Address Information Section */}
+          <div className="bg-muted/30 p-4 rounded-lg space-y-4">
+            <h3 className="font-medium text-sm text-muted-foreground uppercase tracking-wide">Address Information</h3>
+            
+            <AddressSelector
+              clientInfoId={clientInfoId !== "none" ? clientInfoId : null}
+              selectedAddressId={selectedBillingAddressId || undefined}
+              onAddressChange={handleBillingAddressChange}
+              label="Billing Address"
+              autoSelectPrimary={true}
+            />
+
+            <AddressSelector
+              clientInfoId={clientInfoId !== "none" ? clientInfoId : null}
+              selectedAddressId={selectedServiceAddressId || undefined}
+              onAddressChange={handleServiceAddressChange}
+              label="Service Address"
+              autoSelectPrimary={false}
             />
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="notes">Notes</Label>
-            <Textarea
-              id="notes"
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              placeholder="Additional notes about the quote"
-              rows={3}
+          {/* Quote Items Section */}
+          <div className="bg-muted/30 p-4 rounded-lg">
+            <h3 className="font-medium text-sm text-muted-foreground uppercase tracking-wide mb-4">Quote Items</h3>
+            <QuoteItemsManager
+              items={quoteItems}
+              onItemsChange={setQuoteItems}
+              clientInfoId={clientInfoId !== "none" ? clientInfoId : undefined}
             />
           </div>
-          
+
+          {/* Template Section */}
+          <div className="bg-muted/30 p-4 rounded-lg space-y-4">
+            <h3 className="font-medium text-sm text-muted-foreground uppercase tracking-wide">Quote Template</h3>
+            
+            <div className="space-y-2">
+              <Label htmlFor="templateId">Quote Template (Optional)</Label>
+              <Select value={selectedTemplateId} onValueChange={setSelectedTemplateId}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select a template to include" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">No template</SelectItem>
+                  {templates.map((template) => (
+                    <SelectItem key={template.id} value={template.id}>
+                      {template.name} {template.is_default && "(Default)"}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {templates.length === 0 && (
+                <p className="text-sm text-gray-500">
+                  No templates available. Create templates in System Settings.
+                </p>
+              )}
+            </div>
+          </div>
+
           <div className="flex justify-end space-x-2 mt-6">
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               Cancel
@@ -446,9 +285,8 @@ export const AddQuoteDialog = ({ open, onOpenChange, onAddQuote, clients, client
             <Button 
               type="submit" 
               className="bg-blue-600 hover:bg-blue-700"
-              disabled={!isFormValid}
             >
-              Add Quote
+              Create Quote
             </Button>
           </div>
         </form>

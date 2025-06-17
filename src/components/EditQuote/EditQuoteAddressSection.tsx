@@ -17,7 +17,9 @@ export const EditQuoteAddressSection = ({
   onServiceAddressChange
 }: EditQuoteAddressSectionProps) => {
   return (
-    <>
+    <div className="bg-muted/30 p-4 rounded-lg space-y-4">
+      <h3 className="font-medium text-sm text-muted-foreground uppercase tracking-wide">Address Information</h3>
+      
       {/* Billing Address Selection */}
       <AddressSelector
         clientInfoId={clientInfoId !== "none" ? clientInfoId : null}
@@ -35,6 +37,6 @@ export const EditQuoteAddressSection = ({
         label="Service Address"
         autoSelectPrimary={false}
       />
-    </>
+    </div>
   );
 };

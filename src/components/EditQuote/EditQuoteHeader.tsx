@@ -21,7 +21,7 @@ export const EditQuoteHeader = ({
 }: EditQuoteHeaderProps) => {
   return (
     <DialogHeader>
-      <div className="flex justify-between items-start">
+      <div className="flex justify-between items-start bg-muted/30 p-4 rounded-lg -mx-6 -mt-6 mb-6">
         <div>
           <DialogTitle>Edit Quote</DialogTitle>
           <DialogDescription>
