@@ -36,8 +36,8 @@ export const QuoteItemsManager = ({ items, onItemsChange, clientInfoId }: QuoteI
       if (carrierItem && user) {
         // Find matching address based on circuit quote location
         let matchingAddress = addresses.find(addr => 
-          addr.city.toLowerCase().includes(carrierItem.client_name.toLowerCase()) ||
-          addr.street_address.toLowerCase().includes(carrierItem.client_name.toLowerCase())
+          addr.city.toLowerCase().includes(carrierItem.location.toLowerCase()) ||
+          addr.street_address.toLowerCase().includes(carrierItem.location.toLowerCase())
         );
         
         // If no matching address found, use the first available address
@@ -52,7 +52,7 @@ export const QuoteItemsManager = ({ items, onItemsChange, clientInfoId }: QuoteI
             .insert({
               user_id: user.id,
               name: `${carrierItem.carrier} - ${carrierItem.type} - ${carrierItem.speed}`,
-              description: `${carrierItem.term ? `Term: ${carrierItem.term}` : ''}${carrierItem.notes ? ` | Notes: ${carrierItem.notes}` : ''}`,
+              description: `Location: ${carrierItem.location}${carrierItem.term ? ` | Term: ${carrierItem.term}` : ''}${carrierItem.notes ? ` | Notes: ${carrierItem.notes}` : ''}`,
               price: 0, // Leave sell price blank
               cost: carrierItem.price, // Populate cost with carrier price
               charge_type: 'MRC',
@@ -81,6 +81,7 @@ export const QuoteItemsManager = ({ items, onItemsChange, clientInfoId }: QuoteI
             address: matchingAddress
           };
 
+          // Just add to the items list, don't trigger any save
           onItemsChange([...items, quoteItem]);
           setSelectedItemId("");
           return;
@@ -110,6 +111,7 @@ export const QuoteItemsManager = ({ items, onItemsChange, clientInfoId }: QuoteI
       address: addresses.length > 0 ? addresses[0] : undefined
     };
 
+    // Just add to the items list, don't trigger any save
     onItemsChange([...items, newItem]);
     setSelectedItemId("");
   };
