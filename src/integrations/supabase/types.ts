@@ -943,8 +943,6 @@ export type Database = {
       }
       vendors: {
         Row: {
-          address: string | null
-          contact_name: string | null
           created_at: string
           description: string | null
           email: string | null
@@ -952,13 +950,12 @@ export type Database = {
           is_active: boolean
           name: string
           phone: string | null
+          rep_name: string | null
+          sales_model: string | null
           updated_at: string
           user_id: string
-          website: string | null
         }
         Insert: {
-          address?: string | null
-          contact_name?: string | null
           created_at?: string
           description?: string | null
           email?: string | null
@@ -966,13 +963,12 @@ export type Database = {
           is_active?: boolean
           name: string
           phone?: string | null
+          rep_name?: string | null
+          sales_model?: string | null
           updated_at?: string
           user_id: string
-          website?: string | null
         }
         Update: {
-          address?: string | null
-          contact_name?: string | null
           created_at?: string
           description?: string | null
           email?: string | null
@@ -980,9 +976,10 @@ export type Database = {
           is_active?: boolean
           name?: string
           phone?: string | null
+          rep_name?: string | null
+          sales_model?: string | null
           updated_at?: string
           user_id?: string
-          website?: string | null
         }
         Relationships: []
       }
