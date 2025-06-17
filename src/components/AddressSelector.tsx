@@ -25,9 +25,9 @@ export const AddressSelector = ({
   const [useCustom, setUseCustom] = useState(false);
   const [customAddress, setCustomAddress] = useState("");
 
-  // Only auto-select primary address if explicitly requested AND no address is currently selected
+  // Auto-select primary address only when explicitly requested AND when addresses load
   useEffect(() => {
-    if (autoSelectPrimary && addresses.length > 0 && !selectedAddressId) {
+    if (autoSelectPrimary && addresses.length > 0 && !selectedAddressId && !useCustom) {
       const primaryAddress = addresses.find(addr => addr.is_primary);
       if (primaryAddress) {
         const formattedAddress = `${primaryAddress.street_address}${primaryAddress.street_address_2 ? `, ${primaryAddress.street_address_2}` : ''}, ${primaryAddress.city}, ${primaryAddress.state} ${primaryAddress.zip_code}`;
@@ -39,7 +39,7 @@ export const AddressSelector = ({
         });
       }
     }
-  }, [addresses, autoSelectPrimary, selectedAddressId, onAddressChange, label]);
+  }, [addresses, autoSelectPrimary, selectedAddressId, useCustom, onAddressChange, label]);
 
   const handleAddressSelect = (addressId: string) => {
     if (addressId === "custom") {
@@ -69,6 +69,15 @@ export const AddressSelector = ({
     setCustomAddress(value);
     onAddressChange(null, value);
     console.log('AddressSelector - Custom address changed:', { label, customAddress: value });
+  };
+
+  // Get the current display value for the select
+  const getSelectValue = () => {
+    if (useCustom) return "custom";
+    if (selectedAddressId && addresses.find(addr => addr.id === selectedAddressId)) {
+      return selectedAddressId;
+    }
+    return "none";
   };
 
   if (!clientInfoId) {
@@ -111,7 +120,7 @@ export const AddressSelector = ({
 
       {!useCustom ? (
         <Select 
-          value={selectedAddressId || "none"} 
+          value={getSelectValue()} 
           onValueChange={handleAddressSelect}
         >
           <SelectTrigger>
