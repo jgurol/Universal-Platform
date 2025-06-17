@@ -15,7 +15,7 @@ export const ItemsManagement = () => {
   const [isAddItemOpen, setIsAddItemOpen] = useState(false);
   const [isEditItemOpen, setIsEditItemOpen] = useState(false);
   const [selectedItem, setSelectedItem] = useState<Item | null>(null);
-  const { items, isLoading, addItem, updateItem } = useItems();
+  const { items, isLoading, addItem, updateItem, deleteItem } = useItems();
   const { categories } = useCategories();
   const { vendors } = useVendors();
 
@@ -39,6 +39,12 @@ export const ItemsManagement = () => {
   const handleUpdateItem = (itemId: string, updates: Partial<Item>) => {
     updateItem(itemId, updates);
     setSelectedItem(null);
+  };
+
+  const handleDeleteItem = (itemId: string) => {
+    if (confirm('Are you sure you want to delete this item?')) {
+      deleteItem(itemId);
+    }
   };
 
   if (isLoading) {
@@ -124,7 +130,12 @@ export const ItemsManagement = () => {
                     <Button variant="ghost" size="sm" onClick={() => handleEditItem(item)}>
                       <Edit className="h-4 w-4" />
                     </Button>
-                    <Button variant="ghost" size="sm" className="text-red-600 hover:text-red-700">
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      className="text-red-600 hover:text-red-700"
+                      onClick={() => handleDeleteItem(item.id)}
+                    >
                       <Trash2 className="h-4 w-4" />
                     </Button>
                   </div>

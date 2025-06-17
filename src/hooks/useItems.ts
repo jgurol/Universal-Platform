@@ -112,6 +112,40 @@ export const useItems = () => {
     }
   };
 
+  const deleteItem = async (itemId: string) => {
+    if (!user) return;
+
+    try {
+      const { error } = await supabase
+        .from('items')
+        .update({ is_active: false })
+        .eq('id', itemId)
+        .eq('user_id', user.id);
+
+      if (error) {
+        console.error('Error deleting item:', error);
+        toast({
+          title: "Failed to delete item",
+          description: error.message,
+          variant: "destructive"
+        });
+      } else {
+        setItems(prev => prev.filter(item => item.id !== itemId));
+        toast({
+          title: "Item deleted",
+          description: "Item has been deleted successfully.",
+        });
+      }
+    } catch (err) {
+      console.error('Error in deleteItem:', err);
+      toast({
+        title: "Error",
+        description: "Failed to delete item",
+        variant: "destructive"
+      });
+    }
+  };
+
   useEffect(() => {
     fetchItems();
   }, [user]);
@@ -121,6 +155,7 @@ export const useItems = () => {
     isLoading,
     fetchItems,
     addItem,
-    updateItem
+    updateItem,
+    deleteItem
   };
 };
