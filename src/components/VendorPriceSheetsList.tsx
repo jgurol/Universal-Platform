@@ -9,6 +9,7 @@ import { useVendorPriceSheets } from "@/hooks/useVendorPriceSheets";
 import { UploadPriceSheetDialog } from "@/components/UploadPriceSheetDialog";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { useVendors } from "@/hooks/useVendors";
 
 interface VendorPriceSheetsListProps {
   vendorId?: string;
@@ -16,9 +17,15 @@ interface VendorPriceSheetsListProps {
 }
 
 export const VendorPriceSheetsList = ({ vendorId, vendorName }: VendorPriceSheetsListProps) => {
-  const { priceSheets, loading, uploadPriceSheet, deletePriceSheet } = useVendorPriceSheets(vendorId);
+  const { priceSheets, isLoading, uploadPriceSheet, deletePriceSheet } = useVendorPriceSheets();
+  const { vendors } = useVendors();
   const [isUploadDialogOpen, setIsUploadDialogOpen] = useState(false);
   const { toast } = useToast();
+
+  // Filter price sheets by vendorId if provided
+  const filteredPriceSheets = vendorId 
+    ? priceSheets.filter(sheet => sheet.vendor_id === vendorId)
+    : priceSheets;
 
   const formatFileSize = (bytes: number | null): string => {
     if (!bytes) return "Unknown size";
@@ -80,7 +87,7 @@ export const VendorPriceSheetsList = ({ vendorId, vendorName }: VendorPriceSheet
 
   const handleUpload = async (file: File, name: string, selectedVendorId?: string) => {
     try {
-      await uploadPriceSheet(file, name, selectedVendorId);
+      await uploadPriceSheet(file, name, selectedVendorId || vendorId);
       setIsUploadDialogOpen(false);
     } catch (error) {
       console.error('Upload failed:', error);
@@ -104,7 +111,7 @@ export const VendorPriceSheetsList = ({ vendorId, vendorName }: VendorPriceSheet
     }
   };
 
-  if (loading) {
+  if (isLoading) {
     return (
       <Card>
         <CardContent className="flex items-center justify-center py-8">
@@ -135,7 +142,7 @@ export const VendorPriceSheetsList = ({ vendorId, vendorName }: VendorPriceSheet
         </Button>
       </div>
 
-      {priceSheets.length === 0 ? (
+      {filteredPriceSheets.length === 0 ? (
         <Card>
           <CardContent className="text-center py-8">
             <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
@@ -154,7 +161,7 @@ export const VendorPriceSheetsList = ({ vendorId, vendorName }: VendorPriceSheet
         </Card>
       ) : (
         <div className="grid gap-4">
-          {priceSheets.map((priceSheet) => (
+          {filteredPriceSheets.map((priceSheet) => (
             <Card key={priceSheet.id} className="hover:shadow-md transition-shadow">
               <CardContent className="p-6">
                 <div className="flex items-start justify-between">
@@ -235,7 +242,7 @@ export const VendorPriceSheetsList = ({ vendorId, vendorName }: VendorPriceSheet
         open={isUploadDialogOpen}
         onOpenChange={setIsUploadDialogOpen}
         onUpload={handleUpload}
-        preselectedVendorId={vendorId}
+        vendors={vendors}
       />
     </div>
   );
