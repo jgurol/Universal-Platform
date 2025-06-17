@@ -1,6 +1,7 @@
 
 import { DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { QuoteDetailsSection } from "@/components/QuoteDetailsSection";
+import { Client } from "@/pages/Index";
 
 interface EditQuoteHeaderProps {
   quoteNumber: string;
@@ -9,6 +10,7 @@ interface EditQuoteHeaderProps {
   onDateChange: (value: string) => void;
   expiresAt: string;
   onExpiresAtChange: (value: string) => void;
+  selectedSalesperson?: Client | null;
 }
 
 export const EditQuoteHeader = ({
@@ -17,7 +19,8 @@ export const EditQuoteHeader = ({
   date,
   onDateChange,
   expiresAt,
-  onExpiresAtChange
+  onExpiresAtChange,
+  selectedSalesperson
 }: EditQuoteHeaderProps) => {
   return (
     <DialogHeader>
@@ -36,6 +39,7 @@ export const EditQuoteHeader = ({
           onDateChange={onDateChange}
           expiresAt={expiresAt}
           onExpiresAtChange={onExpiresAtChange}
+          selectedSalesperson={selectedSalesperson}
         />
       </div>
     </DialogHeader>

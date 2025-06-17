@@ -1,4 +1,3 @@
-
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Quote, Client, ClientInfo } from "@/pages/Index";
@@ -233,6 +232,7 @@ export const EditQuoteDialog = ({
           onDateChange={setDate}
           expiresAt={expiresAt}
           onExpiresAtChange={setExpiresAt}
+          selectedSalesperson={selectedSalesperson}
         />
         
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -242,7 +242,6 @@ export const EditQuoteDialog = ({
             clientInfoId={clientInfoId}
             onClientInfoIdChange={setClientInfoId}
             clientInfos={clientInfos}
-            selectedSalesperson={selectedSalesperson}
             status={status}
             onStatusChange={setStatus}
             commissionOverride={commissionOverride}

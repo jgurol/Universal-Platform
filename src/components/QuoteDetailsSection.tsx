@@ -1,6 +1,7 @@
 
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
+import { Client } from "@/pages/Index";
 
 interface QuoteDetailsSectionProps {
   quoteNumber: string;
@@ -9,6 +10,7 @@ interface QuoteDetailsSectionProps {
   onDateChange: (value: string) => void;
   expiresAt: string;
   onExpiresAtChange: (value: string) => void;
+  selectedSalesperson?: Client | null;
 }
 
 export const QuoteDetailsSection = ({
@@ -17,7 +19,8 @@ export const QuoteDetailsSection = ({
   date,
   onDateChange,
   expiresAt,
-  onExpiresAtChange
+  onExpiresAtChange,
+  selectedSalesperson
 }: QuoteDetailsSectionProps) => {
   return (
     <div className="grid grid-cols-1 gap-3 min-w-[280px]">
@@ -55,6 +58,16 @@ export const QuoteDetailsSection = ({
           className="h-8"
         />
       </div>
+
+      {/* Associated Salesperson moved here */}
+      {selectedSalesperson && (
+        <div className="space-y-2">
+          <Label className="text-sm">Associated Salesperson</Label>
+          <div className="border rounded-md px-3 py-2 bg-muted text-muted-foreground text-sm">
+            {selectedSalesperson.name} {selectedSalesperson.companyName && `(${selectedSalesperson.companyName})`}
+          </div>
+        </div>
+      )}
     </div>
   );
 };

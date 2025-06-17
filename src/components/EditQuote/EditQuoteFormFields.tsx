@@ -3,7 +3,7 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { Client, ClientInfo } from "@/pages/Index";
+import { ClientInfo } from "@/pages/Index";
 
 interface EditQuoteFormFieldsProps {
   description: string;
@@ -11,7 +11,6 @@ interface EditQuoteFormFieldsProps {
   clientInfoId: string;
   onClientInfoIdChange: (value: string) => void;
   clientInfos: ClientInfo[];
-  selectedSalesperson: Client | null;
   status: string;
   onStatusChange: (value: string) => void;
   commissionOverride: string;
@@ -26,7 +25,6 @@ export const EditQuoteFormFields = ({
   clientInfoId,
   onClientInfoIdChange,
   clientInfos,
-  selectedSalesperson,
   status,
   onStatusChange,
   commissionOverride,
@@ -64,16 +62,6 @@ export const EditQuoteFormFields = ({
           </SelectContent>
         </Select>
       </div>
-
-      {/* Salesperson Display */}
-      {selectedSalesperson && (
-        <div className="space-y-2">
-          <Label>Associated Salesperson</Label>
-          <div className="border rounded-md px-3 py-2 bg-muted text-muted-foreground">
-            {selectedSalesperson.name} {selectedSalesperson.companyName && `(${selectedSalesperson.companyName})`}
-          </div>
-        </div>
-      )}
 
       <div className="space-y-2">
         <Label htmlFor="status">Status</Label>

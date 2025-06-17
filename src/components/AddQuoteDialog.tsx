@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -305,6 +304,16 @@ export const AddQuoteDialog = ({ open, onOpenChange, onAddQuote, clients, client
                   className="h-8"
                 />
               </div>
+
+              {/* Associated Salesperson moved here */}
+              {selectedSalesperson && (
+                <div className="space-y-2">
+                  <Label className="text-sm">Associated Salesperson</Label>
+                  <div className="border rounded-md px-3 py-2 bg-muted text-muted-foreground text-sm">
+                    {selectedSalesperson.name} {selectedSalesperson.companyName && `(${selectedSalesperson.companyName})`}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </DialogHeader>
@@ -376,15 +385,6 @@ export const AddQuoteDialog = ({ open, onOpenChange, onAddQuote, clients, client
             label="Service Address (Optional)"
             autoSelectPrimary={false}
           />
-
-          {selectedSalesperson && (
-            <div className="space-y-2">
-              <Label>Associated Salesperson</Label>
-              <div className="border rounded-md px-3 py-2 bg-muted text-muted-foreground">
-                {selectedSalesperson.name} {selectedSalesperson.companyName && `(${selectedSalesperson.companyName})`}
-              </div>
-            </div>
-          )}
 
           <QuoteItemsManager 
             items={quoteItems}
