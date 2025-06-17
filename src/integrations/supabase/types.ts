@@ -945,6 +945,7 @@ export type Database = {
         Row: {
           color: string | null
           created_at: string
+          dba: string | null
           description: string | null
           email: string | null
           id: string
@@ -959,6 +960,7 @@ export type Database = {
         Insert: {
           color?: string | null
           created_at?: string
+          dba?: string | null
           description?: string | null
           email?: string | null
           id?: string
@@ -973,6 +975,7 @@ export type Database = {
         Update: {
           color?: string | null
           created_at?: string
+          dba?: string | null
           description?: string | null
           email?: string | null
           id?: string
