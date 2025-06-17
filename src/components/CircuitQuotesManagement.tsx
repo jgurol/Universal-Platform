@@ -4,7 +4,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, Search, Building, DollarSign, Zap, Loader2 } from "lucide-react";
+import { Plus, Search, Building, DollarSign, Zap, Loader2, CheckCircle, Clock } from "lucide-react";
 import { AddCircuitQuoteDialog } from "@/components/AddCircuitQuoteDialog";
 import { CircuitQuoteCard } from "@/components/CircuitQuoteCard";
 import { useCircuitQuotes } from "@/hooks/useCircuitQuotes";
@@ -81,9 +81,11 @@ export const CircuitQuotesManagement = () => {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Status</SelectItem>
+              <SelectItem value="new_pricing">New Pricing</SelectItem>
               <SelectItem value="researching">Researching</SelectItem>
-              <SelectItem value="quoted">Quoted</SelectItem>
-              <SelectItem value="published">Published</SelectItem>
+              <SelectItem value="completed">Completed</SelectItem>
+              <SelectItem value="ready_for_review">Ready for Review</SelectItem>
+              <SelectItem value="sent_to_customer">Sent to Customer</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -95,7 +97,7 @@ export const CircuitQuotesManagement = () => {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
         <Card>
           <CardContent className="flex items-center p-6">
             <div className="flex items-center">
@@ -113,6 +115,18 @@ export const CircuitQuotesManagement = () => {
             <div className="flex items-center">
               <Search className="h-8 w-8 text-blue-600" />
               <div className="ml-4">
+                <p className="text-sm font-medium text-gray-600">New Pricing</p>
+                <p className="text-2xl font-bold">{quotes.filter(q => q.status === 'new_pricing').length}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardContent className="flex items-center p-6">
+            <div className="flex items-center">
+              <Clock className="h-8 w-8 text-yellow-600" />
+              <div className="ml-4">
                 <p className="text-sm font-medium text-gray-600">Researching</p>
                 <p className="text-2xl font-bold">{quotes.filter(q => q.status === 'researching').length}</p>
               </div>
@@ -123,10 +137,10 @@ export const CircuitQuotesManagement = () => {
         <Card>
           <CardContent className="flex items-center p-6">
             <div className="flex items-center">
-              <DollarSign className="h-8 w-8 text-green-600" />
+              <CheckCircle className="h-8 w-8 text-green-600" />
               <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Quoted</p>
-                <p className="text-2xl font-bold">{quotes.filter(q => q.status === 'quoted').length}</p>
+                <p className="text-sm font-medium text-gray-600">Completed</p>
+                <p className="text-2xl font-bold">{quotes.filter(q => q.status === 'completed').length}</p>
               </div>
             </div>
           </CardContent>
@@ -137,8 +151,8 @@ export const CircuitQuotesManagement = () => {
             <div className="flex items-center">
               <Zap className="h-8 w-8 text-orange-600" />
               <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Published</p>
-                <p className="text-2xl font-bold">{quotes.filter(q => q.status === 'published').length}</p>
+                <p className="text-sm font-medium text-gray-600">Sent to Customer</p>
+                <p className="text-2xl font-bold">{quotes.filter(q => q.status === 'sent_to_customer').length}</p>
               </div>
             </div>
           </CardContent>

@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ChevronDown, ChevronRight, MapPin, Building, Calendar, Plus, Edit, Trash2 } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { AddCarrierQuoteDialog } from "@/components/AddCarrierQuoteDialog";
 import { EditCarrierQuoteDialog } from "@/components/EditCarrierQuoteDialog";
 import type { CircuitQuote, CarrierQuote } from "@/hooks/useCircuitQuotes";
@@ -33,15 +34,27 @@ export const CircuitQuoteCard = ({
 
   const getStatusBadge = (status: string) => {
     switch (status) {
+      case 'new_pricing':
+        return <Badge variant="secondary" className="bg-purple-100 text-purple-800">New Pricing</Badge>;
       case 'researching':
         return <Badge variant="secondary" className="bg-yellow-100 text-yellow-800">Researching</Badge>;
-      case 'quoted':
-        return <Badge variant="secondary" className="bg-green-100 text-green-800">Quoted</Badge>;
-      case 'published':
-        return <Badge variant="secondary" className="bg-blue-100 text-blue-800">Published</Badge>;
+      case 'completed':
+        return <Badge variant="secondary" className="bg-green-100 text-green-800">Completed</Badge>;
+      case 'ready_for_review':
+        return <Badge variant="secondary" className="bg-blue-100 text-blue-800">Ready for Review</Badge>;
+      case 'sent_to_customer':
+        return <Badge variant="secondary" className="bg-orange-100 text-orange-800">Sent to Customer</Badge>;
       default:
         return <Badge variant="secondary">{status}</Badge>;
     }
+  };
+
+  const handleStatusChange = (newStatus: string) => {
+    const updatedQuote = {
+      ...quote,
+      status: newStatus as 'new_pricing' | 'researching' | 'completed' | 'ready_for_review' | 'sent_to_customer'
+    };
+    onUpdate(updatedQuote);
   };
 
   const addCarrierQuote = (carrierQuote: Omit<CarrierQuote, "id" | "circuit_quote_id">) => {
@@ -147,7 +160,21 @@ export const CircuitQuoteCard = ({
                 )}
               </div>
             </div>
-            {getStatusBadge(quote.status)}
+            <div className="flex flex-col gap-2">
+              {getStatusBadge(quote.status)}
+              <Select value={quote.status} onValueChange={handleStatusChange}>
+                <SelectTrigger className="w-[140px] h-8 text-xs">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="bg-white z-50">
+                  <SelectItem value="new_pricing">New Pricing</SelectItem>
+                  <SelectItem value="researching">Researching</SelectItem>
+                  <SelectItem value="completed">Completed</SelectItem>
+                  <SelectItem value="ready_for_review">Ready for Review</SelectItem>
+                  <SelectItem value="sent_to_customer">Sent to Customer</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
         </div>
       </CardHeader>

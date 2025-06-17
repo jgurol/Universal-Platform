@@ -12,7 +12,7 @@ export interface CircuitQuote {
   suite: string;
   created_at: string;
   carriers: CarrierQuote[];
-  status: 'researching' | 'quoted' | 'published';
+  status: 'new_pricing' | 'researching' | 'completed' | 'ready_for_review' | 'sent_to_customer';
 }
 
 export interface CarrierQuote {
@@ -70,7 +70,7 @@ export const useCircuitQuotes = () => {
           month: 'short', 
           day: 'numeric' 
         }),
-        status: quote.status as 'researching' | 'quoted' | 'published',
+        status: quote.status as 'new_pricing' | 'researching' | 'completed' | 'ready_for_review' | 'sent_to_customer',
         carriers: quote.carrier_quotes || []
       }));
 

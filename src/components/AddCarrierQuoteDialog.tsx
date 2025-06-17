@@ -5,34 +5,29 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Textarea } from "@/components/ui/textarea";
-import { CarrierQuote } from "@/components/CircuitQuotesManagement";
 
 interface AddCarrierQuoteDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onAddCarrier: (carrier: Omit<CarrierQuote, "id">) => void;
+  onAddCarrier: (carrier: {
+    carrier: string;
+    type: string;
+    speed: string;
+    price: number;
+    term: string;
+    notes: string;
+    color: string;
+  }) => void;
 }
 
-const carrierOptions = [
-  { value: "frontier", label: "Frontier", color: "bg-green-100 text-green-800" },
-  { value: "geolinks", label: "Geolinks", color: "bg-purple-100 text-purple-800" },
-  { value: "verizon", label: "Verizon", color: "bg-red-100 text-red-800" },
-  { value: "att", label: "AT&T", color: "bg-blue-100 text-blue-800" },
-  { value: "spectrum", label: "Spectrum", color: "bg-yellow-100 text-yellow-800" },
-  { value: "lumen", label: "Lumen", color: "bg-indigo-100 text-indigo-800" },
-  { value: "other", label: "Other", color: "bg-gray-100 text-gray-800" }
-];
-
-const typeOptions = [
-  "Broadband",
-  "Fiber",
-  "Fixed Wireless",
-  "Cable",
-  "DSL",
-  "Ethernet",
-  "T1",
-  "Other"
+const carrierColors = [
+  { name: "Gray", value: "bg-gray-100 text-gray-800" },
+  { name: "Blue", value: "bg-blue-100 text-blue-800" },
+  { name: "Green", value: "bg-green-100 text-green-800" },
+  { name: "Yellow", value: "bg-yellow-100 text-yellow-800" },
+  { name: "Red", value: "bg-red-100 text-red-800" },
+  { name: "Purple", value: "bg-purple-100 text-purple-800" },
+  { name: "Orange", value: "bg-orange-100 text-orange-800" },
 ];
 
 export const AddCarrierQuoteDialog = ({ open, onOpenChange, onAddCarrier }: AddCarrierQuoteDialogProps) => {
@@ -40,37 +35,32 @@ export const AddCarrierQuoteDialog = ({ open, onOpenChange, onAddCarrier }: AddC
   const [type, setType] = useState("");
   const [speed, setSpeed] = useState("");
   const [price, setPrice] = useState("");
-  const [term, setTerm] = useState("36 months");
+  const [term, setTerm] = useState("");
   const [notes, setNotes] = useState("");
+  const [color, setColor] = useState("bg-gray-100 text-gray-800");
 
   const resetForm = () => {
     setCarrier("");
     setType("");
     setSpeed("");
     setPrice("");
-    setTerm("36 months");
+    setTerm("");
     setNotes("");
-  };
-
-  const getCarrierColor = (carrierValue: string) => {
-    const option = carrierOptions.find(opt => opt.value === carrierValue);
-    return option?.color || "bg-gray-100 text-gray-800";
+    setColor("bg-gray-100 text-gray-800");
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
     if (carrier && type && speed && price) {
-      const selectedCarrier = carrierOptions.find(opt => opt.value === carrier);
-      
       onAddCarrier({
-        carrier: selectedCarrier?.label || carrier,
+        carrier,
         type,
         speed,
         price: parseFloat(price),
         term,
         notes,
-        color: getCarrierColor(carrier)
+        color
       });
       
       resetForm();
@@ -84,91 +74,98 @@ export const AddCarrierQuoteDialog = ({ open, onOpenChange, onAddCarrier }: AddC
         <DialogHeader>
           <DialogTitle>Add Carrier Quote</DialogTitle>
           <DialogDescription>
-            Add pricing information from a carrier for this circuit quote.
+            Add a new carrier quote for this circuit.
           </DialogDescription>
         </DialogHeader>
         
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="carrier">Carrier (Required)</Label>
-            <Select value={carrier} onValueChange={setCarrier} required>
-              <SelectTrigger>
-                <SelectValue placeholder="Select carrier" />
-              </SelectTrigger>
-              <SelectContent>
-                {carrierOptions.map((option) => (
-                  <SelectItem key={option.value} value={option.value}>
-                    {option.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="carrier">Carrier (Required)</Label>
+              <Input
+                id="carrier"
+                value={carrier}
+                onChange={(e) => setCarrier(e.target.value)}
+                placeholder="e.g., Verizon, AT&T"
+                required
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="type">Type (Required)</Label>
+              <Input
+                id="type"
+                value={type}
+                onChange={(e) => setType(e.target.value)}
+                placeholder="e.g., Fiber, Copper"
+                required
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="speed">Speed (Required)</Label>
+              <Input
+                id="speed"
+                value={speed}
+                onChange={(e) => setSpeed(e.target.value)}
+                placeholder="e.g., 100Mbps, 1Gbps"
+                required
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="price">Price (Required)</Label>
+              <Input
+                id="price"
+                type="number"
+                step="0.01"
+                min="0"
+                value={price}
+                onChange={(e) => setPrice(e.target.value)}
+                placeholder="Monthly price"
+                required
+              />
+            </div>
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="type">Connection Type (Required)</Label>
-            <Select value={type} onValueChange={setType} required>
-              <SelectTrigger>
-                <SelectValue placeholder="Select connection type" />
-              </SelectTrigger>
-              <SelectContent>
-                {typeOptions.map((option) => (
-                  <SelectItem key={option} value={option}>
-                    {option}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="speed">Speed (Required)</Label>
+            <Label htmlFor="term">Term</Label>
             <Input
-              id="speed"
-              value={speed}
-              onChange={(e) => setSpeed(e.target.value)}
-              placeholder="e.g., 100x100M, 1Gx1G"
-              required
+              id="term"
+              value={term}
+              onChange={(e) => setTerm(e.target.value)}
+              placeholder="e.g., 36 months, 1 year"
             />
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="price">Monthly Price (Required)</Label>
-            <Input
-              id="price"
-              type="number"
-              step="0.01"
-              value={price}
-              onChange={(e) => setPrice(e.target.value)}
-              placeholder="Enter monthly price"
-              required
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="term">Contract Term</Label>
-            <Select value={term} onValueChange={setTerm}>
+            <Label htmlFor="color">Badge Color</Label>
+            <Select value={color} onValueChange={setColor}>
               <SelectTrigger>
-                <SelectValue placeholder="Select term" />
+                <SelectValue placeholder="Select color" />
               </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="Month to Month">Month to Month</SelectItem>
-                <SelectItem value="12 months">12 months</SelectItem>
-                <SelectItem value="24 months">24 months</SelectItem>
-                <SelectItem value="36 months">36 months</SelectItem>
-                <SelectItem value="60 months">60 months</SelectItem>
+              <SelectContent className="bg-white z-50">
+                {carrierColors.map((colorOption) => (
+                  <SelectItem key={colorOption.value} value={colorOption.value}>
+                    <div className="flex items-center gap-2">
+                      <div className={`w-4 h-4 rounded ${colorOption.value}`}></div>
+                      {colorOption.name}
+                    </div>
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>
 
           <div className="space-y-2">
             <Label htmlFor="notes">Notes</Label>
-            <Textarea
+            <Input
               id="notes"
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
-              placeholder="Additional notes about this quote (e.g., includes static IPs, installation fees, etc.)"
-              rows={3}
+              placeholder="Additional notes about this quote"
             />
           </div>
           
