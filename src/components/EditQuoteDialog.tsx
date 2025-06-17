@@ -1,3 +1,4 @@
+
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,6 +11,7 @@ import { QuoteDetailsSection } from "@/components/QuoteDetailsSection";
 import { AddressSelector } from "@/components/AddressSelector";
 import { useQuoteForm } from "@/hooks/useQuoteForm";
 import { useQuoteItems } from "@/hooks/useQuoteItems";
+import { useClientAddresses } from "@/hooks/useClientAddresses";
 import { updateQuoteItems, calculateTotalsByChargeType } from "@/services/quoteItemsService";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -57,6 +59,8 @@ export const EditQuoteDialog = ({
   } = useQuoteForm(quote, open);
 
   const { quoteItems, setQuoteItems } = useQuoteItems(quote, open);
+  const { addresses } = useClientAddresses(clientInfoId !== "none" ? clientInfoId : null);
+  
   const [selectedBillingAddressId, setSelectedBillingAddressId] = useState<string | null>(null);
   const [billingAddress, setBillingAddress] = useState<string>("");
   const [selectedServiceAddressId, setSelectedServiceAddressId] = useState<string | null>(null);
@@ -66,20 +70,66 @@ export const EditQuoteDialog = ({
   const [templates, setTemplates] = useState<QuoteTemplate[]>([]);
   const { user } = useAuth();
 
-  // Initialize addresses from quote - don't auto-populate service address
+  // Helper function to find matching address ID from address string
+  const findMatchingAddressId = (addressString: string, addresses: any[]) => {
+    if (!addressString || !addresses.length) return null;
+    
+    const matchingAddress = addresses.find(addr => {
+      const formattedAddress = `${addr.street_address}${addr.street_address_2 ? `, ${addr.street_address_2}` : ''}, ${addr.city}, ${addr.state} ${addr.zip_code}`;
+      return formattedAddress === addressString;
+    });
+    
+    return matchingAddress ? matchingAddress.id : null;
+  };
+
+  // Initialize addresses from quote - check if they match existing addresses
   useEffect(() => {
-    if (quote && open) {
-      setBillingAddress(quote.billingAddress || "");
-      // Only set service address if it actually exists in the quote - never auto-populate
-      setServiceAddress(quote.serviceAddress || "");
-      setSelectedBillingAddressId(null);
-      setSelectedServiceAddressId(null);
-      console.log('EditQuoteDialog - Initialized addresses (strict no auto-population):', { 
+    if (quote && open && addresses.length > 0) {
+      console.log('EditQuoteDialog - Initializing addresses with quote data:', { 
         billing: quote.billingAddress, 
-        service: quote.serviceAddress 
+        service: quote.serviceAddress,
+        addressesCount: addresses.length 
       });
+
+      // Handle billing address
+      if (quote.billingAddress) {
+        const matchingBillingId = findMatchingAddressId(quote.billingAddress, addresses);
+        if (matchingBillingId) {
+          console.log('EditQuoteDialog - Found matching billing address ID:', matchingBillingId);
+          setSelectedBillingAddressId(matchingBillingId);
+          setBillingAddress(quote.billingAddress);
+        } else {
+          console.log('EditQuoteDialog - Billing address is custom');
+          setSelectedBillingAddressId(null);
+          setBillingAddress(quote.billingAddress);
+        }
+      } else {
+        setSelectedBillingAddressId(null);
+        setBillingAddress("");
+      }
+
+      // Handle service address
+      if (quote.serviceAddress) {
+        const matchingServiceId = findMatchingAddressId(quote.serviceAddress, addresses);
+        if (matchingServiceId) {
+          console.log('EditQuoteDialog - Found matching service address ID:', matchingServiceId);
+          setSelectedServiceAddressId(matchingServiceId);
+          setServiceAddress(quote.serviceAddress);
+        } else {
+          console.log('EditQuoteDialog - Service address is custom');
+          setSelectedServiceAddressId(null);
+          setServiceAddress(quote.serviceAddress);
+        }
+      } else {
+        setSelectedServiceAddressId(null);
+        setServiceAddress("");
+      }
+    } else if (quote && open) {
+      // If no addresses loaded yet, just set the string values
+      setBillingAddress(quote.billingAddress || "");
+      setServiceAddress(quote.serviceAddress || "");
     }
-  }, [quote, open]);
+  }, [quote, open, addresses]);
 
   // Load templates when dialog opens
   useEffect(() => {
@@ -117,9 +167,8 @@ export const EditQuoteDialog = ({
   };
 
   const handleServiceAddressChange = (addressId: string | null, customAddr?: string) => {
-    console.log('EditQuoteDialog - Service address changed (no auto-population):', { addressId, customAddr });
+    console.log('EditQuoteDialog - Service address changed:', { addressId, customAddr });
     setSelectedServiceAddressId(addressId);
-    // Only set if there's an actual custom address, otherwise keep empty
     setServiceAddress(customAddr || "");
   };
 
@@ -142,7 +191,7 @@ export const EditQuoteDialog = ({
         // Update quote items in database with address information and custom descriptions
         await updateQuoteItems(quote.id, quoteItems);
 
-        console.log('EditQuoteDialog - Updating quote with addresses (no auto-population):', { 
+        console.log('EditQuoteDialog - Updating quote with addresses:', { 
           billing: billingAddress, 
           service: serviceAddress 
         });
@@ -162,9 +211,8 @@ export const EditQuoteDialog = ({
           commissionOverride: commissionOverride ? parseFloat(commissionOverride) : undefined,
           expiresAt: expiresAt || undefined,
           notes: notes || undefined,
-          // Only set addresses if they have actual values, don't auto-populate
           billingAddress: billingAddress || undefined,
-          serviceAddress: serviceAddress || undefined, // Keep blank if user left it blank
+          serviceAddress: serviceAddress || undefined,
           templateId: selectedTemplateId !== "none" ? selectedTemplateId : undefined
         } as Quote);
         
@@ -239,7 +287,7 @@ export const EditQuoteDialog = ({
             autoSelectPrimary={false}
           />
 
-          {/* Service Address Selection - NO auto-selection */}
+          {/* Service Address Selection */}
           <AddressSelector
             clientInfoId={clientInfoId !== "none" ? clientInfoId : null}
             selectedAddressId={selectedServiceAddressId || undefined}
