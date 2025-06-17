@@ -8,6 +8,7 @@ import { Plus, Search, Building, DollarSign, Zap, Loader2, CheckCircle, Clock } 
 import { AddCircuitQuoteDialog } from "@/components/AddCircuitQuoteDialog";
 import { CircuitQuoteCard } from "@/components/CircuitQuoteCard";
 import { useCircuitQuotes } from "@/hooks/useCircuitQuotes";
+import { useEffect } from "react";
 
 // Re-export interfaces for backward compatibility
 export type { CircuitQuote, CarrierQuote } from "@/hooks/useCircuitQuotes";
@@ -21,12 +22,19 @@ export const CircuitQuotesManagement = () => {
     deleteQuote,
     addCarrierQuote, 
     updateCarrierQuote, 
-    deleteCarrierQuote 
+    deleteCarrierQuote,
+    fetchQuotes
   } = useCircuitQuotes();
   
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
+
+  // Add additional fetch after component mounts
+  useEffect(() => {
+    console.log('[CircuitQuotesManagement] Component mounted, triggering data fetch');
+    fetchQuotes();
+  }, [fetchQuotes]);
 
   const filteredQuotes = quotes.filter(quote => {
     const matchesSearch = quote.client_name.toLowerCase().includes(searchTerm.toLowerCase()) ||

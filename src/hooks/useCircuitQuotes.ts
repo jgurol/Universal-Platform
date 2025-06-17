@@ -33,10 +33,9 @@ export const useCircuitQuotes = () => {
   const { toast } = useToast();
 
   const fetchQuotes = async () => {
-    if (!user) return;
-
     try {
       setLoading(true);
+      console.log('[useCircuitQuotes] Starting fetch with user:', user?.id);
       
       // Fetch circuit quotes with their carrier quotes
       const { data: circuitQuotes, error: quotesError } = await supabase
@@ -57,6 +56,8 @@ export const useCircuitQuotes = () => {
         return;
       }
 
+      console.log('[useCircuitQuotes] Raw data from Supabase:', circuitQuotes);
+
       // Transform data to match the expected format
       const transformedQuotes: CircuitQuote[] = (circuitQuotes || []).map(quote => ({
         id: quote.id,
@@ -73,6 +74,7 @@ export const useCircuitQuotes = () => {
         carriers: quote.carrier_quotes || []
       }));
 
+      console.log('[useCircuitQuotes] Transformed quotes:', transformedQuotes);
       setQuotes(transformedQuotes);
     } catch (error) {
       console.error('Error in fetchQuotes:', error);
@@ -87,7 +89,14 @@ export const useCircuitQuotes = () => {
   };
 
   const addQuote = async (newQuote: Omit<CircuitQuote, "id" | "created_at" | "carriers">) => {
-    if (!user) return;
+    if (!user) {
+      toast({
+        title: "Error",
+        description: "You must be logged in to create quotes",
+        variant: "destructive"
+      });
+      return;
+    }
 
     try {
       const { data, error } = await supabase
@@ -322,10 +331,9 @@ export const useCircuitQuotes = () => {
   };
 
   useEffect(() => {
-    if (user) {
-      fetchQuotes();
-    }
-  }, [user]);
+    // Fetch quotes on initial load, even if user is not yet available
+    fetchQuotes();
+  }, []);
 
   return {
     quotes,
