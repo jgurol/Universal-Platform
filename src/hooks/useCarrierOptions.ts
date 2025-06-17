@@ -19,7 +19,7 @@ export const useCarrierOptions = () => {
     try {
       setLoading(true);
       
-      // Fetch vendors - now selecting all required fields
+      // Fetch vendors - now selecting all required fields and sorting alphabetically
       const { data: vendorData, error: vendorError } = await supabase
         .from('vendors')
         .select('id, user_id, name, description, contact_name, email, phone, address, website, is_active, created_at, updated_at')
