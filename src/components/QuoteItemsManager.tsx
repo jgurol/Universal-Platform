@@ -23,6 +23,31 @@ export const QuoteItemsManager = ({ items, onItemsChange, clientInfoId }: QuoteI
   const addItem = () => {
     if (!selectedItemId) return;
     
+    // Handle carrier quote items
+    if (selectedItemId.startsWith('carrier-temp-')) {
+      // This is a temporary item created from carrier quote data
+      // Find the item in the form component's temp items
+      const tempItemData = {
+        id: selectedItemId,
+        item_id: selectedItemId,
+        quantity: 1,
+        unit_price: 0, // Will be set by the form
+        cost_override: 0,
+        total_price: 0,
+        charge_type: 'MRC' as 'NRC' | 'MRC',
+        address_id: addresses.length > 0 ? addresses[0].id : undefined,
+        name: "Carrier Quote Item", // Will be updated
+        description: "",
+        item: undefined,
+        address: addresses.length > 0 ? addresses[0] : undefined
+      };
+
+      onItemsChange([...items, tempItemData]);
+      setSelectedItemId("");
+      return;
+    }
+    
+    // Handle regular items
     const selectedItem = availableItems.find(item => item.id === selectedItemId);
     if (!selectedItem) return;
 
@@ -92,6 +117,7 @@ export const QuoteItemsManager = ({ items, onItemsChange, clientInfoId }: QuoteI
         isLoading={isLoading}
         onAddItem={addItem}
         disabled={!selectedItemId || !clientInfoId}
+        clientInfoId={clientInfoId}
       />
 
       {items.length > 0 && (
