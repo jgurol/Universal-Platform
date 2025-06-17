@@ -35,9 +35,7 @@ export const EditQuoteFormFields = ({
   onNotesChange
 }: EditQuoteFormFieldsProps) => {
   return (
-    <div className="bg-muted/30 p-4 rounded-lg space-y-4">
-      <h3 className="font-medium text-sm text-muted-foreground uppercase tracking-wide">Basic Information</h3>
-      
+    <>
       {/* Quote Name */}
       <div className="space-y-2">
         <Label htmlFor="description">Quote Name</Label>
@@ -77,34 +75,32 @@ export const EditQuoteFormFields = ({
         </div>
       )}
 
-      <div className="grid grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <Label htmlFor="status">Status</Label>
-          <Select value={status} onValueChange={onStatusChange}>
-            <SelectTrigger>
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="pending">Pending</SelectItem>
-              <SelectItem value="approved">Approved</SelectItem>
-              <SelectItem value="rejected">Rejected</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
+      <div className="space-y-2">
+        <Label htmlFor="status">Status</Label>
+        <Select value={status} onValueChange={onStatusChange}>
+          <SelectTrigger>
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="pending">Pending</SelectItem>
+            <SelectItem value="approved">Approved</SelectItem>
+            <SelectItem value="rejected">Rejected</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
 
-        <div className="space-y-2">
-          <Label htmlFor="commissionOverride">Commission Override (%)</Label>
-          <Input
-            id="commissionOverride"
-            type="number"
-            step="0.01"
-            min="0"
-            max="100"
-            value={commissionOverride}
-            onChange={(e) => onCommissionOverrideChange(e.target.value)}
-            placeholder="Optional commission override"
-          />
-        </div>
+      <div className="space-y-2">
+        <Label htmlFor="commissionOverride">Commission Override (%)</Label>
+        <Input
+          id="commissionOverride"
+          type="number"
+          step="0.01"
+          min="0"
+          max="100"
+          value={commissionOverride}
+          onChange={(e) => onCommissionOverrideChange(e.target.value)}
+          placeholder="Optional commission override"
+        />
       </div>
 
       <div className="space-y-2">
@@ -117,6 +113,6 @@ export const EditQuoteFormFields = ({
           rows={3}
         />
       </div>
-    </div>
+    </>
   );
 };

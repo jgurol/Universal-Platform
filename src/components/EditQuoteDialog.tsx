@@ -154,9 +154,7 @@ export const EditQuoteDialog = ({
   // Initialize template selection from quote
   useEffect(() => {
     if (quote && open) {
-      const templateId = (quote as any).templateId || "none";
-      console.log('EditQuoteDialog - Setting template ID:', templateId);
-      setSelectedTemplateId(templateId);
+      setSelectedTemplateId((quote as any).templateId || "none");
     }
   }, [quote, open]);
 
@@ -237,7 +235,7 @@ export const EditQuoteDialog = ({
           onExpiresAtChange={setExpiresAt}
         />
         
-        <form onSubmit={handleSubmit} className="space-y-6">
+        <form onSubmit={handleSubmit} className="space-y-4">
           <EditQuoteFormFields
             description={description}
             onDescriptionChange={setDescription}
@@ -261,14 +259,11 @@ export const EditQuoteDialog = ({
             onServiceAddressChange={handleServiceAddressChange}
           />
 
-          <div className="bg-muted/30 p-4 rounded-lg">
-            <h3 className="font-medium text-sm text-muted-foreground uppercase tracking-wide mb-4">Quote Items</h3>
-            <QuoteItemsManager
-              items={quoteItems}
-              onItemsChange={setQuoteItems}
-              clientInfoId={clientInfoId !== "none" ? clientInfoId : undefined}
-            />
-          </div>
+          <QuoteItemsManager
+            items={quoteItems}
+            onItemsChange={setQuoteItems}
+            clientInfoId={clientInfoId !== "none" ? clientInfoId : undefined}
+          />
 
           <EditQuoteTemplateSection
             selectedTemplateId={selectedTemplateId}
