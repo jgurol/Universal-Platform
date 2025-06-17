@@ -61,22 +61,52 @@ export const clientAddressService = {
   },
 
   async deleteClientAddress(addressId: string): Promise<void> {
-    // First check if this address is referenced by any quote items
-    const { data: quoteItems, error: checkError } = await supabase
+    console.log('[clientAddressService] Starting deletion check for address:', addressId);
+    
+    // Check if this address is referenced by any quote items
+    const { data: quoteItems, error: quoteItemsError } = await supabase
       .from('quote_items')
-      .select('id')
-      .eq('address_id', addressId)
-      .limit(1);
+      .select('id, quote_id')
+      .eq('address_id', addressId);
 
-    if (checkError) {
-      console.error('Error checking address references:', checkError);
-      throw checkError;
+    if (quoteItemsError) {
+      console.error('Error checking quote items references:', quoteItemsError);
+      throw quoteItemsError;
     }
 
-    if (quoteItems && quoteItems.length > 0) {
-      throw new Error('This address cannot be deleted because it is being used in existing quotes. Please remove it from all quotes first.');
+    console.log('[clientAddressService] Quote items using this address:', quoteItems);
+
+    // Check if this address is used in quotes' billing_address or service_address fields
+    const { data: quotesUsingAddress, error: quotesError } = await supabase
+      .from('quotes')
+      .select('id, billing_address, service_address')
+      .or(`billing_address.ilike.%${addressId}%,service_address.ilike.%${addressId}%`);
+
+    if (quotesError) {
+      console.error('Error checking quotes references:', quotesError);
+      throw quotesError;
     }
 
+    console.log('[clientAddressService] Quotes using this address in billing/service fields:', quotesUsingAddress);
+
+    // If there are any references, provide detailed error message
+    if ((quoteItems && quoteItems.length > 0) || (quotesUsingAddress && quotesUsingAddress.length > 0)) {
+      let errorMessage = 'This address cannot be deleted because it is being used in existing quotes:';
+      
+      if (quoteItems && quoteItems.length > 0) {
+        const quoteIds = [...new Set(quoteItems.map(item => item.quote_id))];
+        errorMessage += `\n- Referenced in ${quoteItems.length} quote item(s) across ${quoteIds.length} quote(s)`;
+      }
+      
+      if (quotesUsingAddress && quotesUsingAddress.length > 0) {
+        errorMessage += `\n- Used as billing/service address in ${quotesUsingAddress.length} quote(s)`;
+      }
+      
+      errorMessage += '\n\nPlease remove these references first before deleting the address.';
+      throw new Error(errorMessage);
+    }
+
+    // If no references found, proceed with deletion
     const { error } = await supabase
       .from('client_addresses')
       .delete()
@@ -85,9 +115,11 @@ export const clientAddressService = {
     if (error) {
       console.error('Error deleting client address:', error);
       if (error.code === '23503') {
-        throw new Error('This address cannot be deleted because it is being used in existing quotes. Please remove it from all quotes first.');
+        throw new Error('This address cannot be deleted because it is still being referenced. Please check all quotes and remove any references first.');
       }
       throw error;
     }
+
+    console.log('[clientAddressService] Address deleted successfully:', addressId);
   }
 };
