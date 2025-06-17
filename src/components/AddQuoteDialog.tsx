@@ -305,12 +305,19 @@ export const AddQuoteDialog = ({ open, onOpenChange, onAddQuote, clients, client
                 />
               </div>
 
-              {/* Associated Salesperson moved here */}
-              {selectedSalesperson && (
+              {/* Associated Salesperson */}
+              {selectedSalesperson ? (
                 <div className="space-y-2">
                   <Label className="text-sm">Associated Salesperson</Label>
                   <div className="border rounded-md px-3 py-2 bg-muted text-muted-foreground text-sm">
                     {selectedSalesperson.name} {selectedSalesperson.companyName && `(${selectedSalesperson.companyName})`}
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  <Label className="text-sm">Associated Salesperson</Label>
+                  <div className="border rounded-md px-3 py-2 bg-muted text-muted-foreground text-sm">
+                    No Salesperson Assigned
                   </div>
                 </div>
               )}
