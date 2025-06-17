@@ -101,14 +101,17 @@ export const updateQuoteItems = async (quoteId: string, items: QuoteItemData[]) 
       // First, create temporary items in the items table for carrier quotes
       const temporaryItems = await Promise.all(
         carrierItems.map(async (carrierItem) => {
-          // Build description without location
+          // Build description without location or term - only include notes
           const descriptionParts = [];
           if (carrierItem.description) {
-            // Clean description to remove location information
+            // Clean description to remove location and term information
             const cleanDescription = carrierItem.description
               .replace(/Location: [^|]+\s*\|\s*?/g, '') // Remove "Location: xxx |"
               .replace(/\|\s*Location: [^|]+/g, '') // Remove "| Location: xxx"
               .replace(/^Location: [^|]+$/g, '') // Remove standalone "Location: xxx"
+              .replace(/Term: [^|]+\s*\|\s*?/g, '') // Remove "Term: xxx |"
+              .replace(/\|\s*Term: [^|]+/g, '') // Remove "| Term: xxx"
+              .replace(/^Term: [^|]+$/g, '') // Remove standalone "Term: xxx"
               .trim();
             
             if (cleanDescription) {
@@ -122,7 +125,7 @@ export const updateQuoteItems = async (quoteId: string, items: QuoteItemData[]) 
             .insert({
               user_id: (await supabase.auth.getUser()).data.user?.id,
               name: carrierItem.name,
-              description: descriptionParts.join(' | '), // Clean description without location
+              description: descriptionParts.join(' | '), // Clean description without location or term
               price: carrierItem.unit_price,
               cost: carrierItem.cost_override || 0,
               charge_type: carrierItem.charge_type,

@@ -57,14 +57,17 @@ export const createQuoteInDatabase = async (
       if (item.item_id.startsWith('carrier-')) {
         console.log('[createQuoteInDatabase] Creating temporary item for carrier quote item:', item.name);
         
-        // Build description without location
+        // Build description without location or term - only include notes
         const descriptionParts = [];
         if (item.description) {
-          // If description exists, use it but ensure location is not included
+          // Clean description to remove location and term information
           const cleanDescription = item.description
             .replace(/Location: [^|]+\s*\|\s*?/g, '') // Remove "Location: xxx |"
             .replace(/\|\s*Location: [^|]+/g, '') // Remove "| Location: xxx"
             .replace(/^Location: [^|]+$/g, '') // Remove standalone "Location: xxx"
+            .replace(/Term: [^|]+\s*\|\s*?/g, '') // Remove "Term: xxx |"
+            .replace(/\|\s*Term: [^|]+/g, '') // Remove "| Term: xxx"
+            .replace(/^Term: [^|]+$/g, '') // Remove standalone "Term: xxx"
             .trim();
           
           if (cleanDescription) {
@@ -77,7 +80,7 @@ export const createQuoteInDatabase = async (
           .insert({
             user_id: userId,
             name: item.name || 'Carrier Quote Item',
-            description: descriptionParts.join(' | '), // Clean description without location
+            description: descriptionParts.join(' | '), // Clean description without location or term
             price: item.unit_price,
             cost: item.cost_override || 0,
             charge_type: item.charge_type,
