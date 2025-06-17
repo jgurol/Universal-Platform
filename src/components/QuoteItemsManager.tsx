@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Label } from "@/components/ui/label";
 import { QuoteItemData } from "@/types/quoteItems";
@@ -9,8 +8,6 @@ import { QuoteItemForm } from "@/components/QuoteItemForm";
 import { QuoteItemRow } from "@/components/QuoteItemRow";
 import { QuoteItemTotals } from "@/components/QuoteItemTotals";
 import { DragDropContext, Droppable, Draggable, DropResult } from 'react-beautiful-dnd';
-import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/context/AuthContext";
 
 interface QuoteItemsManagerProps {
   items: QuoteItemData[];
@@ -23,7 +20,6 @@ export const QuoteItemsManager = ({ items, onItemsChange, clientInfoId }: QuoteI
   const { addresses } = useClientAddresses(clientInfoId || null);
   const { carrierQuoteItems } = useCarrierQuoteItems(clientInfoId || null);
   const [selectedItemId, setSelectedItemId] = useState("");
-  const { user } = useAuth();
 
   const addItem = async () => {
     if (!selectedItemId) return;
@@ -33,7 +29,7 @@ export const QuoteItemsManager = ({ items, onItemsChange, clientInfoId }: QuoteI
       const carrierQuoteId = selectedItemId.replace('carrier-', '');
       const carrierItem = carrierQuoteItems.find(item => item.id === carrierQuoteId);
       
-      if (carrierItem && user) {
+      if (carrierItem) {
         // Find matching address based on circuit quote location
         let matchingAddress = addresses.find(addr => 
           addr.city.toLowerCase().includes(carrierItem.location.toLowerCase()) ||
@@ -45,50 +41,37 @@ export const QuoteItemsManager = ({ items, onItemsChange, clientInfoId }: QuoteI
           matchingAddress = addresses[0];
         }
 
-        try {
-          // Create an item in the items table for this carrier quote
-          const { data: newItem, error: itemError } = await supabase
-            .from('items')
-            .insert({
-              user_id: user.id,
-              name: `${carrierItem.carrier} - ${carrierItem.type} - ${carrierItem.speed}`,
-              description: `Location: ${carrierItem.location}${carrierItem.term ? ` | Term: ${carrierItem.term}` : ''}${carrierItem.notes ? ` | Notes: ${carrierItem.notes}` : ''}`,
-              price: 0, // Leave sell price blank
-              cost: carrierItem.price, // Populate cost with carrier price
-              charge_type: 'MRC',
-              is_active: true
-            })
-            .select()
-            .single();
-
-          if (itemError) {
-            console.error('Error creating item for carrier quote:', itemError);
-            return;
-          }
-
-          const quoteItem: QuoteItemData = {
-            id: `temp-${Date.now()}`,
-            item_id: newItem.id,
-            quantity: 1,
-            unit_price: 0, // Leave sell price blank
-            cost_override: carrierItem.price, // Populate cost with carrier price
-            total_price: 0, // Will be 0 since unit_price is 0
+        // Create a temporary quote item for the carrier quote (no database item needed)
+        const quoteItem: QuoteItemData = {
+          id: `temp-carrier-${Date.now()}`,
+          item_id: `carrier-${carrierItem.id}`, // Use a special ID format for carrier items
+          quantity: 1,
+          unit_price: 0, // Leave sell price blank
+          cost_override: carrierItem.price, // Populate cost with carrier price
+          total_price: 0, // Will be 0 since unit_price is 0
+          charge_type: 'MRC',
+          address_id: matchingAddress?.id,
+          name: `${carrierItem.carrier} - ${carrierItem.type} - ${carrierItem.speed}`,
+          description: `Location: ${carrierItem.location}${carrierItem.term ? ` | Term: ${carrierItem.term}` : ''}${carrierItem.notes ? ` | Notes: ${carrierItem.notes}` : ''}`,
+          item: {
+            id: `carrier-${carrierItem.id}`,
+            user_id: '',
+            name: `${carrierItem.carrier} - ${carrierItem.type} - ${carrierItem.speed}`,
+            description: `Location: ${carrierItem.location}${carrierItem.term ? ` | Term: ${carrierItem.term}` : ''}${carrierItem.notes ? ` | Notes: ${carrierItem.notes}` : ''}`,
+            price: 0,
+            cost: carrierItem.price,
             charge_type: 'MRC',
-            address_id: matchingAddress?.id,
-            name: newItem.name,
-            description: newItem.description || '',
-            item: newItem,
-            address: matchingAddress
-          };
+            is_active: true,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          },
+          address: matchingAddress
+        };
 
-          // Just add to the items list, don't trigger any save
-          onItemsChange([...items, quoteItem]);
-          setSelectedItemId("");
-          return;
-        } catch (error) {
-          console.error('Error creating carrier quote item:', error);
-          return;
-        }
+        // Just add to the items list, don't trigger any save
+        onItemsChange([...items, quoteItem]);
+        setSelectedItemId("");
+        return;
       }
     }
     

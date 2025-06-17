@@ -50,24 +50,53 @@ export const createQuoteInDatabase = async (
   if (quote.quoteItems && quote.quoteItems.length > 0) {
     console.log('[createQuoteInDatabase] Saving quote items:', quote.quoteItems.length);
     
-    // Insert quote items - no need to update items table since we already created them
-    const itemsToInsert = quote.quoteItems.map(item => ({
-      quote_id: quoteData.id,
-      item_id: item.item_id,
-      quantity: item.quantity,
-      unit_price: item.unit_price,
-      total_price: item.total_price,
-      charge_type: item.charge_type,
-      address_id: item.address_id || null
-    }));
+    for (const item of quote.quoteItems) {
+      let itemId = item.item_id;
+      
+      // Handle carrier quote items - create actual items for them
+      if (item.item_id.startsWith('carrier-')) {
+        console.log('[createQuoteInDatabase] Creating item for carrier quote item:', item.name);
+        
+        const { data: newItem, error: itemError } = await supabase
+          .from('items')
+          .insert({
+            user_id: userId,
+            name: item.name || 'Carrier Quote Item',
+            description: item.description || '',
+            price: item.unit_price,
+            cost: item.cost_override || 0,
+            charge_type: item.charge_type,
+            is_active: true
+          })
+          .select()
+          .single();
 
-    const { error: itemsError } = await supabase
-      .from('quote_items')
-      .insert(itemsToInsert);
+        if (itemError) {
+          console.error('Error creating item for carrier quote:', itemError);
+          throw itemError;
+        }
+        
+        itemId = newItem.id;
+        console.log('[createQuoteInDatabase] Created item with ID:', itemId);
+      }
+      
+      // Insert quote item with the correct item_id
+      const { error: quoteItemError } = await supabase
+        .from('quote_items')
+        .insert({
+          quote_id: quoteData.id,
+          item_id: itemId,
+          quantity: item.quantity,
+          unit_price: item.unit_price,
+          total_price: item.total_price,
+          charge_type: item.charge_type,
+          address_id: item.address_id || null
+        });
 
-    if (itemsError) {
-      console.error('Error creating quote items:', itemsError);
-      throw itemsError;
+      if (quoteItemError) {
+        console.error('Error creating quote item:', quoteItemError);
+        throw quoteItemError;
+      }
     }
 
     console.log('[createQuoteInDatabase] Quote items saved successfully');
