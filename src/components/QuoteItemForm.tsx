@@ -30,7 +30,7 @@ export const QuoteItemForm = ({
   const hasCarrierItems = carrierQuoteItems.length > 0;
 
   return (
-    <div className="space-y-4 p-4 border rounded-lg bg-slate-100">
+    <div className="space-y-4 p-4 border rounded-lg bg-blue-50">
       <div className="space-y-4">
         <Label>Add Item to Quote</Label>
         
