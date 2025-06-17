@@ -12,7 +12,7 @@ import { EditAddressDialog } from "@/components/EditAddressDialog";
 interface ClientAddressListProps {
   addresses: ClientAddress[];
   clientInfoId: string;
-  onAddAddress: (address: AddClientAddressData) => Promise<void>;
+  onAddAddress: (address: AddClientAddressData) => Promise<ClientAddress>;
   onUpdateAddress: (address: UpdateClientAddressData) => Promise<void>;
   onDeleteAddress: (addressId: string) => Promise<void>;
 }
