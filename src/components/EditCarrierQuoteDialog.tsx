@@ -35,7 +35,7 @@ export const EditCarrierQuoteDialog = ({ open, onOpenChange, carrier, onUpdateCa
       setVendorId(foundVendor?.id || "");
       setCategoryId(foundCategory?.id || "");
       setSpeed(carrier.speed);
-      setPrice(carrier.price.toString());
+      setPrice(carrier.price > 0 ? carrier.price.toString() : "");
       setTerm(carrier.term);
       setNotes(carrier.notes);
     }
@@ -44,7 +44,7 @@ export const EditCarrierQuoteDialog = ({ open, onOpenChange, carrier, onUpdateCa
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (vendorId && categoryId && speed && price) {
+    if (vendorId && categoryId && speed) {
       const selectedVendor = vendors.find(v => v.id === vendorId);
       const selectedCategory = categories.find(c => c.id === categoryId);
       
@@ -56,7 +56,7 @@ export const EditCarrierQuoteDialog = ({ open, onOpenChange, carrier, onUpdateCa
         carrier: selectedVendor?.name || "",
         type: selectedCategory?.name || "",
         speed,
-        price: parseFloat(price),
+        price: price ? parseFloat(price) : 0,
         term,
         notes,
         color: vendorColor
@@ -72,7 +72,7 @@ export const EditCarrierQuoteDialog = ({ open, onOpenChange, carrier, onUpdateCa
         <DialogHeader>
           <DialogTitle>Edit Carrier Quote</DialogTitle>
           <DialogDescription>
-            Update the carrier quote information.
+            Update the carrier quote information. Leave price and term blank if waiting for vendor response.
           </DialogDescription>
         </DialogHeader>
         
@@ -127,15 +127,14 @@ export const EditCarrierQuoteDialog = ({ open, onOpenChange, carrier, onUpdateCa
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="price">Monthly Price (Required)</Label>
+            <Label htmlFor="price">Monthly Price</Label>
             <Input
               id="price"
               type="number"
               step="0.01"
               value={price}
               onChange={(e) => setPrice(e.target.value)}
-              placeholder="Enter monthly price"
-              required
+              placeholder="Leave blank if waiting for quote"
             />
           </div>
 
@@ -143,7 +142,7 @@ export const EditCarrierQuoteDialog = ({ open, onOpenChange, carrier, onUpdateCa
             <Label htmlFor="term">Contract Term</Label>
             <Select value={term} onValueChange={setTerm}>
               <SelectTrigger>
-                <SelectValue placeholder="Select term" />
+                <SelectValue placeholder="Leave blank if waiting for quote" />
               </SelectTrigger>
               <SelectContent className="bg-white z-50">
                 <SelectItem value="Month to Month">Month to Month</SelectItem>
@@ -173,7 +172,7 @@ export const EditCarrierQuoteDialog = ({ open, onOpenChange, carrier, onUpdateCa
             <Button 
               type="submit" 
               className="bg-purple-600 hover:bg-purple-700"
-              disabled={!vendorId || !categoryId || !speed || !price || loading}
+              disabled={!vendorId || !categoryId || !speed || loading}
             >
               Update Carrier Quote
             </Button>

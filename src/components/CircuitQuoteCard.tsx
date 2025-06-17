@@ -112,6 +112,14 @@ export const CircuitQuoteCard = ({
     ? `${quote.location}, Suite ${quote.suite}`
     : quote.location;
 
+  // Calculate price range, handling cases where price might be 0 (waiting for quote)
+  const carriersWithPrices = quote.carriers.filter(c => c.price > 0);
+  const priceDisplay = carriersWithPrices.length > 0 
+    ? `$${Math.min(...carriersWithPrices.map(c => c.price))} - $${Math.max(...carriersWithPrices.map(c => c.price))}`
+    : quote.carriers.length > 0 
+      ? "Pending quotes"
+      : "No quotes yet";
+
   return (
     <Card className="border-l-4 border-l-purple-500">
       <CardHeader>
@@ -143,13 +151,7 @@ export const CircuitQuoteCard = ({
             <div className="text-right">
               <div className="text-sm text-gray-600">{quote.carriers.length} Carriers</div>
               <div className="text-lg font-semibold">
-                {quote.carriers.length > 0 ? (
-                  <>
-                    ${Math.min(...quote.carriers.map(c => c.price))} - ${Math.max(...quote.carriers.map(c => c.price))}
-                  </>
-                ) : (
-                  "No quotes yet"
-                )}
+                {priceDisplay}
               </div>
             </div>
             <div className="flex items-center gap-2">
@@ -188,7 +190,7 @@ export const CircuitQuoteCard = ({
                 key={carrier.id}
                 className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium text-white shadow-sm"
                 style={{ backgroundColor: carrier.color || '#3B82F6' }}
-                title={`${carrier.carrier} - ${carrier.type} - ${carrier.speed} - $${carrier.price}`}
+                title={`${carrier.carrier} - ${carrier.type} - ${carrier.speed} - ${carrier.price > 0 ? `$${carrier.price}` : 'Pending quote'}`}
               >
                 {carrier.carrier}
               </div>
@@ -231,10 +233,17 @@ export const CircuitQuoteCard = ({
                       <div className="font-medium">{carrier.speed}</div>
                     </div>
                     <div>
-                      <div className="font-semibold text-lg">${carrier.price}</div>
+                      <div className="font-semibold text-lg">
+                        {carrier.price > 0 ? `$${carrier.price}` : (
+                          <span className="text-orange-600 text-sm">Pending</span>
+                        )}
+                      </div>
                     </div>
                     <div className="md:col-span-2">
-                      <div className="text-sm text-gray-600">{carrier.notes}</div>
+                      <div className="text-sm text-gray-600">
+                        {carrier.term && <div className="font-medium mb-1">{carrier.term}</div>}
+                        {carrier.notes}
+                      </div>
                     </div>
                     <div className="flex items-center gap-2">
                       <Button
