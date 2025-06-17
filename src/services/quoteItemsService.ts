@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { QuoteItemData } from "@/types/quoteItems";
 
@@ -29,7 +30,7 @@ export const fetchQuoteItems = async (quoteId: string): Promise<QuoteItemData[]>
       name: item.item?.name || 'Unknown Item',
       description: item.item?.description || '',
       item: item.item,
-      address: item.address
+      address: item.address // This should now properly include the address for carrier items
     }));
   } catch (error) {
     console.error('Error in fetchQuoteItems:', error);

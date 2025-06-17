@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Label } from "@/components/ui/label";
 import { QuoteItemData } from "@/types/quoteItems";
@@ -200,6 +201,7 @@ export const QuoteItemsManager = ({ items, onItemsChange, clientInfoId }: QuoteI
         if (field === 'address_id') {
           const selectedAddress = addresses.find(addr => addr.id === value);
           updatedItem.address = selectedAddress;
+          console.log('[QuoteItemsManager] Updated item address:', { itemId, addressId: value, address: selectedAddress });
         }
         
         // Recalculate total price when quantity or unit price changes
