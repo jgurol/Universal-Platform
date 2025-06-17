@@ -53,9 +53,9 @@ export const createQuoteInDatabase = async (
     for (const item of quote.quoteItems) {
       let itemId = item.item_id;
       
-      // Handle carrier quote items - create actual items for them
+      // Handle carrier quote items - create temporary items for them that won't appear in catalog
       if (item.item_id.startsWith('carrier-')) {
-        console.log('[createQuoteInDatabase] Creating item for carrier quote item:', item.name);
+        console.log('[createQuoteInDatabase] Creating temporary item for carrier quote item:', item.name);
         
         const { data: newItem, error: itemError } = await supabase
           .from('items')
@@ -66,18 +66,18 @@ export const createQuoteInDatabase = async (
             price: item.unit_price,
             cost: item.cost_override || 0,
             charge_type: item.charge_type,
-            is_active: true
+            is_active: false // Set to false so it doesn't appear in the catalog
           })
           .select()
           .single();
 
         if (itemError) {
-          console.error('Error creating item for carrier quote:', itemError);
+          console.error('Error creating temporary item for carrier quote:', itemError);
           throw itemError;
         }
         
         itemId = newItem.id;
-        console.log('[createQuoteInDatabase] Created item with ID:', itemId);
+        console.log('[createQuoteInDatabase] Created temporary item with ID:', itemId);
       }
       
       // Insert quote item with the correct item_id

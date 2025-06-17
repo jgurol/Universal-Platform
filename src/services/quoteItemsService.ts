@@ -64,7 +64,7 @@ export const updateQuoteItems = async (quoteId: string, items: QuoteItemData[]) 
     const validItems = items.filter(item => {
       const isCarrierItem = item.item_id.startsWith('carrier-');
       if (isCarrierItem) {
-        console.log('[QuoteItemsService] Skipping carrier item (will be handled as custom item):', item.name);
+        console.log('[QuoteItemsService] Skipping carrier item (will be handled as temporary item):', item.name);
         return false;
       }
       return true;
@@ -95,14 +95,14 @@ export const updateQuoteItems = async (quoteId: string, items: QuoteItemData[]) 
       }
     }
 
-    // Handle carrier items separately - create them as custom items with a placeholder UUID
+    // Handle carrier items separately - create them as temporary items (is_active = false)
     const carrierItems = items.filter(item => item.item_id.startsWith('carrier-'));
     
     if (carrierItems.length > 0) {
-      // First, create placeholder items in the items table for carrier quotes
-      const placeholderItems = await Promise.all(
+      // First, create temporary items in the items table for carrier quotes
+      const temporaryItems = await Promise.all(
         carrierItems.map(async (carrierItem) => {
-          // Create a placeholder item in the items table
+          // Create a temporary item in the items table that won't appear in catalog
           const { data: newItem, error: itemError } = await supabase
             .from('items')
             .insert({
@@ -112,26 +112,26 @@ export const updateQuoteItems = async (quoteId: string, items: QuoteItemData[]) 
               price: carrierItem.unit_price,
               cost: carrierItem.cost_override || 0,
               charge_type: carrierItem.charge_type,
-              is_active: true
+              is_active: false // This ensures it won't appear in the catalog
             })
             .select()
             .single();
 
           if (itemError) {
-            console.error('Error creating placeholder item for carrier quote:', itemError);
+            console.error('Error creating temporary item for carrier quote:', itemError);
             throw itemError;
           }
 
           return {
             ...carrierItem,
             item_id: newItem.id, // Use the new item's UUID
-            placeholderItemId: newItem.id
+            temporaryItemId: newItem.id
           };
         })
       );
 
       // Now insert the quote items with valid UUIDs
-      const carrierQuoteItems = placeholderItems.map(item => ({
+      const carrierQuoteItems = temporaryItems.map(item => ({
         quote_id: quoteId,
         item_id: item.item_id,
         quantity: item.quantity,
@@ -150,7 +150,7 @@ export const updateQuoteItems = async (quoteId: string, items: QuoteItemData[]) 
         throw carrierInsertError;
       }
 
-      console.log('[QuoteItemsService] Successfully created carrier items as placeholder items');
+      console.log('[QuoteItemsService] Successfully created carrier items as temporary items (not in catalog)');
     }
 
     console.log('[QuoteItemsService] Quote items updated successfully');
