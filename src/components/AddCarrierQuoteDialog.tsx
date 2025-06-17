@@ -6,7 +6,12 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { FileText, ExternalLink } from "lucide-react";
 import { useCarrierOptions } from "@/hooks/useCarrierOptions";
+import { useVendorPriceSheets } from "@/hooks/useVendorPriceSheets";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 
 interface AddCarrierQuoteDialogProps {
   open: boolean;
@@ -31,6 +36,39 @@ export const AddCarrierQuoteDialog = ({ open, onOpenChange, onAddCarrier }: AddC
   const [notes, setNotes] = useState("");
 
   const { vendors, categories, loading } = useCarrierOptions();
+  const { priceSheets } = useVendorPriceSheets();
+  const { toast } = useToast();
+
+  // Filter price sheets for the selected vendor
+  const vendorPriceSheets = priceSheets.filter(sheet => sheet.vendor_id === vendorId);
+
+  const handleOpenPriceSheet = async (priceSheet: any) => {
+    try {
+      const { data, error } = await supabase.storage
+        .from('vendor-price-sheets')
+        .createSignedUrl(priceSheet.file_path, 3600); // 1 hour expiry
+
+      if (error) {
+        console.error('Error creating signed URL:', error);
+        toast({
+          title: "Error",
+          description: "Failed to open price sheet",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      // Open in new window
+      window.open(data.signedUrl, '_blank');
+    } catch (error) {
+      console.error('Error opening price sheet:', error);
+      toast({
+        title: "Error",
+        description: "Failed to open price sheet",
+        variant: "destructive"
+      });
+    }
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -70,13 +108,37 @@ export const AddCarrierQuoteDialog = ({ open, onOpenChange, onAddCarrier }: AddC
         <DialogHeader>
           <DialogTitle>Add Carrier Quote</DialogTitle>
           <DialogDescription>
-            Add a new carrier quote for comparison. Leave price and term blank if waiting for vendor response.
+            Add a new carrier quote for comparison. Leave cost and term blank if waiting for vendor response.
           </DialogDescription>
         </DialogHeader>
         
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="vendor">Carrier (Required)</Label>
+            <div className="flex items-center justify-between">
+              <Label htmlFor="vendor">Carrier (Required)</Label>
+              {vendorId && vendorPriceSheets.length > 0 && (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline" size="sm" type="button">
+                      <FileText className="h-4 w-4 mr-1" />
+                      Price Sheets ({vendorPriceSheets.length})
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent className="bg-white z-50">
+                    {vendorPriceSheets.map((sheet) => (
+                      <DropdownMenuItem 
+                        key={sheet.id}
+                        onClick={() => handleOpenPriceSheet(sheet)}
+                        className="cursor-pointer"
+                      >
+                        <ExternalLink className="h-4 w-4 mr-2" />
+                        {sheet.name}
+                      </DropdownMenuItem>
+                    ))}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              )}
+            </div>
             <Select value={vendorId} onValueChange={setVendorId} required>
               <SelectTrigger>
                 <SelectValue placeholder={loading ? "Loading vendors..." : "Select vendor"} />
@@ -125,7 +187,7 @@ export const AddCarrierQuoteDialog = ({ open, onOpenChange, onAddCarrier }: AddC
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="price">Monthly Price</Label>
+            <Label htmlFor="price">Cost</Label>
             <Input
               id="price"
               type="number"

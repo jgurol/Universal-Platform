@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -49,10 +48,10 @@ export const VendorPriceSheetsList = ({ vendorId, vendorName }: VendorPriceSheet
     try {
       const { data, error } = await supabase.storage
         .from('vendor-price-sheets')
-        .download(priceSheet.file_path);
+        .createSignedUrl(priceSheet.file_path, 3600); // 1 hour expiry
 
       if (error) {
-        console.error('Error downloading file:', error);
+        console.error('Error creating signed URL:', error);
         toast({
           title: "Download failed",
           description: error.message,
@@ -61,25 +60,18 @@ export const VendorPriceSheetsList = ({ vendorId, vendorName }: VendorPriceSheet
         return;
       }
 
-      // Create a download link
-      const url = URL.createObjectURL(data);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = priceSheet.file_name;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
+      // Open in new window instead of downloading
+      window.open(data.signedUrl, '_blank');
 
       toast({
-        title: "Download started",
-        description: `${priceSheet.name} is being downloaded.`
+        title: "Opening price sheet",
+        description: `${priceSheet.name} is opening in a new window.`
       });
     } catch (error) {
-      console.error('Error downloading price sheet:', error);
+      console.error('Error opening price sheet:', error);
       toast({
         title: "Download failed",
-        description: "Failed to download the price sheet",
+        description: "Failed to open the price sheet",
         variant: "destructive"
       });
     }
