@@ -26,14 +26,20 @@ export const useSpeeds = () => {
 
     try {
       setLoading(true);
+      console.log('Fetching speeds for user:', user.id);
+      
       const { data, error } = await supabase
         .from('speeds')
         .select('*')
         .eq('is_active', true)
         .order('name');
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching speeds:', error);
+        throw error;
+      }
 
+      console.log('Speeds fetched:', data);
       setSpeeds(data || []);
     } catch (error) {
       console.error('Error fetching speeds:', error);

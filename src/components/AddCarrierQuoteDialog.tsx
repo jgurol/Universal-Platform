@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -41,6 +40,8 @@ export const AddCarrierQuoteDialog = ({ open, onOpenChange, onAddCarrier }: AddC
   const { priceSheets } = useVendorPriceSheets();
   const { speeds, loading: speedsLoading } = useSpeeds();
   const { toast } = useToast();
+
+  console.log('Speeds data:', speeds, 'Loading:', speedsLoading);
 
   // Filter price sheets for the selected vendor
   const vendorPriceSheets = priceSheets.filter(sheet => sheet.vendor_id === vendorId);
