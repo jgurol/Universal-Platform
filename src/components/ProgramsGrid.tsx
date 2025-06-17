@@ -1,5 +1,5 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { FileText, Phone, Zap, Network } from "lucide-react";
+import { FileText, Zap, Network } from "lucide-react";
 import { Link } from "react-router-dom";
 
 interface Program {
@@ -19,14 +19,6 @@ const programs: Program[] = [
     icon: FileText,
     route: "/quoting-system",
     color: "bg-blue-500 hover:bg-blue-600"
-  },
-  {
-    id: "did",
-    title: "DID Number Management",
-    description: "Manage direct inward dialing numbers",
-    icon: Phone,
-    route: "/did-management",
-    color: "bg-purple-500 hover:bg-purple-600"
   },
   {
     id: "circuit",
