@@ -1,6 +1,5 @@
-
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { FileText, BarChart3, Phone, Zap, Network } from "lucide-react";
+import { FileText, Phone, Zap, Network } from "lucide-react";
 import { Link } from "react-router-dom";
 
 interface Program {
@@ -20,14 +19,6 @@ const programs: Program[] = [
     icon: FileText,
     route: "/quoting-system",
     color: "bg-blue-500 hover:bg-blue-600"
-  },
-  {
-    id: "kpi",
-    title: "KPI Management",
-    description: "Track and analyze key performance indicators",
-    icon: BarChart3,
-    route: "/kpi-management",
-    color: "bg-green-500 hover:bg-green-600"
   },
   {
     id: "did",
