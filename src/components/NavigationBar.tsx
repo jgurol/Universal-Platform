@@ -46,6 +46,10 @@ export function NavigationBar() {
                     Manage your account preferences and personal information
                   </ListItem>
                   
+                  <ListItem href="/vendors" title="Vendor Management" Icon={Building}>
+                    Manage vendors and supplier information
+                  </ListItem>
+                  
                   {isAdmin && (
                     <>
                       <ListItem href="/client-management" title="Client Management" Icon={Building}>
