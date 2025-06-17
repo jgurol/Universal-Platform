@@ -135,7 +135,7 @@ export const QuoteItemForm = ({
         <Button
           onClick={onAddItem}
           disabled={disabled || !selectedItemId || isLoading || carrierLoading}
-          className="bg-blue-600 hover:bg-blue-700 w-full"
+          className="bg-blue-700 hover:bg-blue-800 w-full"
         >
           {isLoading || carrierLoading ? (
             <Loader2 className="h-4 w-4 animate-spin mr-2" />
