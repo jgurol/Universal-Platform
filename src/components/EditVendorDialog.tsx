@@ -36,6 +36,7 @@ const colorOptions = [
 
 export const EditVendorDialog = ({ open, onOpenChange, onUpdateVendor, vendor }: EditVendorDialogProps) => {
   const [name, setName] = useState("");
+  const [dba, setDba] = useState("");
   const [description, setDescription] = useState("");
   const [repName, setRepName] = useState("");
   const [email, setEmail] = useState("");
@@ -46,6 +47,7 @@ export const EditVendorDialog = ({ open, onOpenChange, onUpdateVendor, vendor }:
   useEffect(() => {
     if (vendor) {
       setName(vendor.name);
+      setDba(vendor.dba || "");
       setDescription(vendor.description || "");
       setRepName(vendor.rep_name || "");
       setEmail(vendor.email || "");
@@ -60,6 +62,7 @@ export const EditVendorDialog = ({ open, onOpenChange, onUpdateVendor, vendor }:
     if (vendor && name) {
       onUpdateVendor(vendor.id, {
         name,
+        dba: dba || undefined,
         description: description || undefined,
         rep_name: repName || undefined,
         email: email || undefined,
@@ -94,6 +97,16 @@ export const EditVendorDialog = ({ open, onOpenChange, onUpdateVendor, vendor }:
               onChange={(e) => setName(e.target.value)}
               placeholder="Enter vendor name"
               required
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="edit-dba">Doing Business As (DBA)</Label>
+            <Input
+              id="edit-dba"
+              value={dba}
+              onChange={(e) => setDba(e.target.value)}
+              placeholder="Enter DBA name"
             />
           </div>
 

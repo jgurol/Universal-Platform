@@ -35,6 +35,7 @@ const colorOptions = [
 
 export const AddVendorDialog = ({ open, onOpenChange, onAddVendor }: AddVendorDialogProps) => {
   const [name, setName] = useState("");
+  const [dba, setDba] = useState("");
   const [description, setDescription] = useState("");
   const [repName, setRepName] = useState("");
   const [email, setEmail] = useState("");
@@ -47,6 +48,7 @@ export const AddVendorDialog = ({ open, onOpenChange, onAddVendor }: AddVendorDi
     if (name) {
       onAddVendor({
         name,
+        dba: dba || undefined,
         description: description || undefined,
         rep_name: repName || undefined,
         email: email || undefined,
@@ -58,6 +60,7 @@ export const AddVendorDialog = ({ open, onOpenChange, onAddVendor }: AddVendorDi
       
       // Reset form
       setName("");
+      setDba("");
       setDescription("");
       setRepName("");
       setEmail("");
@@ -86,6 +89,16 @@ export const AddVendorDialog = ({ open, onOpenChange, onAddVendor }: AddVendorDi
               onChange={(e) => setName(e.target.value)}
               placeholder="Enter vendor name"
               required
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="dba">Doing Business As (DBA)</Label>
+            <Input
+              id="dba"
+              value={dba}
+              onChange={(e) => setDba(e.target.value)}
+              placeholder="Enter DBA name"
             />
           </div>
 
