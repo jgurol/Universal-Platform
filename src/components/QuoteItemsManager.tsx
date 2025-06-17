@@ -106,17 +106,9 @@ export const QuoteItemsManager = ({ items, onItemsChange, clientInfoId }: QuoteI
             };
 
             console.log('[QuoteItemsManager] Creating new address with parsed components:', newAddressData);
-            await addAddress(newAddressData);
-            
-            // Refresh addresses to get the newly created one
-            // The useClientAddresses hook should automatically refresh, but we'll find it after creation
-            setTimeout(() => {
-              const newAddress = addresses.find(addr => 
-                addr.city.toLowerCase() === parsedAddress.city.toLowerCase() &&
-                addr.state.toLowerCase() === parsedAddress.state.toLowerCase()
-              );
-              matchingAddress = newAddress;
-            }, 100);
+            const newAddress = await addAddress(newAddressData);
+            matchingAddress = newAddress;
+            console.log('[QuoteItemsManager] Address created successfully:', newAddress);
           } catch (error) {
             console.error('Error creating address for carrier location:', error);
             // Continue without address if creation fails
