@@ -179,6 +179,22 @@ export const CircuitQuoteCard = ({
             </div>
           </div>
         </div>
+        
+        {/* Show vendor badges when minimized */}
+        {!isExpanded && quote.carriers.length > 0 && (
+          <div className="flex flex-wrap gap-2 mt-3 pt-3 border-t border-gray-100">
+            {quote.carriers.map((carrier) => (
+              <div
+                key={carrier.id}
+                className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium text-white shadow-sm"
+                style={{ backgroundColor: carrier.color || '#3B82F6' }}
+                title={`${carrier.carrier} - ${carrier.type} - ${carrier.speed} - $${carrier.price}`}
+              >
+                {carrier.carrier}
+              </div>
+            ))}
+          </div>
+        )}
       </CardHeader>
 
       {isExpanded && (
