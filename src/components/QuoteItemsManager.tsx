@@ -30,19 +30,30 @@ export const QuoteItemsManager = ({ items, onItemsChange, clientInfoId }: QuoteI
       const carrierItem = carrierQuoteItems.find(item => item.id === carrierQuoteId);
       
       if (carrierItem) {
+        // Find matching address based on circuit quote location
+        let matchingAddress = addresses.find(addr => 
+          addr.city.toLowerCase().includes(carrierItem.client_name.toLowerCase()) ||
+          addr.street_address.toLowerCase().includes(carrierItem.client_name.toLowerCase())
+        );
+        
+        // If no matching address found, use the first available address
+        if (!matchingAddress && addresses.length > 0) {
+          matchingAddress = addresses[0];
+        }
+
         const newItem: QuoteItemData = {
           id: `temp-${Date.now()}`,
           item_id: `carrier-${carrierItem.id}`,
           quantity: 1,
-          unit_price: carrierItem.price,
-          cost_override: carrierItem.price * 0.7, // Assume 30% margin
-          total_price: carrierItem.price,
+          unit_price: 0, // Leave sell price blank
+          cost_override: carrierItem.price, // Populate cost with carrier price
+          total_price: 0, // Will be 0 since unit_price is 0
           charge_type: 'MRC',
-          address_id: addresses.length > 0 ? addresses[0].id : undefined,
+          address_id: matchingAddress?.id,
           name: `${carrierItem.carrier} - ${carrierItem.type} - ${carrierItem.speed}`,
           description: `${carrierItem.term ? `Term: ${carrierItem.term}` : ''}${carrierItem.notes ? ` | Notes: ${carrierItem.notes}` : ''}`,
           item: undefined,
-          address: addresses.length > 0 ? addresses[0] : undefined
+          address: matchingAddress
         };
 
         onItemsChange([...items, newItem]);

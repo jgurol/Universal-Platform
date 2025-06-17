@@ -13,6 +13,7 @@ export interface CarrierQuoteItem {
   notes?: string;
   circuit_quote_id: string;
   client_name: string;
+  location: string; // Added location from circuit quote
 }
 
 export const useCarrierQuoteItems = (clientInfoId: string | null) => {
@@ -32,7 +33,7 @@ export const useCarrierQuoteItems = (clientInfoId: string | null) => {
         // Get circuit quotes for this client that are completed
         const { data: circuitQuotes, error: circuitError } = await supabase
           .from('circuit_quotes')
-          .select('id, client_name')
+          .select('id, client_name, location')
           .eq('user_id', user.id)
           .eq('client_info_id', clientInfoId)
           .eq('status', 'completed');
@@ -71,7 +72,8 @@ export const useCarrierQuoteItems = (clientInfoId: string | null) => {
               term: cq.term,
               notes: cq.notes,
               circuit_quote_id: cq.circuit_quote_id,
-              client_name: circuitQuote?.client_name || ''
+              client_name: circuitQuote?.client_name || '',
+              location: circuitQuote?.location || ''
             };
           });
           setCarrierQuoteItems(items);
