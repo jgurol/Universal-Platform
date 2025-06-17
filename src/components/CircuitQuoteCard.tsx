@@ -202,7 +202,7 @@ export const CircuitQuoteCard = ({
                   <div className="grid grid-cols-1 md:grid-cols-7 gap-4 items-center">
                     <div>
                       <div 
-                        className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium text-white"
+                        className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium text-white shadow-sm"
                         style={{ backgroundColor: carrier.color || '#3B82F6' }}
                       >
                         {carrier.carrier}

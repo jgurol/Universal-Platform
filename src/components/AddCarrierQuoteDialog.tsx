@@ -1,9 +1,11 @@
+
 import { useState } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
 import { useCarrierOptions } from "@/hooks/useCarrierOptions";
 
 interface AddCarrierQuoteDialogProps {
@@ -20,16 +22,6 @@ interface AddCarrierQuoteDialogProps {
   }) => void;
 }
 
-const carrierColors = [
-  { name: "Gray", value: "bg-gray-100 text-gray-800" },
-  { name: "Blue", value: "bg-blue-100 text-blue-800" },
-  { name: "Green", value: "bg-green-100 text-green-800" },
-  { name: "Yellow", value: "bg-yellow-100 text-yellow-800" },
-  { name: "Red", value: "bg-red-100 text-red-800" },
-  { name: "Purple", value: "bg-purple-100 text-purple-800" },
-  { name: "Orange", value: "bg-orange-100 text-orange-800" },
-];
-
 export const AddCarrierQuoteDialog = ({ open, onOpenChange, onAddCarrier }: AddCarrierQuoteDialogProps) => {
   const [vendorId, setVendorId] = useState("");
   const [categoryId, setCategoryId] = useState("");
@@ -37,19 +29,8 @@ export const AddCarrierQuoteDialog = ({ open, onOpenChange, onAddCarrier }: AddC
   const [price, setPrice] = useState("");
   const [term, setTerm] = useState("");
   const [notes, setNotes] = useState("");
-  const [color, setColor] = useState("bg-gray-100 text-gray-800");
 
   const { vendors, categories, loading } = useCarrierOptions();
-
-  const resetForm = () => {
-    setVendorId("");
-    setCategoryId("");
-    setSpeed("");
-    setPrice("");
-    setTerm("");
-    setNotes("");
-    setColor("bg-gray-100 text-gray-800");
-  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -58,6 +39,9 @@ export const AddCarrierQuoteDialog = ({ open, onOpenChange, onAddCarrier }: AddC
       const selectedVendor = vendors.find(v => v.id === vendorId);
       const selectedCategory = categories.find(c => c.id === categoryId);
       
+      // Use vendor's color or default to blue
+      const vendorColor = selectedVendor?.color || '#3B82F6';
+      
       onAddCarrier({
         carrier: selectedVendor?.name || "",
         type: selectedCategory?.name || "",
@@ -65,10 +49,17 @@ export const AddCarrierQuoteDialog = ({ open, onOpenChange, onAddCarrier }: AddC
         price: parseFloat(price),
         term,
         notes,
-        color
+        color: vendorColor
       });
       
-      resetForm();
+      // Reset form
+      setVendorId("");
+      setCategoryId("");
+      setSpeed("");
+      setPrice("");
+      setTerm("");
+      setNotes("");
+      
       onOpenChange(false);
     }
   };
@@ -79,94 +70,26 @@ export const AddCarrierQuoteDialog = ({ open, onOpenChange, onAddCarrier }: AddC
         <DialogHeader>
           <DialogTitle>Add Carrier Quote</DialogTitle>
           <DialogDescription>
-            Add a new carrier quote for this circuit.
+            Add a new carrier quote for comparison.
           </DialogDescription>
         </DialogHeader>
         
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="vendor">Carrier (Required)</Label>
-              <Select value={vendorId} onValueChange={setVendorId} required>
-                <SelectTrigger>
-                  <SelectValue placeholder={loading ? "Loading vendors..." : "Select a vendor"} />
-                </SelectTrigger>
-                <SelectContent className="bg-white z-50">
-                  {vendors.map((vendor) => (
-                    <SelectItem key={vendor.id} value={vendor.id}>
-                      {vendor.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="category">Circuit Type (Required)</Label>
-              <Select value={categoryId} onValueChange={setCategoryId} required>
-                <SelectTrigger>
-                  <SelectValue placeholder={loading ? "Loading types..." : "Select circuit type"} />
-                </SelectTrigger>
-                <SelectContent className="bg-white z-50">
-                  {categories.map((category) => (
-                    <SelectItem key={category.id} value={category.id}>
-                      {category.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="speed">Speed (Required)</Label>
-              <Input
-                id="speed"
-                value={speed}
-                onChange={(e) => setSpeed(e.target.value)}
-                placeholder="e.g., 100Mbps, 1Gbps"
-                required
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="price">Price (Required)</Label>
-              <Input
-                id="price"
-                type="number"
-                step="0.01"
-                min="0"
-                value={price}
-                onChange={(e) => setPrice(e.target.value)}
-                placeholder="Monthly price"
-                required
-              />
-            </div>
-          </div>
-
           <div className="space-y-2">
-            <Label htmlFor="term">Term</Label>
-            <Input
-              id="term"
-              value={term}
-              onChange={(e) => setTerm(e.target.value)}
-              placeholder="e.g., 36 months, 1 year"
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="color">Badge Color</Label>
-            <Select value={color} onValueChange={setColor}>
+            <Label htmlFor="vendor">Carrier (Required)</Label>
+            <Select value={vendorId} onValueChange={setVendorId} required>
               <SelectTrigger>
-                <SelectValue placeholder="Select color" />
+                <SelectValue placeholder={loading ? "Loading vendors..." : "Select vendor"} />
               </SelectTrigger>
               <SelectContent className="bg-white z-50">
-                {carrierColors.map((colorOption) => (
-                  <SelectItem key={colorOption.value} value={colorOption.value}>
+                {vendors.map((vendor) => (
+                  <SelectItem key={vendor.id} value={vendor.id}>
                     <div className="flex items-center gap-2">
-                      <div className={`w-4 h-4 rounded ${colorOption.value}`}></div>
-                      {colorOption.name}
+                      <div 
+                        className="w-3 h-3 rounded-full" 
+                        style={{ backgroundColor: vendor.color || '#3B82F6' }}
+                      />
+                      {vendor.name}
                     </div>
                   </SelectItem>
                 ))}
@@ -175,12 +98,69 @@ export const AddCarrierQuoteDialog = ({ open, onOpenChange, onAddCarrier }: AddC
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="notes">Notes</Label>
+            <Label htmlFor="category">Circuit Type (Required)</Label>
+            <Select value={categoryId} onValueChange={setCategoryId} required>
+              <SelectTrigger>
+                <SelectValue placeholder={loading ? "Loading types..." : "Select circuit type"} />
+              </SelectTrigger>
+              <SelectContent className="bg-white z-50">
+                {categories.map((category) => (
+                  <SelectItem key={category.id} value={category.id}>
+                    {category.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="speed">Speed (Required)</Label>
             <Input
+              id="speed"
+              value={speed}
+              onChange={(e) => setSpeed(e.target.value)}
+              placeholder="e.g., 100x100M, 1Gx1G"
+              required
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="price">Monthly Price (Required)</Label>
+            <Input
+              id="price"
+              type="number"
+              step="0.01"
+              value={price}
+              onChange={(e) => setPrice(e.target.value)}
+              placeholder="Enter monthly price"
+              required
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="term">Contract Term</Label>
+            <Select value={term} onValueChange={setTerm}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select term" />
+              </SelectTrigger>
+              <SelectContent className="bg-white z-50">
+                <SelectItem value="Month to Month">Month to Month</SelectItem>
+                <SelectItem value="12 months">12 months</SelectItem>
+                <SelectItem value="24 months">24 months</SelectItem>
+                <SelectItem value="36 months">36 months</SelectItem>
+                <SelectItem value="60 months">60 months</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="notes">Notes</Label>
+            <Textarea
               id="notes"
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
-              placeholder="Additional notes about this quote"
+              placeholder="Additional notes about this quote (e.g., includes static IPs, installation fees, etc.)"
+              rows={3}
             />
           </div>
           
