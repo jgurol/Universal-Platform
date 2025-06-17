@@ -3,9 +3,10 @@ import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { ChevronDown, ChevronRight, MapPin, Building, Calendar, Plus } from "lucide-react";
+import { ChevronDown, ChevronRight, MapPin, Building, Calendar, Plus, Edit, Trash2 } from "lucide-react";
 import { CircuitQuote, CarrierQuote } from "@/components/CircuitQuotesManagement";
 import { AddCarrierQuoteDialog } from "@/components/AddCarrierQuoteDialog";
+import { EditCarrierQuoteDialog } from "@/components/EditCarrierQuoteDialog";
 
 interface CircuitQuoteCardProps {
   quote: CircuitQuote;
@@ -15,6 +16,8 @@ interface CircuitQuoteCardProps {
 export const CircuitQuoteCard = ({ quote, onUpdate }: CircuitQuoteCardProps) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const [isAddCarrierDialogOpen, setIsAddCarrierDialogOpen] = useState(false);
+  const [isEditCarrierDialogOpen, setIsEditCarrierDialogOpen] = useState(false);
+  const [editingCarrier, setEditingCarrier] = useState<CarrierQuote | null>(null);
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -41,6 +44,31 @@ export const CircuitQuoteCard = ({ quote, onUpdate }: CircuitQuoteCardProps) => 
     };
     
     onUpdate(updatedQuote);
+  };
+
+  const editCarrierQuote = (updatedCarrier: CarrierQuote) => {
+    const updatedQuote: CircuitQuote = {
+      ...quote,
+      carriers: quote.carriers.map(carrier => 
+        carrier.id === updatedCarrier.id ? updatedCarrier : carrier
+      )
+    };
+    
+    onUpdate(updatedQuote);
+  };
+
+  const deleteCarrierQuote = (carrierId: string) => {
+    const updatedQuote: CircuitQuote = {
+      ...quote,
+      carriers: quote.carriers.filter(carrier => carrier.id !== carrierId)
+    };
+    
+    onUpdate(updatedQuote);
+  };
+
+  const handleEditCarrier = (carrier: CarrierQuote) => {
+    setEditingCarrier(carrier);
+    setIsEditCarrierDialogOpen(true);
   };
 
   return (
@@ -78,7 +106,13 @@ export const CircuitQuoteCard = ({ quote, onUpdate }: CircuitQuoteCardProps) => 
             <div className="text-right">
               <div className="text-sm text-gray-600">{quote.carriers.length} Carriers</div>
               <div className="text-lg font-semibold">
-                ${Math.min(...quote.carriers.map(c => c.price))} - ${Math.max(...quote.carriers.map(c => c.price))}
+                {quote.carriers.length > 0 ? (
+                  <>
+                    ${Math.min(...quote.carriers.map(c => c.price))} - ${Math.max(...quote.carriers.map(c => c.price))}
+                  </>
+                ) : (
+                  "No quotes yet"
+                )}
               </div>
             </div>
             {getStatusBadge(quote.status)}
@@ -104,7 +138,7 @@ export const CircuitQuoteCard = ({ quote, onUpdate }: CircuitQuoteCardProps) => 
             <div className="grid gap-3">
               {quote.carriers.map((carrier) => (
                 <div key={carrier.id} className="border rounded-lg p-4 bg-gray-50">
-                  <div className="grid grid-cols-1 md:grid-cols-6 gap-4 items-center">
+                  <div className="grid grid-cols-1 md:grid-cols-7 gap-4 items-center">
                     <div>
                       <Badge className={carrier.color}>
                         {carrier.carrier}
@@ -122,6 +156,24 @@ export const CircuitQuoteCard = ({ quote, onUpdate }: CircuitQuoteCardProps) => 
                     <div className="md:col-span-2">
                       <div className="text-sm text-gray-600">{carrier.notes}</div>
                     </div>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleEditCarrier(carrier)}
+                        className="h-8 w-8 p-0"
+                      >
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => deleteCarrierQuote(carrier.id)}
+                        className="h-8 w-8 p-0 text-red-600 hover:text-red-700"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
                   </div>
                 </div>
               ))}
@@ -135,6 +187,15 @@ export const CircuitQuoteCard = ({ quote, onUpdate }: CircuitQuoteCardProps) => 
         onOpenChange={setIsAddCarrierDialogOpen}
         onAddCarrier={addCarrierQuote}
       />
+
+      {editingCarrier && (
+        <EditCarrierQuoteDialog
+          open={isEditCarrierDialogOpen}
+          onOpenChange={setIsEditCarrierDialogOpen}
+          carrier={editingCarrier}
+          onUpdateCarrier={editCarrierQuote}
+        />
+      )}
     </Card>
   );
 };
