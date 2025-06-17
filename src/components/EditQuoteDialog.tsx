@@ -1,14 +1,8 @@
 
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Textarea } from "@/components/ui/textarea";
 import { Quote, Client, ClientInfo } from "@/pages/Index";
 import { QuoteItemsManager } from "@/components/QuoteItemsManager";
-import { QuoteDetailsSection } from "@/components/QuoteDetailsSection";
-import { AddressSelector } from "@/components/AddressSelector";
 import { useQuoteForm } from "@/hooks/useQuoteForm";
 import { useQuoteItems } from "@/hooks/useQuoteItems";
 import { useClientAddresses } from "@/hooks/useClientAddresses";
@@ -17,6 +11,10 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
 import type { Database } from "@/integrations/supabase/types";
+import { EditQuoteHeader } from "@/components/EditQuote/EditQuoteHeader";
+import { EditQuoteAddressSection } from "@/components/EditQuote/EditQuoteAddressSection";
+import { EditQuoteTemplateSection } from "@/components/EditQuote/EditQuoteTemplateSection";
+import { EditQuoteFormFields } from "@/components/EditQuote/EditQuoteFormFields";
 
 type QuoteTemplate = Database['public']['Tables']['quote_templates']['Row'];
 
@@ -228,83 +226,38 @@ export const EditQuoteDialog = ({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[1400px] max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <div className="flex justify-between items-start">
-            <div>
-              <DialogTitle>Edit Quote</DialogTitle>
-              <DialogDescription>
-                Update the quote details and items. A new version number will be assigned.
-              </DialogDescription>
-            </div>
-            
-            <QuoteDetailsSection
-              quoteNumber={quoteNumber}
-              onQuoteNumberChange={setQuoteNumber}
-              date={date}
-              onDateChange={setDate}
-              expiresAt={expiresAt}
-              onExpiresAtChange={setExpiresAt}
-            />
-          </div>
-        </DialogHeader>
+        <EditQuoteHeader
+          quoteNumber={quoteNumber}
+          onQuoteNumberChange={setQuoteNumber}
+          date={date}
+          onDateChange={setDate}
+          expiresAt={expiresAt}
+          onExpiresAtChange={setExpiresAt}
+        />
         
         <form onSubmit={handleSubmit} className="space-y-4">
-          {/* Quote Name */}
-          <div className="space-y-2">
-            <Label htmlFor="description">Quote Name</Label>
-            <Input
-              id="description"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              placeholder="Enter quote name"
-            />
-          </div>
-
-          {/* Client Selection */}
-          <div className="space-y-2">
-            <Label htmlFor="clientInfo">Client Company</Label>
-            <Select value={clientInfoId} onValueChange={setClientInfoId}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select a client company" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="none">No client selected</SelectItem>
-                {clientInfos.map((clientInfo) => (
-                  <SelectItem key={clientInfo.id} value={clientInfo.id}>
-                    {clientInfo.company_name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* Billing Address Selection */}
-          <AddressSelector
-            clientInfoId={clientInfoId !== "none" ? clientInfoId : null}
-            selectedAddressId={selectedBillingAddressId || undefined}
-            onAddressChange={handleBillingAddressChange}
-            label="Billing Address"
-            autoSelectPrimary={false}
+          <EditQuoteFormFields
+            description={description}
+            onDescriptionChange={setDescription}
+            clientInfoId={clientInfoId}
+            onClientInfoIdChange={setClientInfoId}
+            clientInfos={clientInfos}
+            selectedSalesperson={selectedSalesperson}
+            status={status}
+            onStatusChange={setStatus}
+            commissionOverride={commissionOverride}
+            onCommissionOverrideChange={setCommissionOverride}
+            notes={notes}
+            onNotesChange={setNotes}
           />
 
-          {/* Service Address Selection */}
-          <AddressSelector
-            clientInfoId={clientInfoId !== "none" ? clientInfoId : null}
-            selectedAddressId={selectedServiceAddressId || undefined}
-            onAddressChange={handleServiceAddressChange}
-            label="Service Address"
-            autoSelectPrimary={false}
+          <EditQuoteAddressSection
+            clientInfoId={clientInfoId}
+            selectedBillingAddressId={selectedBillingAddressId}
+            onBillingAddressChange={handleBillingAddressChange}
+            selectedServiceAddressId={selectedServiceAddressId}
+            onServiceAddressChange={handleServiceAddressChange}
           />
-
-          {/* Salesperson Display */}
-          {selectedSalesperson && (
-            <div className="space-y-2">
-              <Label>Associated Salesperson</Label>
-              <div className="border rounded-md px-3 py-2 bg-muted text-muted-foreground">
-                {selectedSalesperson.name} {selectedSalesperson.companyName && `(${selectedSalesperson.companyName})`}
-              </div>
-            </div>
-          )}
 
           <QuoteItemsManager
             items={quoteItems}
@@ -312,66 +265,11 @@ export const EditQuoteDialog = ({
             clientInfoId={clientInfoId !== "none" ? clientInfoId : undefined}
           />
 
-          <div className="space-y-2">
-            <Label htmlFor="status">Status</Label>
-            <Select value={status} onValueChange={setStatus}>
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="pending">Pending</SelectItem>
-                <SelectItem value="approved">Approved</SelectItem>
-                <SelectItem value="rejected">Rejected</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="commissionOverride">Commission Override (%)</Label>
-            <Input
-              id="commissionOverride"
-              type="number"
-              step="0.01"
-              min="0"
-              max="100"
-              value={commissionOverride}
-              onChange={(e) => setCommissionOverride(e.target.value)}
-              placeholder="Optional commission override"
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="notes">Notes</Label>
-            <Textarea
-              id="notes"
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              placeholder="Additional notes about the quote"
-              rows={3}
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="templateId">Quote Template (Optional)</Label>
-            <Select value={selectedTemplateId} onValueChange={setSelectedTemplateId}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select a template to include" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="none">No template</SelectItem>
-                {templates.map((template) => (
-                  <SelectItem key={template.id} value={template.id}>
-                    {template.name} {template.is_default && "(Default)"}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            {templates.length === 0 && (
-              <p className="text-sm text-gray-500">
-                No templates available. Create templates in System Settings.
-              </p>
-            )}
-          </div>
+          <EditQuoteTemplateSection
+            selectedTemplateId={selectedTemplateId}
+            onTemplateChange={setSelectedTemplateId}
+            templates={templates}
+          />
 
           <div className="flex justify-end space-x-2 mt-6">
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
