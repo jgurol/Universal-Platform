@@ -11,7 +11,7 @@ import {
   navigationMenuTriggerStyle,
 } from "@/components/ui/navigation-menu";
 import { cn } from "@/lib/utils";
-import { Settings, Users, FileText, Home, UserPlus, Building, UserCog, CreditCard, Zap } from 'lucide-react';
+import { Settings, Users, FileText, Home, UserPlus, Building, UserCog, Zap } from 'lucide-react';
 
 export function NavigationBar() {
   const { isAdmin } = useAuth();
@@ -44,10 +44,6 @@ export function NavigationBar() {
                 <ul className="grid w-[300px] gap-3 p-4">
                   <ListItem href="/settings/profile" title="Profile Settings" Icon={Settings}>
                     Manage your account preferences and personal information
-                  </ListItem>
-                  
-                  <ListItem href="/settings/billing" title="Billing & Subscriptions" Icon={CreditCard}>
-                    Manage your subscription, payment methods, and billing history
                   </ListItem>
                   
                   {isAdmin && (
