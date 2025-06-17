@@ -60,13 +60,25 @@ export const VendorPriceSheetsList = ({ vendorId, vendorName }: VendorPriceSheet
         return;
       }
 
-      // Open in new window instead of downloading
-      window.open(data.signedUrl, '_blank');
-
-      toast({
-        title: "Opening price sheet",
-        description: `${priceSheet.name} is opening in a new window.`
-      });
+      // Open in popup window
+      const popup = window.open(
+        data.signedUrl, 
+        'priceSheet',
+        'width=1200,height=800,scrollbars=yes,resizable=yes,toolbar=no,menubar=no'
+      );
+      
+      if (!popup) {
+        toast({
+          title: "Popup blocked",
+          description: "Please allow popups for this site to view price sheets",
+          variant: "destructive"
+        });
+      } else {
+        toast({
+          title: "Opening price sheet",
+          description: `${priceSheet.name} is opening in a popup window.`
+        });
+      }
     } catch (error) {
       console.error('Error opening price sheet:', error);
       toast({
@@ -191,7 +203,7 @@ export const VendorPriceSheetsList = ({ vendorId, vendorName }: VendorPriceSheet
                       className="flex items-center gap-1"
                     >
                       <Download className="h-4 w-4" />
-                      Download
+                      Open
                     </Button>
                     
                     <AlertDialog>

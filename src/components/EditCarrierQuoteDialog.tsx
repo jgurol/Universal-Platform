@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -52,8 +51,20 @@ export const EditCarrierQuoteDialog = ({ open, onOpenChange, carrier, onUpdateCa
         return;
       }
 
-      // Open in new window
-      window.open(data.signedUrl, '_blank');
+      // Open in popup window
+      const popup = window.open(
+        data.signedUrl, 
+        'priceSheet',
+        'width=1200,height=800,scrollbars=yes,resizable=yes,toolbar=no,menubar=no'
+      );
+      
+      if (!popup) {
+        toast({
+          title: "Popup blocked",
+          description: "Please allow popups for this site to view price sheets",
+          variant: "destructive"
+        });
+      }
     } catch (error) {
       console.error('Error opening price sheet:', error);
       toast({
