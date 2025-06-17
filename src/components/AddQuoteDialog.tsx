@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -37,7 +38,6 @@ export const AddQuoteDialog = ({ open, onOpenChange, onAddQuote, clients, client
   const [notes, setNotes] = useState("");
   const [commissionOverride, setCommissionOverride] = useState("");
   const [quoteItems, setQuoteItems] = useState<QuoteItemData[]>([]);
-  const [selectedAddressId, setSelectedAddressId] = useState<string | null>(null);
   const [billingAddress, setBillingAddress] = useState<string>("");
   const [selectedBillingAddressId, setSelectedBillingAddressId] = useState<string | null>(null);
   const [serviceAddress, setServiceAddress] = useState<string>("");
@@ -58,10 +58,9 @@ export const AddQuoteDialog = ({ open, onOpenChange, onAddQuote, clients, client
     setNotes("");
     setCommissionOverride("");
     setQuoteItems([]);
-    setSelectedAddressId(null);
     setBillingAddress("");
     setSelectedBillingAddressId(null);
-    setServiceAddress(""); // Reset to empty, don't auto-populate
+    setServiceAddress("");
     setSelectedServiceAddressId(null);
     setSelectedTemplateId("none");
     
@@ -187,12 +186,6 @@ export const AddQuoteDialog = ({ open, onOpenChange, onAddQuote, clients, client
     }
   }, [clientInfoId, clientInfos]);
 
-  const handleAddressChange = (addressId: string | null, customAddr?: string) => {
-    console.log('AddQuoteDialog - Address changed:', { addressId, customAddr });
-    setSelectedAddressId(addressId);
-    setBillingAddress(customAddr || "");
-  };
-
   const handleBillingAddressChange = (addressId: string | null, customAddr?: string) => {
     console.log('AddQuoteDialog - Billing address changed:', { addressId, customAddr });
     setSelectedBillingAddressId(addressId);
@@ -200,9 +193,8 @@ export const AddQuoteDialog = ({ open, onOpenChange, onAddQuote, clients, client
   };
 
   const handleServiceAddressChange = (addressId: string | null, customAddr?: string) => {
-    console.log('AddQuoteDialog - Service address changed (strict no auto-population):', { addressId, customAddr });
+    console.log('AddQuoteDialog - Service address changed:', { addressId, customAddr });
     setSelectedServiceAddressId(addressId);
-    // Only set if there's an actual custom address, otherwise keep empty
     setServiceAddress(customAddr || "");
   };
 
@@ -213,14 +205,14 @@ export const AddQuoteDialog = ({ open, onOpenChange, onAddQuote, clients, client
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    console.log('[AddQuoteDialog] Form submitted with addresses (no auto-population):', { 
+    console.log('[AddQuoteDialog] Form submitted with addresses:', { 
       billing: billingAddress, 
       service: serviceAddress 
     });
     
     const totalAmount = calculateTotalAmount();
     
-    // Fix: Check for clientInfoId instead of clientId, since clientId can be empty if no salesperson is associated
+    // Check for clientInfoId instead of clientId, since clientId can be empty if no salesperson is associated
     if (clientInfoId && clientInfoId !== "none" && date) {
       const selectedClient = clientId ? clients.find(client => client.id === clientId) : null;
       const selectedClientInfo = clientInfos.find(info => info.id === clientInfoId);
@@ -232,7 +224,7 @@ export const AddQuoteDialog = ({ open, onOpenChange, onAddQuote, clients, client
           companyName: selectedClientInfo.company_name,
           amount: totalAmount,
           date,
-          description: description, // Keep the description as-is, don't default to empty string
+          description: description,
           quoteNumber: quoteNumber || undefined,
           quoteMonth: quoteMonth || undefined,
           quoteYear: quoteYear || undefined,
@@ -243,16 +235,13 @@ export const AddQuoteDialog = ({ open, onOpenChange, onAddQuote, clients, client
           commissionOverride: commissionOverride ? parseFloat(commissionOverride) : undefined,
           expiresAt: expiresAt || undefined,
           notes: notes || undefined,
-          quoteItems: quoteItems.map(item => ({
-            ...item,
-            address_id: selectedBillingAddressId || selectedServiceAddressId || undefined
-          })),
+          quoteItems: quoteItems,
           billingAddress: billingAddress || undefined,
-          serviceAddress: serviceAddress || undefined, // Keep blank if user left it blank - no auto-population
+          serviceAddress: serviceAddress || undefined,
           templateId: selectedTemplateId !== "none" ? selectedTemplateId : undefined
         };
         
-        console.log('[AddQuoteDialog] Calling onAddQuote with data (service address may be blank):', quoteData);
+        console.log('[AddQuoteDialog] Calling onAddQuote with data:', quoteData);
         onAddQuote(quoteData);
         
         // Reset form after successful submission
@@ -380,7 +369,6 @@ export const AddQuoteDialog = ({ open, onOpenChange, onAddQuote, clients, client
             autoSelectPrimary={true}
           />
 
-          {/* Service Address Selection - NO auto-selection */}
           <AddressSelector
             clientInfoId={clientInfoId !== "none" ? clientInfoId : null}
             selectedAddressId={selectedServiceAddressId || undefined}
