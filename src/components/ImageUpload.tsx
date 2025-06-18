@@ -54,15 +54,22 @@ export const ImageUpload = ({
       const fileName = `${Date.now()}.${fileExt}`;
       const filePath = `${fileName}`;
 
+      console.log('[ImageUpload] Uploading file:', { fileName, filePath });
+
       const { error: uploadError } = await supabase.storage
         .from('quote-item-images')
         .upload(filePath, file);
 
-      if (uploadError) throw uploadError;
+      if (uploadError) {
+        console.error('[ImageUpload] Upload error:', uploadError);
+        throw uploadError;
+      }
 
       const { data } = supabase.storage
         .from('quote-item-images')
         .getPublicUrl(filePath);
+
+      console.log('[ImageUpload] Upload successful:', { publicUrl: data.publicUrl, fileName });
 
       onImageUploaded(data.publicUrl, fileName);
 
@@ -88,6 +95,7 @@ export const ImageUpload = ({
   const handleRemoveImage = async () => {
     if (currentImageName) {
       try {
+        console.log('[ImageUpload] Removing image:', currentImageName);
         await supabase.storage
           .from('quote-item-images')
           .remove([currentImageName]);
@@ -97,6 +105,8 @@ export const ImageUpload = ({
     }
     onImageRemoved();
   };
+
+  console.log('[ImageUpload] Current image state:', { currentImageUrl, currentImageName });
 
   return (
     <div className="space-y-2">
@@ -114,6 +124,13 @@ export const ImageUpload = ({
             src={currentImageUrl}
             alt="Quote item"
             className="w-20 h-20 object-cover rounded border"
+            onError={(e) => {
+              console.error('[ImageUpload] Image failed to load:', currentImageUrl);
+              e.currentTarget.style.display = 'none';
+            }}
+            onLoad={() => {
+              console.log('[ImageUpload] Image loaded successfully:', currentImageUrl);
+            }}
           />
           <Button
             type="button"

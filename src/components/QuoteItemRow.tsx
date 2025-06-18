@@ -43,14 +43,21 @@ export const QuoteItemRow = ({ quoteItem, addresses, onUpdateItem, onRemoveItem 
   };
 
   const handleImageUploaded = (imageUrl: string, imageName: string) => {
+    console.log(`[QuoteItemRow] Image uploaded for item ${quoteItem.id}:`, { imageUrl, imageName });
     onUpdateItem(quoteItem.id, 'image_url', imageUrl);
     onUpdateItem(quoteItem.id, 'image_name', imageName);
   };
 
   const handleImageRemoved = () => {
+    console.log(`[QuoteItemRow] Image removed for item ${quoteItem.id}`);
     onUpdateItem(quoteItem.id, 'image_url', '');
     onUpdateItem(quoteItem.id, 'image_name', '');
   };
+
+  console.log(`[QuoteItemRow] Rendering item ${quoteItem.id} with image:`, { 
+    image_url: quoteItem.image_url, 
+    image_name: quoteItem.image_name 
+  });
 
   return (
     <div className="flex items-start gap-2 p-3 border rounded bg-gray-50">
