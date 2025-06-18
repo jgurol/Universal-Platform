@@ -121,7 +121,8 @@ export const ReactQuillEditor: React.FC<ReactQuillEditorProps> = ({
       const index = range ? range.index : quill.getLength();
       
       quill.insertEmbed(index, 'image', imageUrl);
-      quill.setSelection(index + 1);
+      // Fix: Pass proper RangeStatic object instead of just a number
+      quill.setSelection({ index: index + 1, length: 0 });
     }
 
     // Reset file input
