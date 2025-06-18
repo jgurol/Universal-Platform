@@ -35,7 +35,9 @@ export const addMarkdownTextToPDF = (
     cleanContent = content
       .replace(/<img[^>]*>/g, '') // Remove image tags
       .replace(/<strong>(.*?)<\/strong>/g, '**$1**') // Convert strong to markdown
+      .replace(/<b>(.*?)<\/b>/g, '**$1**') // Convert b to markdown
       .replace(/<em>(.*?)<\/em>/g, '*$1*') // Convert em to markdown
+      .replace(/<i>(.*?)<\/i>/g, '*$1*') // Convert i to markdown
       .replace(/<u>(.*?)<\/u>/g, '__$1__') // Convert u to markdown
       .replace(/<br\s*\/?>/g, '\n') // Convert br to newlines
       .replace(/<\/p><p>/g, '\n\n') // Convert p tags to paragraphs
@@ -122,28 +124,20 @@ const addFormattedParagraph = (
   const bottomMargin = 24;
   const topMargin = 10;
   
-  // Group sections into lines that fit within maxWidth
+  // Build lines with proper word wrapping
   const lines: TextSection[][] = [];
   let currentLine: TextSection[] = [];
   let currentLineWidth = 0;
   
+  // Process each section
   for (const section of sections) {
-    // Set font to measure text width
-    doc.setFontSize(9);
-    if (section.bold && section.italic) {
-      doc.setFont('helvetica', 'bolditalic');
-    } else if (section.bold) {
-      doc.setFont('helvetica', 'bold');
-    } else if (section.italic) {
-      doc.setFont('helvetica', 'italic');
-    } else {
-      doc.setFont('helvetica', 'normal');
-    }
+    const words = section.text.split(/\s+/).filter(word => word.length > 0);
     
-    const words = section.text.split(/\s+/);
-    
-    for (let i = 0; i < words.length; i++) {
-      const word = words[i];
+    for (const word of words) {
+      // Set font to measure text width accurately
+      doc.setFontSize(9);
+      setFontStyle(doc, section.bold, section.italic);
+      
       const wordWidth = doc.getTextWidth(word);
       const spaceWidth = doc.getTextWidth(' ');
       
@@ -159,6 +153,7 @@ const addFormattedParagraph = (
       
       // Add word to current line
       if (currentLine.length === 0) {
+        // First word on line
         currentLine.push({
           text: word,
           bold: section.bold,
@@ -166,12 +161,13 @@ const addFormattedParagraph = (
         });
         currentLineWidth = wordWidth;
       } else {
-        // Check if we can add to the last section with same formatting
+        // Check if we can merge with the last section (same formatting)
         const lastSection = currentLine[currentLine.length - 1];
         if (lastSection.bold === section.bold && lastSection.italic === section.italic) {
           lastSection.text += ' ' + word;
           currentLineWidth += spaceWidth + wordWidth;
         } else {
+          // Different formatting, create new section
           currentLine.push({
             text: ' ' + word,
             bold: section.bold,
@@ -205,20 +201,16 @@ const addFormattedParagraph = (
     // Render the line with proper formatting
     let currentX = startX;
     for (const section of line) {
-      // Set the appropriate font style
+      // Apply font style for each section
       doc.setFontSize(9);
-      if (section.bold && section.italic) {
-        doc.setFont('helvetica', 'bolditalic');
-      } else if (section.bold) {
-        doc.setFont('helvetica', 'bold');
-      } else if (section.italic) {
-        doc.setFont('helvetica', 'italic');
-      } else {
-        doc.setFont('helvetica', 'normal');
-      }
+      setFontStyle(doc, section.bold, section.italic);
+      
+      console.log(`Rendering section: "${section.text}" - Bold: ${section.bold}, Italic: ${section.italic}`);
       
       // Render the text
       doc.text(section.text, currentX, currentY);
+      
+      // Move X position for next section
       currentX += doc.getTextWidth(section.text);
     }
     
@@ -226,6 +218,23 @@ const addFormattedParagraph = (
   }
   
   return currentY;
+};
+
+// Helper function to set font style consistently
+const setFontStyle = (doc: jsPDF, bold: boolean, italic: boolean) => {
+  if (bold && italic) {
+    doc.setFont('helvetica', 'bolditalic');
+    console.log('Setting font to bolditalic');
+  } else if (bold) {
+    doc.setFont('helvetica', 'bold');
+    console.log('Setting font to bold');
+  } else if (italic) {
+    doc.setFont('helvetica', 'italic');
+    console.log('Setting font to italic');
+  } else {
+    doc.setFont('helvetica', 'normal');
+    console.log('Setting font to normal');
+  }
 };
 
 // Enhanced markdown inline formatting parser
@@ -237,7 +246,7 @@ const parseMarkdownInline = (text: string): TextSection[] => {
   
   while (currentIndex < text.length) {
     // Look for **bold** (must come before *italic* check)
-    const boldMatch = text.substring(currentIndex).match(/^\*\*(.*?)\*\*/);
+    const boldMatch = text.substring(currentIndex).match(/^\*\*(.*?)\*\*/s);
     if (boldMatch) {
       const boldText = boldMatch[1];
       if (boldText) {
@@ -253,7 +262,7 @@ const parseMarkdownInline = (text: string): TextSection[] => {
     }
     
     // Look for *italic*
-    const italicMatch = text.substring(currentIndex).match(/^\*(.*?)\*/);
+    const italicMatch = text.substring(currentIndex).match(/^\*(.*?)\*/s);
     if (italicMatch) {
       const italicText = italicMatch[1];
       if (italicText) {
@@ -270,14 +279,13 @@ const parseMarkdownInline = (text: string): TextSection[] => {
     
     // Regular text - find the next formatting marker or end of string
     let nextMarkerIndex = text.length;
-    const nextBold = text.indexOf('**', currentIndex);
-    const nextItalic = text.indexOf('*', currentIndex);
     
-    if (nextBold !== -1) {
-      nextMarkerIndex = Math.min(nextMarkerIndex, nextBold);
-    }
-    if (nextItalic !== -1) {
-      nextMarkerIndex = Math.min(nextMarkerIndex, nextItalic);
+    // Look for the next ** or * that isn't escaped
+    for (let i = currentIndex; i < text.length; i++) {
+      if (text[i] === '*') {
+        nextMarkerIndex = i;
+        break;
+      }
     }
     
     const regularText = text.substring(currentIndex, nextMarkerIndex);
@@ -291,6 +299,11 @@ const parseMarkdownInline = (text: string): TextSection[] => {
     }
     
     currentIndex = nextMarkerIndex;
+    
+    // Safety check to prevent infinite loops
+    if (currentIndex === nextMarkerIndex && nextMarkerIndex < text.length) {
+      currentIndex++;
+    }
   }
   
   // If no sections were created, add the whole text as regular
