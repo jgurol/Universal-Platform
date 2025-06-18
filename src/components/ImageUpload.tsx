@@ -106,7 +106,17 @@ export const ImageUpload = ({
     onImageRemoved();
   };
 
-  console.log('[ImageUpload] Current image state:', { currentImageUrl, currentImageName });
+  // Construct image URL if we have image_name but no image_url
+  const displayImageUrl = currentImageUrl || (currentImageName ? 
+    `${supabase.storage.from('quote-item-images').getPublicUrl(currentImageName).data.publicUrl}` : 
+    null);
+
+  console.log('[ImageUpload] Display logic:', { 
+    currentImageUrl, 
+    currentImageName, 
+    displayImageUrl,
+    hasImage: !!(currentImageUrl || currentImageName)
+  });
 
   return (
     <div className="space-y-2">
@@ -118,18 +128,18 @@ export const ImageUpload = ({
         className="hidden"
       />
       
-      {currentImageUrl ? (
+      {displayImageUrl ? (
         <div className="relative group">
           <img
-            src={currentImageUrl}
+            src={displayImageUrl}
             alt="Quote item"
             className="w-20 h-20 object-cover rounded border"
             onError={(e) => {
-              console.error('[ImageUpload] Image failed to load:', currentImageUrl);
+              console.error('[ImageUpload] Image failed to load:', displayImageUrl);
               e.currentTarget.style.display = 'none';
             }}
             onLoad={() => {
-              console.log('[ImageUpload] Image loaded successfully:', currentImageUrl);
+              console.log('[ImageUpload] Image loaded successfully:', displayImageUrl);
             }}
           />
           <Button
