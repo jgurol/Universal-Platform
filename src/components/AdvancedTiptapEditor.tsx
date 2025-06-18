@@ -5,11 +5,9 @@ import StarterKit from '@tiptap/starter-kit';
 import Image from '@tiptap/extension-image';
 import Placeholder from '@tiptap/extension-placeholder';
 import TextAlign from '@tiptap/extension-text-align';
-import Underline from '@tiptap/extension-underline';
 import Link from '@tiptap/extension-link';
 import Table from '@tiptap/extension-table';
 import TableRow from '@tiptap/extension-table-row';
-import TableHeader from '@tiptap/extension-table-header';
 import TableCell from '@tiptap/extension-table-cell';
 import TextStyle from '@tiptap/extension-text-style';
 import Color from '@tiptap/extension-color';
@@ -81,7 +79,7 @@ const AdvancedTiptapEditor: React.FC<AdvancedTiptapEditorProps> = ({
     extensions: [
       StarterKit.configure({
         heading: {
-          levels: [1, 2, 3, 4, 5, 6],
+          levels: [1, 2, 3, 4, 5, 6] as [1, 2, 3, 4, 5, 6],
         },
       }),
       Image.configure({
@@ -97,7 +95,6 @@ const AdvancedTiptapEditor: React.FC<AdvancedTiptapEditorProps> = ({
       TextAlign.configure({
         types: ['heading', 'paragraph'],
       }),
-      Underline,
       Link.configure({
         openOnClick: false,
         HTMLAttributes: {
@@ -108,7 +105,6 @@ const AdvancedTiptapEditor: React.FC<AdvancedTiptapEditorProps> = ({
         resizable: true,
       }),
       TableRow,
-      TableHeader,
       TableCell,
       TextStyle,
       Color,
@@ -279,7 +275,7 @@ const AdvancedTiptapEditor: React.FC<AdvancedTiptapEditorProps> = ({
               if (value === 'p') {
                 editor.chain().focus().setParagraph().run();
               } else {
-                const level = parseInt(value.replace('h', ''));
+                const level = parseInt(value.replace('h', '')) as 1 | 2 | 3;
                 editor.chain().focus().toggleHeading({ level }).run();
               }
             }}
@@ -315,16 +311,6 @@ const AdvancedTiptapEditor: React.FC<AdvancedTiptapEditorProps> = ({
             className={editor.isActive('italic') ? 'bg-gray-200' : ''}
           >
             <Italic className="h-4 w-4" />
-          </Button>
-
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            onClick={() => editor.chain().focus().toggleUnderline().run()}
-            className={editor.isActive('underline') ? 'bg-gray-200' : ''}
-          >
-            <UnderlineIcon className="h-4 w-4" />
           </Button>
 
           <Button
@@ -559,16 +545,6 @@ const AdvancedTiptapEditor: React.FC<AdvancedTiptapEditorProps> = ({
             className={editor.isActive('italic') ? 'bg-gray-200' : ''}
           >
             <Italic className="h-4 w-4" />
-          </Button>
-
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            onClick={() => editor.chain().focus().toggleUnderline().run()}
-            className={editor.isActive('underline') ? 'bg-gray-200' : ''}
-          >
-            <UnderlineIcon className="h-4 w-4" />
           </Button>
         </BubbleMenu>
       )}
