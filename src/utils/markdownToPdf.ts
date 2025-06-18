@@ -98,8 +98,8 @@ export const addMarkdownTextToPDF = (
     const sections = parseMarkdownInline(paragraph);
     console.log(`PDF Generation - Paragraph ${paragraphIndex + 1} sections:`, sections.length);
     
-    // Process paragraph with proper text wrapping - using simple approach
-    currentY = addParagraphSimple(doc, sections, startX, currentY, maxWidth, lineHeight);
+    // Process paragraph with proper text wrapping
+    currentY = addFormattedParagraph(doc, sections, startX, currentY, maxWidth, lineHeight);
     
     console.log(`PDF Generation - Finished paragraph ${paragraphIndex + 1}, current Y:`, currentY);
   });
@@ -108,8 +108,8 @@ export const addMarkdownTextToPDF = (
   return currentY;
 };
 
-// Simplified paragraph rendering that respects formatting but uses proper word wrapping
-const addParagraphSimple = (
+// Add formatted paragraph that preserves bold/italic formatting
+const addFormattedParagraph = (
   doc: jsPDF,
   sections: TextSection[],
   startX: number,
@@ -122,144 +122,110 @@ const addParagraphSimple = (
   const bottomMargin = 24;
   const topMargin = 10;
   
-  // Combine all text from sections to get the full paragraph text
-  const fullText = sections.map(s => s.text).join('');
+  // Group sections into lines that fit within maxWidth
+  const lines: TextSection[][] = [];
+  let currentLine: TextSection[] = [];
+  let currentLineWidth = 0;
   
-  // Set base font for text measurement
-  doc.setFontSize(9);
-  doc.setFont('helvetica', 'normal');
-  
-  // Split text into words to handle wrapping properly
-  const words = fullText.split(/\s+/);
-  let currentLine = '';
-  let currentX = startX;
-  
-  // Track which section we're in for formatting
-  let sectionIndex = 0;
-  let sectionCharIndex = 0;
-  let currentSection = sections[0];
-  
-  for (let wordIndex = 0; wordIndex < words.length; wordIndex++) {
-    const word = words[wordIndex];
-    const testLine = currentLine ? `${currentLine} ${word}` : word;
-    
-    // Check if adding this word would exceed the line width
-    const testWidth = doc.getTextWidth(testLine);
-    
-    if (testWidth > maxWidth && currentLine) {
-      // Output current line first
-      outputLineWithFormatting(doc, currentLine, sections, startX, currentY, sectionIndex, sectionCharIndex);
-      
-      // Move to next line
-      currentY += lineHeight;
-      
-      // Check if we need a new page
-      if (currentY > pageHeight - bottomMargin) {
-        doc.addPage();
-        currentY = topMargin;
-        
-        // Add header on new page
-        doc.setFontSize(9);
-        doc.setFont('helvetica', 'bold');
-        doc.text('Terms & Conditions (continued):', startX, currentY);
-        currentY += 8;
-      }
-      
-      // Update section tracking for the characters we just output
-      const lineLength = currentLine.length + 1; // +1 for space
-      for (let i = 0; i < lineLength; i++) {
-        if (currentSection && sectionCharIndex >= currentSection.text.length) {
-          sectionIndex++;
-          sectionCharIndex = 0;
-          currentSection = sections[sectionIndex];
-        }
-        if (currentSection) {
-          sectionCharIndex++;
-        }
-      }
-      
-      currentLine = word;
-    } else {
-      currentLine = testLine;
-    }
-  }
-  
-  // Output remaining text
-  if (currentLine) {
-    outputLineWithFormatting(doc, currentLine, sections, startX, currentY, sectionIndex, sectionCharIndex);
-    currentY += lineHeight;
-  }
-  
-  return currentY;
-};
-
-// Helper function to output a line with proper formatting
-const outputLineWithFormatting = (
-  doc: jsPDF,
-  lineText: string,
-  sections: TextSection[],
-  startX: number,
-  y: number,
-  startSectionIndex: number,
-  startSectionCharIndex: number
-): void => {
-  let currentX = startX;
-  let sectionIndex = startSectionIndex;
-  let sectionCharIndex = startSectionCharIndex;
-  let currentSection = sections[sectionIndex];
-  let currentText = '';
-  
-  for (let charIndex = 0; charIndex < lineText.length; charIndex++) {
-    const char = lineText[charIndex];
-    
-    // Move to next section if we've exhausted current section
-    while (currentSection && sectionCharIndex >= currentSection.text.length) {
-      // Output accumulated text with current formatting
-      if (currentText) {
-        // Set font for current section
-        doc.setFontSize(9);
-        if (currentSection.bold && currentSection.italic) {
-          doc.setFont('helvetica', 'bolditalic');
-        } else if (currentSection.bold) {
-          doc.setFont('helvetica', 'bold');
-        } else if (currentSection.italic) {
-          doc.setFont('helvetica', 'italic');
-        } else {
-          doc.setFont('helvetica', 'normal');
-        }
-        
-        doc.text(currentText, currentX, y);
-        currentX += doc.getTextWidth(currentText);
-        currentText = '';
-      }
-      
-      sectionIndex++;
-      sectionCharIndex = 0;
-      currentSection = sections[sectionIndex];
-    }
-    
-    if (currentSection && sectionCharIndex < currentSection.text.length) {
-      currentText += char;
-      sectionCharIndex++;
-    }
-  }
-  
-  // Output any remaining text
-  if (currentText && currentSection) {
-    // Set font for current section
+  for (const section of sections) {
+    // Set font to measure text width
     doc.setFontSize(9);
-    if (currentSection.bold && currentSection.italic) {
+    if (section.bold && section.italic) {
       doc.setFont('helvetica', 'bolditalic');
-    } else if (currentSection.bold) {
+    } else if (section.bold) {
       doc.setFont('helvetica', 'bold');
-    } else if (currentSection.italic) {
+    } else if (section.italic) {
       doc.setFont('helvetica', 'italic');
     } else {
       doc.setFont('helvetica', 'normal');
     }
     
-    doc.text(currentText, currentX, y);
+    const words = section.text.split(/\s+/);
+    
+    for (let i = 0; i < words.length; i++) {
+      const word = words[i];
+      const wordWidth = doc.getTextWidth(word);
+      const spaceWidth = doc.getTextWidth(' ');
+      
+      // Check if adding this word would exceed the line width
+      const testWidth = currentLineWidth + (currentLineWidth > 0 ? spaceWidth : 0) + wordWidth;
+      
+      if (testWidth > maxWidth && currentLine.length > 0) {
+        // Start a new line
+        lines.push([...currentLine]);
+        currentLine = [];
+        currentLineWidth = 0;
+      }
+      
+      // Add word to current line
+      if (currentLine.length === 0) {
+        currentLine.push({
+          text: word,
+          bold: section.bold,
+          italic: section.italic
+        });
+        currentLineWidth = wordWidth;
+      } else {
+        // Check if we can add to the last section with same formatting
+        const lastSection = currentLine[currentLine.length - 1];
+        if (lastSection.bold === section.bold && lastSection.italic === section.italic) {
+          lastSection.text += ' ' + word;
+          currentLineWidth += spaceWidth + wordWidth;
+        } else {
+          currentLine.push({
+            text: ' ' + word,
+            bold: section.bold,
+            italic: section.italic
+          });
+          currentLineWidth += spaceWidth + wordWidth;
+        }
+      }
+    }
   }
+  
+  // Add the last line if it has content
+  if (currentLine.length > 0) {
+    lines.push(currentLine);
+  }
+  
+  // Render each line
+  for (const line of lines) {
+    // Check if we need a new page
+    if (currentY > pageHeight - bottomMargin) {
+      doc.addPage();
+      currentY = topMargin;
+      
+      // Add header on new page
+      doc.setFontSize(9);
+      doc.setFont('helvetica', 'bold');
+      doc.text('Terms & Conditions (continued):', startX, currentY);
+      currentY += 8;
+    }
+    
+    // Render the line with proper formatting
+    let currentX = startX;
+    for (const section of line) {
+      // Set the appropriate font style
+      doc.setFontSize(9);
+      if (section.bold && section.italic) {
+        doc.setFont('helvetica', 'bolditalic');
+      } else if (section.bold) {
+        doc.setFont('helvetica', 'bold');
+      } else if (section.italic) {
+        doc.setFont('helvetica', 'italic');
+      } else {
+        doc.setFont('helvetica', 'normal');
+      }
+      
+      // Render the text
+      doc.text(section.text, currentX, currentY);
+      currentX += doc.getTextWidth(section.text);
+    }
+    
+    currentY += lineHeight;
+  }
+  
+  return currentY;
 };
 
 // Enhanced markdown inline formatting parser
