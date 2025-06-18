@@ -62,14 +62,14 @@ export const CarrierQuoteNotesList = ({
   };
 
   return (
-    <div className="space-y-2">
+    <div className="space-y-3">
       {notes.length > 0 && (
         <h4 className="font-medium">Previous Notes</h4>
       )}
       
       {notes.map((note) => (
         <Card key={note.id} className="border-l-4 border-l-blue-500">
-          <CardHeader className="pb-2">
+          <CardHeader className="pb-3">
             <div className="flex justify-between items-center">
               <span className="text-sm text-gray-500 font-medium">{note.date}</span>
               <Button
@@ -84,21 +84,21 @@ export const CarrierQuoteNotesList = ({
           </CardHeader>
           <CardContent className="pt-0">
             {note.note && (
-              <p className="text-sm mb-2 whitespace-pre-wrap">{note.note}</p>
+              <p className="text-sm mb-3 whitespace-pre-wrap">{note.note}</p>
             )}
             
             {note.files.length > 0 && (
-              <div className="space-y-2">
+              <div className="space-y-3">
                 <Label className="text-xs font-medium text-gray-600">Attachments:</Label>
-                <div className="grid grid-cols-1 gap-2">
+                <div className="grid grid-cols-1 gap-3">
                   {note.files.map((file) => (
                     <div key={file.id} className="space-y-2">
                       {file.type.startsWith('image/') ? (
-                        <div className="space-y-1">
-                          <div className="flex items-center justify-between bg-gray-50 p-2 rounded">
+                        <div className="space-y-2">
+                          <div className="flex items-center justify-between bg-gray-50 p-2 rounded text-sm">
                             <div className="flex items-center gap-2">
                               <Image className="h-4 w-4" />
-                              <span className="text-sm">{file.name}</span>
+                              <span>{file.name}</span>
                               <span className="text-xs text-gray-500">({formatFileSize(file.size)})</span>
                             </div>
                             <Button
@@ -110,20 +110,27 @@ export const CarrierQuoteNotesList = ({
                               <Download className="h-3 w-3" />
                             </Button>
                           </div>
-                          <div className="border rounded-lg overflow-hidden">
+                          <div className="border rounded-lg overflow-hidden bg-gray-50 p-2">
                             <img 
                               src={file.url} 
                               alt={file.name}
-                              className="w-full max-w-md h-auto object-contain"
+                              className="w-full max-w-md h-auto object-contain rounded"
                               style={{ maxHeight: '300px' }}
+                              onError={(e) => {
+                                console.error('Image failed to load:', file.url);
+                                e.currentTarget.style.display = 'none';
+                              }}
+                              onLoad={() => {
+                                console.log('Image loaded successfully:', file.url);
+                              }}
                             />
                           </div>
                         </div>
                       ) : (
-                        <div className="flex items-center justify-between bg-gray-50 p-2 rounded">
+                        <div className="flex items-center justify-between bg-gray-50 p-2 rounded text-sm">
                           <div className="flex items-center gap-2">
                             <FileText className="h-4 w-4" />
-                            <span className="text-sm">{file.name}</span>
+                            <span>{file.name}</span>
                             <span className="text-xs text-gray-500">({formatFileSize(file.size)})</span>
                           </div>
                           <Button

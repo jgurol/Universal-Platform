@@ -86,7 +86,7 @@ export const CarrierQuoteNotesDialog = ({
         note: note.content,
         files: (note.carrier_quote_note_files || []).map((file: any) => ({
           id: file.id,
-          name: file.name,
+          name: file.file_name,
           type: file.file_type,
           url: file.file_path,
           size: file.file_size || 0
@@ -114,15 +114,24 @@ export const CarrierQuoteNotesDialog = ({
       const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
       const filePath = `carrier-quote-notes/${carrierId}/${fileName}`;
 
+      console.log('Uploading file to path:', filePath);
+
       const { data: uploadData, error: uploadError } = await supabase.storage
         .from('carrier-quote-files')
         .upload(filePath, file);
 
-      if (uploadError) throw uploadError;
+      if (uploadError) {
+        console.error('Upload error:', uploadError);
+        throw uploadError;
+      }
+
+      console.log('Upload successful:', uploadData);
 
       const { data: urlData } = supabase.storage
         .from('carrier-quote-files')
         .getPublicUrl(filePath);
+
+      console.log('Public URL:', urlData.publicUrl);
 
       return {
         id: Date.now().toString() + Math.random().toString(36).substring(2),
