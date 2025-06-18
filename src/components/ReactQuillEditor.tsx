@@ -24,15 +24,7 @@ export const ReactQuillEditor: React.FC<ReactQuillEditorProps> = ({
   const quillRef = useRef<ReactQuill>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
-  const [editorReady, setEditorReady] = useState(false);
   const { toast } = useToast();
-
-  // Check if editor is ready after component mounts
-  useEffect(() => {
-    if (quillRef.current && quillRef.current.getEditor()) {
-      setEditorReady(true);
-    }
-  }, []);
 
   const uploadImage = useCallback(async (file: File) => {
     if (!file.type.startsWith('image/')) {
@@ -95,7 +87,7 @@ export const ReactQuillEditor: React.FC<ReactQuillEditorProps> = ({
 
   const handleFileSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
-    if (!file || !editorReady || !quillRef.current) return;
+    if (!file || !quillRef.current) return;
 
     const imageUrl = await uploadImage(file);
     if (imageUrl) {
@@ -105,7 +97,7 @@ export const ReactQuillEditor: React.FC<ReactQuillEditorProps> = ({
         const index = range ? range.index : quill.getLength();
         
         quill.insertEmbed(index, 'image', imageUrl);
-        quill.setSelection({ index: index + 1, length: 0 });
+        quill.setSelection(index + 1, 0);
       }
     }
 
@@ -115,7 +107,7 @@ export const ReactQuillEditor: React.FC<ReactQuillEditorProps> = ({
     }
   };
 
-  // Custom toolbar configuration with safe handler
+  // Custom toolbar configuration
   const modules = {
     toolbar: {
       container: [
@@ -140,36 +132,32 @@ export const ReactQuillEditor: React.FC<ReactQuillEditorProps> = ({
     'link', 'image'
   ];
 
-  // Convert markdown to HTML for display
-  const getHtmlValue = useCallback(() => {
-    if (!value) return '';
+  // Convert markdown content to HTML for initial display
+  const convertMarkdownToHtml = useCallback((markdownContent: string) => {
+    if (!markdownContent) return '';
     
-    return value
+    return markdownContent
       .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
       .replace(/\*(.*?)\*/g, '<em>$1</em>')
       .replace(/__(.*?)__/g, '<u>$1</u>')
-      .replace(/!\[([^\]]*)\]\(([^)]+)\)/g, '<img src="$2" alt="$1" style="max-width: 120px; max-height: 80px; object-fit: cover; border-radius: 6px; margin: 4px;" />')
+      .replace(/!\[([^\]]*)\]\(([^)]+)\)/g, '<img src="$2" alt="$1" style="max-width: 300px; height: auto;" />')
       .replace(/\n/g, '<br>');
-  }, [value]);
+  }, []);
 
-  // Convert HTML to markdown for storage
-  const handleChange = useCallback((content: string) => {
-    // Set editor ready state on first change if not already set
-    if (!editorReady && quillRef.current && quillRef.current.getEditor()) {
-      setEditorReady(true);
-    }
+  // Convert HTML content back to markdown for storage
+  const convertHtmlToMarkdown = useCallback((htmlContent: string) => {
+    if (!htmlContent) return '';
     
-    // Convert HTML to markdown-like format
-    let processedContent = content;
+    let markdownContent = htmlContent;
     
-    // Convert img tags to markdown format
-    processedContent = processedContent.replace(
+    // Convert images to markdown format
+    markdownContent = markdownContent.replace(
       /<img[^>]*src="([^"]*)"[^>]*alt="([^"]*)"[^>]*>/g,
       '![$2]($1)'
     );
     
-    // Convert other HTML to markdown-like format
-    processedContent = processedContent
+    // Convert other HTML to markdown
+    markdownContent = markdownContent
       .replace(/<strong>(.*?)<\/strong>/g, '**$1**')
       .replace(/<em>(.*?)<\/em>/g, '*$1*')
       .replace(/<u>(.*?)<\/u>/g, '__$1__')
@@ -184,8 +172,16 @@ export const ReactQuillEditor: React.FC<ReactQuillEditorProps> = ({
       .replace(/<\/li>/g, '')
       .trim();
 
-    onChange(processedContent);
-  }, [onChange, editorReady]);
+    return markdownContent;
+  }, []);
+
+  const handleChange = useCallback((content: string) => {
+    const markdownContent = convertHtmlToMarkdown(content);
+    onChange(markdownContent);
+  }, [onChange, convertHtmlToMarkdown]);
+
+  // Get the HTML value for the editor
+  const htmlValue = convertMarkdownToHtml(value);
 
   return (
     <div className={cn("border rounded-lg bg-white", className)}>
@@ -207,7 +203,7 @@ export const ReactQuillEditor: React.FC<ReactQuillEditorProps> = ({
       <ReactQuill
         ref={quillRef}
         theme="snow"
-        value={getHtmlValue()}
+        value={htmlValue}
         onChange={handleChange}
         modules={modules}
         formats={formats}
