@@ -68,7 +68,7 @@ const handler = async (req: Request): Promise<Response> => {
     console.log('Generated reset token for user:', user.id);
     console.log('Token expires at:', expiresAt.toISOString());
 
-    // Store reset token in database - check if table exists first
+    // Store reset token in database
     console.log('Attempting to store reset token...');
     const { data: tokenData, error: tokenError } = await supabase
       .from('password_reset_tokens')
@@ -84,14 +84,6 @@ const handler = async (req: Request): Promise<Response> => {
     if (tokenError) {
       console.error("Error storing reset token:", tokenError);
       console.error("Token error details:", JSON.stringify(tokenError, null, 2));
-      
-      // Try to get more info about the table
-      const { data: tableInfo, error: tableError } = await supabase
-        .from('password_reset_tokens')
-        .select('*')
-        .limit(1);
-      
-      console.log('Table check result:', { tableInfo, tableError });
       
       return new Response(JSON.stringify({ 
         success: false, 
@@ -109,10 +101,10 @@ const handler = async (req: Request): Promise<Response> => {
     const siteUrl = 'https://34d679df-b261-47ea-b136-e7aae591255b.lovableproject.com';
     const resetUrl = `${siteUrl}/auth?reset_token=${resetToken}`;
 
-    // Send password reset email via Resend
+    // Send password reset email via Resend using californiatelecom.com domain
     console.log('Sending email to:', email);
     const emailResponse = await resend.emails.send({
-      from: 'California Telecom <onboarding@resend.dev>',
+      from: 'California Telecom <noreply@californiatelecom.com>',
       to: [email],
       subject: 'Password Reset - Universal Platform',
       html: `
