@@ -8,7 +8,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Trash2, MapPin, FileText, GripVertical } from "lucide-react";
 import { QuoteItemData } from "@/types/quoteItems";
 import { ClientAddress } from "@/types/clientAddress";
-import { ReactQuillEditor } from "@/components/ReactQuillEditor";
+import { AdvancedTiptapEditor } from "@/components/AdvancedTiptapEditor";
 
 interface QuoteItemRowProps {
   quoteItem: QuoteItemData;
@@ -55,18 +55,15 @@ export const QuoteItemRow = ({ quoteItem, addresses, onUpdateItem, onRemoveItem 
     description: quoteItem.description?.substring(0, 100)
   });
 
-  // Function to strip markdown and get plain text preview
+  // Function to strip HTML and get plain text preview
   const getDescriptionPreview = (description: string): string => {
     if (!description) return '';
     
-    // Remove markdown formatting and image references for preview
+    // Remove HTML tags and format for preview
     const plainText = description
-      .replace(/\*\*(.*?)\*\*/g, '$1') // Remove bold formatting
-      .replace(/\*(.*?)\*/g, '$1') // Remove italic formatting
-      .replace(/__(.*?)__/g, '$1') // Remove underline formatting
-      .replace(/!\[([^\]]*)\]\(([^)]+)\)/g, '[Image: $1]') // Replace images with placeholder
-      .replace(/<[^>]*>/g, '') // Remove any HTML tags
-      .replace(/\n/g, ' ') // Replace newlines with spaces
+      .replace(/<[^>]*>/g, '') // Remove HTML tags
+      .replace(/&nbsp;/g, ' ') // Replace non-breaking spaces
+      .replace(/\s+/g, ' ') // Replace multiple spaces with single space
       .trim();
     
     return plainText.length > 30 ? `${plainText.substring(0, 30)}...` : plainText;
@@ -109,7 +106,7 @@ export const QuoteItemRow = ({ quoteItem, addresses, onUpdateItem, onRemoveItem 
                   <DialogTitle>Edit Item Description</DialogTitle>
                 </DialogHeader>
                 <div className="space-y-4">
-                  <ReactQuillEditor
+                  <AdvancedTiptapEditor
                     value={tempDescription}
                     onChange={setTempDescription}
                     placeholder="Enter item description with formatting and images..."
