@@ -13,10 +13,11 @@ import {
   TableCell 
 } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
-import { Shield, UserCheck, UserX, PencilIcon } from 'lucide-react';
+import { Shield, UserCheck, UserX, PencilIcon, Plus, Mail } from 'lucide-react';
 import { Navigate } from 'react-router-dom';
 import { EditUserDialog } from '@/components/EditUserDialog';
 import { AssociateUserDialog } from '@/components/AssociateUserDialog';
+import { AddUserDialog } from '@/components/AddUserDialog';
 
 interface UserProfile {
   id: string;
@@ -44,6 +45,7 @@ export default function Admin() {
   const [loading, setLoading] = useState(true);
   const [editingUser, setEditingUser] = useState<UserProfile | null>(null);
   const [associatingUser, setAssociatingUser] = useState<UserProfile | null>(null);
+  const [isAddUserOpen, setIsAddUserOpen] = useState(false);
   const [agents, setAgents] = useState<Agent[]>([]);
 
   // Redirect non-admin users
@@ -169,15 +171,66 @@ export default function Admin() {
     setAssociatingUser(null);
   };
 
+  const handleUserAdded = () => {
+    fetchUsers();
+    setIsAddUserOpen(false);
+  };
+
+  const sendResetEmail = async (userProfile: UserProfile) => {
+    try {
+      // Send password reset email via Supabase Auth
+      const { error: resetError } = await supabase.auth.resetPasswordForEmail(userProfile.email, {
+        redirectTo: `${window.location.origin}/auth`
+      });
+
+      if (resetError) throw resetError;
+
+      // Also send our custom notification email
+      try {
+        const { error: emailError } = await supabase.functions.invoke('send-user-email', {
+          body: {
+            email: userProfile.email,
+            fullName: userProfile.full_name || 'User',
+            type: 'reset',
+          }
+        });
+
+        if (emailError) {
+          console.error("Error sending notification email:", emailError);
+        }
+      } catch (emailError) {
+        console.error("Error sending notification email:", emailError);
+      }
+
+      toast({
+        title: "Password reset sent",
+        description: `Reset email sent to ${userProfile.email}`,
+      });
+    } catch (error: any) {
+      console.error('Error sending reset email:', error);
+      toast({
+        title: "Error",
+        description: `Failed to send reset email: ${error.message}`,
+        variant: "destructive"
+      });
+    }
+  };
+
   return (
     <div className="container mx-auto p-4 min-h-screen">
       <Header />
       
       <div className="mb-6 flex justify-between items-center">
         <h1 className="text-2xl font-bold text-gray-900">User Management</h1>
-        <Button onClick={() => { fetchUsers(); fetchAgents(); }} disabled={loading}>
-          {loading ? 'Loading...' : 'Refresh'}
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button onClick={() => setIsAddUserOpen(true)} className="bg-green-600 hover:bg-green-700">
+            <Plus className="h-4 w-4 mr-2" />
+            Add User
+          </Button>
+          <Button onClick={() => { fetchUsers(); fetchAgents(); }} disabled={loading}>
+            {loading ? 'Loading...' : 'Refresh'}
+          </Button>
+        </div>
       </div>
 
       <div className="bg-white rounded-lg shadow overflow-hidden">
@@ -253,6 +306,16 @@ export default function Admin() {
                           Edit
                         </Button>
                         
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => sendResetEmail(userProfile)}
+                          className="text-purple-600 hover:bg-purple-50"
+                        >
+                          <Mail className="w-4 h-4 mr-1" />
+                          Reset
+                        </Button>
+                        
                         {userProfile.role === 'agent' && userProfile.id !== user?.id && (
                           <>
                             {userProfile.is_associated ? (
@@ -287,6 +350,13 @@ export default function Admin() {
           </Table>
         )}
       </div>
+
+      <AddUserDialog
+        agents={agents}
+        open={isAddUserOpen}
+        onOpenChange={setIsAddUserOpen}
+        onUserAdded={handleUserAdded}
+      />
 
       {editingUser && (
         <EditUserDialog
