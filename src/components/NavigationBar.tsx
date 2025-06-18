@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
@@ -56,9 +57,11 @@ export function NavigationBar() {
                         Manage your clients' information and details
                       </ListItem>
                       
+                      {/* Agent Management hidden for now - will build later
                       <ListItem href="/agent-management" title="Agent Management" Icon={UserCog}>
                         Manage commission agents and their rates
                       </ListItem>
+                      */}
                       
                       <ListItem href="/admin" title="User Management" Icon={Users}>
                         Manage users, set permissions, and control access
