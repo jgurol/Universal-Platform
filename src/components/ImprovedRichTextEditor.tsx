@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Bold, Italic, Underline, List, ListOrdered, Image, Type, Palette } from 'lucide-react';
@@ -108,25 +109,13 @@ export const ImprovedRichTextEditor: React.FC<ImprovedRichTextEditorProps> = ({
     }
   };
 
-  // Handle keyboard shortcuts
+  // Handle keyboard shortcuts - Fixed Enter key behavior
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter') {
-      e.preventDefault();
-      
-      const selection = window.getSelection();
-      if (!selection || selection.rangeCount === 0) return;
-      
-      const range = selection.getRangeAt(0);
-      const br = document.createElement('br');
-      range.deleteContents();
-      range.insertNode(br);
-      
-      range.setStartAfter(br);
-      range.setEndAfter(br);
-      selection.removeAllRanges();
-      selection.addRange(range);
-      
+      // Let the browser handle Enter naturally, but ensure proper line breaks
+      // Don't prevent default - let contentEditable handle it naturally
       setTimeout(() => handleInput(), 0);
+      return;
     }
 
     // Keyboard shortcuts
