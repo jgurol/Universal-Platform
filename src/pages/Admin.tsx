@@ -177,30 +177,20 @@ export default function Admin() {
 
   const sendResetEmail = async (userProfile: UserProfile) => {
     try {
-      // Send password reset email via Supabase Auth
-      const { error: resetError } = await supabase.auth.resetPasswordForEmail(userProfile.email, {
-        redirectTo: `${window.location.origin}/auth`
+      console.log('Sending custom password reset request for admin user:', userProfile.email);
+      
+      // Use our custom edge function
+      const { data, error } = await supabase.functions.invoke('send-password-reset', {
+        body: { email: userProfile.email }
       });
 
-      if (resetError) throw resetError;
-
-      // Also send our custom notification email
-      try {
-        const { error: emailError } = await supabase.functions.invoke('send-user-email', {
-          body: {
-            email: userProfile.email,
-            fullName: userProfile.full_name || 'User',
-            type: 'reset',
-          }
-        });
-
-        if (emailError) {
-          console.error("Error sending notification email:", emailError);
-        }
-      } catch (emailError) {
-        console.error("Error sending notification email:", emailError);
+      if (error) {
+        console.error('Custom password reset error:', error);
+        throw error;
       }
 
+      console.log('Custom password reset response:', data);
+      
       toast({
         title: "Password reset sent",
         description: `Reset email sent to ${userProfile.email}`,
