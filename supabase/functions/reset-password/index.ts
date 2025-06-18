@@ -16,7 +16,12 @@ const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
 const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 
 // Create admin client with service role key
-const supabase = createClient(supabaseUrl, supabaseServiceKey);
+const supabase = createClient(supabaseUrl, supabaseServiceKey, {
+  auth: {
+    autoRefreshToken: false,
+    persistSession: false
+  }
+});
 
 const handler = async (req: Request): Promise<Response> => {
   if (req.method === 'OPTIONS') {
@@ -62,6 +67,8 @@ const handler = async (req: Request): Promise<Response> => {
       });
     }
 
+    console.log('Token is valid, updating password for user:', tokenData.user_id);
+
     // Update user password
     const { error: updateError } = await supabase.auth.admin.updateUserById(
       tokenData.user_id,
@@ -103,9 +110,11 @@ const handler = async (req: Request): Promise<Response> => {
 
   } catch (error: any) {
     console.error("Exception in reset-password:", error);
+    console.error("Error stack:", error.stack);
     return new Response(JSON.stringify({ 
       success: false, 
-      error: "An unexpected error occurred" 
+      error: "An unexpected error occurred",
+      details: error.message
     }), {
       status: 500,
       headers: { 'Content-Type': 'application/json', ...corsHeaders },

@@ -66,35 +66,51 @@ const handler = async (req: Request): Promise<Response> => {
     const expiresAt = new Date(Date.now() + 60 * 60 * 1000); // 1 hour from now
 
     console.log('Generated reset token for user:', user.id);
+    console.log('Token expires at:', expiresAt.toISOString());
 
-    // Store reset token in database
-    const { error: tokenError } = await supabase
+    // Store reset token in database - check if table exists first
+    console.log('Attempting to store reset token...');
+    const { data: tokenData, error: tokenError } = await supabase
       .from('password_reset_tokens')
       .insert({
         user_id: user.id,
         token: resetToken,
         expires_at: expiresAt.toISOString(),
         used: false
-      });
+      })
+      .select()
+      .single();
 
     if (tokenError) {
       console.error("Error storing reset token:", tokenError);
+      console.error("Token error details:", JSON.stringify(tokenError, null, 2));
+      
+      // Try to get more info about the table
+      const { data: tableInfo, error: tableError } = await supabase
+        .from('password_reset_tokens')
+        .select('*')
+        .limit(1);
+      
+      console.log('Table check result:', { tableInfo, tableError });
+      
       return new Response(JSON.stringify({ 
         success: false, 
-        error: "Failed to generate reset token" 
+        error: "Failed to generate reset token",
+        details: tokenError.message
       }), {
         status: 500,
         headers: { 'Content-Type': 'application/json', ...corsHeaders },
       });
     }
 
-    console.log('Reset token stored successfully');
+    console.log('Reset token stored successfully:', tokenData);
 
     // Get the site URL for the reset link
     const siteUrl = 'https://34d679df-b261-47ea-b136-e7aae591255b.lovableproject.com';
     const resetUrl = `${siteUrl}/auth?reset_token=${resetToken}`;
 
     // Send password reset email via Resend
+    console.log('Sending email to:', email);
     const emailResponse = await resend.emails.send({
       from: 'California Telecom <onboarding@resend.dev>',
       to: [email],
@@ -124,9 +140,11 @@ const handler = async (req: Request): Promise<Response> => {
 
   } catch (error: any) {
     console.error("Exception in send-password-reset:", error);
+    console.error("Error stack:", error.stack);
     return new Response(JSON.stringify({ 
       success: false, 
-      error: "An unexpected error occurred" 
+      error: "An unexpected error occurred",
+      details: error.message
     }), {
       status: 500,
       headers: { 'Content-Type': 'application/json', ...corsHeaders },
