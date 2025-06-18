@@ -7,6 +7,9 @@ import { Image as ImageIcon } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
 interface ReactQuillEditorProps {
   value: string;
@@ -69,6 +72,17 @@ export const ReactQuillEditor: React.FC<ReactQuillEditorProps> = ({
   const [editorReady, setEditorReady] = useState(false);
   const [internalValue, setInternalValue] = useState('');
   const [isInitialized, setIsInitialized] = useState(false);
+  const [imageResizeDialog, setImageResizeDialog] = useState<{
+    open: boolean;
+    element: HTMLImageElement | null;
+    width: string;
+    height: string;
+  }>({
+    open: false,
+    element: null,
+    width: '',
+    height: ''
+  });
   const { toast } = useToast();
 
   // Initialize editor content when component mounts or value prop changes
@@ -80,6 +94,36 @@ export const ReactQuillEditor: React.FC<ReactQuillEditorProps> = ({
       setIsInitialized(true);
     }
   }, [value, isInitialized]);
+
+  // Add event listener for image double-clicks
+  useEffect(() => {
+    if (!editorReady || !quillRef.current) return;
+
+    const quill = quillRef.current.getEditor();
+    const editorElement = quill.container;
+
+    const handleImageDoubleClick = (event: Event) => {
+      const target = event.target as HTMLElement;
+      if (target.tagName === 'IMG') {
+        const img = target as HTMLImageElement;
+        const currentWidth = img.style.width || img.width.toString() || '300';
+        const currentHeight = img.style.height || img.height.toString() || 'auto';
+        
+        setImageResizeDialog({
+          open: true,
+          element: img,
+          width: currentWidth.replace('px', ''),
+          height: currentHeight === 'auto' ? '' : currentHeight.replace('px', '')
+        });
+      }
+    };
+
+    editorElement.addEventListener('dblclick', handleImageDoubleClick);
+
+    return () => {
+      editorElement.removeEventListener('dblclick', handleImageDoubleClick);
+    };
+  }, [editorReady]);
 
   const uploadImage = useCallback(async (file: File) => {
     if (!file.type.startsWith('image/')) {
@@ -207,6 +251,38 @@ export const ReactQuillEditor: React.FC<ReactQuillEditorProps> = ({
     return () => clearTimeout(timeoutId);
   }, [onChange]);
 
+  const handleImageResize = () => {
+    if (!imageResizeDialog.element) return;
+
+    const { element, width, height } = imageResizeDialog;
+    
+    // Apply new dimensions
+    if (width) {
+      element.style.width = `${width}px`;
+    }
+    if (height) {
+      element.style.height = `${height}px`;
+    } else {
+      element.style.height = 'auto';
+    }
+
+    // Trigger content update
+    if (quillRef.current) {
+      const quill = quillRef.current.getEditor();
+      const content = quill.root.innerHTML;
+      setInternalValue(content);
+      const markdownContent = convertHtmlToMarkdown(content);
+      onChange(markdownContent);
+    }
+
+    setImageResizeDialog({ open: false, element: null, width: '', height: '' });
+    
+    toast({
+      title: "Success",
+      description: "Image resized successfully",
+    });
+  };
+
   // Custom toolbar configuration with safer image handler
   const modules = {
     toolbar: {
@@ -244,34 +320,84 @@ export const ReactQuillEditor: React.FC<ReactQuillEditorProps> = ({
   }
 
   return (
-    <div className={cn("border rounded-lg bg-white", className)}>
-      <input
-        ref={fileInputRef}
-        type="file"
-        accept="image/*"
-        onChange={handleFileSelect}
-        className="hidden"
-      />
-      
-      {uploading && (
-        <div className="flex items-center justify-center p-2 bg-blue-50 border-b">
-          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600 mr-2"></div>
-          <span className="text-sm text-blue-600">Uploading image...</span>
-        </div>
-      )}
-      
-      <ReactQuill
-        ref={quillRef}
-        theme="snow"
-        value={internalValue}
-        onChange={handleChange}
-        modules={modules}
-        formats={formats}
-        placeholder={placeholder}
-        style={{
-          minHeight: '180px'
-        }}
-      />
-    </div>
+    <>
+      <div className={cn("border rounded-lg bg-white", className)}>
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/*"
+          onChange={handleFileSelect}
+          className="hidden"
+        />
+        
+        {uploading && (
+          <div className="flex items-center justify-center p-2 bg-blue-50 border-b">
+            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600 mr-2"></div>
+            <span className="text-sm text-blue-600">Uploading image...</span>
+          </div>
+        )}
+        
+        <ReactQuill
+          ref={quillRef}
+          theme="snow"
+          value={internalValue}
+          onChange={handleChange}
+          modules={modules}
+          formats={formats}
+          placeholder={placeholder}
+          style={{
+            minHeight: '180px'
+          }}
+        />
+      </div>
+
+      {/* Image Resize Dialog */}
+      <Dialog open={imageResizeDialog.open} onOpenChange={(open) => setImageResizeDialog(prev => ({ ...prev, open }))}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Resize Image</DialogTitle>
+            <DialogDescription>
+              Set custom width and height for the image. Leave height empty for auto-sizing.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="width" className="text-right">
+                Width (px)
+              </Label>
+              <Input
+                id="width"
+                type="number"
+                value={imageResizeDialog.width}
+                onChange={(e) => setImageResizeDialog(prev => ({ ...prev, width: e.target.value }))}
+                className="col-span-3"
+                placeholder="300"
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="height" className="text-right">
+                Height (px)
+              </Label>
+              <Input
+                id="height"
+                type="number"
+                value={imageResizeDialog.height}
+                onChange={(e) => setImageResizeDialog(prev => ({ ...prev, height: e.target.value }))}
+                className="col-span-3"
+                placeholder="Auto"
+              />
+            </div>
+          </div>
+          <div className="flex justify-end space-x-2">
+            <Button variant="outline" onClick={() => setImageResizeDialog({ open: false, element: null, width: '', height: '' })}>
+              Cancel
+            </Button>
+            <Button onClick={handleImageResize}>
+              Apply Changes
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 };
