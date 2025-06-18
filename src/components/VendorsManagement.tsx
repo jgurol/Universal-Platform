@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Plus, Building2, Edit, Trash2, Mail, Phone, Zap } from "lucide-react";
+import { Plus, Building2, Edit, Trash2, Mail, Phone, Zap, Copy } from "lucide-react";
 import { useVendors } from "@/hooks/useVendors";
 import { AddVendorDialog } from "@/components/AddVendorDialog";
 import { EditVendorDialog } from "@/components/EditVendorDialog";
@@ -21,6 +21,21 @@ export const VendorsManagement = () => {
   const handleEditVendor = (vendor: Vendor) => {
     setSelectedVendor(vendor);
     setIsEditVendorOpen(true);
+  };
+
+  const handleDuplicateVendor = (vendor: Vendor) => {
+    const duplicatedVendor = {
+      name: `${vendor.name} (Copy)`,
+      dba: vendor.dba,
+      description: vendor.description,
+      rep_name: vendor.rep_name,
+      email: vendor.email,
+      phone: vendor.phone,
+      sales_model: vendor.sales_model,
+      color: vendor.color,
+      is_active: true
+    };
+    addVendor(duplicatedVendor);
   };
 
   const handleUpdateVendor = (vendorId: string, updates: Partial<Vendor>) => {
@@ -150,6 +165,15 @@ export const VendorsManagement = () => {
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      onClick={() => handleDuplicateVendor(vendor)}
+                      className="text-green-600 hover:text-green-700"
+                      title="Duplicate Vendor"
+                    >
+                      <Copy className="h-4 w-4" />
+                    </Button>
                     <Button variant="ghost" size="sm" onClick={() => handleEditVendor(vendor)}>
                       <Edit className="h-4 w-4" />
                     </Button>
