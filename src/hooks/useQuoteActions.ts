@@ -1,3 +1,4 @@
+
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/context/AuthContext";
 import { Quote, Client } from "@/pages/Index";
@@ -44,10 +45,7 @@ export const useQuoteActions = (
       console.log('[updateQuote] Updating quote with data:', updatedQuote);
       await updateQuoteInDatabase(updatedQuote);
       
-      // Force refresh quotes to ensure UI is updated
-      console.log('[updateQuote] Quote updated successfully, refreshing quotes...');
       fetchQuotes();
-      
       const client = clients.find(c => c.id === updatedQuote.clientId);
       toast({
         title: "Quote updated",
@@ -60,7 +58,6 @@ export const useQuoteActions = (
         description: "Failed to update quote. Please try again.",
         variant: "destructive",
       });
-      throw error; // Re-throw to prevent dialog from closing on error
     }
   };
 

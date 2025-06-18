@@ -1,4 +1,3 @@
-
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Quote, Client, ClientInfo } from "@/pages/Index";
@@ -179,7 +178,6 @@ export const EditQuoteDialog = ({
       if (selectedClient) {
         const { totalAmount } = calculateTotalsByChargeType(quoteItems);
         
-        console.log('[EditQuoteDialog] Saving quote with description:', description);
         console.log('[EditQuoteDialog] Saving quote items before updating quote:', quoteItems.map(item => ({
           id: item.id,
           name: item.name,
@@ -192,18 +190,17 @@ export const EditQuoteDialog = ({
 
         console.log('EditQuoteDialog - Updating quote with addresses:', { 
           billing: billingAddress, 
-          service: serviceAddress,
-          description: description
+          service: serviceAddress 
         });
 
-        const updatedQuote: Quote = {
+        onUpdateQuote({
           ...quote,
           clientId,
           clientName: selectedClient.name,
           companyName: selectedClient.companyName || selectedClient.name,
           amount: totalAmount,
           date,
-          description: description || "", // Ensure description is explicitly set
+          description: description || "",
           quoteNumber: quoteNumber || undefined,
           status,
           clientInfoId: clientInfoId !== "none" ? clientInfoId : undefined,
@@ -214,11 +211,8 @@ export const EditQuoteDialog = ({
           billingAddress: billingAddress || undefined,
           serviceAddress: serviceAddress || undefined,
           templateId: selectedTemplateId !== "none" ? selectedTemplateId : undefined
-        };
-
-        console.log('[EditQuoteDialog] Final quote object before update:', updatedQuote);
+        } as Quote);
         
-        onUpdateQuote(updatedQuote);
         onOpenChange(false);
       }
     }

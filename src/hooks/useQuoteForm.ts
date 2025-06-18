@@ -71,16 +71,9 @@ export const useQuoteForm = (quote: Quote | null, open: boolean) => {
     generateNextVersionNumber();
   }, [quote, user, open]);
 
-  // Update form when quote changes - Fixed description handling
+  // Update form when quote changes
   useEffect(() => {
-    if (quote && open) {
-      console.log('[useQuoteForm] Initializing form with quote data:', {
-        id: quote.id,
-        description: quote.description,
-        clientId: quote.clientId,
-        clientInfoId: quote.clientInfoId
-      });
-      
+    if (quote) {
       setClientId(quote.clientId);
       setClientInfoId(quote.clientInfoId || "");
       setDate(quote.date);
@@ -91,29 +84,8 @@ export const useQuoteForm = (quote: Quote | null, open: boolean) => {
       setExpiresAt(quote.expiresAt || "");
       setNotes(quote.notes || "");
       setCommissionOverride(quote.commissionOverride?.toString() || "");
-
-      console.log('[useQuoteForm] Description state set to:', quote.description);
     }
-  }, [quote, open]);
-
-  // Reset form when dialog closes
-  useEffect(() => {
-    if (!open) {
-      console.log('[useQuoteForm] Dialog closed, resetting form');
-      setClientId("");
-      setClientInfoId("");
-      setDate("");
-      setDescription("");
-      setQuoteNumber("");
-      setQuoteMonth("");
-      setQuoteYear("");
-      setStatus("pending");
-      setExpiresAt("");
-      setNotes("");
-      setCommissionOverride("");
-      setQuoteItems([]);
-    }
-  }, [open]);
+  }, [quote]);
 
   return {
     clientId,
