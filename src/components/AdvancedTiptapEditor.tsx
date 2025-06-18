@@ -1,7 +1,7 @@
+
 import React, { useRef, useState, useCallback } from 'react';
 import { useEditor, EditorContent, BubbleMenu, FloatingMenu } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
-import Image from '@tiptap/extension-image';
 import Placeholder from '@tiptap/extension-placeholder';
 import TextAlign from '@tiptap/extension-text-align';
 import Link from '@tiptap/extension-link';
@@ -50,6 +50,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import { ImageResize } from './TiptapImageResize';
 
 interface AdvancedTiptapEditorProps {
   value: string;
@@ -77,13 +78,7 @@ const AdvancedTiptapEditor: React.FC<AdvancedTiptapEditorProps> = ({
           levels: [1, 2, 3, 4, 5, 6] as [1, 2, 3, 4, 5, 6],
         },
       }),
-      Image.configure({
-        HTMLAttributes: {
-          class: 'rounded-lg max-w-full h-auto cursor-move',
-        },
-        allowBase64: true,
-        inline: false,
-      }),
+      ImageResize,
       Placeholder.configure({
         placeholder,
       }),
@@ -182,7 +177,14 @@ const AdvancedTiptapEditor: React.FC<AdvancedTiptapEditorProps> = ({
 
     const imageUrl = await uploadImage(file);
     if (imageUrl) {
-      editor.chain().focus().setImage({ src: imageUrl }).run();
+      editor.chain().focus().insertContent({
+        type: 'imageResize',
+        attrs: {
+          src: imageUrl,
+          width: 400,
+          height: null
+        }
+      }).run();
     }
 
     if (fileInputRef.current) {
