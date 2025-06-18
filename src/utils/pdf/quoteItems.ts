@@ -159,18 +159,28 @@ const processHtmlDescriptionContent = async (description: string): Promise<{
 }> => {
   if (!description) return { text: '', images: [], minHeight: 10 };
   
+  console.log('[PDF] Processing HTML description:', description.substring(0, 200));
+  
   // Extract images using regex for HTML img tags
-  const imageRegex = /<img[^>]*src="([^"]*)"[^>]*alt="([^"]*)"[^>]*>/g;
+  const imageRegex = /<img[^>]*src="([^"]*)"[^>]*(?:alt="([^"]*)")?[^>]*>/g;
   const images: Array<{ url: string; alt: string; data?: string }> = [];
   let match;
   
   while ((match = imageRegex.exec(description)) !== null) {
     const url = match[1] || '';
-    const alt = match[2] || '';
+    const alt = match[2] || 'Image';
+    
+    console.log('[PDF] Found image in description:', { url: url.substring(0, 100), alt });
     
     try {
       const imageData = await loadImageForPDF(url);
-      images.push({ url, alt, data: imageData || undefined });
+      if (imageData) {
+        images.push({ url, alt, data: imageData });
+        console.log('[PDF] Successfully loaded image data for:', alt);
+      } else {
+        console.log('[PDF] Failed to load image data for:', alt);
+        images.push({ url, alt });
+      }
     } catch (error) {
       console.error('[PDF] Error loading embedded image:', error);
       images.push({ url, alt });
@@ -184,14 +194,24 @@ const processHtmlDescriptionContent = async (description: string): Promise<{
     .replace(/<em>(.*?)<\/em>/g, '$1') // Remove em tags but keep content
     .replace(/<u>(.*?)<\/u>/g, '$1') // Remove u tags but keep content
     .replace(/<br\s*\/?>/g, ' ') // Replace br tags with spaces
+    .replace(/<\/p><p>/g, '\n') // Convert p tags to line breaks
+    .replace(/<p>/g, '') // Remove opening p tags
+    .replace(/<\/p>/g, '') // Remove closing p tags
     .replace(/<[^>]*>/g, '') // Remove any remaining HTML tags
     .replace(/\s+/g, ' ') // Normalize whitespace
     .trim();
   
   // Calculate minimum height needed (text + images)
   const textLines = Math.ceil(plainText.length / 40); // Approximate line count
-  const imageHeight = images.length > 0 ? 15 : 0; // Height per image row
+  const imageHeight = images.filter(img => img.data).length > 0 ? 15 : 0; // Height per image row
   const minHeight = Math.max(10, (textLines * 4) + imageHeight + 5);
+  
+  console.log('[PDF] Description processing complete:', { 
+    textLength: plainText.length, 
+    imageCount: images.length, 
+    loadedImages: images.filter(img => img.data).length,
+    minHeight 
+  });
   
   return { text: plainText, images, minHeight };
 };
@@ -224,8 +244,18 @@ const addDescriptionContent = async (
           const imageWidth = 12;
           const imageHeight = 12;
           
-          doc.addImage(image.data, 'JPEG', imageX, currentY, imageWidth, imageHeight);
-          console.log('[PDF] Embedded image added at:', imageX, currentY);
+          console.log('[PDF] Adding image to PDF at position:', { x: imageX, y: currentY, width: imageWidth, height: imageHeight });
+          
+          // Try different image formats
+          let format = 'JPEG';
+          if (image.data.includes('data:image/png')) {
+            format = 'PNG';
+          } else if (image.data.includes('data:image/gif')) {
+            format = 'GIF';
+          }
+          
+          doc.addImage(image.data, format, imageX, currentY, imageWidth, imageHeight);
+          console.log('[PDF] Successfully added image to PDF:', image.alt);
           
           imageX += imageWidth + 2; // Add spacing between images
           
@@ -236,45 +266,89 @@ const addDescriptionContent = async (
           }
         } catch (error) {
           console.error('[PDF] Error adding embedded image to PDF:', error);
+          // Add a placeholder text instead of the image
+          doc.setFontSize(6);
+          doc.setTextColor(100, 100, 100);
+          doc.text(`[Image: ${image.alt}]`, imageX, currentY);
+          imageX += 20;
         }
       }
     }
   }
 };
 
-// Helper function to load image for PDF
+// Helper function to load image for PDF with better error handling and timeout
 const loadImageForPDF = (imageUrl: string): Promise<string | null> => {
   return new Promise((resolve) => {
+    console.log('[PDF] Loading image for PDF:', imageUrl.substring(0, 100));
+    
+    // Set a timeout for image loading
+    const timeout = setTimeout(() => {
+      console.log('[PDF] Image loading timeout for:', imageUrl.substring(0, 50));
+      resolve(null);
+    }, 10000); // 10 second timeout
+    
     const img = new Image();
     img.crossOrigin = 'anonymous';
     
     img.onload = () => {
+      clearTimeout(timeout);
       try {
+        console.log('[PDF] Image loaded successfully, converting to canvas:', {
+          width: img.width,
+          height: img.height,
+          src: imageUrl.substring(0, 50)
+        });
+        
         const canvas = document.createElement('canvas');
         const ctx = canvas.getContext('2d');
         
         if (!ctx) {
+          console.log('[PDF] Failed to get canvas context');
           resolve(null);
           return;
         }
         
-        canvas.width = img.width;
-        canvas.height = img.height;
-        ctx.drawImage(img, 0, 0);
+        // Set reasonable canvas size
+        const maxSize = 500; // Maximum dimension
+        let { width, height } = img;
+        
+        if (width > maxSize || height > maxSize) {
+          const ratio = Math.min(maxSize / width, maxSize / height);
+          width = width * ratio;
+          height = height * ratio;
+        }
+        
+        canvas.width = width;
+        canvas.height = height;
+        ctx.drawImage(img, 0, 0, width, height);
         
         const dataURL = canvas.toDataURL('image/jpeg', 0.8);
+        console.log('[PDF] Image converted to data URL successfully, size:', dataURL.length);
         resolve(dataURL);
       } catch (error) {
+        clearTimeout(timeout);
         console.error('[PDF] Error converting image to data URL:', error);
         resolve(null);
       }
     };
     
-    img.onerror = () => {
-      console.error('[PDF] Error loading image:', imageUrl);
+    img.onerror = (error) => {
+      clearTimeout(timeout);
+      console.error('[PDF] Error loading image:', error, imageUrl.substring(0, 50));
       resolve(null);
     };
     
-    img.src = imageUrl;
+    // Handle different URL types
+    if (imageUrl.startsWith('data:')) {
+      // Data URL - can be used directly
+      img.src = imageUrl;
+    } else if (imageUrl.startsWith('http')) {
+      // External URL - may have CORS issues
+      img.src = imageUrl;
+    } else {
+      // Relative URL - make it absolute
+      img.src = new URL(imageUrl, window.location.origin).href;
+    }
   });
 };
