@@ -29,7 +29,7 @@ const handler = async (req: Request): Promise<Response> => {
 
     console.log('Processing password reset request for:', email);
 
-    // Find user by email
+    // Find user by email using admin API
     const { data: users, error: userError } = await supabase.auth.admin.listUsers();
     
     if (userError) {
@@ -84,9 +84,9 @@ const handler = async (req: Request): Promise<Response> => {
     const siteUrl = 'https://34d679df-b261-47ea-b136-e7aae591255b.lovableproject.com';
     const resetUrl = `${siteUrl}/auth?reset_token=${resetToken}`;
 
-    // Send password reset email
+    // Send password reset email via Resend
     const emailResponse = await resend.emails.send({
-      from: 'Universal Platform <onboarding@resend.dev>',
+      from: 'California Telecom <onboarding@resend.dev>',
       to: [email],
       subject: 'Password Reset - Universal Platform',
       html: `
@@ -102,7 +102,7 @@ const handler = async (req: Request): Promise<Response> => {
       `,
     });
 
-    console.log('Password reset email sent:', emailResponse);
+    console.log('Password reset email sent via Resend:', emailResponse);
 
     return new Response(JSON.stringify({ 
       success: true, 
