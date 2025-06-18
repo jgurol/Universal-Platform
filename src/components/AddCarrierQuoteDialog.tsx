@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -6,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { FileText, ExternalLink } from "lucide-react";
+import { FileText, ExternalLink, MessageSquare } from "lucide-react";
 import { useCarrierOptions } from "@/hooks/useCarrierOptions";
 import { useVendorPriceSheets } from "@/hooks/useVendorPriceSheets";
 import { useSpeeds } from "@/hooks/useSpeeds";
@@ -262,6 +263,9 @@ export const AddCarrierQuoteDialog = ({ open, onOpenChange, onAddCarrier }: AddC
               placeholder="Additional notes about this quote (e.g., includes static IPs, installation fees, etc.)"
               rows={3}
             />
+            <div className="text-xs text-gray-500">
+              Note: After creating the quote, you can use the edit dialog to add detailed notes with file attachments.
+            </div>
           </div>
           
           <div className="flex justify-end space-x-2 mt-6">
