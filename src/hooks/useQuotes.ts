@@ -54,6 +54,7 @@ export const useQuotes = (
           return mapped;
         });
         
+        console.info('[fetchQuotes] Setting quotes in state, count:', mappedQuotes.length);
         setQuotes(mappedQuotes);
         console.info('[fetchQuotes] Final mapped quotes count:', mappedQuotes.length);
       }
