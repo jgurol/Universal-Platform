@@ -93,7 +93,7 @@ export const CircuitQuoteCarriers = ({
           
           return (
             <div key={carrier.id} className="border rounded-lg p-4 bg-gray-50">
-              <div className="grid grid-cols-1 md:grid-cols-7 gap-4 items-center">
+              <div className="grid grid-cols-1 md:grid-cols-8 gap-4 items-center">
                 <div>
                   <div 
                     className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium text-white shadow-sm ${
@@ -117,9 +117,13 @@ export const CircuitQuoteCarriers = ({
                     )}
                   </div>
                 </div>
+                <div>
+                  <div className="text-sm">
+                    {carrier.term && <div className="font-medium">{carrier.term}</div>}
+                  </div>
+                </div>
                 <div className="md:col-span-2">
                   <div className="text-sm text-gray-600">
-                    {carrier.term && <div className="font-medium mb-1">{carrier.term}</div>}
                     {tickedOptions.length > 0 && (
                       <div className="flex flex-wrap gap-1 mb-1">
                         {tickedOptions.map((option, index) => (
