@@ -1,14 +1,11 @@
 import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { FileText, Image, Upload, Trash2, Download } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
+import { useToast } from "@/hooks/use-toast";
+import { CarrierQuoteNotesForm } from "./CircuitQuotes/CarrierQuoteNotes/CarrierQuoteNotesForm";
+import { CarrierQuoteNotesList } from "./CircuitQuotes/CarrierQuoteNotes/CarrierQuoteNotesList";
 
 interface NoteEntry {
   id: string;
@@ -303,152 +300,19 @@ export const CarrierQuoteNotesDialog = ({
         </DialogHeader>
 
         <div className="space-y-4">
-          {/* Add new note section */}
-          <Card>
-            <CardHeader className="pb-3">
-              <h4 className="font-medium">Add New Note</h4>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div>
-                <Label htmlFor="new-note">Note</Label>
-                <Textarea
-                  id="new-note"
-                  value={newNote}
-                  onChange={(e) => setNewNote(e.target.value)}
-                  placeholder="Enter your note here..."
-                  rows={3}
-                />
-              </div>
+          <CarrierQuoteNotesForm
+            newNote={newNote}
+            setNewNote={setNewNote}
+            uploadingFiles={uploadingFiles}
+            setUploadingFiles={setUploadingFiles}
+            loading={loading}
+            onSaveNote={saveNote}
+          />
 
-              <div>
-                <Label htmlFor="file-upload">Attach Files</Label>
-                <Input
-                  id="file-upload"
-                  type="file"
-                  multiple
-                  onChange={handleFileUpload}
-                  accept="image/*,.pdf,.doc,.docx,.txt"
-                />
-              </div>
-
-              {uploadingFiles.length > 0 && (
-                <div className="space-y-2">
-                  <Label>Files to upload:</Label>
-                  {uploadingFiles.map((file, index) => (
-                    <div key={index} className="flex items-center justify-between bg-gray-50 p-2 rounded">
-                      <span className="text-sm">{file.name} ({formatFileSize(file.size)})</span>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => removeUploadingFile(index)}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  ))}
-                </div>
-              )}
-
-              <Button 
-                onClick={saveNote} 
-                disabled={loading || (!newNote.trim() && uploadingFiles.length === 0)}
-                className="w-full"
-              >
-                {loading ? "Saving..." : "Save Note"}
-              </Button>
-            </CardContent>
-          </Card>
-
-          {/* Existing notes - with tighter spacing */}
-          <div className="space-y-2">
-            {notes.length > 0 && (
-              <h4 className="font-medium">Previous Notes</h4>
-            )}
-            
-            {notes.map((note) => (
-              <Card key={note.id} className="border-l-4 border-l-blue-500">
-                <CardHeader className="pb-2">
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm text-gray-500 font-medium">{note.date}</span>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => deleteNote(note.id)}
-                      className="text-red-600 hover:text-red-700 h-6 w-6 p-0"
-                    >
-                      <Trash2 className="h-3 w-3" />
-                    </Button>
-                  </div>
-                </CardHeader>
-                <CardContent className="pt-0">
-                  {note.note && (
-                    <p className="text-sm mb-2 whitespace-pre-wrap">{note.note}</p>
-                  )}
-                  
-                  {note.files.length > 0 && (
-                    <div className="space-y-2">
-                      <Label className="text-xs font-medium text-gray-600">Attachments:</Label>
-                      <div className="grid grid-cols-1 gap-2">
-                        {note.files.map((file) => (
-                          <div key={file.id} className="space-y-2">
-                            {file.type.startsWith('image/') ? (
-                              <div className="space-y-1">
-                                <div className="flex items-center justify-between bg-gray-50 p-2 rounded">
-                                  <div className="flex items-center gap-2">
-                                    <Image className="h-4 w-4" />
-                                    <span className="text-sm">{file.name}</span>
-                                    <span className="text-xs text-gray-500">({formatFileSize(file.size)})</span>
-                                  </div>
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    onClick={() => downloadFile(file)}
-                                    className="h-6 w-6 p-0"
-                                  >
-                                    <Download className="h-3 w-3" />
-                                  </Button>
-                                </div>
-                                <div className="border rounded-lg overflow-hidden">
-                                  <img 
-                                    src={file.url} 
-                                    alt={file.name}
-                                    className="w-full max-w-md h-auto object-contain"
-                                    style={{ maxHeight: '300px' }}
-                                  />
-                                </div>
-                              </div>
-                            ) : (
-                              <div className="flex items-center justify-between bg-gray-50 p-2 rounded">
-                                <div className="flex items-center gap-2">
-                                  <FileText className="h-4 w-4" />
-                                  <span className="text-sm">{file.name}</span>
-                                  <span className="text-xs text-gray-500">({formatFileSize(file.size)})</span>
-                                </div>
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => downloadFile(file)}
-                                  className="h-6 w-6 p-0"
-                                >
-                                  <Download className="h-3 w-3" />
-                                </Button>
-                              </div>
-                            )}
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            ))}
-
-            {notes.length === 0 && (
-              <div className="text-center text-gray-500 py-6">
-                No notes yet. Add your first note above.
-              </div>
-            )}
-          </div>
+          <CarrierQuoteNotesList
+            notes={notes}
+            onDeleteNote={deleteNote}
+          />
         </div>
 
         <div className="flex justify-end mt-4">
