@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,7 +7,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Trash2, MapPin, FileText, GripVertical } from "lucide-react";
 import { QuoteItemData } from "@/types/quoteItems";
 import { ClientAddress } from "@/types/clientAddress";
-import { EnhancedRichTextEditor } from "@/components/EnhancedRichTextEditor";
+import { ImprovedRichTextEditor } from "@/components/ImprovedRichTextEditor";
 
 interface QuoteItemRowProps {
   quoteItem: QuoteItemData;
@@ -53,6 +52,7 @@ export const QuoteItemRow = ({ quoteItem, addresses, onUpdateItem, onRemoveItem 
     const plainText = description
       .replace(/\*\*(.*?)\*\*/g, '$1') // Remove bold formatting
       .replace(/\*(.*?)\*/g, '$1') // Remove italic formatting
+      .replace(/__(.*?)__/g, '$1') // Remove underline formatting
       .replace(/!\[([^\]]*)\]\(([^)]+)\)/g, '[Image: $1]') // Replace images with placeholder
       .replace(/\n/g, ' ') // Replace newlines with spaces
       .trim();
@@ -92,23 +92,23 @@ export const QuoteItemRow = ({ quoteItem, addresses, onUpdateItem, onRemoveItem 
                   }
                 </Button>
               </DialogTrigger>
-              <DialogContent className="sm:max-w-[600px]">
+              <DialogContent className="sm:max-w-[800px]">
                 <DialogHeader>
                   <DialogTitle>Edit Item Description</DialogTitle>
                 </DialogHeader>
                 <div className="space-y-4">
-                  <EnhancedRichTextEditor
+                  <ImprovedRichTextEditor
                     value={tempDescription}
                     onChange={setTempDescription}
                     placeholder="Enter item description with formatting and images..."
-                    rows={8}
+                    rows={10}
                   />
                   <div className="flex justify-end space-x-2">
                     <Button variant="outline" onClick={handleDescriptionCancel}>
                       Cancel
                     </Button>
-                    <Button onClick={handleDescriptionSave}>
-                      Save
+                    <Button onClick={handleDescriptionSave} className="bg-blue-600 hover:bg-blue-700">
+                      Save Description
                     </Button>
                   </div>
                 </div>
