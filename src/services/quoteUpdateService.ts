@@ -10,11 +10,19 @@ export const updateQuoteInDatabase = async (quote: Quote): Promise<void> => {
     description: quote.description
   });
 
+  // Helper function to convert empty strings to null for UUID fields
+  const sanitizeUuid = (value: string | undefined | null): string | null => {
+    if (!value || value.trim() === '') {
+      return null;
+    }
+    return value;
+  };
+
   const { error } = await supabase
     .from('quotes')
     .update({
-      client_id: quote.clientId || null,
-      client_info_id: quote.clientInfoId || null,
+      client_id: sanitizeUuid(quote.clientId),
+      client_info_id: sanitizeUuid(quote.clientInfoId),
       amount: quote.amount,
       date: quote.date,
       description: quote.description,
@@ -28,7 +36,7 @@ export const updateQuoteInDatabase = async (quote: Quote): Promise<void> => {
       notes: quote.notes,
       billing_address: quote.billingAddress,
       service_address: quote.serviceAddress,
-      template_id: quote.templateId,
+      template_id: sanitizeUuid(quote.templateId),
       updated_at: new Date().toISOString()
     })
     .eq('id', quote.id);
