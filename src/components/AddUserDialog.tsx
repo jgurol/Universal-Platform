@@ -63,78 +63,40 @@ export const AddUserDialog = ({
   const onSubmit = async (data: FormValues) => {
     setIsLoading(true);
     try {
-      // Generate a temporary password
-      const temporaryPassword = Math.random().toString(36).slice(-12);
+      console.log('Calling create-user function with data:', data);
       
-      // Create user with Supabase Auth
-      const { data: authData, error: authError } = await supabase.auth.admin.createUser({
-        email: data.email,
-        password: temporaryPassword,
-        email_confirm: true,
-        user_metadata: {
-          full_name: data.full_name,
-        }
-      });
-
-      if (authError) {
-        console.error("Error creating user:", authError);
-        toast({
-          title: "Failed to create user",
-          description: authError.message,
-          variant: "destructive",
-        });
-        return;
-      }
-
-      if (!authData.user) {
-        toast({
-          title: "Failed to create user",
-          description: "No user data returned",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      // Update user profile
-      const { error: profileError } = await supabase
-        .from('profiles')
-        .update({
+      // Call our edge function to create the user
+      const { data: result, error } = await supabase.functions.invoke('create-user', {
+        body: {
+          email: data.email,
           full_name: data.full_name,
           role: data.role,
           associated_agent_id: data.associated_agent_id === "none" ? null : data.associated_agent_id,
-          is_associated: data.role === 'admin' ? true : !!data.associated_agent_id,
-        })
-        .eq('id', authData.user.id);
+          send_welcome_email: data.send_welcome_email,
+        }
+      });
 
-      if (profileError) {
-        console.error("Error updating profile:", profileError);
+      if (error) {
+        console.error("Error from create-user function:", error);
         toast({
-          title: "User created but profile update failed",
-          description: profileError.message,
+          title: "Failed to create user",
+          description: error.message,
           variant: "destructive",
         });
         return;
       }
 
-      // Send welcome email if requested
-      if (data.send_welcome_email) {
-        try {
-          const { error: emailError } = await supabase.functions.invoke('send-user-email', {
-            body: {
-              email: data.email,
-              fullName: data.full_name,
-              type: 'welcome',
-              temporaryPassword: temporaryPassword,
-            }
-          });
-
-          if (emailError) {
-            console.error("Error sending welcome email:", emailError);
-          }
-        } catch (emailError) {
-          console.error("Error sending welcome email:", emailError);
-        }
+      if (!result?.success) {
+        console.error("Create user function returned error:", result?.error);
+        toast({
+          title: "Failed to create user",
+          description: result?.error || "Unknown error occurred",
+          variant: "destructive",
+        });
+        return;
       }
+
+      console.log('User created successfully:', result);
 
       toast({
         title: "User created successfully",
