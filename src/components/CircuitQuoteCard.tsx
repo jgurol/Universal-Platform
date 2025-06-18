@@ -109,7 +109,11 @@ export const CircuitQuoteCard = ({
       price: 0, // Reset price for copied quote
       term: carrier.term,
       notes: `Copied from ${carrier.carrier} quote`,
-      color: carrier.color
+      color: carrier.color,
+      static_ip: carrier.static_ip || false,
+      slash_29: carrier.slash_29 || false,
+      install_fee: carrier.install_fee || false,
+      site_survey_needed: carrier.site_survey_needed || false
     };
 
     if (onAddCarrier) {

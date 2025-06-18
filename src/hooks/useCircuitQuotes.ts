@@ -24,6 +24,10 @@ export interface CarrierQuote {
   notes: string;
   term: string;
   color: string;
+  static_ip: boolean;
+  slash_29: boolean;
+  install_fee: boolean;
+  site_survey_needed: boolean;
 }
 
 export const useCircuitQuotes = () => {
@@ -221,7 +225,11 @@ export const useCircuitQuotes = () => {
           price: carrierQuote.price,
           term: carrierQuote.term,
           notes: carrierQuote.notes,
-          color: carrierQuote.color
+          color: carrierQuote.color,
+          static_ip: carrierQuote.static_ip,
+          slash_29: carrierQuote.slash_29,
+          install_fee: carrierQuote.install_fee,
+          site_survey_needed: carrierQuote.site_survey_needed
         })
         .select()
         .single();
@@ -265,6 +273,10 @@ export const useCircuitQuotes = () => {
           term: carrierQuote.term,
           notes: carrierQuote.notes,
           color: carrierQuote.color,
+          static_ip: carrierQuote.static_ip,
+          slash_29: carrierQuote.slash_29,
+          install_fee: carrierQuote.install_fee,
+          site_survey_needed: carrierQuote.site_survey_needed,
           updated_at: new Date().toISOString()
         })
         .eq('id', carrierQuote.id);

@@ -1,13 +1,13 @@
-
 import { useState } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Textarea } from "@/components/ui/textarea";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { FileText, ExternalLink, MessageSquare } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
+import { FileText, ExternalLink } from "lucide-react";
+import type { CarrierQuote } from "@/hooks/useCircuitQuotes";
 import { useCarrierOptions } from "@/hooks/useCarrierOptions";
 import { useVendorPriceSheets } from "@/hooks/useVendorPriceSheets";
 import { useSpeeds } from "@/hooks/useSpeeds";
@@ -17,15 +17,7 @@ import { useToast } from "@/hooks/use-toast";
 interface AddCarrierQuoteDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onAddCarrier: (carrier: {
-    carrier: string;
-    type: string;
-    speed: string;
-    price: number;
-    term: string;
-    notes: string;
-    color: string;
-  }) => void;
+  onAddCarrier: (carrier: Omit<CarrierQuote, "id" | "circuit_quote_id">) => void;
 }
 
 export const AddCarrierQuoteDialog = ({ open, onOpenChange, onAddCarrier }: AddCarrierQuoteDialogProps) => {
@@ -36,6 +28,10 @@ export const AddCarrierQuoteDialog = ({ open, onOpenChange, onAddCarrier }: AddC
   const [price, setPrice] = useState("");
   const [term, setTerm] = useState("");
   const [notes, setNotes] = useState("");
+  const [staticIp, setStaticIp] = useState(false);
+  const [slash29, setSlash29] = useState(false);
+  const [installFee, setInstallFee] = useState(false);
+  const [siteSurveyNeeded, setSiteSurveyNeeded] = useState(false);
 
   const { vendors, categories, loading } = useCarrierOptions();
   const { priceSheets } = useVendorPriceSheets();
@@ -87,6 +83,20 @@ export const AddCarrierQuoteDialog = ({ open, onOpenChange, onAddCarrier }: AddC
     }
   };
 
+  const resetForm = () => {
+    setVendorId("");
+    setCategoryId("");
+    setSpeedId("");
+    setCustomSpeed("");
+    setPrice("");
+    setTerm("");
+    setNotes("");
+    setStaticIp(false);
+    setSlash29(false);
+    setInstallFee(false);
+    setSiteSurveyNeeded(false);
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -106,18 +116,14 @@ export const AddCarrierQuoteDialog = ({ open, onOpenChange, onAddCarrier }: AddC
         price: price ? parseFloat(price) : 0,
         term,
         notes,
-        color: vendorColor
+        color: vendorColor,
+        static_ip: staticIp,
+        slash_29: slash29,
+        install_fee: installFee,
+        site_survey_needed: siteSurveyNeeded
       });
       
-      // Reset form
-      setVendorId("");
-      setCategoryId("");
-      setSpeedId("");
-      setCustomSpeed("");
-      setPrice("");
-      setTerm("");
-      setNotes("");
-      
+      resetForm();
       onOpenChange(false);
     }
   };
@@ -252,6 +258,55 @@ export const AddCarrierQuoteDialog = ({ open, onOpenChange, onAddCarrier }: AddC
                 <SelectItem value="60 months">60 months</SelectItem>
               </SelectContent>
             </Select>
+          </div>
+
+          <div className="space-y-4">
+            <Label>Options</Label>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="static-ip"
+                  checked={staticIp}
+                  onCheckedChange={(checked) => setStaticIp(checked as boolean)}
+                />
+                <Label htmlFor="static-ip" className="text-sm font-normal">
+                  Static IP
+                </Label>
+              </div>
+              
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="slash-29"
+                  checked={slash29}
+                  onCheckedChange={(checked) => setSlash29(checked as boolean)}
+                />
+                <Label htmlFor="slash-29" className="text-sm font-normal">
+                  /29
+                </Label>
+              </div>
+              
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="install-fee"
+                  checked={installFee}
+                  onCheckedChange={(checked) => setInstallFee(checked as boolean)}
+                />
+                <Label htmlFor="install-fee" className="text-sm font-normal">
+                  Install Fee
+                </Label>
+              </div>
+              
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="site-survey"
+                  checked={siteSurveyNeeded}
+                  onCheckedChange={(checked) => setSiteSurveyNeeded(checked as boolean)}
+                />
+                <Label htmlFor="site-survey" className="text-sm font-normal">
+                  Site Survey Needed
+                </Label>
+              </div>
+            </div>
           </div>
 
           <div className="space-y-2">

@@ -158,9 +158,13 @@ export type Database = {
           color: string
           created_at: string
           id: string
+          install_fee: boolean | null
           notes: string | null
           price: number
+          site_survey_needed: boolean | null
+          slash_29: boolean | null
           speed: string
+          static_ip: boolean | null
           term: string | null
           type: string
           updated_at: string
@@ -171,9 +175,13 @@ export type Database = {
           color?: string
           created_at?: string
           id?: string
+          install_fee?: boolean | null
           notes?: string | null
           price: number
+          site_survey_needed?: boolean | null
+          slash_29?: boolean | null
           speed: string
+          static_ip?: boolean | null
           term?: string | null
           type: string
           updated_at?: string
@@ -184,9 +192,13 @@ export type Database = {
           color?: string
           created_at?: string
           id?: string
+          install_fee?: boolean | null
           notes?: string | null
           price?: number
+          site_survey_needed?: boolean | null
+          slash_29?: boolean | null
           speed?: string
+          static_ip?: boolean | null
           term?: string | null
           type?: string
           updated_at?: string
