@@ -1,4 +1,3 @@
-
 import jsPDF from 'jspdf';
 import { PDFGenerationContext } from './types';
 
@@ -78,19 +77,27 @@ const addMRCItems = async (doc: jsPDF, mrcItems: any[], quote: any, yPos: number
       addressText = addressText.substring(0, 37) + '...';
     }
     
-    // Process description to extract images and text from HTML
+    // Process description to extract content with proper text/image separation
     const descriptionContent = await processHtmlDescriptionContent(item.description || item.item?.description || '');
     
-    // Calculate proper row height based on content
+    // Calculate proper row height based on content structure
     let rowHeight = 10; // Base height
-    const textLines = Math.ceil((descriptionContent.text || '').length / 35);
-    const imageCount = descriptionContent.images.filter(img => img.data).length;
     
-    if (textLines > 0) {
-      rowHeight = Math.max(rowHeight, textLines * 3 + 2);
+    // Calculate height for text content (account for line breaks)
+    if (descriptionContent.textSegments && descriptionContent.textSegments.length > 0) {
+      const totalTextLines = descriptionContent.textSegments.reduce((total, segment) => {
+        const lines = Math.ceil(segment.length / 35);
+        return total + Math.max(1, lines);
+      }, 0);
+      rowHeight = Math.max(rowHeight, (totalTextLines * 3) + 8);
     }
-    if (imageCount > 0) {
-      rowHeight = Math.max(rowHeight, 25); // Minimum height for images
+    
+    // Account for images
+    if (descriptionContent.images && descriptionContent.images.length > 0) {
+      const loadedImages = descriptionContent.images.filter(img => img.data);
+      if (loadedImages.length > 0) {
+        rowHeight = Math.max(rowHeight, 25);
+      }
     }
     
     if (index % 2 === 0) {
@@ -107,9 +114,9 @@ const addMRCItems = async (doc: jsPDF, mrcItems: any[], quote: any, yPos: number
     doc.setTextColor(80, 80, 80);
     doc.text(`Location: ${addressText}`, colX.description + 4, yPos + 5);
     
-    // Add description content with proper formatting
+    // Add description content with proper text/image flow
     const contentStartY = yPos + 10;
-    await addDescriptionContent(doc, descriptionContent, colX.description + 4, contentStartY);
+    await addDescriptionContentWithFlow(doc, descriptionContent, colX.description + 4, contentStartY);
     
     doc.setTextColor(0, 0, 0);
     doc.setFontSize(9);
@@ -163,73 +170,107 @@ const addNRCItems = (doc: jsPDF, nrcItems: any[], yPos: number, colX: any): numb
   return yPos;
 };
 
-// Process HTML description content to extract text and images
+// Enhanced HTML description processor that preserves text/image flow
 const processHtmlDescriptionContent = async (description: string): Promise<{
-  text: string;
-  images: Array<{ url: string; alt: string; data?: string; dimensions?: { width: number; height: number } }>;
+  textSegments: string[];
+  images: Array<{ url: string; alt: string; data?: string; dimensions?: { width: number; height: number }; position: number }>;
 }> => {
-  if (!description) return { text: '', images: [] };
+  if (!description) return { textSegments: [], images: [] };
   
-  console.log('[PDF] Processing HTML description:', description.substring(0, 200));
+  console.log('[PDF] Processing HTML description with flow preservation:', description.substring(0, 200));
   
-  // Extract images using regex for HTML img tags
-  const imageRegex = /<img[^>]*src="([^"]*)"[^>]*(?:alt="([^"]*)")?[^>]*>/g;
-  const images: Array<{ url: string; alt: string; data?: string; dimensions?: { width: number; height: number } }> = [];
-  let match;
+  // Create a temporary DOM structure to parse HTML properly
+  const tempDiv = document.createElement('div');
+  tempDiv.innerHTML = description;
   
-  while ((match = imageRegex.exec(description)) !== null) {
-    const url = match[1] || '';
-    const alt = match[2] || 'Image';
-    
-    console.log('[PDF] Found image in description:', { url: url.substring(0, 100), alt });
-    
-    try {
-      const imageResult = await loadImageForPDF(url);
-      if (imageResult) {
-        images.push({ 
-          url, 
-          alt, 
-          data: imageResult.data,
-          dimensions: imageResult.dimensions
-        });
-        console.log('[PDF] Successfully loaded image data for:', alt, 'dimensions:', imageResult.dimensions);
-      } else {
-        console.log('[PDF] Failed to load image data for:', alt);
-        images.push({ url, alt });
+  const textSegments: string[] = [];
+  const images: Array<{ url: string; alt: string; data?: string; dimensions?: { width: number; height: number }; position: number }> = [];
+  
+  // Process nodes in order to maintain text/image flow
+  const processNode = async (node: Node, segmentIndex: number): Promise<number> => {
+    if (node.nodeType === Node.TEXT_NODE) {
+      const text = node.textContent?.trim();
+      if (text) {
+        textSegments.push(text);
+        return segmentIndex + 1;
       }
-    } catch (error) {
-      console.error('[PDF] Error loading embedded image:', error);
-      images.push({ url, alt });
+    } else if (node.nodeType === Node.ELEMENT_NODE) {
+      const element = node as Element;
+      
+      if (element.tagName === 'IMG') {
+        const url = element.getAttribute('src') || '';
+        const alt = element.getAttribute('alt') || 'Image';
+        
+        console.log('[PDF] Found image at position:', segmentIndex, { url: url.substring(0, 100), alt });
+        
+        try {
+          const imageResult = await loadImageForPDF(url);
+          if (imageResult) {
+            images.push({ 
+              url, 
+              alt, 
+              data: imageResult.data,
+              dimensions: imageResult.dimensions,
+              position: segmentIndex
+            });
+            console.log('[PDF] Successfully loaded image data for:', alt);
+          } else {
+            images.push({ url, alt, position: segmentIndex });
+          }
+        } catch (error) {
+          console.error('[PDF] Error loading embedded image:', error);
+          images.push({ url, alt, position: segmentIndex });
+        }
+        
+        return segmentIndex + 1;
+      } else {
+        // Process child nodes for other elements (p, strong, em, etc.)
+        let currentIndex = segmentIndex;
+        for (const child of Array.from(element.childNodes)) {
+          currentIndex = await processNode(child, currentIndex);
+        }
+        return currentIndex;
+      }
     }
+    
+    return segmentIndex;
+  };
+  
+  // Process all nodes maintaining order
+  let segmentIndex = 0;
+  for (const child of Array.from(tempDiv.childNodes)) {
+    segmentIndex = await processNode(child, segmentIndex);
   }
   
-  // Extract plain text (remove HTML tags)
-  const plainText = description
-    .replace(/<img[^>]*>/g, '') // Remove img tags
-    .replace(/<strong>(.*?)<\/strong>/g, '$1') // Remove strong tags but keep content
-    .replace(/<em>(.*?)<\/em>/g, '$1') // Remove em tags but keep content
-    .replace(/<u>(.*?)<\/u>/g, '$1') // Remove u tags but keep content
-    .replace(/<br\s*\/?>/g, ' ') // Replace br tags with spaces
-    .replace(/<\/p><p>/g, '\n') // Convert p tags to line breaks
-    .replace(/<p>/g, '') // Remove opening p tags
-    .replace(/<\/p>/g, '') // Remove closing p tags
-    .replace(/<[^>]*>/g, '') // Remove any remaining HTML tags
-    .replace(/\s+/g, ' ') // Normalize whitespace
-    .trim();
+  // Clean up text segments
+  const cleanedSegments = textSegments
+    .map(segment => segment
+      .replace(/&nbsp;/g, ' ')
+      .replace(/&amp;/g, '&')
+      .replace(/&lt;/g, '<')
+      .replace(/&gt;/g, '>')
+      .replace(/&quot;/g, '"')
+      .replace(/&#39;/g, "'")
+      .trim()
+    )
+    .filter(segment => segment.length > 0);
   
   console.log('[PDF] Description processing complete:', { 
-    textLength: plainText.length, 
+    textSegments: cleanedSegments.length, 
     imageCount: images.length, 
     loadedImages: images.filter(img => img.data).length
   });
   
-  return { text: plainText, images };
+  return { textSegments: cleanedSegments, images };
 };
 
-// Add description content (text and images) to PDF with consistent formatting
-const addDescriptionContent = async (
+// Add description content maintaining proper text/image flow
+const addDescriptionContentWithFlow = async (
   doc: jsPDF, 
-  content: { text: string; images: Array<{ url: string; alt: string; data?: string; dimensions?: { width: number; height: number } }> }, 
+  content: { 
+    textSegments: string[]; 
+    images: Array<{ url: string; alt: string; data?: string; dimensions?: { width: number; height: number }; position: number }> 
+  }, 
   startX: number, 
   startY: number
 ): Promise<void> => {
@@ -237,96 +278,93 @@ const addDescriptionContent = async (
   const lineHeight = 3;
   const contentWidth = 120;
   
-  // Add description text first
-  if (content.text) {
-    doc.setFontSize(7);
-    doc.setTextColor(60, 60, 60);
-    doc.setFont('helvetica', 'normal');
-    
-    // Split text to fit within width and handle line breaks properly
-    const textLines = doc.splitTextToSize(content.text, contentWidth);
-    
-    if (Array.isArray(textLines)) {
-      textLines.forEach((line, index) => {
-        doc.text(line, startX, currentY);
-        currentY += lineHeight;
-      });
-    } else {
-      doc.text(textLines, startX, currentY);
-      currentY += lineHeight;
-    }
-    
-    // Add some spacing after text if there are images
-    if (content.images.length > 0) {
-      currentY += 2;
-    }
-  }
+  // Create a combined array of content items with their positions
+  const contentItems: Array<{ type: 'text' | 'image'; content: any; position: number }> = [];
   
-  // Add embedded images with consistent formatting
-  if (content.images.length > 0) {
-    let imageX = startX;
-    const imageSpacing = 2;
-    const maxImageWidth = 20;
-    const maxImageHeight = 18;
-    
-    for (const image of content.images) {
-      if (image.data && image.dimensions) {
-        try {
-          // Calculate proper dimensions maintaining aspect ratio
-          let { width, height } = image.dimensions;
-          const aspectRatio = width / height;
-          
-          // Scale to fit within max dimensions while maintaining aspect ratio
-          if (width > maxImageWidth || height > maxImageHeight) {
-            if (aspectRatio > 1) {
-              // Landscape: limit by width
-              width = maxImageWidth;
-              height = maxImageWidth / aspectRatio;
-            } else {
-              // Portrait: limit by height
-              height = maxImageHeight;
-              width = maxImageHeight * aspectRatio;
-            }
+  // Add text segments
+  content.textSegments.forEach((text, index) => {
+    contentItems.push({ type: 'text', content: text, position: index });
+  });
+  
+  // Add images with their positions
+  content.images.forEach(image => {
+    contentItems.push({ type: 'image', content: image, position: image.position });
+  });
+  
+  // Sort by position to maintain proper flow
+  contentItems.sort((a, b) => a.position - b.position);
+  
+  // Process items in order
+  for (const item of contentItems) {
+    if (item.type === 'text') {
+      doc.setFontSize(7);
+      doc.setTextColor(60, 60, 60);
+      doc.setFont('helvetica', 'normal');
+      
+      const textLines = doc.splitTextToSize(item.content, contentWidth);
+      
+      if (Array.isArray(textLines)) {
+        textLines.forEach((line) => {
+          doc.text(line, startX, currentY);
+          currentY += lineHeight;
+        });
+      } else {
+        doc.text(textLines, startX, currentY);
+        currentY += lineHeight;
+      }
+      
+      // Add small spacing after text
+      currentY += 1;
+      
+    } else if (item.type === 'image' && item.content.data && item.content.dimensions) {
+      try {
+        const image = item.content;
+        const maxImageWidth = 20;
+        const maxImageHeight = 18;
+        
+        // Calculate proper dimensions maintaining aspect ratio
+        let { width, height } = image.dimensions;
+        const aspectRatio = width / height;
+        
+        if (width > maxImageWidth || height > maxImageHeight) {
+          if (aspectRatio > 1) {
+            width = maxImageWidth;
+            height = maxImageWidth / aspectRatio;
+          } else {
+            height = maxImageHeight;
+            width = maxImageHeight * aspectRatio;
           }
-          
-          console.log('[PDF] Adding image to PDF with dimensions:', { 
-            x: imageX, 
-            y: currentY, 
-            width, 
-            height,
-            originalDimensions: image.dimensions,
-            aspectRatio
-          });
-          
-          // Determine image format
-          let format = 'JPEG';
-          if (image.data.includes('data:image/png')) {
-            format = 'PNG';
-          } else if (image.data.includes('data:image/gif')) {
-            format = 'GIF';
-          }
-          
-          // Add image with consistent positioning
-          doc.addImage(image.data, format, imageX, currentY, width, height);
-          console.log('[PDF] Successfully added image to PDF:', image.alt);
-          
-          // Move to next position
-          imageX += width + imageSpacing;
-          
-          // If next image would exceed row width, move to next row
-          if (imageX + maxImageWidth > startX + contentWidth) {
-            currentY += Math.max(height, maxImageHeight) + imageSpacing;
-            imageX = startX;
-          }
-        } catch (error) {
-          console.error('[PDF] Error adding embedded image to PDF:', error);
-          // Add a placeholder text instead of the image
-          doc.setFontSize(6);
-          doc.setTextColor(100, 100, 100);
-          doc.setFont('helvetica', 'italic');
-          doc.text(`[Image: ${image.alt}]`, imageX, currentY);
-          imageX += 25;
         }
+        
+        console.log('[PDF] Adding image with flow at position:', image.position, { 
+          x: startX, 
+          y: currentY, 
+          width, 
+          height
+        });
+        
+        // Determine image format
+        let format = 'JPEG';
+        if (image.data.includes('data:image/png')) {
+          format = 'PNG';
+        } else if (image.data.includes('data:image/gif')) {
+          format = 'GIF';
+        }
+        
+        doc.addImage(image.data, format, startX, currentY, width, height);
+        console.log('[PDF] Successfully added image with flow:', image.alt);
+        
+        // Move Y position after image
+        currentY += height + 3; // Add spacing after image
+        
+      } catch (error) {
+        console.error('[PDF] Error adding image with flow to PDF:', error);
+        // Add a placeholder text instead
+        doc.setFontSize(6);
+        doc.setTextColor(100, 100, 100);
+        doc.setFont('helvetica', 'italic');
+        doc.text(`[Image: ${item.content.alt}]`, startX, currentY);
+        currentY += lineHeight;
       }
     }
   }
