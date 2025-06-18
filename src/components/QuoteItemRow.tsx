@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -20,12 +21,22 @@ export const QuoteItemRow = ({ quoteItem, addresses, onUpdateItem, onRemoveItem 
   const [isDescriptionOpen, setIsDescriptionOpen] = useState(false);
   const [tempDescription, setTempDescription] = useState(quoteItem.description || quoteItem.item?.description || '');
 
+  // Update tempDescription when dialog opens or quoteItem changes
+  const handleDialogOpenChange = (open: boolean) => {
+    if (open) {
+      // Reset temp description to current value when opening
+      setTempDescription(quoteItem.description || quoteItem.item?.description || '');
+    }
+    setIsDescriptionOpen(open);
+  };
+
   const formatAddressShort = (address: any) => {
     if (!address) return 'No address';
     return `${address.address_type} - ${address.city}, ${address.state}`;
   };
 
   const handleDescriptionSave = () => {
+    console.log('[QuoteItemRow] Saving description:', tempDescription);
     onUpdateItem(quoteItem.id, 'description', tempDescription);
     setIsDescriptionOpen(false);
   };
@@ -54,6 +65,7 @@ export const QuoteItemRow = ({ quoteItem, addresses, onUpdateItem, onRemoveItem 
       .replace(/\*(.*?)\*/g, '$1') // Remove italic formatting
       .replace(/__(.*?)__/g, '$1') // Remove underline formatting
       .replace(/!\[([^\]]*)\]\(([^)]+)\)/g, '[Image: $1]') // Replace images with placeholder
+      .replace(/<[^>]*>/g, '') // Remove any HTML tags
       .replace(/\n/g, ' ') // Replace newlines with spaces
       .trim();
     
@@ -78,7 +90,7 @@ export const QuoteItemRow = ({ quoteItem, addresses, onUpdateItem, onRemoveItem 
             className="text-sm font-medium h-8"
           />
           <div className="space-y-1">
-            <Dialog open={isDescriptionOpen} onOpenChange={setIsDescriptionOpen}>
+            <Dialog open={isDescriptionOpen} onOpenChange={handleDialogOpenChange}>
               <DialogTrigger asChild>
                 <Button
                   variant="outline"
@@ -101,6 +113,7 @@ export const QuoteItemRow = ({ quoteItem, addresses, onUpdateItem, onRemoveItem 
                     value={tempDescription}
                     onChange={setTempDescription}
                     placeholder="Enter item description with formatting and images..."
+                    className="min-h-[200px]"
                   />
                   <div className="flex justify-end space-x-2">
                     <Button variant="outline" onClick={handleDescriptionCancel}>
