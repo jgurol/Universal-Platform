@@ -4,6 +4,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { FileText, Image, Download, Trash2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 interface NoteFile {
   id: string;
@@ -33,9 +34,32 @@ export const CarrierQuoteNotesList = ({
 
   const downloadFile = async (file: NoteFile) => {
     try {
-      const response = await fetch(file.url);
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
+      // Extract the file path from the public URL
+      const urlParts = file.url.split('/');
+      const bucketIndex = urlParts.findIndex(part => part === 'carrier-quote-files');
+      if (bucketIndex === -1) {
+        throw new Error('Invalid file URL format');
+      }
+      
+      const filePath = urlParts.slice(bucketIndex + 1).join('/');
+      console.log('Downloading file from path:', filePath);
+
+      // Download the file using Supabase's download method
+      const { data, error } = await supabase.storage
+        .from('carrier-quote-files')
+        .download(filePath);
+
+      if (error) {
+        console.error('Supabase download error:', error);
+        throw error;
+      }
+
+      if (!data) {
+        throw new Error('No data received from download');
+      }
+
+      // Create download link
+      const url = window.URL.createObjectURL(data);
       const a = document.createElement('a');
       a.href = url;
       a.download = file.name;
@@ -43,6 +67,8 @@ export const CarrierQuoteNotesList = ({
       a.click();
       window.URL.revokeObjectURL(url);
       document.body.removeChild(a);
+
+      console.log('File downloaded successfully:', file.name);
     } catch (error) {
       console.error('Error downloading file:', error);
       toast({
