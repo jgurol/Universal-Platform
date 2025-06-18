@@ -34,6 +34,7 @@ export const EditCarrierQuoteDialog = ({ open, onOpenChange, carrier, onUpdateCa
   const [slash29, setSlash29] = useState(false);
   const [installFee, setInstallFee] = useState(false);
   const [siteSurveyNeeded, setSiteSurveyNeeded] = useState(false);
+  const [noService, setNoService] = useState(false);
   const [isNotesDialogOpen, setIsNotesDialogOpen] = useState(false);
 
   const { vendors, categories, loading } = useCarrierOptions();
@@ -110,6 +111,7 @@ export const EditCarrierQuoteDialog = ({ open, onOpenChange, carrier, onUpdateCa
       setSlash29(carrier.slash_29 || false);
       setInstallFee(carrier.install_fee || false);
       setSiteSurveyNeeded(carrier.site_survey_needed || false);
+      setNoService(carrier.no_service || false);
     }
   }, [carrier, vendors, categories, speeds]);
 
@@ -137,7 +139,8 @@ export const EditCarrierQuoteDialog = ({ open, onOpenChange, carrier, onUpdateCa
         static_ip: staticIp,
         slash_29: slash29,
         install_fee: installFee,
-        site_survey_needed: siteSurveyNeeded
+        site_survey_needed: siteSurveyNeeded,
+        no_service: noService
       });
       
       onOpenChange(false);
@@ -325,6 +328,17 @@ export const EditCarrierQuoteDialog = ({ open, onOpenChange, carrier, onUpdateCa
                   />
                   <Label htmlFor="site-survey" className="text-sm font-normal">
                     Site Survey Needed
+                  </Label>
+                </div>
+                
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="no-service"
+                    checked={noService}
+                    onCheckedChange={(checked) => setNoService(checked as boolean)}
+                  />
+                  <Label htmlFor="no-service" className="text-sm font-normal">
+                    No Service
                   </Label>
                 </div>
               </div>

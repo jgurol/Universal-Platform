@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -34,6 +33,7 @@ export const AddCarrierQuoteDialog = ({ open, onOpenChange, onAddCarrier }: AddC
   const [slash29, setSlash29] = useState(false);
   const [installFee, setInstallFee] = useState(false);
   const [siteSurveyNeeded, setSiteSurveyNeeded] = useState(false);
+  const [noService, setNoService] = useState(false);
 
   const { vendors, categories, loading } = useCarrierOptions();
   const { priceSheets } = useVendorPriceSheets();
@@ -97,6 +97,7 @@ export const AddCarrierQuoteDialog = ({ open, onOpenChange, onAddCarrier }: AddC
     setSlash29(false);
     setInstallFee(false);
     setSiteSurveyNeeded(false);
+    setNoService(false);
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -122,7 +123,8 @@ export const AddCarrierQuoteDialog = ({ open, onOpenChange, onAddCarrier }: AddC
         static_ip: staticIp,
         slash_29: slash29,
         install_fee: installFee,
-        site_survey_needed: siteSurveyNeeded
+        site_survey_needed: siteSurveyNeeded,
+        no_service: noService
       });
       
       resetForm();
@@ -306,6 +308,17 @@ export const AddCarrierQuoteDialog = ({ open, onOpenChange, onAddCarrier }: AddC
                 />
                 <Label htmlFor="site-survey" className="text-sm font-normal">
                   Site Survey Needed
+                </Label>
+              </div>
+              
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="no-service"
+                  checked={noService}
+                  onCheckedChange={(checked) => setNoService(checked as boolean)}
+                />
+                <Label htmlFor="no-service" className="text-sm font-normal">
+                  No Service
                 </Label>
               </div>
             </div>
