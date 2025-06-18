@@ -159,6 +159,7 @@ export type Database = {
           created_at: string
           id: string
           install_fee: boolean | null
+          no_service: boolean | null
           notes: string | null
           price: number
           site_survey_needed: boolean | null
@@ -176,6 +177,7 @@ export type Database = {
           created_at?: string
           id?: string
           install_fee?: boolean | null
+          no_service?: boolean | null
           notes?: string | null
           price: number
           site_survey_needed?: boolean | null
@@ -193,6 +195,7 @@ export type Database = {
           created_at?: string
           id?: string
           install_fee?: boolean | null
+          no_service?: boolean | null
           notes?: string | null
           price?: number
           site_survey_needed?: boolean | null
