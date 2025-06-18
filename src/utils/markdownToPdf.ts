@@ -108,7 +108,7 @@ export const addMarkdownTextToPDF = (
     }
     
     // Process each section of the paragraph with improved text flow
-    currentY = addSectionsWithImprovedFlow(doc, sections, startX, currentY, maxWidth, lineHeight);
+    currentY = addSectionsWithProperWrapping(doc, sections, startX, currentY, maxWidth, lineHeight);
     
     // Move to next line after paragraph
     currentY += paragraphSpacing;
@@ -119,8 +119,8 @@ export const addMarkdownTextToPDF = (
   return currentY;
 };
 
-// New function to add sections with improved text flow
-const addSectionsWithImprovedFlow = (
+// New function to add sections with proper text wrapping that preserves formatting
+const addSectionsWithProperWrapping = (
   doc: jsPDF,
   sections: TextSection[],
   startX: number,
@@ -134,105 +134,73 @@ const addSectionsWithImprovedFlow = (
   const bottomMargin = 24;
   const topMargin = 10;
   
-  // Combine all sections into one continuous text flow
-  let combinedText = '';
-  let formatMap: Array<{ start: number; end: number; bold: boolean; italic: boolean }> = [];
-  
+  // Process each section sequentially while maintaining proper text flow
   sections.forEach(section => {
-    const startPos = combinedText.length;
-    combinedText += section.text;
-    const endPos = combinedText.length;
+    // Set font style for this section
+    doc.setFontSize(9);
+    if (section.bold && section.italic) {
+      doc.setFont('helvetica', 'bolditalic');
+    } else if (section.bold) {
+      doc.setFont('helvetica', 'bold');
+    } else if (section.italic) {
+      doc.setFont('helvetica', 'italic');
+    } else {
+      doc.setFont('helvetica', 'normal');
+    }
     
-    formatMap.push({
-      start: startPos,
-      end: endPos,
-      bold: section.bold,
-      italic: section.italic
-    });
-  });
-  
-  // Use jsPDF's built-in text splitting for better word wrapping
-  doc.setFontSize(9);
-  doc.setFont('helvetica', 'normal');
-  
-  const textLines = doc.splitTextToSize(combinedText, maxWidth);
-  
-  if (Array.isArray(textLines)) {
-    textLines.forEach((line: string) => {
+    // Split text into words for proper wrapping
+    const words = section.text.split(/\s+/).filter(word => word.length > 0);
+    
+    words.forEach((word, wordIndex) => {
       // Check if we need a new page
       if (currentY > pageHeight - bottomMargin) {
         doc.addPage();
         currentY = topMargin;
+        currentX = startX;
         
         // Add header on new page
         doc.setFontSize(9);
         doc.setFont('helvetica', 'bold');
         doc.text('Terms & Conditions (continued):', startX, currentY);
         currentY += 8;
-        doc.setFont('helvetica', 'normal');
+        
+        // Reset font for current section
+        if (section.bold && section.italic) {
+          doc.setFont('helvetica', 'bolditalic');
+        } else if (section.bold) {
+          doc.setFont('helvetica', 'bold');
+        } else if (section.italic) {
+          doc.setFont('helvetica', 'italic');
+        } else {
+          doc.setFont('helvetica', 'normal');
+        }
       }
       
-      // Add the line with proper formatting
-      addFormattedLine(doc, line, startX, currentY, combinedText, formatMap);
-      currentY += lineHeight;
-    });
-  } else {
-    // Single line case
-    addFormattedLine(doc, textLines, startX, currentY, combinedText, formatMap);
-    currentY += lineHeight;
-  }
-  
-  return currentY;
-};
-
-// Function to add a line with proper formatting
-const addFormattedLine = (
-  doc: jsPDF,
-  line: string,
-  x: number,
-  y: number,
-  fullText: string,
-  formatMap: Array<{ start: number; end: number; bold: boolean; italic: boolean }>
-) => {
-  // Find the position of this line in the full text
-  const lineStart = fullText.indexOf(line);
-  if (lineStart === -1) {
-    // Fallback: just add the line as normal text
-    doc.setFont('helvetica', 'normal');
-    doc.text(line, x, y);
-    return;
-  }
-  
-  const lineEnd = lineStart + line.length;
-  let currentX = x;
-  
-  // Process each character in the line to apply correct formatting
-  for (let i = 0; i < line.length; i++) {
-    const charPos = lineStart + i;
-    const char = line[i];
-    
-    // Find the format for this character
-    const format = formatMap.find(f => charPos >= f.start && charPos < f.end);
-    
-    if (format) {
-      // Set font style
-      if (format.bold && format.italic) {
-        doc.setFont('helvetica', 'bolditalic');
-      } else if (format.bold) {
-        doc.setFont('helvetica', 'bold');
-      } else if (format.italic) {
-        doc.setFont('helvetica', 'italic');
-      } else {
-        doc.setFont('helvetica', 'normal');
+      // Calculate word width including space
+      const wordWidth = doc.getTextWidth(word);
+      const spaceWidth = doc.getTextWidth(' ');
+      const totalWidth = wordWidth + (wordIndex < words.length - 1 ? spaceWidth : 0);
+      
+      // Check if word fits on current line
+      if (currentX + totalWidth > startX + maxWidth && currentX > startX) {
+        // Move to next line
+        currentY += lineHeight;
+        currentX = startX;
       }
-    } else {
-      doc.setFont('helvetica', 'normal');
-    }
-    
-    // Add the character
-    doc.text(char, currentX, y);
-    currentX += doc.getTextWidth(char);
-  }
+      
+      // Add the word
+      doc.text(word, currentX, currentY);
+      currentX += wordWidth;
+      
+      // Add space after word (except for last word in section)
+      if (wordIndex < words.length - 1) {
+        currentX += spaceWidth;
+      }
+    });
+  });
+  
+  // Move to next line for next paragraph
+  return currentY + lineHeight;
 };
 
 // Helper function to calculate paragraph height
