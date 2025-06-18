@@ -2,6 +2,8 @@
 import { Node, mergeAttributes } from '@tiptap/core';
 import { ReactNodeViewRenderer, NodeViewWrapper } from '@tiptap/react';
 import React, { useState, useRef, useEffect } from 'react';
+import { Button } from '@/components/ui/button';
+import { AlignLeft, Square } from 'lucide-react';
 
 interface ImageResizeProps {
   node: any;
@@ -15,6 +17,8 @@ const ImageResizeComponent: React.FC<ImageResizeProps> = ({ node, updateAttribut
   const [startSize, setStartSize] = useState({ width: 0, height: 0 });
   const imgRef = useRef<HTMLImageElement>(null);
 
+  const isInline = node.attrs.display !== 'block';
+
   const handleMouseDown = (e: React.MouseEvent) => {
     e.preventDefault();
     setIsResizing(true);
@@ -27,6 +31,11 @@ const ImageResizeComponent: React.FC<ImageResizeProps> = ({ node, updateAttribut
         height: img.offsetHeight
       });
     }
+  };
+
+  const toggleDisplay = () => {
+    const newDisplay = isInline ? 'block' : 'inline';
+    updateAttributes({ display: newDisplay });
   };
 
   useEffect(() => {
@@ -60,27 +69,47 @@ const ImageResizeComponent: React.FC<ImageResizeProps> = ({ node, updateAttribut
   }, [isResizing, startPos, startSize, updateAttributes]);
 
   return (
-    <NodeViewWrapper className="relative inline-block">
-      <img
-        ref={imgRef}
-        src={node.attrs.src}
-        alt={node.attrs.alt || ''}
-        width={node.attrs.width}
-        height={node.attrs.height}
-        className="rounded-lg max-w-full h-auto"
-        style={{
-          width: node.attrs.width ? `${node.attrs.width}px` : 'auto',
-          height: node.attrs.height ? `${node.attrs.height}px` : 'auto'
-        }}
-      />
-      {selected && (
-        <div className="absolute inset-0 border-2 border-blue-500 pointer-events-none">
-          <div
-            className="absolute bottom-0 right-0 w-3 h-3 bg-blue-500 cursor-se-resize pointer-events-auto"
-            onMouseDown={handleMouseDown}
-          />
-        </div>
-      )}
+    <NodeViewWrapper 
+      className={isInline ? "inline-block" : "block my-2"}
+      style={{ display: isInline ? 'inline-block' : 'block' }}
+    >
+      <div className="relative group">
+        <img
+          ref={imgRef}
+          src={node.attrs.src}
+          alt={node.attrs.alt || ''}
+          width={node.attrs.width}
+          height={node.attrs.height}
+          className="rounded-lg max-w-full h-auto"
+          style={{
+            width: node.attrs.width ? `${node.attrs.width}px` : 'auto',
+            height: node.attrs.height ? `${node.attrs.height}px` : 'auto',
+            verticalAlign: isInline ? 'middle' : 'top'
+          }}
+        />
+        {selected && (
+          <>
+            <div className="absolute inset-0 border-2 border-blue-500 pointer-events-none">
+              <div
+                className="absolute bottom-0 right-0 w-3 h-3 bg-blue-500 cursor-se-resize pointer-events-auto"
+                onMouseDown={handleMouseDown}
+              />
+            </div>
+            <div className="absolute top-2 right-2 flex gap-1">
+              <Button
+                type="button"
+                size="sm"
+                variant="secondary"
+                onClick={toggleDisplay}
+                className="h-6 w-6 p-0 bg-white/90 hover:bg-white border shadow-sm"
+                title={isInline ? "Make block (break text)" : "Make inline (flow with text)"}
+              >
+                {isInline ? <Square className="h-3 w-3" /> : <AlignLeft className="h-3 w-3" />}
+              </Button>
+            </div>
+          </>
+        )}
+      </div>
     </NodeViewWrapper>
   );
 };
@@ -111,6 +140,9 @@ export const ImageResize = Node.create({
       height: {
         default: null,
       },
+      display: {
+        default: 'inline',
+      },
     };
   },
 
@@ -126,6 +158,7 @@ export const ImageResize = Node.create({
             title: img.getAttribute('title'),
             width: img.getAttribute('width') ? parseInt(img.getAttribute('width')!) : null,
             height: img.getAttribute('height') ? parseInt(img.getAttribute('height')!) : null,
+            display: img.style.display === 'block' ? 'block' : 'inline',
           };
         },
       },
@@ -133,7 +166,10 @@ export const ImageResize = Node.create({
   },
 
   renderHTML({ HTMLAttributes }) {
-    return ['img', mergeAttributes(HTMLAttributes)];
+    const { display, ...attrs } = HTMLAttributes;
+    return ['img', mergeAttributes(attrs, {
+      style: `display: ${display || 'inline'}; ${display === 'inline' ? 'vertical-align: middle;' : 'margin: 8px 0;'}`
+    })];
   },
 
   addNodeView() {
