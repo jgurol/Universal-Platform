@@ -78,6 +78,79 @@ export type Database = {
         }
         Relationships: []
       }
+      carrier_quote_note_files: {
+        Row: {
+          carrier_quote_note_id: string
+          created_at: string
+          file_name: string
+          file_path: string
+          file_size: number | null
+          file_type: string
+          id: string
+        }
+        Insert: {
+          carrier_quote_note_id: string
+          created_at?: string
+          file_name: string
+          file_path: string
+          file_size?: number | null
+          file_type: string
+          id?: string
+        }
+        Update: {
+          carrier_quote_note_id?: string
+          created_at?: string
+          file_name?: string
+          file_path?: string
+          file_size?: number | null
+          file_type?: string
+          id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "carrier_quote_note_files_carrier_quote_note_id_fkey"
+            columns: ["carrier_quote_note_id"]
+            isOneToOne: false
+            referencedRelation: "carrier_quote_notes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      carrier_quote_notes: {
+        Row: {
+          carrier_quote_id: string
+          content: string
+          created_at: string
+          id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          carrier_quote_id: string
+          content: string
+          created_at?: string
+          id?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          carrier_quote_id?: string
+          content?: string
+          created_at?: string
+          id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "carrier_quote_notes_carrier_quote_id_fkey"
+            columns: ["carrier_quote_id"]
+            isOneToOne: false
+            referencedRelation: "carrier_quotes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       carrier_quotes: {
         Row: {
           carrier: string
