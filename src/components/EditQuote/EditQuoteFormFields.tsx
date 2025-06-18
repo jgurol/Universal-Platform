@@ -4,6 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { ClientInfo } from "@/pages/Index";
+import { ImprovedRichTextEditor } from "@/components/ImprovedRichTextEditor";
 
 interface EditQuoteFormFieldsProps {
   description: string;
@@ -32,20 +33,23 @@ export const EditQuoteFormFields = ({
   notes,
   onNotesChange
 }: EditQuoteFormFieldsProps) => {
+  console.log('[EditQuoteFormFields] Rendering with description:', description);
+
   return (
     <>
-      {/* Quote Name */}
       <div className="space-y-2">
         <Label htmlFor="description">Quote Name</Label>
-        <Input
-          id="description"
+        <ImprovedRichTextEditor
           value={description}
-          onChange={(e) => onDescriptionChange(e.target.value)}
+          onChange={(value) => {
+            console.log('[EditQuoteFormFields] Description changed to:', value);
+            onDescriptionChange(value);
+          }}
           placeholder="Enter quote name"
+          rows={3}
         />
       </div>
 
-      {/* Client Selection */}
       <div className="space-y-2">
         <Label htmlFor="clientInfo">Client Company</Label>
         <Select value={clientInfoId} onValueChange={onClientInfoIdChange}>
@@ -67,12 +71,13 @@ export const EditQuoteFormFields = ({
         <Label htmlFor="status">Status</Label>
         <Select value={status} onValueChange={onStatusChange}>
           <SelectTrigger>
-            <SelectValue />
+            <SelectValue placeholder="Select status" />
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="pending">Pending</SelectItem>
+            <SelectItem value="sent">Sent</SelectItem>
             <SelectItem value="approved">Approved</SelectItem>
-            <SelectItem value="rejected">Rejected</SelectItem>
+            <SelectItem value="declined">Declined</SelectItem>
           </SelectContent>
         </Select>
       </div>
