@@ -45,18 +45,34 @@ export const useQuotes = (
         return;
       }
 
-      console.info('[fetchQuotes] Raw quotesData from database:', quotesData);
+      console.info('[fetchQuotes] Raw quotesData from database with descriptions:', 
+        quotesData?.map(q => ({ 
+          id: q.id, 
+          description: q.description,
+          descriptionType: typeof q.description,
+          descriptionLength: q.description?.length 
+        }))
+      );
       
       if (quotesData) {
         const mappedQuotes = quotesData.map(quote => {
+          console.log(`[fetchQuotes] Processing quote ${quote.id}:`);
+          console.log('Raw description from DB:', quote.description);
           const mapped = mapQuoteData(quote, clients, clientInfos);
-          console.log(`[fetchQuotes] Mapped quote ${quote.id} - Status: "${mapped.status}", Description: "${mapped.description}"`);
+          console.log(`[fetchQuotes] Mapped quote ${quote.id} - Description: "${mapped.description}"`);
           return mapped;
         });
         
         console.info('[fetchQuotes] Setting quotes in state, count:', mappedQuotes.length);
+        console.info('[fetchQuotes] Final mapped quotes with descriptions:', 
+          mappedQuotes.map(q => ({ 
+            id: q.id, 
+            description: q.description,
+            descriptionType: typeof q.description,
+            descriptionLength: q.description?.length 
+          }))
+        );
         setQuotes(mappedQuotes);
-        console.info('[fetchQuotes] Final mapped quotes count:', mappedQuotes.length);
       }
     } catch (err) {
       console.error('Error in fetchQuotes:', err);
