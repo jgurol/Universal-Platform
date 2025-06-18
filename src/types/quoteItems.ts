@@ -12,9 +12,9 @@ export interface QuoteItemData {
   charge_type: 'NRC' | 'MRC';
   address_id?: string;
   name?: string; // Editable name for this quote item
-  description?: string; // Editable description for this quote item
-  image_url?: string; // URL for uploaded image
-  image_name?: string; // Name of uploaded image file
+  description?: string; // Rich text description with embedded images (markdown format)
+  image_url?: string; // Legacy field - kept for backward compatibility
+  image_name?: string; // Legacy field - kept for backward compatibility
   item?: Item;
   address?: ClientAddress;
 }

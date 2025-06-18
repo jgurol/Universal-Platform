@@ -2,14 +2,13 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Trash2, MapPin, FileText, GripVertical } from "lucide-react";
 import { QuoteItemData } from "@/types/quoteItems";
 import { ClientAddress } from "@/types/clientAddress";
-import { ImageUpload } from "@/components/ImageUpload";
+import { EnhancedRichTextEditor } from "@/components/EnhancedRichTextEditor";
 
 interface QuoteItemRowProps {
   quoteItem: QuoteItemData;
@@ -42,22 +41,24 @@ export const QuoteItemRow = ({ quoteItem, addresses, onUpdateItem, onRemoveItem 
     onUpdateItem(quoteItem.id, 'address_id', addressId);
   };
 
-  const handleImageUploaded = (imageUrl: string, imageName: string) => {
-    console.log(`[QuoteItemRow] Image uploaded for item ${quoteItem.id}:`, { imageUrl, imageName });
-    onUpdateItem(quoteItem.id, 'image_url', imageUrl);
-    onUpdateItem(quoteItem.id, 'image_name', imageName);
-  };
-
-  const handleImageRemoved = () => {
-    console.log(`[QuoteItemRow] Image removed for item ${quoteItem.id}`);
-    onUpdateItem(quoteItem.id, 'image_url', '');
-    onUpdateItem(quoteItem.id, 'image_name', '');
-  };
-
-  console.log(`[QuoteItemRow] Rendering item ${quoteItem.id} with image:`, { 
-    image_url: quoteItem.image_url, 
-    image_name: quoteItem.image_name 
+  console.log(`[QuoteItemRow] Rendering item ${quoteItem.id} with description:`, { 
+    description: quoteItem.description?.substring(0, 100)
   });
+
+  // Function to strip markdown and get plain text preview
+  const getDescriptionPreview = (description: string): string => {
+    if (!description) return '';
+    
+    // Remove markdown formatting and image references for preview
+    const plainText = description
+      .replace(/\*\*(.*?)\*\*/g, '$1') // Remove bold formatting
+      .replace(/\*(.*?)\*/g, '$1') // Remove italic formatting
+      .replace(/!\[([^\]]*)\]\(([^)]+)\)/g, '[Image: $1]') // Replace images with placeholder
+      .replace(/\n/g, ' ') // Replace newlines with spaces
+      .trim();
+    
+    return plainText.length > 30 ? `${plainText.substring(0, 30)}...` : plainText;
+  };
 
   return (
     <div className="flex items-start gap-2 p-3 border rounded bg-gray-50">
@@ -86,22 +87,21 @@ export const QuoteItemRow = ({ quoteItem, addresses, onUpdateItem, onRemoveItem 
                 >
                   <FileText className="w-3 h-3 mr-1" />
                   {quoteItem.description || quoteItem.item?.description ? 
-                    `${(quoteItem.description || quoteItem.item?.description || '').substring(0, 20)}...` : 
+                    getDescriptionPreview(quoteItem.description || quoteItem.item?.description || '') : 
                     'Add description'
                   }
                 </Button>
               </DialogTrigger>
-              <DialogContent className="sm:max-w-[500px]">
+              <DialogContent className="sm:max-w-[600px]">
                 <DialogHeader>
                   <DialogTitle>Edit Item Description</DialogTitle>
                 </DialogHeader>
                 <div className="space-y-4">
-                  <Textarea
+                  <EnhancedRichTextEditor
                     value={tempDescription}
-                    onChange={(e) => setTempDescription(e.target.value)}
-                    placeholder="Enter item description"
-                    rows={6}
-                    className="resize-none"
+                    onChange={setTempDescription}
+                    placeholder="Enter item description with formatting and images..."
+                    rows={8}
                   />
                   <div className="flex justify-end space-x-2">
                     <Button variant="outline" onClick={handleDescriptionCancel}>
@@ -136,14 +136,6 @@ export const QuoteItemRow = ({ quoteItem, addresses, onUpdateItem, onRemoveItem 
                 )}
               </SelectContent>
             </Select>
-          </div>
-          <div className="flex justify-start">
-            <ImageUpload
-              onImageUploaded={handleImageUploaded}
-              currentImageUrl={quoteItem.image_url}
-              currentImageName={quoteItem.image_name}
-              onImageRemoved={handleImageRemoved}
-            />
           </div>
         </div>
 

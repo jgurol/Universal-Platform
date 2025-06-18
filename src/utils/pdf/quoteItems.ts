@@ -1,3 +1,4 @@
+
 import jsPDF from 'jspdf';
 import { PDFGenerationContext } from './types';
 
@@ -77,22 +78,9 @@ const addMRCItems = async (doc: jsPDF, mrcItems: any[], quote: any, yPos: number
       addressText = addressText.substring(0, 37) + '...';
     }
     
-    let rowHeight = 10;
-    let imageHeight = 0;
-    
-    // Check if item has an image
-    if (item.image_url) {
-      try {
-        console.log('[PDF] Adding image for item:', itemName, 'URL:', item.image_url);
-        const imageData = await loadImageForPDF(item.image_url);
-        if (imageData) {
-          imageHeight = 20; // Reserve space for image
-          rowHeight = Math.max(rowHeight, imageHeight + 2);
-        }
-      } catch (error) {
-        console.error('[PDF] Error loading image:', error);
-      }
-    }
+    // Process description to extract images and text
+    const descriptionContent = await processDescriptionContent(item.description || item.item?.description || '');
+    let rowHeight = Math.max(10, descriptionContent.minHeight);
     
     if (index % 2 === 0) {
       doc.setFillColor(250, 250, 250);
@@ -108,24 +96,8 @@ const addMRCItems = async (doc: jsPDF, mrcItems: any[], quote: any, yPos: number
     doc.setTextColor(80, 80, 80);
     doc.text(`Location: ${addressText}`, colX.description + 4, yPos + 5);
     
-    // Add image if available
-    if (item.image_url && imageHeight > 0) {
-      try {
-        const imageData = await loadImageForPDF(item.image_url);
-        if (imageData) {
-          // Position image to the right of the description
-          const imageX = colX.description + 90;
-          const imageY = yPos - 2;
-          const imageWidth = 15;
-          const actualImageHeight = 15;
-          
-          doc.addImage(imageData, 'JPEG', imageX, imageY, imageWidth, actualImageHeight);
-          console.log('[PDF] Image added successfully at:', imageX, imageY);
-        }
-      } catch (error) {
-        console.error('[PDF] Error adding image to PDF:', error);
-      }
-    }
+    // Add description text and embedded images
+    await addDescriptionContent(doc, descriptionContent, colX.description + 4, yPos + 10);
     
     doc.setTextColor(0, 0, 0);
     doc.setFontSize(9);
@@ -177,6 +149,94 @@ const addNRCItems = (doc: jsPDF, nrcItems: any[], yPos: number, colX: any): numb
   doc.text(nrcTotalText, colX.total + 12 - nrcTotalWidth, yPos);
   
   return yPos;
+};
+
+// Process description content to extract text and images
+const processDescriptionContent = async (description: string): Promise<{
+  text: string;
+  images: Array<{ url: string; alt: string; data?: string }>;
+  minHeight: number;
+}> => {
+  if (!description) return { text: '', images: [], minHeight: 10 };
+  
+  // Extract images using regex
+  const imageRegex = /!\[([^\]]*)\]\(([^)]+)\)/g;
+  const images: Array<{ url: string; alt: string; data?: string }> = [];
+  let match;
+  
+  while ((match = imageRegex.exec(description)) !== null) {
+    const alt = match[1] || '';
+    const url = match[2] || '';
+    
+    try {
+      const imageData = await loadImageForPDF(url);
+      images.push({ url, alt, data: imageData || undefined });
+    } catch (error) {
+      console.error('[PDF] Error loading embedded image:', error);
+      images.push({ url, alt });
+    }
+  }
+  
+  // Extract plain text (remove markdown formatting and image references)
+  const plainText = description
+    .replace(/\*\*(.*?)\*\*/g, '$1') // Remove bold formatting
+    .replace(/\*(.*?)\*/g, '$1') // Remove italic formatting
+    .replace(/!\[([^\]]*)\]\(([^)]+)\)/g, '') // Remove image references
+    .replace(/\n/g, ' ') // Replace newlines with spaces
+    .trim();
+  
+  // Calculate minimum height needed (text + images)
+  const textLines = Math.ceil(plainText.length / 40); // Approximate line count
+  const imageHeight = images.length > 0 ? 15 : 0; // Height per image row
+  const minHeight = Math.max(10, (textLines * 4) + imageHeight + 5);
+  
+  return { text: plainText, images, minHeight };
+};
+
+// Add description content (text and images) to PDF
+const addDescriptionContent = async (
+  doc: jsPDF, 
+  content: { text: string; images: Array<{ url: string; alt: string; data?: string }> }, 
+  startX: number, 
+  startY: number
+): Promise<void> => {
+  let currentY = startY;
+  
+  // Add description text
+  if (content.text) {
+    doc.setFontSize(7);
+    doc.setTextColor(60, 60, 60);
+    const textLines = doc.splitTextToSize(content.text, 80);
+    doc.text(textLines, startX, currentY);
+    currentY += Array.isArray(textLines) ? textLines.length * 3 : 3;
+  }
+  
+  // Add embedded images
+  if (content.images.length > 0) {
+    let imageX = startX;
+    
+    for (const image of content.images) {
+      if (image.data) {
+        try {
+          const imageWidth = 12;
+          const imageHeight = 12;
+          
+          doc.addImage(image.data, 'JPEG', imageX, currentY, imageWidth, imageHeight);
+          console.log('[PDF] Embedded image added at:', imageX, currentY);
+          
+          imageX += imageWidth + 2; // Add spacing between images
+          
+          // If images would exceed row width, move to next row
+          if (imageX > startX + 70) {
+            currentY += imageHeight + 2;
+            imageX = startX;
+          }
+        } catch (error) {
+          console.error('[PDF] Error adding embedded image to PDF:', error);
+        }
+      }
+    }
+  }
 };
 
 // Helper function to load image for PDF
