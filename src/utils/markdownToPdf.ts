@@ -107,80 +107,11 @@ export const addMarkdownTextToPDF = (
       currentY += 8;
     }
     
-    // Process each section of the paragraph
-    let currentLineY = currentY;
-    let currentX = startX;
-    let lineStarted = false;
-    
-    sections.forEach((section, sectionIndex) => {
-      console.log(`PDF Generation - Processing section ${sectionIndex + 1}:`, section.text.substring(0, 50));
-      
-      if (!section.text.trim()) return;
-      
-      // Set font style
-      doc.setFontSize(9);
-      if (section.bold && section.italic) {
-        doc.setFont('helvetica', 'bolditalic');
-      } else if (section.bold) {
-        doc.setFont('helvetica', 'bold');
-      } else if (section.italic) {
-        doc.setFont('helvetica', 'italic');
-      } else {
-        doc.setFont('helvetica', 'normal');
-      }
-      
-      // Split text into words to handle line wrapping properly
-      const words = section.text.split(/\s+/).filter(word => word.length > 0);
-      
-      words.forEach((word, wordIndex) => {
-        const wordWidth = doc.getTextWidth(word + ' ');
-        const remainingWidth = maxWidth - (currentX - startX);
-        
-        // Check if word fits on current line
-        if (lineStarted && wordWidth > remainingWidth) {
-          // Move to next line
-          currentLineY += lineHeight;
-          currentX = startX;
-          lineStarted = false;
-          
-          // Check if we need a new page
-          if (currentLineY > pageHeight - bottomMargin) {
-            console.log('PDF Generation - Adding new page at Y:', currentLineY);
-            doc.addPage();
-            currentLineY = topMargin;
-            currentX = startX;
-            
-            // Add header on new page
-            doc.setFontSize(9);
-            doc.setFont('helvetica', 'bold');
-            doc.text('Terms & Conditions (continued):', startX, currentLineY);
-            currentLineY += 8;
-            
-            // Reset font style after header
-            if (section.bold && section.italic) {
-              doc.setFont('helvetica', 'bolditalic');
-            } else if (section.bold) {
-              doc.setFont('helvetica', 'bold');
-            } else if (section.italic) {
-              doc.setFont('helvetica', 'italic');
-            } else {
-              doc.setFont('helvetica', 'normal');
-            }
-          }
-        }
-        
-        // Add the word
-        const textToAdd = wordIndex < words.length - 1 ? word + ' ' : word;
-        doc.text(textToAdd, currentX, currentLineY);
-        currentX += doc.getTextWidth(textToAdd);
-        lineStarted = true;
-        
-        console.log(`PDF Generation - Added word "${word}" at X ${currentX}, Y ${currentLineY}`);
-      });
-    });
+    // Process each section of the paragraph with improved text flow
+    currentY = addSectionsWithImprovedFlow(doc, sections, startX, currentY, maxWidth, lineHeight);
     
     // Move to next line after paragraph
-    currentY = currentLineY + lineHeight + paragraphSpacing;
+    currentY += paragraphSpacing;
     console.log(`PDF Generation - Finished paragraph ${paragraphIndex + 1}, current Y:`, currentY);
   });
   
@@ -188,42 +119,134 @@ export const addMarkdownTextToPDF = (
   return currentY;
 };
 
-// Helper function to calculate paragraph height
-const calculateParagraphHeight = (doc: jsPDF, sections: TextSection[], maxWidth: number, lineHeight: number): number => {
-  let totalHeight = 0;
-  let currentLineWidth = 0;
-  let lines = 1;
+// New function to add sections with improved text flow
+const addSectionsWithImprovedFlow = (
+  doc: jsPDF,
+  sections: TextSection[],
+  startX: number,
+  startY: number,
+  maxWidth: number,
+  lineHeight: number
+): number => {
+  let currentY = startY;
+  let currentX = startX;
+  const pageHeight = 297;
+  const bottomMargin = 24;
+  const topMargin = 10;
+  
+  // Combine all sections into one continuous text flow
+  let combinedText = '';
+  let formatMap: Array<{ start: number; end: number; bold: boolean; italic: boolean }> = [];
   
   sections.forEach(section => {
-    if (!section.text.trim()) return;
+    const startPos = combinedText.length;
+    combinedText += section.text;
+    const endPos = combinedText.length;
     
-    // Set font style for accurate measurement
-    doc.setFontSize(9);
-    if (section.bold && section.italic) {
-      doc.setFont('helvetica', 'bolditalic');
-    } else if (section.bold) {
-      doc.setFont('helvetica', 'bold');
-    } else if (section.italic) {
-      doc.setFont('helvetica', 'italic');
+    formatMap.push({
+      start: startPos,
+      end: endPos,
+      bold: section.bold,
+      italic: section.italic
+    });
+  });
+  
+  // Use jsPDF's built-in text splitting for better word wrapping
+  doc.setFontSize(9);
+  doc.setFont('helvetica', 'normal');
+  
+  const textLines = doc.splitTextToSize(combinedText, maxWidth);
+  
+  if (Array.isArray(textLines)) {
+    textLines.forEach((line: string) => {
+      // Check if we need a new page
+      if (currentY > pageHeight - bottomMargin) {
+        doc.addPage();
+        currentY = topMargin;
+        
+        // Add header on new page
+        doc.setFontSize(9);
+        doc.setFont('helvetica', 'bold');
+        doc.text('Terms & Conditions (continued):', startX, currentY);
+        currentY += 8;
+        doc.setFont('helvetica', 'normal');
+      }
+      
+      // Add the line with proper formatting
+      addFormattedLine(doc, line, startX, currentY, combinedText, formatMap);
+      currentY += lineHeight;
+    });
+  } else {
+    // Single line case
+    addFormattedLine(doc, textLines, startX, currentY, combinedText, formatMap);
+    currentY += lineHeight;
+  }
+  
+  return currentY;
+};
+
+// Function to add a line with proper formatting
+const addFormattedLine = (
+  doc: jsPDF,
+  line: string,
+  x: number,
+  y: number,
+  fullText: string,
+  formatMap: Array<{ start: number; end: number; bold: boolean; italic: boolean }>
+) => {
+  // Find the position of this line in the full text
+  const lineStart = fullText.indexOf(line);
+  if (lineStart === -1) {
+    // Fallback: just add the line as normal text
+    doc.setFont('helvetica', 'normal');
+    doc.text(line, x, y);
+    return;
+  }
+  
+  const lineEnd = lineStart + line.length;
+  let currentX = x;
+  
+  // Process each character in the line to apply correct formatting
+  for (let i = 0; i < line.length; i++) {
+    const charPos = lineStart + i;
+    const char = line[i];
+    
+    // Find the format for this character
+    const format = formatMap.find(f => charPos >= f.start && charPos < f.end);
+    
+    if (format) {
+      // Set font style
+      if (format.bold && format.italic) {
+        doc.setFont('helvetica', 'bolditalic');
+      } else if (format.bold) {
+        doc.setFont('helvetica', 'bold');
+      } else if (format.italic) {
+        doc.setFont('helvetica', 'italic');
+      } else {
+        doc.setFont('helvetica', 'normal');
+      }
     } else {
       doc.setFont('helvetica', 'normal');
     }
     
-    const words = section.text.split(/\s+/).filter(word => word.length > 0);
-    
-    words.forEach(word => {
-      const wordWidth = doc.getTextWidth(word + ' ');
-      
-      if (currentLineWidth + wordWidth > maxWidth) {
-        lines++;
-        currentLineWidth = wordWidth;
-      } else {
-        currentLineWidth += wordWidth;
-      }
-    });
-  });
+    // Add the character
+    doc.text(char, currentX, y);
+    currentX += doc.getTextWidth(char);
+  }
+};
+
+// Helper function to calculate paragraph height
+const calculateParagraphHeight = (doc: jsPDF, sections: TextSection[], maxWidth: number, lineHeight: number): number => {
+  // Combine all text for accurate measurement
+  const combinedText = sections.map(s => s.text).join('');
   
-  return lines * lineHeight;
+  doc.setFontSize(9);
+  doc.setFont('helvetica', 'normal');
+  
+  const textLines = doc.splitTextToSize(combinedText, maxWidth);
+  const numberOfLines = Array.isArray(textLines) ? textLines.length : 1;
+  
+  return numberOfLines * lineHeight;
 };
 
 // Enhanced markdown inline formatting parser
