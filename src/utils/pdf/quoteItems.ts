@@ -1,3 +1,4 @@
+
 import jsPDF from 'jspdf';
 import { PDFGenerationContext } from './types';
 
@@ -28,7 +29,7 @@ export const addQuoteItems = (doc: jsPDF, context: PDFGenerationContext, startY:
     
     // Monthly Fees Section
     if (mrcItems.length > 0) {
-      yPos = addMRCItems(doc, mrcItems, quote, yPos, colX);
+      yPos = await addMRCItems(doc, mrcItems, quote, yPos, colX);
     }
     
     // One-Time Fees
@@ -40,7 +41,7 @@ export const addQuoteItems = (doc: jsPDF, context: PDFGenerationContext, startY:
   return yPos;
 };
 
-const addMRCItems = (doc: jsPDF, mrcItems: any[], quote: any, yPos: number, colX: any): number => {
+const addMRCItems = async (doc: jsPDF, mrcItems: any[], quote: any, yPos: number, colX: any): Promise<number> => {
   doc.setFontSize(12);
   doc.setFont('helvetica', 'bold');
   doc.text('Monthly Fees', 10, yPos);
@@ -61,7 +62,9 @@ const addMRCItems = (doc: jsPDF, mrcItems: any[], quote: any, yPos: number, colX
   yPos += 4;
   
   doc.setFont('helvetica', 'normal');
-  mrcItems.forEach((item, index) => {
+  
+  for (let index = 0; index < mrcItems.length; index++) {
+    const item = mrcItems[index];
     const itemName = item.item?.name || item.name || 'Monthly Service';
     
     let addressText = '';
@@ -75,7 +78,22 @@ const addMRCItems = (doc: jsPDF, mrcItems: any[], quote: any, yPos: number, colX
       addressText = addressText.substring(0, 37) + '...';
     }
     
-    const rowHeight = 10;
+    let rowHeight = 10;
+    let imageHeight = 0;
+    
+    // Check if item has an image
+    if (item.image_url) {
+      try {
+        console.log('[PDF] Adding image for item:', itemName, 'URL:', item.image_url);
+        const imageData = await loadImageForPDF(item.image_url);
+        if (imageData) {
+          imageHeight = 20; // Reserve space for image
+          rowHeight = Math.max(rowHeight, imageHeight + 2);
+        }
+      } catch (error) {
+        console.error('[PDF] Error loading image:', error);
+      }
+    }
     
     if (index % 2 === 0) {
       doc.setFillColor(250, 250, 250);
@@ -87,9 +105,28 @@ const addMRCItems = (doc: jsPDF, mrcItems: any[], quote: any, yPos: number, colX
     doc.setFont('helvetica', 'normal');
     doc.text(itemName.substring(0, 35), colX.description + 2, yPos);
     
-    doc.setFontSize(8); // Increased from 7 to 8
+    doc.setFontSize(8);
     doc.setTextColor(80, 80, 80);
     doc.text(`Location: ${addressText}`, colX.description + 4, yPos + 5);
+    
+    // Add image if available
+    if (item.image_url && imageHeight > 0) {
+      try {
+        const imageData = await loadImageForPDF(item.image_url);
+        if (imageData) {
+          // Position image to the right of the description
+          const imageX = colX.description + 90;
+          const imageY = yPos - 2;
+          const imageWidth = 15;
+          const actualImageHeight = 15;
+          
+          doc.addImage(imageData, 'JPEG', imageX, imageY, imageWidth, actualImageHeight);
+          console.log('[PDF] Image added successfully at:', imageX, imageY);
+        }
+      } catch (error) {
+        console.error('[PDF] Error adding image to PDF:', error);
+      }
+    }
     
     doc.setTextColor(0, 0, 0);
     doc.setFontSize(9);
@@ -107,7 +144,7 @@ const addMRCItems = (doc: jsPDF, mrcItems: any[], quote: any, yPos: number, colX
     doc.text(totalText, colX.total + 12 - totalWidth, yPos);
     
     yPos += rowHeight;
-  });
+  }
   
   yPos += 2;
   doc.setDrawColor(0, 0, 0);
@@ -141,4 +178,41 @@ const addNRCItems = (doc: jsPDF, nrcItems: any[], yPos: number, colX: any): numb
   doc.text(nrcTotalText, colX.total + 12 - nrcTotalWidth, yPos);
   
   return yPos;
+};
+
+// Helper function to load image for PDF
+const loadImageForPDF = (imageUrl: string): Promise<string | null> => {
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    
+    img.onload = () => {
+      try {
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        
+        if (!ctx) {
+          resolve(null);
+          return;
+        }
+        
+        canvas.width = img.width;
+        canvas.height = img.height;
+        ctx.drawImage(img, 0, 0);
+        
+        const dataURL = canvas.toDataURL('image/jpeg', 0.8);
+        resolve(dataURL);
+      } catch (error) {
+        console.error('[PDF] Error converting image to data URL:', error);
+        resolve(null);
+      }
+    };
+    
+    img.onerror = () => {
+      console.error('[PDF] Error loading image:', imageUrl);
+      resolve(null);
+    };
+    
+    img.src = imageUrl;
+  });
 };
