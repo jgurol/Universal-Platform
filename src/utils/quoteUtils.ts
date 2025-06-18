@@ -32,16 +32,8 @@ export const mapQuoteData = (quoteData: any, clients: Client[], clientInfos: Cli
     billingAddress: quoteData.billing_address,
     serviceAddress: quoteData.service_address,
     templateId: quoteData.template_id,
-    createdAt: quoteData.created_at,
-    updatedAt: quoteData.updated_at,
-    emailSentAt: quoteData.email_sent_at,
-    emailOpened: quoteData.email_opened,
-    emailOpenedAt: quoteData.email_opened_at,
-    emailOpenCount: quoteData.email_open_count,
-    acceptedAt: quoteData.accepted_at,
-    archived: quoteData.archived,
-    emailStatus: quoteData.email_status,
     acceptanceStatus: quoteData.acceptance_status,
+    acceptedAt: quoteData.accepted_at,
     acceptedBy: quoteData.accepted_by
   };
 
