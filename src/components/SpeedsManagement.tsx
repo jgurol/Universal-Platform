@@ -1,7 +1,6 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Plus, Pencil, Trash2 } from "lucide-react";
+import { Plus, Pencil, Trash2, Copy } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
@@ -22,6 +21,35 @@ export const SpeedsManagement = () => {
   const handleEdit = (speed: any) => {
     setSelectedSpeed(speed);
     setEditDialogOpen(true);
+  };
+
+  const handleDuplicate = async (speed: any) => {
+    try {
+      const { error } = await supabase
+        .from('speeds')
+        .insert({
+          name: `${speed.name} (Copy)`,
+          description: speed.description,
+          is_active: speed.is_active,
+          user_id: (await supabase.auth.getUser()).data.user?.id
+        });
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: "Speed option duplicated successfully",
+      });
+      
+      refetchSpeeds();
+    } catch (error) {
+      console.error('Error duplicating speed:', error);
+      toast({
+        title: "Error",
+        description: "Failed to duplicate speed option",
+        variant: "destructive"
+      });
+    }
   };
 
   const handleDelete = async (speedId: string) => {
@@ -113,6 +141,15 @@ export const SpeedsManagement = () => {
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end space-x-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleDuplicate(speed)}
+                          className="text-green-600 hover:text-green-700"
+                          title="Duplicate Speed Option"
+                        >
+                          <Copy className="h-4 w-4" />
+                        </Button>
                         <Button
                           variant="outline"
                           size="sm"
