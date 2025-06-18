@@ -68,14 +68,18 @@ export const ReactQuillEditor: React.FC<ReactQuillEditorProps> = ({
   const [uploading, setUploading] = useState(false);
   const [editorReady, setEditorReady] = useState(false);
   const [internalValue, setInternalValue] = useState('');
+  const [isInitialized, setIsInitialized] = useState(false);
   const { toast } = useToast();
 
   // Initialize editor content when component mounts or value prop changes
   useEffect(() => {
-    const htmlContent = convertMarkdownToHtml(value);
-    setInternalValue(htmlContent);
-    setEditorReady(true);
-  }, [value]);
+    if (!isInitialized) {
+      const htmlContent = convertMarkdownToHtml(value);
+      setInternalValue(htmlContent);
+      setEditorReady(true);
+      setIsInitialized(true);
+    }
+  }, [value, isInitialized]);
 
   const uploadImage = useCallback(async (file: File) => {
     if (!file.type.startsWith('image/')) {
@@ -97,22 +101,29 @@ export const ReactQuillEditor: React.FC<ReactQuillEditorProps> = ({
     }
 
     setUploading(true);
+    console.log('[ReactQuillEditor] Starting image upload...');
 
     try {
       const fileExt = file.name.split('.').pop();
       const fileName = `${Date.now()}.${fileExt}`;
       const filePath = `${fileName}`;
 
+      console.log('[ReactQuillEditor] Uploading to Supabase storage...');
       const { error: uploadError } = await supabase.storage
         .from('quote-item-images')
         .upload(filePath, file);
 
-      if (uploadError) throw uploadError;
+      if (uploadError) {
+        console.error('[ReactQuillEditor] Upload error:', uploadError);
+        throw uploadError;
+      }
 
       const { data } = supabase.storage
         .from('quote-item-images')
         .getPublicUrl(filePath);
 
+      console.log('[ReactQuillEditor] Image uploaded successfully:', data.publicUrl);
+      
       toast({
         title: "Success",
         description: "Image uploaded successfully",
@@ -120,7 +131,7 @@ export const ReactQuillEditor: React.FC<ReactQuillEditorProps> = ({
 
       return data.publicUrl;
     } catch (error) {
-      console.error('Error uploading image:', error);
+      console.error('[ReactQuillEditor] Error uploading image:', error);
       toast({
         title: "Error",
         description: "Failed to upload image",
@@ -133,23 +144,48 @@ export const ReactQuillEditor: React.FC<ReactQuillEditorProps> = ({
   }, [toast]);
 
   const handleImageUpload = useCallback(() => {
+    console.log('[ReactQuillEditor] Image upload button clicked');
     fileInputRef.current?.click();
   }, []);
 
   const handleFileSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
-    if (!file || !quillRef.current) return;
+    if (!file) {
+      console.log('[ReactQuillEditor] No file selected');
+      return;
+    }
 
-    const imageUrl = await uploadImage(file);
-    if (imageUrl) {
-      const quill = quillRef.current.getEditor();
-      if (quill) {
-        const range = quill.getSelection();
-        const index = range ? range.index : quill.getLength();
+    console.log('[ReactQuillEditor] File selected:', file.name);
+
+    if (!quillRef.current) {
+      console.error('[ReactQuillEditor] Quill ref not available');
+      return;
+    }
+
+    try {
+      const imageUrl = await uploadImage(file);
+      if (imageUrl) {
+        console.log('[ReactQuillEditor] Inserting image into editor:', imageUrl);
         
-        quill.insertEmbed(index, 'image', imageUrl);
-        quill.setSelection(index + 1, 0);
+        const quill = quillRef.current.getEditor();
+        if (quill) {
+          // Get current selection or insert at the end
+          const range = quill.getSelection();
+          const index = range ? range.index : quill.getLength();
+          
+          // Insert the image
+          quill.insertEmbed(index, 'image', imageUrl);
+          
+          // Move cursor after the image
+          quill.setSelection(index + 1, 0);
+          
+          console.log('[ReactQuillEditor] Image inserted successfully');
+        } else {
+          console.error('[ReactQuillEditor] Could not get Quill editor instance');
+        }
       }
+    } catch (error) {
+      console.error('[ReactQuillEditor] Error in handleFileSelect:', error);
     }
 
     // Reset file input
@@ -159,12 +195,19 @@ export const ReactQuillEditor: React.FC<ReactQuillEditorProps> = ({
   };
 
   const handleChange = useCallback((content: string) => {
+    console.log('[ReactQuillEditor] Content changed, length:', content.length);
     setInternalValue(content);
-    const markdownContent = convertHtmlToMarkdown(content);
-    onChange(markdownContent);
+    
+    // Debounce the onChange to prevent excessive calls
+    const timeoutId = setTimeout(() => {
+      const markdownContent = convertHtmlToMarkdown(content);
+      onChange(markdownContent);
+    }, 100);
+
+    return () => clearTimeout(timeoutId);
   }, [onChange]);
 
-  // Custom toolbar configuration
+  // Custom toolbar configuration with safer image handler
   const modules = {
     toolbar: {
       container: [
