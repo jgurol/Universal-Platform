@@ -30,10 +30,22 @@ export const CircuitQuoteCarriers = ({
     return ticked;
   };
 
+  // Sort carriers by carrier name first, then by speed
+  const sortedCarriers = [...carriers].sort((a, b) => {
+    // First sort by carrier name
+    const carrierComparison = a.carrier.localeCompare(b.carrier);
+    if (carrierComparison !== 0) {
+      return carrierComparison;
+    }
+    
+    // If carrier names are the same, sort by speed
+    return a.speed.localeCompare(b.speed);
+  });
+
   if (isMinimized) {
     return (
       <div className="flex flex-wrap gap-2 mt-3 pt-3 border-t border-gray-100">
-        {carriers.map((carrier) => {
+        {sortedCarriers.map((carrier) => {
           const isPending = !carrier.price || carrier.price === 0;
           const tickedOptions = getTickedCheckboxes(carrier);
           const tooltipText = `${carrier.carrier} - ${carrier.type} - ${carrier.speed} - ${carrier.price > 0 ? `$${carrier.price}` : 'Pending quote'}${tickedOptions.length > 0 ? ` - ${tickedOptions.join(', ')}` : ''}`;
@@ -75,7 +87,7 @@ export const CircuitQuoteCarriers = ({
       </div>
       
       <div className="grid gap-3">
-        {carriers.map((carrier) => {
+        {sortedCarriers.map((carrier) => {
           const isPending = !carrier.price || carrier.price === 0;
           const tickedOptions = getTickedCheckboxes(carrier);
           
