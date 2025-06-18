@@ -98,8 +98,8 @@ export const addMarkdownTextToPDF = (
     const sections = parseMarkdownInline(paragraph);
     console.log(`PDF Generation - Paragraph ${paragraphIndex + 1} sections:`, sections.length);
     
-    // Process paragraph with proper text wrapping
-    currentY = addParagraphWithWrapping(doc, sections, startX, currentY, maxWidth, lineHeight);
+    // Process paragraph with proper text wrapping - using simple approach
+    currentY = addParagraphSimple(doc, sections, startX, currentY, maxWidth, lineHeight);
     
     console.log(`PDF Generation - Finished paragraph ${paragraphIndex + 1}, current Y:`, currentY);
   });
@@ -108,8 +108,8 @@ export const addMarkdownTextToPDF = (
   return currentY;
 };
 
-// New function to add a paragraph with proper text wrapping
-const addParagraphWithWrapping = (
+// Simplified paragraph rendering that respects formatting but uses proper word wrapping
+const addParagraphSimple = (
   doc: jsPDF,
   sections: TextSection[],
   startX: number,
@@ -129,84 +129,137 @@ const addParagraphWithWrapping = (
   doc.setFontSize(9);
   doc.setFont('helvetica', 'normal');
   
-  // Use jsPDF's built-in text splitting to handle line breaks properly
-  const textLines = doc.splitTextToSize(fullText, maxWidth);
-  const linesArray = Array.isArray(textLines) ? textLines : [textLines];
+  // Split text into words to handle wrapping properly
+  const words = fullText.split(/\s+/);
+  let currentLine = '';
+  let currentX = startX;
   
-  console.log('PDF Generation - Text split into lines:', linesArray.length, linesArray);
-  
-  // Now we need to process each line and apply formatting
+  // Track which section we're in for formatting
   let sectionIndex = 0;
   let sectionCharIndex = 0;
   let currentSection = sections[0];
   
-  linesArray.forEach((line, lineIndex) => {
-    // Check if we need a new page
-    if (currentY > pageHeight - bottomMargin) {
-      doc.addPage();
-      currentY = topMargin;
-      
-      // Add header on new page
-      doc.setFontSize(9);
-      doc.setFont('helvetica', 'bold');
-      doc.text('Terms & Conditions (continued):', startX, currentY);
-      currentY += 8;
-    }
+  for (let wordIndex = 0; wordIndex < words.length; wordIndex++) {
+    const word = words[wordIndex];
+    const testLine = currentLine ? `${currentLine} ${word}` : word;
     
-    // Process the line character by character to apply formatting
-    let currentX = startX;
-    let lineText = '';
+    // Check if adding this word would exceed the line width
+    const testWidth = doc.getTextWidth(testLine);
     
-    for (let charIndex = 0; charIndex < line.length; charIndex++) {
-      const char = line[charIndex];
+    if (testWidth > maxWidth && currentLine) {
+      // Output current line first
+      outputLineWithFormatting(doc, currentLine, sections, startX, currentY, sectionIndex, sectionCharIndex);
       
-      // Move to next section if we've exhausted current section
-      while (currentSection && sectionCharIndex >= currentSection.text.length) {
-        // Output accumulated text with current formatting
-        if (lineText) {
-          doc.text(lineText, currentX, currentY);
-          currentX += doc.getTextWidth(lineText);
-          lineText = '';
+      // Move to next line
+      currentY += lineHeight;
+      
+      // Check if we need a new page
+      if (currentY > pageHeight - bottomMargin) {
+        doc.addPage();
+        currentY = topMargin;
+        
+        // Add header on new page
+        doc.setFontSize(9);
+        doc.setFont('helvetica', 'bold');
+        doc.text('Terms & Conditions (continued):', startX, currentY);
+        currentY += 8;
+      }
+      
+      // Update section tracking for the characters we just output
+      const lineLength = currentLine.length + 1; // +1 for space
+      for (let i = 0; i < lineLength; i++) {
+        if (currentSection && sectionCharIndex >= currentSection.text.length) {
+          sectionIndex++;
+          sectionCharIndex = 0;
+          currentSection = sections[sectionIndex];
         }
-        
-        sectionIndex++;
-        sectionCharIndex = 0;
-        currentSection = sections[sectionIndex];
-        
         if (currentSection) {
-          // Set font for new section
-          doc.setFontSize(9);
-          if (currentSection.bold && currentSection.italic) {
-            doc.setFont('helvetica', 'bolditalic');
-          } else if (currentSection.bold) {
-            doc.setFont('helvetica', 'bold');
-          } else if (currentSection.italic) {
-            doc.setFont('helvetica', 'italic');
-          } else {
-            doc.setFont('helvetica', 'normal');
-          }
+          sectionCharIndex++;
         }
       }
       
-      if (currentSection && sectionCharIndex < currentSection.text.length) {
-        lineText += char;
-        sectionCharIndex++;
-      }
+      currentLine = word;
+    } else {
+      currentLine = testLine;
     }
-    
-    // Output any remaining text for this line
-    if (lineText && currentSection) {
-      doc.text(lineText, currentX, currentY);
-    }
-    
-    // Move to next line
+  }
+  
+  // Output remaining text
+  if (currentLine) {
+    outputLineWithFormatting(doc, currentLine, sections, startX, currentY, sectionIndex, sectionCharIndex);
     currentY += lineHeight;
-    
-    // Reset for next line processing
-    lineText = '';
-  });
+  }
   
   return currentY;
+};
+
+// Helper function to output a line with proper formatting
+const outputLineWithFormatting = (
+  doc: jsPDF,
+  lineText: string,
+  sections: TextSection[],
+  startX: number,
+  y: number,
+  startSectionIndex: number,
+  startSectionCharIndex: number
+): void => {
+  let currentX = startX;
+  let sectionIndex = startSectionIndex;
+  let sectionCharIndex = startSectionCharIndex;
+  let currentSection = sections[sectionIndex];
+  let currentText = '';
+  
+  for (let charIndex = 0; charIndex < lineText.length; charIndex++) {
+    const char = lineText[charIndex];
+    
+    // Move to next section if we've exhausted current section
+    while (currentSection && sectionCharIndex >= currentSection.text.length) {
+      // Output accumulated text with current formatting
+      if (currentText) {
+        // Set font for current section
+        doc.setFontSize(9);
+        if (currentSection.bold && currentSection.italic) {
+          doc.setFont('helvetica', 'bolditalic');
+        } else if (currentSection.bold) {
+          doc.setFont('helvetica', 'bold');
+        } else if (currentSection.italic) {
+          doc.setFont('helvetica', 'italic');
+        } else {
+          doc.setFont('helvetica', 'normal');
+        }
+        
+        doc.text(currentText, currentX, y);
+        currentX += doc.getTextWidth(currentText);
+        currentText = '';
+      }
+      
+      sectionIndex++;
+      sectionCharIndex = 0;
+      currentSection = sections[sectionIndex];
+    }
+    
+    if (currentSection && sectionCharIndex < currentSection.text.length) {
+      currentText += char;
+      sectionCharIndex++;
+    }
+  }
+  
+  // Output any remaining text
+  if (currentText && currentSection) {
+    // Set font for current section
+    doc.setFontSize(9);
+    if (currentSection.bold && currentSection.italic) {
+      doc.setFont('helvetica', 'bolditalic');
+    } else if (currentSection.bold) {
+      doc.setFont('helvetica', 'bold');
+    } else if (currentSection.italic) {
+      doc.setFont('helvetica', 'italic');
+    } else {
+      doc.setFont('helvetica', 'normal');
+    }
+    
+    doc.text(currentText, currentX, y);
+  }
 };
 
 // Enhanced markdown inline formatting parser
