@@ -27,6 +27,13 @@ export const ReactQuillEditor: React.FC<ReactQuillEditorProps> = ({
   const [editorReady, setEditorReady] = useState(false);
   const { toast } = useToast();
 
+  // Check if editor is ready after component mounts
+  useEffect(() => {
+    if (quillRef.current && quillRef.current.getEditor()) {
+      setEditorReady(true);
+    }
+  }, []);
+
   const uploadImage = useCallback(async (file: File) => {
     if (!file.type.startsWith('image/')) {
       toast({
@@ -133,11 +140,6 @@ export const ReactQuillEditor: React.FC<ReactQuillEditorProps> = ({
     'link', 'image'
   ];
 
-  // Handle editor ready state
-  const handleEditorReady = useCallback(() => {
-    setEditorReady(true);
-  }, []);
-
   // Convert markdown to HTML for display
   const getHtmlValue = useCallback(() => {
     if (!value) return '';
@@ -152,7 +154,10 @@ export const ReactQuillEditor: React.FC<ReactQuillEditorProps> = ({
 
   // Convert HTML to markdown for storage
   const handleChange = useCallback((content: string) => {
-    if (!editorReady) return;
+    // Set editor ready state on first change if not already set
+    if (!editorReady && quillRef.current && quillRef.current.getEditor()) {
+      setEditorReady(true);
+    }
     
     // Convert HTML to markdown-like format
     let processedContent = content;
@@ -204,7 +209,6 @@ export const ReactQuillEditor: React.FC<ReactQuillEditorProps> = ({
         theme="snow"
         value={getHtmlValue()}
         onChange={handleChange}
-        onReady={handleEditorReady}
         modules={modules}
         formats={formats}
         placeholder={placeholder}
