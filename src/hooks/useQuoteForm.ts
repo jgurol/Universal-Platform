@@ -91,6 +91,8 @@ export const useQuoteForm = (quote: Quote | null, open: boolean) => {
       setExpiresAt(quote.expiresAt || "");
       setNotes(quote.notes || "");
       setCommissionOverride(quote.commissionOverride?.toString() || "");
+
+      console.log('[useQuoteForm] Description state set to:', quote.description);
     }
   }, [quote, open]);
 
