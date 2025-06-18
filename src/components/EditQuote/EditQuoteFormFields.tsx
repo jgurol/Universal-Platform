@@ -4,7 +4,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { ClientInfo } from "@/pages/Index";
-import { ReactQuillEditor } from "@/components/ReactQuillEditor";
 
 interface EditQuoteFormFieldsProps {
   description: string;
@@ -37,10 +36,11 @@ export const EditQuoteFormFields = ({
     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
       <div className="space-y-2">
         <Label htmlFor="description">Quote Name</Label>
-        <ReactQuillEditor
+        <Input
+          id="description"
           value={description}
-          onChange={onDescriptionChange}
-          placeholder="Enter quote name with formatting..."
+          onChange={(e) => onDescriptionChange(e.target.value)}
+          placeholder="Enter quote name..."
         />
       </div>
 
