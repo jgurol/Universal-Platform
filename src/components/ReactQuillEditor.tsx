@@ -100,7 +100,7 @@ export const ReactQuillEditor: React.FC<ReactQuillEditorProps> = ({
     if (!editorReady || !quillRef.current) return;
 
     const quill = quillRef.current.getEditor();
-    const editorElement = quill.container;
+    const editorElement = quill.root; // Changed from quill.container to quill.root
 
     const handleImageDoubleClick = (event: Event) => {
       const target = event.target as HTMLElement;
