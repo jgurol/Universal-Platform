@@ -31,6 +31,15 @@ export const ItemsManagement = () => {
     return vendor?.name;
   };
 
+  const stripHtmlTags = (html: string): string => {
+    if (!html) return '';
+    // Create a temporary div element to parse HTML
+    const tempDiv = document.createElement('div');
+    tempDiv.innerHTML = html;
+    // Get the text content and remove extra whitespace
+    return tempDiv.textContent || tempDiv.innerText || '';
+  };
+
   const handleEditItem = (item: Item) => {
     setSelectedItem(item);
     setIsEditItemOpen(true);
@@ -115,7 +124,7 @@ export const ItemsManagement = () => {
                       )}
                     </div>
                     {item.description && (
-                      <p className="text-sm text-gray-600 mb-1">{item.description}</p>
+                      <p className="text-sm text-gray-600 mb-1">{stripHtmlTags(item.description)}</p>
                     )}
                     <div className="flex items-center gap-4 text-xs text-gray-500">
                       {getCategoryName(item.category_id) && (
