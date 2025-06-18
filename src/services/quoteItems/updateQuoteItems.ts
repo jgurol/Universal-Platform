@@ -68,20 +68,24 @@ export const updateQuoteItems = async (quoteId: string, items: QuoteItemData[]):
         console.log('[updateQuoteItems] Created temporary item with ID:', itemId);
       }
 
-      // Insert the quote item
+      // Insert the quote item with image fields
+      const insertData = {
+        quote_id: quoteId,
+        item_id: itemId,
+        quantity: item.quantity,
+        unit_price: item.unit_price,
+        total_price: item.total_price,
+        charge_type: item.charge_type,
+        address_id: item.address_id || null,
+        image_url: item.image_url || null,
+        image_name: item.image_name || null
+      };
+
+      console.log('[updateQuoteItems] Inserting quote item with data:', insertData);
+
       const { error: insertError } = await supabase
         .from('quote_items')
-        .insert({
-          quote_id: quoteId,
-          item_id: itemId,
-          quantity: item.quantity,
-          unit_price: item.unit_price,
-          total_price: item.total_price,
-          charge_type: item.charge_type,
-          address_id: item.address_id || null,
-          image_url: item.image_url || null,
-          image_name: item.image_name || null
-        });
+        .insert(insertData);
 
       if (insertError) {
         console.error('[updateQuoteItems] Error inserting quote item:', insertError);
