@@ -9,6 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Trash2, MapPin, FileText, GripVertical } from "lucide-react";
 import { QuoteItemData } from "@/types/quoteItems";
 import { ClientAddress } from "@/types/clientAddress";
+import { ImageUpload } from "@/components/ImageUpload";
 
 interface QuoteItemRowProps {
   quoteItem: QuoteItemData;
@@ -39,6 +40,16 @@ export const QuoteItemRow = ({ quoteItem, addresses, onUpdateItem, onRemoveItem 
   const handleAddressChange = (addressId: string) => {
     console.log(`[QuoteItemRow] Address changed for item ${quoteItem.id} to address ${addressId}`);
     onUpdateItem(quoteItem.id, 'address_id', addressId);
+  };
+
+  const handleImageUploaded = (imageUrl: string, imageName: string) => {
+    onUpdateItem(quoteItem.id, 'image_url', imageUrl);
+    onUpdateItem(quoteItem.id, 'image_name', imageName);
+  };
+
+  const handleImageRemoved = () => {
+    onUpdateItem(quoteItem.id, 'image_url', '');
+    onUpdateItem(quoteItem.id, 'image_name', '');
   };
 
   return (
@@ -118,6 +129,14 @@ export const QuoteItemRow = ({ quoteItem, addresses, onUpdateItem, onRemoveItem 
                 )}
               </SelectContent>
             </Select>
+          </div>
+          <div className="flex justify-start">
+            <ImageUpload
+              onImageUploaded={handleImageUploaded}
+              currentImageUrl={quoteItem.image_url}
+              currentImageName={quoteItem.image_name}
+              onImageRemoved={handleImageRemoved}
+            />
           </div>
         </div>
 

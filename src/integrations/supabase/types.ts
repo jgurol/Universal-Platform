@@ -714,6 +714,8 @@ export type Database = {
           charge_type: string | null
           created_at: string
           id: string
+          image_name: string | null
+          image_url: string | null
           item_id: string
           quantity: number
           quote_id: string
@@ -726,6 +728,8 @@ export type Database = {
           charge_type?: string | null
           created_at?: string
           id?: string
+          image_name?: string | null
+          image_url?: string | null
           item_id: string
           quantity?: number
           quote_id: string
@@ -738,6 +742,8 @@ export type Database = {
           charge_type?: string | null
           created_at?: string
           id?: string
+          image_name?: string | null
+          image_url?: string | null
           item_id?: string
           quantity?: number
           quote_id?: string

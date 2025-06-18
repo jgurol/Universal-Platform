@@ -25,7 +25,9 @@ export const fetchQuoteItems = async (quoteId: string): Promise<QuoteItemData[]>
         id: item.id,
         item_name: item.item?.name,
         address_id: item.address_id,
-        address_data: item.address
+        address_data: item.address,
+        image_url: item.image_url,
+        image_name: item.image_name
       });
 
       return {
@@ -39,6 +41,8 @@ export const fetchQuoteItems = async (quoteId: string): Promise<QuoteItemData[]>
         address_id: item.address_id,
         name: item.item?.name || 'Unknown Item',
         description: item.item?.description || '',
+        image_url: item.image_url,
+        image_name: item.image_name,
         item: item.item,
         address: item.address
       };

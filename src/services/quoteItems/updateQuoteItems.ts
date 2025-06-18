@@ -34,7 +34,9 @@ export const updateQuoteItems = async (quoteId: string, items: QuoteItemData[]):
         address_id: item.address_id,
         quantity: item.quantity,
         unit_price: item.unit_price,
-        total_price: item.total_price
+        total_price: item.total_price,
+        image_url: item.image_url,
+        image_name: item.image_name
       });
 
       let itemId = item.item_id;
@@ -76,7 +78,9 @@ export const updateQuoteItems = async (quoteId: string, items: QuoteItemData[]):
           unit_price: item.unit_price,
           total_price: item.total_price,
           charge_type: item.charge_type,
-          address_id: item.address_id || null
+          address_id: item.address_id || null,
+          image_url: item.image_url || null,
+          image_name: item.image_name || null
         });
 
       if (insertError) {
