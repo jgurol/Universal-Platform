@@ -10,7 +10,6 @@ import Table from '@tiptap/extension-table';
 import TableRow from '@tiptap/extension-table-row';
 import TableCell from '@tiptap/extension-table-cell';
 import TextStyle from '@tiptap/extension-text-style';
-import Color from '@tiptap/extension-color';
 import Highlight from '@tiptap/extension-highlight';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -18,7 +17,6 @@ import { Separator } from '@/components/ui/separator';
 import { 
   Bold, 
   Italic, 
-  Underline as UnderlineIcon,
   Strikethrough,
   List, 
   ListOrdered, 
@@ -32,9 +30,7 @@ import {
   Code,
   Minus,
   Table as TableIcon,
-  Palette,
   Highlighter,
-  Type,
   Undo,
   Redo,
   Plus
@@ -71,7 +67,6 @@ const AdvancedTiptapEditor: React.FC<AdvancedTiptapEditorProps> = ({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [linkUrl, setLinkUrl] = useState('');
   const [showLinkInput, setShowLinkInput] = useState(false);
-  const [selectedColor, setSelectedColor] = useState('#000000');
   const [selectedHighlight, setSelectedHighlight] = useState('#ffff00');
   const { toast } = useToast();
 
@@ -107,7 +102,6 @@ const AdvancedTiptapEditor: React.FC<AdvancedTiptapEditorProps> = ({
       TableRow,
       TableCell,
       TextStyle,
-      Color,
       Highlight.configure({
         multicolor: true,
       }),
@@ -208,11 +202,6 @@ const AdvancedTiptapEditor: React.FC<AdvancedTiptapEditorProps> = ({
       editor.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run();
     }
   }, [editor]);
-
-  const colors = [
-    '#000000', '#374151', '#6B7280', '#EF4444', '#F59E0B', 
-    '#10B981', '#3B82F6', '#8B5CF6', '#EC4899', '#FFFFFF'
-  ];
 
   const highlights = [
     '#FFFF00', '#FFE4B5', '#98FB98', '#87CEEB', '#DDA0DD',
@@ -324,30 +313,6 @@ const AdvancedTiptapEditor: React.FC<AdvancedTiptapEditorProps> = ({
           </Button>
 
           <Separator orientation="vertical" className="h-6 mx-1" />
-
-          {/* Text Color */}
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button type="button" variant="ghost" size="sm">
-                <Type className="h-4 w-4" />
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-48">
-              <div className="grid grid-cols-5 gap-1">
-                {colors.map((color) => (
-                  <button
-                    key={color}
-                    className="w-6 h-6 rounded border border-gray-200"
-                    style={{ backgroundColor: color }}
-                    onClick={() => {
-                      editor.chain().focus().setColor(color).run();
-                      setSelectedColor(color);
-                    }}
-                  />
-                ))}
-              </div>
-            </PopoverContent>
-          </Popover>
 
           {/* Highlight Color */}
           <Popover>
