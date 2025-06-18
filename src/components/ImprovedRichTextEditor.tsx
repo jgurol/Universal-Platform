@@ -190,7 +190,25 @@ export const ImprovedRichTextEditor: React.FC<ImprovedRichTextEditorProps> = ({
     editorRef.current?.focus();
   };
 
-  // Handle image upload
+  // Save current cursor position
+  const saveSelection = (): Range | null => {
+    const selection = window.getSelection();
+    if (selection && selection.rangeCount > 0) {
+      return selection.getRangeAt(0).cloneRange();
+    }
+    return null;
+  };
+
+  // Restore cursor position
+  const restoreSelection = (range: Range) => {
+    const selection = window.getSelection();
+    if (selection) {
+      selection.removeAllRanges();
+      selection.addRange(range);
+    }
+  };
+
+  // Handle image upload with improved cursor positioning
   const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
@@ -215,6 +233,9 @@ export const ImprovedRichTextEditor: React.FC<ImprovedRichTextEditorProps> = ({
 
     setUploading(true);
 
+    // Save current cursor position before upload
+    const savedRange = saveSelection();
+
     try {
       const fileExt = file.name.split('.').pop();
       const fileName = `${Date.now()}.${fileExt}`;
@@ -230,29 +251,45 @@ export const ImprovedRichTextEditor: React.FC<ImprovedRichTextEditorProps> = ({
         .from('quote-item-images')
         .getPublicUrl(filePath);
 
-      // Insert image at cursor position
-      const selection = window.getSelection();
-      if (selection && selection.rangeCount > 0 && editorRef.current) {
-        const range = selection.getRangeAt(0);
-        const img = document.createElement('img');
-        img.src = data.publicUrl;
-        img.alt = file.name;
-        img.style.maxWidth = '120px';
-        img.style.maxHeight = '80px';
-        img.style.objectFit = 'cover';
-        img.style.borderRadius = '6px';
-        img.style.margin = '4px';
-        img.style.border = '1px solid #e5e7eb';
+      // Restore cursor position and insert image
+      if (editorRef.current && savedRange) {
+        editorRef.current.focus();
+        restoreSelection(savedRange);
         
-        range.deleteContents();
-        range.insertNode(img);
-        
-        range.setStartAfter(img);
-        range.setEndAfter(img);
-        selection.removeAllRanges();
-        selection.addRange(range);
-        
-        handleInput();
+        const selection = window.getSelection();
+        if (selection && selection.rangeCount > 0) {
+          const range = selection.getRangeAt(0);
+          
+          // Create image element
+          const img = document.createElement('img');
+          img.src = data.publicUrl;
+          img.alt = file.name;
+          img.style.maxWidth = '120px';
+          img.style.maxHeight = '80px';
+          img.style.objectFit = 'cover';
+          img.style.borderRadius = '6px';
+          img.style.margin = '4px';
+          img.style.border = '1px solid #e5e7eb';
+          img.style.display = 'inline-block';
+          
+          // Insert image at cursor position
+          range.deleteContents();
+          range.insertNode(img);
+          
+          // Create a text node after the image to ensure cursor positioning
+          const textNode = document.createTextNode('\u00A0'); // Non-breaking space
+          range.setStartAfter(img);
+          range.insertNode(textNode);
+          
+          // Position cursor after the text node
+          range.setStartAfter(textNode);
+          range.setEndAfter(textNode);
+          selection.removeAllRanges();
+          selection.addRange(range);
+          
+          // Trigger content update
+          handleInput();
+        }
       }
 
       toast({
