@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
@@ -76,7 +77,22 @@ export const useCircuitQuotes = () => {
           day: 'numeric' 
         }),
         status: quote.status as 'new_pricing' | 'researching' | 'completed' | 'sent_to_customer',
-        carriers: quote.carrier_quotes || []
+        carriers: (quote.carrier_quotes || []).map((carrier: any) => ({
+          id: carrier.id,
+          circuit_quote_id: carrier.circuit_quote_id,
+          carrier: carrier.carrier,
+          type: carrier.type,
+          speed: carrier.speed,
+          price: carrier.price,
+          notes: carrier.notes || '',
+          term: carrier.term || '',
+          color: carrier.color,
+          static_ip: carrier.static_ip || false,
+          slash_29: carrier.slash_29 || false,
+          install_fee: carrier.install_fee || false,
+          site_survey_needed: carrier.site_survey_needed || false,
+          no_service: carrier.no_service || false
+        }))
       }));
 
       console.log('[useCircuitQuotes] Transformed quotes:', transformedQuotes);
