@@ -20,11 +20,24 @@ export const CircuitQuoteCarriers = ({
   onDeleteCarrier,
   onCopyCarrier
 }: CircuitQuoteCarriersProps) => {
+  const getTickedCheckboxes = (carrier: CarrierQuote) => {
+    const ticked = [];
+    if (carrier.static_ip) ticked.push("Static IP");
+    if (carrier.slash_29) ticked.push("/29");
+    if (carrier.install_fee) ticked.push("Install Fee");
+    if (carrier.site_survey_needed) ticked.push("Site Survey");
+    if (carrier.no_service) ticked.push("No Service");
+    return ticked;
+  };
+
   if (isMinimized) {
     return (
       <div className="flex flex-wrap gap-2 mt-3 pt-3 border-t border-gray-100">
         {carriers.map((carrier) => {
           const isPending = !carrier.price || carrier.price === 0;
+          const tickedOptions = getTickedCheckboxes(carrier);
+          const tooltipText = `${carrier.carrier} - ${carrier.type} - ${carrier.speed} - ${carrier.price > 0 ? `$${carrier.price}` : 'Pending quote'}${tickedOptions.length > 0 ? ` - ${tickedOptions.join(', ')}` : ''}`;
+          
           return (
             <div
               key={carrier.id}
@@ -32,9 +45,12 @@ export const CircuitQuoteCarriers = ({
                 isPending ? 'animate-pulse' : ''
               }`}
               style={{ backgroundColor: carrier.color || '#3B82F6' }}
-              title={`${carrier.carrier} - ${carrier.type} - ${carrier.speed} - ${carrier.price > 0 ? `$${carrier.price}` : 'Pending quote'}`}
+              title={tooltipText}
             >
-              {carrier.carrier}
+              <span className="mr-1">{carrier.carrier}</span>
+              {tickedOptions.length > 0 && (
+                <span className="text-xs opacity-75">({tickedOptions.join(', ')})</span>
+              )}
             </div>
           );
         })}
@@ -61,6 +77,8 @@ export const CircuitQuoteCarriers = ({
       <div className="grid gap-3">
         {carriers.map((carrier) => {
           const isPending = !carrier.price || carrier.price === 0;
+          const tickedOptions = getTickedCheckboxes(carrier);
+          
           return (
             <div key={carrier.id} className="border rounded-lg p-4 bg-gray-50">
               <div className="grid grid-cols-1 md:grid-cols-7 gap-4 items-center">
@@ -90,6 +108,15 @@ export const CircuitQuoteCarriers = ({
                 <div className="md:col-span-2">
                   <div className="text-sm text-gray-600">
                     {carrier.term && <div className="font-medium mb-1">{carrier.term}</div>}
+                    {tickedOptions.length > 0 && (
+                      <div className="flex flex-wrap gap-1 mb-1">
+                        {tickedOptions.map((option, index) => (
+                          <span key={index} className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-blue-100 text-blue-800">
+                            {option}
+                          </span>
+                        ))}
+                      </div>
+                    )}
                     {carrier.notes}
                   </div>
                 </div>
