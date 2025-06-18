@@ -22,113 +22,27 @@ const Auth = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showResetForm, setShowResetForm] = useState(false);
   const [showUpdatePasswordForm, setShowUpdatePasswordForm] = useState(false);
+  const [resetToken, setResetToken] = useState<string | null>(null);
   const [tokenError, setTokenError] = useState<string | null>(null);
-  const [isCheckingSession, setIsCheckingSession] = useState(true);
+  const [isCheckingSession, setIsCheckingSession] = useState(false);
   const { user, signIn, signUp } = useAuth();
   const { toast } = useToast();
 
-  // Debug the current URL and hash
+  // Check for reset token in URL
   useEffect(() => {
-    console.log('Current URL:', window.location.href);
-    console.log('Current URL hash:', window.location.hash);
+    const urlParams = new URLSearchParams(window.location.search);
+    const token = urlParams.get('reset_token');
     
-    // Log session information
-    supabase.auth.getSession().then(({ data }) => {
-      console.log('Initial session check:', data.session);
-    });
-  }, []);
-  
-  // Check if we have a password reset token in the URL
-  useEffect(() => {
-    const checkForPasswordReset = async () => {
-      // When a user clicks the reset password link in their email,
-      // they will be redirected to this page with a special hash parameter
-      const hash = window.location.hash;
-      console.log('Checking for password reset. Hash:', hash);
+    if (token) {
+      console.log('Password reset token found in URL');
+      setResetToken(token);
+      setShowUpdatePasswordForm(true);
+      setActiveTab("none");
       
-      if (hash && hash.includes('type=recovery')) {
-        console.log('Password reset flow detected');
-        setShowUpdatePasswordForm(true);
-        setActiveTab("none"); // Ensure tabs don't show
-        setIsCheckingSession(true);
-        
-        try {
-          // Clear any prior token errors
-          setTokenError(null);
-          
-          // Parse the URL hash to get access token
-          const hashParams = new URLSearchParams(hash.substring(1));
-          const accessToken = hashParams.get('access_token');
-          const refreshToken = hashParams.get('refresh_token');
-          const tokenType = hashParams.get('token_type');
-          const expiresIn = hashParams.get('expires_in');
-          
-          console.log('Recovery tokens found:', {
-            hasAccessToken: !!accessToken,
-            hasRefreshToken: !!refreshToken,
-            tokenType,
-            expiresIn
-          });
-          
-          if (!accessToken) {
-            console.error('No access token found in URL');
-            setTokenError("Password reset link is missing required authentication token. Please request a new password reset.");
-            setIsCheckingSession(false);
-            return;
-          }
-          
-          // Clear any existing sessions first
-          await supabase.auth.signOut();
-          
-          // Set the session with the token from URL
-          const { data, error } = await supabase.auth.setSession({
-            access_token: accessToken,
-            refresh_token: refreshToken || '',
-          });
-          
-          if (error) {
-            console.error('Error setting session:', error);
-            
-            // Provide more specific error messages
-            let errorMessage = "The password reset link is invalid or has expired.";
-            if (error.message.includes('invalid')) {
-              errorMessage = "The password reset link contains an invalid token. Please request a new password reset.";
-            } else if (error.message.includes('expired')) {
-              errorMessage = "The password reset link has expired. Please request a new password reset.";
-            } else if (error.message.includes('signature')) {
-              errorMessage = "The password reset link signature is invalid. This may happen if the link was modified or corrupted. Please request a new password reset.";
-            }
-            
-            setTokenError(errorMessage);
-            toast({
-              title: "Reset Link Error",
-              description: errorMessage,
-              variant: "destructive"
-            });
-          } else if (data.session) {
-            console.log('Successfully set session for password reset:', data.session.user?.email);
-            toast({
-              title: "Reset Link Valid",
-              description: "Please enter your new password below",
-            });
-          } else {
-            console.error('No session returned after setting tokens');
-            setTokenError("Unable to establish session with reset tokens. Please request a new password reset.");
-          }
-        } catch (err) {
-          console.error('Error during recovery flow:', err);
-          setTokenError("An unexpected error occurred while processing the reset link. Please try requesting a new password reset.");
-        } finally {
-          setIsCheckingSession(false);
-        }
-      } else {
-        setIsCheckingSession(false);
-      }
-    };
-    
-    // Run the password reset check
-    checkForPasswordReset();
-  }, [toast]);
+      // Clean up URL
+      window.history.replaceState(null, '', window.location.pathname);
+    }
+  }, []);
 
   const handleLoginSubmit = async (email: string, password: string) => {
     try {
@@ -157,30 +71,17 @@ const Auth = () => {
     try {
       setIsSubmitting(true);
       
-      // Use the deployed URL instead of localhost
-      const currentUrl = window.location.origin;
+      console.log('Sending password reset request for:', email);
       
-      // Check if we're on localhost and use the production URL instead
-      const isLocalhost = currentUrl.includes('localhost') || currentUrl.includes('127.0.0.1');
-      const redirectUrl = isLocalhost 
-        ? 'https://34d679df-b261-47ea-b136-e7aae591255b.lovableproject.com/auth'
-        : `${currentUrl}/auth`;
-      
-      console.log('Sending password reset email:', {
-        email,
-        redirectUrl,
-        isLocalhost
-      });
-      
-      const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: redirectUrl,
+      const { data, error } = await supabase.functions.invoke('send-password-reset', {
+        body: { email }
       });
       
       if (error) {
         console.error('Password reset error:', error);
         toast({
           title: "Password reset failed",
-          description: error.message,
+          description: "Failed to send password reset email. Please try again.",
           variant: "destructive"
         });
         throw error;
@@ -188,7 +89,7 @@ const Auth = () => {
       
       toast({
         title: "Password Reset Email Sent",
-        description: "Check your email for a password reset link. The link will be valid for 1 hour.",
+        description: "If an account with that email exists, a password reset link has been sent. Please check your email.",
       });
       setShowResetForm(false);
       setActiveTab("login");
@@ -201,33 +102,26 @@ const Auth = () => {
   
   const handleUpdatePasswordSubmit = async (password: string) => {
     try {
-      console.log("Update password flow started");
+      console.log("Custom password update flow started");
       setIsSubmitting(true);
       
-      // Get the current session to verify we have the right context
-      const { data: sessionData } = await supabase.auth.getSession();
-      console.log("Current session before password update:", sessionData.session?.user?.email);
-      
-      if (!sessionData.session) {
-        setTokenError("Your password reset session has expired. Please request a new password reset link.");
-        toast({
-          title: "Session Expired",
-          description: "Your password reset session has expired. Please request a new password reset link.",
-          variant: "destructive"
-        });
+      if (!resetToken) {
+        setTokenError("No reset token found. Please request a new password reset.");
         return;
       }
       
-      const { error } = await supabase.auth.updateUser({
-        password: password
+      const { data, error } = await supabase.functions.invoke('reset-password', {
+        body: {
+          token: resetToken,
+          newPassword: password
+        }
       });
       
-      if (error) {
+      if (error || !data?.success) {
         console.error("Password update error:", error);
+        const errorMessage = data?.error || "Failed to update password. Please try again.";
         
-        let errorMessage = "Failed to update password. Please try again.";
-        if (error.message.includes('session')) {
-          errorMessage = "Your password reset session has expired. Please request a new password reset link.";
+        if (errorMessage.includes('Invalid') || errorMessage.includes('expired')) {
           setTokenError(errorMessage);
         }
         
@@ -236,7 +130,7 @@ const Auth = () => {
           description: errorMessage,
           variant: "destructive"
         });
-        throw error;
+        return;
       }
       
       console.log("Password updated successfully");
@@ -245,17 +139,17 @@ const Auth = () => {
         description: "Your password has been updated. You can now log in with your new password.",
       });
       
-      // Clear the hash from URL
-      window.history.replaceState(null, '', window.location.pathname);
-      
-      // Sign out the user so they can log in with their new password
-      await supabase.auth.signOut();
-      
       setShowUpdatePasswordForm(false);
       setTokenError(null);
+      setResetToken(null);
       setActiveTab("login");
     } catch (error) {
       console.error("Error updating password:", error);
+      toast({
+        title: "Password Update Failed",
+        description: "An unexpected error occurred. Please try again.",
+        variant: "destructive"
+      });
     } finally {
       setIsSubmitting(false);
     }
@@ -265,9 +159,8 @@ const Auth = () => {
     setTokenError(null);
     setShowUpdatePasswordForm(false);
     setShowResetForm(false);
+    setResetToken(null);
     setActiveTab("login");
-    // Clear the hash from URL
-    window.history.replaceState(null, '', window.location.pathname);
   };
 
   if (user) {

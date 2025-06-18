@@ -15,8 +15,6 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import { AlertTriangle, Info } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/hooks/use-toast";
 
 const updatePasswordSchema = z
   .object({
@@ -45,7 +43,6 @@ export const UpdatePasswordForm: React.FC<UpdatePasswordFormProps> = ({
   tokenError,
   isCheckingSession,
 }) => {
-  const { toast } = useToast();
   const form = useForm<UpdatePasswordFormValues>({
     resolver: zodResolver(updatePasswordSchema),
     defaultValues: {
@@ -53,13 +50,6 @@ export const UpdatePasswordForm: React.FC<UpdatePasswordFormProps> = ({
       confirmPassword: "",
     },
   });
-
-  // Check current user session to verify
-  useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => {
-      // Session check for debugging purposes only
-    });
-  }, [isCheckingSession, tokenError, isSubmitting]);
 
   const handleSubmit = async (values: UpdatePasswordFormValues) => {
     await onUpdatePassword(values.password);
@@ -93,7 +83,7 @@ export const UpdatePasswordForm: React.FC<UpdatePasswordFormProps> = ({
               <li>Go back to the login page</li>
               <li>Click "Forgot password?" again</li>
               <li>Enter your email to get a fresh reset link</li>
-              <li>Check your email and click the new link immediately</li>
+              <li>Check your email and click the new link</li>
             </ol>
           </AlertDescription>
         </Alert>
