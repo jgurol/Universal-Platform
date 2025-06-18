@@ -80,7 +80,18 @@ const addMRCItems = async (doc: jsPDF, mrcItems: any[], quote: any, yPos: number
     
     // Process description to extract images and text from HTML
     const descriptionContent = await processHtmlDescriptionContent(item.description || item.item?.description || '');
-    let rowHeight = Math.max(10, descriptionContent.minHeight);
+    
+    // Calculate proper row height based on content
+    let rowHeight = 10; // Base height
+    const textLines = Math.ceil((descriptionContent.text || '').length / 35);
+    const imageCount = descriptionContent.images.filter(img => img.data).length;
+    
+    if (textLines > 0) {
+      rowHeight = Math.max(rowHeight, textLines * 3 + 2);
+    }
+    if (imageCount > 0) {
+      rowHeight = Math.max(rowHeight, 25); // Minimum height for images
+    }
     
     if (index % 2 === 0) {
       doc.setFillColor(250, 250, 250);
@@ -96,8 +107,9 @@ const addMRCItems = async (doc: jsPDF, mrcItems: any[], quote: any, yPos: number
     doc.setTextColor(80, 80, 80);
     doc.text(`Location: ${addressText}`, colX.description + 4, yPos + 5);
     
-    // Add description text and embedded images
-    await addDescriptionContent(doc, descriptionContent, colX.description + 4, yPos + 10);
+    // Add description content with proper formatting
+    const contentStartY = yPos + 10;
+    await addDescriptionContent(doc, descriptionContent, colX.description + 4, contentStartY);
     
     doc.setTextColor(0, 0, 0);
     doc.setFontSize(9);
@@ -155,9 +167,8 @@ const addNRCItems = (doc: jsPDF, nrcItems: any[], yPos: number, colX: any): numb
 const processHtmlDescriptionContent = async (description: string): Promise<{
   text: string;
   images: Array<{ url: string; alt: string; data?: string; dimensions?: { width: number; height: number } }>;
-  minHeight: number;
 }> => {
-  if (!description) return { text: '', images: [], minHeight: 10 };
+  if (!description) return { text: '', images: [] };
   
   console.log('[PDF] Processing HTML description:', description.substring(0, 200));
   
@@ -206,22 +217,16 @@ const processHtmlDescriptionContent = async (description: string): Promise<{
     .replace(/\s+/g, ' ') // Normalize whitespace
     .trim();
   
-  // Calculate minimum height needed (text + images)
-  const textLines = Math.ceil(plainText.length / 40); // Approximate line count
-  const imageHeight = images.filter(img => img.data).length > 0 ? 20 : 0; // Height per image row
-  const minHeight = Math.max(10, (textLines * 4) + imageHeight + 5);
-  
   console.log('[PDF] Description processing complete:', { 
     textLength: plainText.length, 
     imageCount: images.length, 
-    loadedImages: images.filter(img => img.data).length,
-    minHeight 
+    loadedImages: images.filter(img => img.data).length
   });
   
-  return { text: plainText, images, minHeight };
+  return { text: plainText, images };
 };
 
-// Add description content (text and images) to PDF
+// Add description content (text and images) to PDF with consistent formatting
 const addDescriptionContent = async (
   doc: jsPDF, 
   content: { text: string; images: Array<{ url: string; alt: string; data?: string; dimensions?: { width: number; height: number } }> }, 
@@ -229,44 +234,62 @@ const addDescriptionContent = async (
   startY: number
 ): Promise<void> => {
   let currentY = startY;
+  const lineHeight = 3;
+  const contentWidth = 120;
   
-  // Add description text
+  // Add description text first
   if (content.text) {
     doc.setFontSize(7);
     doc.setTextColor(60, 60, 60);
-    const textLines = doc.splitTextToSize(content.text, 80);
-    doc.text(textLines, startX, currentY);
-    currentY += Array.isArray(textLines) ? textLines.length * 3 : 3;
+    doc.setFont('helvetica', 'normal');
+    
+    // Split text to fit within width and handle line breaks properly
+    const textLines = doc.splitTextToSize(content.text, contentWidth);
+    
+    if (Array.isArray(textLines)) {
+      textLines.forEach((line, index) => {
+        doc.text(line, startX, currentY);
+        currentY += lineHeight;
+      });
+    } else {
+      doc.text(textLines, startX, currentY);
+      currentY += lineHeight;
+    }
+    
+    // Add some spacing after text if there are images
+    if (content.images.length > 0) {
+      currentY += 2;
+    }
   }
   
-  // Add embedded images with proper aspect ratio
+  // Add embedded images with consistent formatting
   if (content.images.length > 0) {
     let imageX = startX;
+    const imageSpacing = 2;
+    const maxImageWidth = 20;
+    const maxImageHeight = 18;
     
     for (const image of content.images) {
       if (image.data && image.dimensions) {
         try {
           // Calculate proper dimensions maintaining aspect ratio
-          const maxWidth = 15;
-          const maxHeight = 15;
-          
           let { width, height } = image.dimensions;
           const aspectRatio = width / height;
           
           // Scale to fit within max dimensions while maintaining aspect ratio
-          if (width > maxWidth || height > maxHeight) {
+          if (width > maxImageWidth || height > maxImageHeight) {
             if (aspectRatio > 1) {
               // Landscape: limit by width
-              width = maxWidth;
-              height = maxWidth / aspectRatio;
+              width = maxImageWidth;
+              height = maxImageWidth / aspectRatio;
             } else {
               // Portrait: limit by height
-              height = maxHeight;
-              width = maxHeight * aspectRatio;
+              height = maxImageHeight;
+              width = maxImageHeight * aspectRatio;
             }
           }
           
-          console.log('[PDF] Adding image to PDF with proper dimensions:', { 
+          console.log('[PDF] Adding image to PDF with dimensions:', { 
             x: imageX, 
             y: currentY, 
             width, 
@@ -275,7 +298,7 @@ const addDescriptionContent = async (
             aspectRatio
           });
           
-          // Try different image formats
+          // Determine image format
           let format = 'JPEG';
           if (image.data.includes('data:image/png')) {
             format = 'PNG';
@@ -283,14 +306,16 @@ const addDescriptionContent = async (
             format = 'GIF';
           }
           
+          // Add image with consistent positioning
           doc.addImage(image.data, format, imageX, currentY, width, height);
           console.log('[PDF] Successfully added image to PDF:', image.alt);
           
-          imageX += width + 2; // Add spacing between images
+          // Move to next position
+          imageX += width + imageSpacing;
           
-          // If images would exceed row width, move to next row
-          if (imageX > startX + 60) {
-            currentY += Math.max(height, 15) + 2;
+          // If next image would exceed row width, move to next row
+          if (imageX + maxImageWidth > startX + contentWidth) {
+            currentY += Math.max(height, maxImageHeight) + imageSpacing;
             imageX = startX;
           }
         } catch (error) {
@@ -298,8 +323,9 @@ const addDescriptionContent = async (
           // Add a placeholder text instead of the image
           doc.setFontSize(6);
           doc.setTextColor(100, 100, 100);
+          doc.setFont('helvetica', 'italic');
           doc.text(`[Image: ${image.alt}]`, imageX, currentY);
-          imageX += 20;
+          imageX += 25;
         }
       }
     }
@@ -315,7 +341,7 @@ const loadImageForPDF = (imageUrl: string): Promise<{ data: string; dimensions: 
     const timeout = setTimeout(() => {
       console.log('[PDF] Image loading timeout for:', imageUrl.substring(0, 50));
       resolve(null);
-    }, 10000); // 10 second timeout
+    }, 8000); // 8 second timeout
     
     const img = new Image();
     img.crossOrigin = 'anonymous';
@@ -338,11 +364,11 @@ const loadImageForPDF = (imageUrl: string): Promise<{ data: string; dimensions: 
           return;
         }
         
-        // Store original dimensions
+        // Store original dimensions for aspect ratio calculation
         const originalDimensions = { width: img.width, height: img.height };
         
         // Set reasonable canvas size for processing (maintain aspect ratio)
-        const maxSize = 500; // Maximum dimension for processing
+        const maxSize = 400; // Reduced size for better performance
         let { width, height } = originalDimensions;
         
         if (width > maxSize || height > maxSize) {
@@ -355,7 +381,7 @@ const loadImageForPDF = (imageUrl: string): Promise<{ data: string; dimensions: 
         canvas.height = height;
         ctx.drawImage(img, 0, 0, width, height);
         
-        const dataURL = canvas.toDataURL('image/jpeg', 0.8);
+        const dataURL = canvas.toDataURL('image/jpeg', 0.7); // Reduced quality for better performance
         console.log('[PDF] Image converted to data URL successfully, size:', dataURL.length, 'dimensions:', { width, height });
         
         resolve({ 
