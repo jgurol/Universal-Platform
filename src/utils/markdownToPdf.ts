@@ -25,7 +25,6 @@ export const addMarkdownTextToPDF = (
   if (!content) return currentY;
   
   console.log('PDF Generation - Processing content:', content);
-  console.log('PDF Generation - Content length:', content.length);
   
   // Check if content is HTML (contains HTML tags) or markdown
   const isHtml = /<\/?[a-z][\s\S]*>/i.test(content);
@@ -64,8 +63,7 @@ export const addMarkdownTextToPDF = (
       .trim();
   }
   
-  console.log('PDF Generation - Cleaned content length:', cleanContent.length);
-  console.log('PDF Generation - First 200 chars:', cleanContent.substring(0, 200));
+  console.log('PDF Generation - Cleaned content:', cleanContent);
   
   // Split content into paragraphs - better handling of line breaks
   const paragraphs = cleanContent
@@ -73,8 +71,7 @@ export const addMarkdownTextToPDF = (
     .map(p => p.replace(/\n/g, ' ').trim()) // Convert single newlines to spaces within paragraphs
     .filter(p => p.length > 0);
   
-  console.log('PDF Generation - Number of paragraphs found:', paragraphs.length);
-  console.log('PDF Generation - Paragraphs:', paragraphs.map((p, i) => `${i + 1}: ${p.substring(0, 100)}...`));
+  console.log('PDF Generation - Number of paragraphs:', paragraphs.length);
   
   paragraphs.forEach((paragraph, paragraphIndex) => {
     console.log(`PDF Generation - Processing paragraph ${paragraphIndex + 1}:`, paragraph.substring(0, 100));
@@ -84,19 +81,9 @@ export const addMarkdownTextToPDF = (
       currentY += paragraphSpacing;
     }
     
-    // Parse the paragraph for inline formatting
-    const sections = parseMarkdownInline(paragraph);
-    console.log(`PDF Generation - Paragraph ${paragraphIndex + 1} sections:`, sections.length);
-    
-    // Estimate paragraph height to check if it fits on current page
-    const estimatedParagraphHeight = calculateParagraphHeight(doc, sections, maxWidth, lineHeight);
-    const spaceRemaining = pageHeight - bottomMargin - currentY;
-    
-    console.log(`PDF Generation - Paragraph estimated height: ${estimatedParagraphHeight}, space remaining: ${spaceRemaining}`);
-    
-    // If paragraph doesn't fit on current page, move to next page
-    if (estimatedParagraphHeight > spaceRemaining && currentY > topMargin + 20) {
-      console.log('PDF Generation - Moving entire paragraph to next page');
+    // Check if we need a new page before processing paragraph
+    if (currentY > pageHeight - bottomMargin - 20) {
+      console.log('PDF Generation - Moving to next page');
       doc.addPage();
       currentY = topMargin;
       
@@ -107,11 +94,13 @@ export const addMarkdownTextToPDF = (
       currentY += 8;
     }
     
-    // Process each section of the paragraph with improved text flow
-    currentY = addSectionsWithProperWrapping(doc, sections, startX, currentY, maxWidth, lineHeight);
+    // Parse the paragraph for inline formatting
+    const sections = parseMarkdownInline(paragraph);
+    console.log(`PDF Generation - Paragraph ${paragraphIndex + 1} sections:`, sections.length);
     
-    // Move to next line after paragraph
-    currentY += paragraphSpacing;
+    // Process paragraph with proper text wrapping
+    currentY = addParagraphWithWrapping(doc, sections, startX, currentY, maxWidth, lineHeight);
+    
     console.log(`PDF Generation - Finished paragraph ${paragraphIndex + 1}, current Y:`, currentY);
   });
   
@@ -119,8 +108,8 @@ export const addMarkdownTextToPDF = (
   return currentY;
 };
 
-// New function to add sections with proper text wrapping that preserves formatting
-const addSectionsWithProperWrapping = (
+// New function to add a paragraph with proper text wrapping
+const addParagraphWithWrapping = (
   doc: jsPDF,
   sections: TextSection[],
   startX: number,
@@ -129,92 +118,95 @@ const addSectionsWithProperWrapping = (
   lineHeight: number
 ): number => {
   let currentY = startY;
-  let currentX = startX;
   const pageHeight = 297;
   const bottomMargin = 24;
   const topMargin = 10;
   
-  // Process each section sequentially while maintaining proper text flow
-  sections.forEach(section => {
-    // Set font style for this section
-    doc.setFontSize(9);
-    if (section.bold && section.italic) {
-      doc.setFont('helvetica', 'bolditalic');
-    } else if (section.bold) {
-      doc.setFont('helvetica', 'bold');
-    } else if (section.italic) {
-      doc.setFont('helvetica', 'italic');
-    } else {
-      doc.setFont('helvetica', 'normal');
-    }
-    
-    // Split text into words for proper wrapping
-    const words = section.text.split(/\s+/).filter(word => word.length > 0);
-    
-    words.forEach((word, wordIndex) => {
-      // Check if we need a new page
-      if (currentY > pageHeight - bottomMargin) {
-        doc.addPage();
-        currentY = topMargin;
-        currentX = startX;
-        
-        // Add header on new page
-        doc.setFontSize(9);
-        doc.setFont('helvetica', 'bold');
-        doc.text('Terms & Conditions (continued):', startX, currentY);
-        currentY += 8;
-        
-        // Reset font for current section
-        if (section.bold && section.italic) {
-          doc.setFont('helvetica', 'bolditalic');
-        } else if (section.bold) {
-          doc.setFont('helvetica', 'bold');
-        } else if (section.italic) {
-          doc.setFont('helvetica', 'italic');
-        } else {
-          doc.setFont('helvetica', 'normal');
-        }
-      }
-      
-      // Calculate word width including space
-      const wordWidth = doc.getTextWidth(word);
-      const spaceWidth = doc.getTextWidth(' ');
-      const totalWidth = wordWidth + (wordIndex < words.length - 1 ? spaceWidth : 0);
-      
-      // Check if word fits on current line
-      if (currentX + totalWidth > startX + maxWidth && currentX > startX) {
-        // Move to next line
-        currentY += lineHeight;
-        currentX = startX;
-      }
-      
-      // Add the word
-      doc.text(word, currentX, currentY);
-      currentX += wordWidth;
-      
-      // Add space after word (except for last word in section)
-      if (wordIndex < words.length - 1) {
-        currentX += spaceWidth;
-      }
-    });
-  });
+  // Combine all text from sections to get the full paragraph text
+  const fullText = sections.map(s => s.text).join('');
   
-  // Move to next line for next paragraph
-  return currentY + lineHeight;
-};
-
-// Helper function to calculate paragraph height
-const calculateParagraphHeight = (doc: jsPDF, sections: TextSection[], maxWidth: number, lineHeight: number): number => {
-  // Combine all text for accurate measurement
-  const combinedText = sections.map(s => s.text).join('');
-  
+  // Set base font for text measurement
   doc.setFontSize(9);
   doc.setFont('helvetica', 'normal');
   
-  const textLines = doc.splitTextToSize(combinedText, maxWidth);
-  const numberOfLines = Array.isArray(textLines) ? textLines.length : 1;
+  // Use jsPDF's built-in text splitting to handle line breaks properly
+  const textLines = doc.splitTextToSize(fullText, maxWidth);
+  const linesArray = Array.isArray(textLines) ? textLines : [textLines];
   
-  return numberOfLines * lineHeight;
+  console.log('PDF Generation - Text split into lines:', linesArray.length, linesArray);
+  
+  // Now we need to process each line and apply formatting
+  let sectionIndex = 0;
+  let sectionCharIndex = 0;
+  let currentSection = sections[0];
+  
+  linesArray.forEach((line, lineIndex) => {
+    // Check if we need a new page
+    if (currentY > pageHeight - bottomMargin) {
+      doc.addPage();
+      currentY = topMargin;
+      
+      // Add header on new page
+      doc.setFontSize(9);
+      doc.setFont('helvetica', 'bold');
+      doc.text('Terms & Conditions (continued):', startX, currentY);
+      currentY += 8;
+    }
+    
+    // Process the line character by character to apply formatting
+    let currentX = startX;
+    let lineText = '';
+    
+    for (let charIndex = 0; charIndex < line.length; charIndex++) {
+      const char = line[charIndex];
+      
+      // Move to next section if we've exhausted current section
+      while (currentSection && sectionCharIndex >= currentSection.text.length) {
+        // Output accumulated text with current formatting
+        if (lineText) {
+          doc.text(lineText, currentX, currentY);
+          currentX += doc.getTextWidth(lineText);
+          lineText = '';
+        }
+        
+        sectionIndex++;
+        sectionCharIndex = 0;
+        currentSection = sections[sectionIndex];
+        
+        if (currentSection) {
+          // Set font for new section
+          doc.setFontSize(9);
+          if (currentSection.bold && currentSection.italic) {
+            doc.setFont('helvetica', 'bolditalic');
+          } else if (currentSection.bold) {
+            doc.setFont('helvetica', 'bold');
+          } else if (currentSection.italic) {
+            doc.setFont('helvetica', 'italic');
+          } else {
+            doc.setFont('helvetica', 'normal');
+          }
+        }
+      }
+      
+      if (currentSection && sectionCharIndex < currentSection.text.length) {
+        lineText += char;
+        sectionCharIndex++;
+      }
+    }
+    
+    // Output any remaining text for this line
+    if (lineText && currentSection) {
+      doc.text(lineText, currentX, currentY);
+    }
+    
+    // Move to next line
+    currentY += lineHeight;
+    
+    // Reset for next line processing
+    lineText = '';
+  });
+  
+  return currentY;
 };
 
 // Enhanced markdown inline formatting parser
