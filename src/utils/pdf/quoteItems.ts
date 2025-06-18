@@ -154,7 +154,7 @@ const addNRCItems = (doc: jsPDF, nrcItems: any[], yPos: number, colX: any): numb
 // Process HTML description content to extract text and images
 const processHtmlDescriptionContent = async (description: string): Promise<{
   text: string;
-  images: Array<{ url: string; alt: string; data?: string }>;
+  images: Array<{ url: string; alt: string; data?: string; dimensions?: { width: number; height: number } }>;
   minHeight: number;
 }> => {
   if (!description) return { text: '', images: [], minHeight: 10 };
@@ -163,7 +163,7 @@ const processHtmlDescriptionContent = async (description: string): Promise<{
   
   // Extract images using regex for HTML img tags
   const imageRegex = /<img[^>]*src="([^"]*)"[^>]*(?:alt="([^"]*)")?[^>]*>/g;
-  const images: Array<{ url: string; alt: string; data?: string }> = [];
+  const images: Array<{ url: string; alt: string; data?: string; dimensions?: { width: number; height: number } }> = [];
   let match;
   
   while ((match = imageRegex.exec(description)) !== null) {
@@ -173,10 +173,15 @@ const processHtmlDescriptionContent = async (description: string): Promise<{
     console.log('[PDF] Found image in description:', { url: url.substring(0, 100), alt });
     
     try {
-      const imageData = await loadImageForPDF(url);
-      if (imageData) {
-        images.push({ url, alt, data: imageData });
-        console.log('[PDF] Successfully loaded image data for:', alt);
+      const imageResult = await loadImageForPDF(url);
+      if (imageResult) {
+        images.push({ 
+          url, 
+          alt, 
+          data: imageResult.data,
+          dimensions: imageResult.dimensions
+        });
+        console.log('[PDF] Successfully loaded image data for:', alt, 'dimensions:', imageResult.dimensions);
       } else {
         console.log('[PDF] Failed to load image data for:', alt);
         images.push({ url, alt });
@@ -203,7 +208,7 @@ const processHtmlDescriptionContent = async (description: string): Promise<{
   
   // Calculate minimum height needed (text + images)
   const textLines = Math.ceil(plainText.length / 40); // Approximate line count
-  const imageHeight = images.filter(img => img.data).length > 0 ? 15 : 0; // Height per image row
+  const imageHeight = images.filter(img => img.data).length > 0 ? 20 : 0; // Height per image row
   const minHeight = Math.max(10, (textLines * 4) + imageHeight + 5);
   
   console.log('[PDF] Description processing complete:', { 
@@ -219,7 +224,7 @@ const processHtmlDescriptionContent = async (description: string): Promise<{
 // Add description content (text and images) to PDF
 const addDescriptionContent = async (
   doc: jsPDF, 
-  content: { text: string; images: Array<{ url: string; alt: string; data?: string }> }, 
+  content: { text: string; images: Array<{ url: string; alt: string; data?: string; dimensions?: { width: number; height: number } }> }, 
   startX: number, 
   startY: number
 ): Promise<void> => {
@@ -234,17 +239,41 @@ const addDescriptionContent = async (
     currentY += Array.isArray(textLines) ? textLines.length * 3 : 3;
   }
   
-  // Add embedded images
+  // Add embedded images with proper aspect ratio
   if (content.images.length > 0) {
     let imageX = startX;
     
     for (const image of content.images) {
-      if (image.data) {
+      if (image.data && image.dimensions) {
         try {
-          const imageWidth = 12;
-          const imageHeight = 12;
+          // Calculate proper dimensions maintaining aspect ratio
+          const maxWidth = 15;
+          const maxHeight = 15;
           
-          console.log('[PDF] Adding image to PDF at position:', { x: imageX, y: currentY, width: imageWidth, height: imageHeight });
+          let { width, height } = image.dimensions;
+          const aspectRatio = width / height;
+          
+          // Scale to fit within max dimensions while maintaining aspect ratio
+          if (width > maxWidth || height > maxHeight) {
+            if (aspectRatio > 1) {
+              // Landscape: limit by width
+              width = maxWidth;
+              height = maxWidth / aspectRatio;
+            } else {
+              // Portrait: limit by height
+              height = maxHeight;
+              width = maxHeight * aspectRatio;
+            }
+          }
+          
+          console.log('[PDF] Adding image to PDF with proper dimensions:', { 
+            x: imageX, 
+            y: currentY, 
+            width, 
+            height,
+            originalDimensions: image.dimensions,
+            aspectRatio
+          });
           
           // Try different image formats
           let format = 'JPEG';
@@ -254,14 +283,14 @@ const addDescriptionContent = async (
             format = 'GIF';
           }
           
-          doc.addImage(image.data, format, imageX, currentY, imageWidth, imageHeight);
+          doc.addImage(image.data, format, imageX, currentY, width, height);
           console.log('[PDF] Successfully added image to PDF:', image.alt);
           
-          imageX += imageWidth + 2; // Add spacing between images
+          imageX += width + 2; // Add spacing between images
           
           // If images would exceed row width, move to next row
-          if (imageX > startX + 70) {
-            currentY += imageHeight + 2;
+          if (imageX > startX + 60) {
+            currentY += Math.max(height, 15) + 2;
             imageX = startX;
           }
         } catch (error) {
@@ -277,8 +306,8 @@ const addDescriptionContent = async (
   }
 };
 
-// Helper function to load image for PDF with better error handling and timeout
-const loadImageForPDF = (imageUrl: string): Promise<string | null> => {
+// Helper function to load image for PDF with proper dimension tracking
+const loadImageForPDF = (imageUrl: string): Promise<{ data: string; dimensions: { width: number; height: number } } | null> => {
   return new Promise((resolve) => {
     console.log('[PDF] Loading image for PDF:', imageUrl.substring(0, 100));
     
@@ -309,14 +338,17 @@ const loadImageForPDF = (imageUrl: string): Promise<string | null> => {
           return;
         }
         
-        // Set reasonable canvas size
-        const maxSize = 500; // Maximum dimension
-        let { width, height } = img;
+        // Store original dimensions
+        const originalDimensions = { width: img.width, height: img.height };
+        
+        // Set reasonable canvas size for processing (maintain aspect ratio)
+        const maxSize = 500; // Maximum dimension for processing
+        let { width, height } = originalDimensions;
         
         if (width > maxSize || height > maxSize) {
           const ratio = Math.min(maxSize / width, maxSize / height);
-          width = width * ratio;
-          height = height * ratio;
+          width = Math.round(width * ratio);
+          height = Math.round(height * ratio);
         }
         
         canvas.width = width;
@@ -324,8 +356,12 @@ const loadImageForPDF = (imageUrl: string): Promise<string | null> => {
         ctx.drawImage(img, 0, 0, width, height);
         
         const dataURL = canvas.toDataURL('image/jpeg', 0.8);
-        console.log('[PDF] Image converted to data URL successfully, size:', dataURL.length);
-        resolve(dataURL);
+        console.log('[PDF] Image converted to data URL successfully, size:', dataURL.length, 'dimensions:', { width, height });
+        
+        resolve({ 
+          data: dataURL, 
+          dimensions: originalDimensions // Return original dimensions for aspect ratio calculation
+        });
       } catch (error) {
         clearTimeout(timeout);
         console.error('[PDF] Error converting image to data URL:', error);
