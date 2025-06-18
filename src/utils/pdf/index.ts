@@ -61,7 +61,7 @@ export const generateQuotePDF = async (quote: Quote, clientInfo?: ClientInfo, sa
   addStatusIndicator(doc, context);
   
   const clientInfoEndY = addClientInfo(doc, context);
-  const quoteItemsEndY = addQuoteItems(doc, context, clientInfoEndY);
+  const quoteItemsEndY = await addQuoteItems(doc, context, clientInfoEndY);
   const templateEndY = await addTemplateContent(doc, context, quoteItemsEndY);
   const notesEndY = addNotes(doc, context, templateEndY);
   

@@ -1,8 +1,7 @@
-
 import jsPDF from 'jspdf';
 import { PDFGenerationContext } from './types';
 
-export const addQuoteItems = (doc: jsPDF, context: PDFGenerationContext, startY: number): number => {
+export const addQuoteItems = async (doc: jsPDF, context: PDFGenerationContext, startY: number): Promise<number> => {
   const { quote, clientInfo } = context;
   let yPos = startY;
   
