@@ -4,12 +4,12 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Item } from "@/types/items";
 import { useCategories } from "@/hooks/useCategories";
 import { useVendors } from "@/hooks/useVendors";
+import { ReactQuillEditor } from "@/components/ReactQuillEditor";
 
 interface EditItemDialogProps {
   open: boolean;
@@ -67,7 +67,7 @@ export const EditItemDialog = ({ open, onOpenChange, onUpdateItem, item }: EditI
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[500px]">
+      <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Edit Item</DialogTitle>
           <DialogDescription>
@@ -88,12 +88,11 @@ export const EditItemDialog = ({ open, onOpenChange, onUpdateItem, item }: EditI
 
           <div className="space-y-2">
             <Label htmlFor="edit-description">Description</Label>
-            <Textarea
-              id="edit-description"
+            <ReactQuillEditor
               value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              placeholder="Enter item description"
-              rows={3}
+              onChange={setDescription}
+              placeholder="Enter item description..."
+              className="min-h-[200px]"
             />
           </div>
 
