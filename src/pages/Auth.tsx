@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Navigate, useLocation } from "react-router-dom";
 import {
@@ -71,14 +72,15 @@ const Auth = () => {
     try {
       setIsSubmitting(true);
       
-      console.log('Sending password reset request for:', email);
+      console.log('Sending custom password reset request for:', email);
       
+      // Use our custom edge function instead of Supabase's built-in method
       const { data, error } = await supabase.functions.invoke('send-password-reset', {
         body: { email }
       });
       
       if (error) {
-        console.error('Password reset error:', error);
+        console.error('Custom password reset error:', error);
         toast({
           title: "Password reset failed",
           description: "Failed to send password reset email. Please try again.",
@@ -86,6 +88,8 @@ const Auth = () => {
         });
         throw error;
       }
+      
+      console.log('Custom password reset response:', data);
       
       toast({
         title: "Password Reset Email Sent",
