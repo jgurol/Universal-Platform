@@ -1,5 +1,5 @@
 
-import React, { useState, useRef, useCallback } from 'react';
+import React, { useState, useRef, useCallback, useEffect } from 'react';
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
 import { Button } from '@/components/ui/button';
@@ -24,36 +24,8 @@ export const ReactQuillEditor: React.FC<ReactQuillEditorProps> = ({
   const quillRef = useRef<ReactQuill>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
+  const [editorReady, setEditorReady] = useState(false);
   const { toast } = useToast();
-
-  // Custom toolbar configuration
-  const modules = {
-    toolbar: {
-      container: [
-        [{ 'header': [1, 2, 3, false] }],
-        ['bold', 'italic', 'underline'],
-        [{ 'color': [] }, { 'background': [] }],
-        [{ 'list': 'ordered'}, { 'list': 'bullet' }],
-        ['link', 'image'],
-        ['clean']
-      ],
-      handlers: {
-        image: handleImageUpload
-      }
-    }
-  };
-
-  const formats = [
-    'header',
-    'bold', 'italic', 'underline',
-    'color', 'background',
-    'list', 'bullet',
-    'link', 'image'
-  ];
-
-  function handleImageUpload() {
-    fileInputRef.current?.click();
-  }
 
   const uploadImage = useCallback(async (file: File) => {
     if (!file.type.startsWith('image/')) {
@@ -110,19 +82,24 @@ export const ReactQuillEditor: React.FC<ReactQuillEditorProps> = ({
     }
   }, [toast]);
 
+  const handleImageUpload = useCallback(() => {
+    fileInputRef.current?.click();
+  }, []);
+
   const handleFileSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
-    if (!file) return;
+    if (!file || !editorReady || !quillRef.current) return;
 
     const imageUrl = await uploadImage(file);
-    if (imageUrl && quillRef.current) {
+    if (imageUrl) {
       const quill = quillRef.current.getEditor();
-      const range = quill.getSelection();
-      const index = range ? range.index : quill.getLength();
-      
-      quill.insertEmbed(index, 'image', imageUrl);
-      // Fix: Pass proper RangeStatic object instead of just a number
-      quill.setSelection({ index: index + 1, length: 0 });
+      if (quill) {
+        const range = quill.getSelection();
+        const index = range ? range.index : quill.getLength();
+        
+        quill.insertEmbed(index, 'image', imageUrl);
+        quill.setSelection({ index: index + 1, length: 0 });
+      }
     }
 
     // Reset file input
@@ -131,19 +108,62 @@ export const ReactQuillEditor: React.FC<ReactQuillEditorProps> = ({
     }
   };
 
-  // Convert Quill's HTML to a format compatible with your existing system
-  const handleChange = (content: string) => {
-    // Quill gives us clean HTML, but we might want to convert images to markdown format
-    // for compatibility with your existing PDF generation system
+  // Custom toolbar configuration with safe handler
+  const modules = {
+    toolbar: {
+      container: [
+        [{ 'header': [1, 2, 3, false] }],
+        ['bold', 'italic', 'underline'],
+        [{ 'color': [] }, { 'background': [] }],
+        [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+        ['link', 'image'],
+        ['clean']
+      ],
+      handlers: {
+        image: handleImageUpload
+      }
+    }
+  };
+
+  const formats = [
+    'header',
+    'bold', 'italic', 'underline',
+    'color', 'background',
+    'list', 'bullet',
+    'link', 'image'
+  ];
+
+  // Handle editor ready state
+  const handleEditorReady = useCallback(() => {
+    setEditorReady(true);
+  }, []);
+
+  // Convert markdown to HTML for display
+  const getHtmlValue = useCallback(() => {
+    if (!value) return '';
+    
+    return value
+      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+      .replace(/\*(.*?)\*/g, '<em>$1</em>')
+      .replace(/__(.*?)__/g, '<u>$1</u>')
+      .replace(/!\[([^\]]*)\]\(([^)]+)\)/g, '<img src="$2" alt="$1" style="max-width: 120px; max-height: 80px; object-fit: cover; border-radius: 6px; margin: 4px;" />')
+      .replace(/\n/g, '<br>');
+  }, [value]);
+
+  // Convert HTML to markdown for storage
+  const handleChange = useCallback((content: string) => {
+    if (!editorReady) return;
+    
+    // Convert HTML to markdown-like format
     let processedContent = content;
     
-    // Convert img tags to markdown format for consistency
+    // Convert img tags to markdown format
     processedContent = processedContent.replace(
       /<img[^>]*src="([^"]*)"[^>]*alt="([^"]*)"[^>]*>/g,
       '![$2]($1)'
     );
     
-    // Convert other HTML to markdown-like format if needed
+    // Convert other HTML to markdown-like format
     processedContent = processedContent
       .replace(/<strong>(.*?)<\/strong>/g, '**$1**')
       .replace(/<em>(.*?)<\/em>/g, '*$1*')
@@ -160,19 +180,7 @@ export const ReactQuillEditor: React.FC<ReactQuillEditorProps> = ({
       .trim();
 
     onChange(processedContent);
-  };
-
-  // Convert markdown back to HTML for Quill
-  const getHtmlValue = () => {
-    if (!value) return '';
-    
-    return value
-      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-      .replace(/\*(.*?)\*/g, '<em>$1</em>')
-      .replace(/__(.*?)__/g, '<u>$1</u>')
-      .replace(/!\[([^\]]*)\]\(([^)]+)\)/g, '<img src="$2" alt="$1" style="max-width: 120px; max-height: 80px; object-fit: cover; border-radius: 6px; margin: 4px;" />')
-      .replace(/\n/g, '<br>');
-  };
+  }, [onChange, editorReady]);
 
   return (
     <div className={cn("border rounded-lg bg-white", className)}>
@@ -196,6 +204,7 @@ export const ReactQuillEditor: React.FC<ReactQuillEditorProps> = ({
         theme="snow"
         value={getHtmlValue()}
         onChange={handleChange}
+        onReady={handleEditorReady}
         modules={modules}
         formats={formats}
         placeholder={placeholder}
