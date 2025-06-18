@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Bold, Italic, Underline, List, ListOrdered, Image, Type, Palette } from 'lucide-react';
@@ -49,70 +48,40 @@ export const ImprovedRichTextEditor: React.FC<ImprovedRichTextEditorProps> = ({
       .replace(/\n/g, '<br>');
   };
 
-  // Convert HTML back to markdown - Fixed version
+  // Convert HTML back to markdown - Simplified and fixed version
   const htmlToMarkdown = (html: string): string => {
     if (!html) return '';
     
+    // Create a temporary div to parse the HTML
     const tempDiv = document.createElement('div');
     tempDiv.innerHTML = html;
     
-    const processNode = (node: Node): string => {
-      if (node.nodeType === Node.TEXT_NODE) {
-        return node.textContent || '';
-      }
-      
-      if (node.nodeType === Node.ELEMENT_NODE) {
-        const element = node as Element;
-        const tagName = element.tagName.toLowerCase();
-        
-        let content = '';
-        // Process child nodes in correct order
-        const childNodes = Array.from(element.childNodes);
-        for (const child of childNodes) {
-          content += processNode(child);
-        }
-        
-        switch (tagName) {
-          case 'strong':
-          case 'b':
-            return `**${content}**`;
-          case 'em':
-          case 'i':
-            return `*${content}*`;
-          case 'u':
-            return `__${content}__`;
-          case 'br':
-            return '\n';
-          case 'img':
-            const src = element.getAttribute('src') || '';
-            const alt = element.getAttribute('alt') || '';
-            return `![${alt}](${src})`;
-          case 'div':
-            const nextSibling = element.nextElementSibling;
-            return content + (nextSibling ? '\n' : '');
-          case 'p':
-            return content + '\n\n';
-          case 'ul':
-            return '\n' + content + '\n';
-          case 'ol':
-            return '\n' + content + '\n';
-          case 'li':
-            return '• ' + content + '\n';
-          default:
-            return content;
-        }
-      }
-      
-      return '';
-    };
+    // Get the plain text content directly
+    let textContent = tempDiv.textContent || tempDiv.innerText || '';
     
-    let result = processNode(tempDiv);
+    // Process the HTML for markdown formatting
+    let result = html;
     
-    // Clean up extra newlines
+    // Convert HTML tags back to markdown
+    result = result
+      .replace(/<strong[^>]*>(.*?)<\/strong>/gi, '**$1**')
+      .replace(/<b[^>]*>(.*?)<\/b>/gi, '**$1**')
+      .replace(/<em[^>]*>(.*?)<\/em>/gi, '*$1*')
+      .replace(/<i[^>]*>(.*?)<\/i>/gi, '*$1*')
+      .replace(/<u[^>]*>(.*?)<\/u>/gi, '__$1__')
+      .replace(/<br\s*\/?>/gi, '\n')
+      .replace(/<div[^>]*>/gi, '\n')
+      .replace(/<\/div>/gi, '')
+      .replace(/<p[^>]*>/gi, '')
+      .replace(/<\/p>/gi, '\n\n')
+      .replace(/<img[^>]*src="([^"]*)"[^>]*alt="([^"]*)"[^>]*>/gi, '![$2]($1)')
+      .replace(/<[^>]+>/g, ''); // Remove any remaining HTML tags
+    
+    // Clean up extra whitespace and newlines
     result = result
       .replace(/\n{3,}/g, '\n\n')
-      .replace(/^\n+/, '')
-      .replace(/\n+$/, '');
+      .replace(/^\s+|\s+$/g, '')
+      .trim();
     
     return result;
   };
