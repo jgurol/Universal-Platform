@@ -57,18 +57,28 @@ const Auth = () => {
           setTokenError(null);
           
           // Parse the URL hash to get access token
-          const accessToken = new URLSearchParams(hash.substring(1)).get('access_token');
-          const refreshToken = new URLSearchParams(hash.substring(1)).get('refresh_token');
+          const hashParams = new URLSearchParams(hash.substring(1));
+          const accessToken = hashParams.get('access_token');
+          const refreshToken = hashParams.get('refresh_token');
+          const tokenType = hashParams.get('token_type');
+          const expiresIn = hashParams.get('expires_in');
           
-          console.log('Access token found:', accessToken ? 'yes' : 'no');
-          console.log('Refresh token found:', refreshToken ? 'yes' : 'no');
+          console.log('Recovery tokens found:', {
+            hasAccessToken: !!accessToken,
+            hasRefreshToken: !!refreshToken,
+            tokenType,
+            expiresIn
+          });
           
           if (!accessToken) {
             console.error('No access token found in URL');
-            setTokenError("Missing access token in recovery link. Please request a new one.");
+            setTokenError("Password reset link is missing required authentication token. Please request a new password reset.");
             setIsCheckingSession(false);
             return;
           }
+          
+          // Clear any existing sessions first
+          await supabase.auth.signOut();
           
           // Set the session with the token from URL
           const { data, error } = await supabase.auth.setSession({
@@ -78,22 +88,36 @@ const Auth = () => {
           
           if (error) {
             console.error('Error setting session:', error);
-            setTokenError(error.message || "Invalid or expired password reset link");
+            
+            // Provide more specific error messages
+            let errorMessage = "The password reset link is invalid or has expired.";
+            if (error.message.includes('invalid')) {
+              errorMessage = "The password reset link contains an invalid token. Please request a new password reset.";
+            } else if (error.message.includes('expired')) {
+              errorMessage = "The password reset link has expired. Please request a new password reset.";
+            } else if (error.message.includes('signature')) {
+              errorMessage = "The password reset link signature is invalid. This may happen if the link was modified or corrupted. Please request a new password reset.";
+            }
+            
+            setTokenError(errorMessage);
             toast({
               title: "Reset Link Error",
-              description: error.message || "The password reset link is invalid or has expired",
+              description: errorMessage,
               variant: "destructive"
             });
-          } else {
-            console.log('Successfully set session for password reset:', data);
+          } else if (data.session) {
+            console.log('Successfully set session for password reset:', data.session.user?.email);
             toast({
               title: "Reset Link Valid",
-              description: "Please enter your new password",
+              description: "Please enter your new password below",
             });
+          } else {
+            console.error('No session returned after setting tokens');
+            setTokenError("Unable to establish session with reset tokens. Please request a new password reset.");
           }
         } catch (err) {
           console.error('Error during recovery flow:', err);
-          setTokenError("An unexpected error occurred");
+          setTokenError("An unexpected error occurred while processing the reset link. Please try requesting a new password reset.");
         } finally {
           setIsCheckingSession(false);
         }
@@ -142,15 +166,18 @@ const Auth = () => {
         ? 'https://34d679df-b261-47ea-b136-e7aae591255b.lovableproject.com/auth'
         : `${currentUrl}/auth`;
       
-      console.log('Current origin URL:', currentUrl);
-      console.log('Full redirect URL:', redirectUrl);
-      console.log('Is localhost?', isLocalhost);
+      console.log('Sending password reset email:', {
+        email,
+        redirectUrl,
+        isLocalhost
+      });
       
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
         redirectTo: redirectUrl,
       });
       
       if (error) {
+        console.error('Password reset error:', error);
         toast({
           title: "Password reset failed",
           description: error.message,
@@ -161,7 +188,7 @@ const Auth = () => {
       
       toast({
         title: "Password Reset Email Sent",
-        description: "Check your email for a password reset link",
+        description: "Check your email for a password reset link. The link will be valid for 1 hour.",
       });
       setShowResetForm(false);
       setActiveTab("login");
@@ -179,15 +206,16 @@ const Auth = () => {
       
       // Get the current session to verify we have the right context
       const { data: sessionData } = await supabase.auth.getSession();
-      console.log("Current session before password update:", sessionData.session);
+      console.log("Current session before password update:", sessionData.session?.user?.email);
       
       if (!sessionData.session) {
+        setTokenError("Your password reset session has expired. Please request a new password reset link.");
         toast({
-          title: "Session Error",
-          description: "No active session found. Please try the reset link again.",
+          title: "Session Expired",
+          description: "Your password reset session has expired. Please request a new password reset link.",
           variant: "destructive"
         });
-        throw new Error("No active session");
+        return;
       }
       
       const { error } = await supabase.auth.updateUser({
@@ -196,9 +224,16 @@ const Auth = () => {
       
       if (error) {
         console.error("Password update error:", error);
+        
+        let errorMessage = "Failed to update password. Please try again.";
+        if (error.message.includes('session')) {
+          errorMessage = "Your password reset session has expired. Please request a new password reset link.";
+          setTokenError(errorMessage);
+        }
+        
         toast({
-          title: "Failed to update password",
-          description: error.message,
+          title: "Password Update Failed",
+          description: errorMessage,
           variant: "destructive"
         });
         throw error;
@@ -206,17 +241,18 @@ const Auth = () => {
       
       console.log("Password updated successfully");
       toast({
-        title: "Password Updated",
-        description: "Your password has been successfully updated. You can now log in with your new password.",
+        title: "Password Updated Successfully",
+        description: "Your password has been updated. You can now log in with your new password.",
       });
       
       // Clear the hash from URL
       window.history.replaceState(null, '', window.location.pathname);
       
-      // Force user to log in with new password
+      // Sign out the user so they can log in with their new password
       await supabase.auth.signOut();
       
       setShowUpdatePasswordForm(false);
+      setTokenError(null);
       setActiveTab("login");
     } catch (error) {
       console.error("Error updating password:", error);
