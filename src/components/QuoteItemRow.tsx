@@ -55,7 +55,7 @@ export const QuoteItemRow = ({ quoteItem, addresses, onUpdateItem, onRemoveItem 
     description: quoteItem.description?.substring(0, 100)
   });
 
-  // Function to strip HTML and get plain text preview
+  // Function to strip HTML and get plain text preview for button
   const getDescriptionPreview = (description: string): string => {
     if (!description) return '';
     
@@ -68,6 +68,8 @@ export const QuoteItemRow = ({ quoteItem, addresses, onUpdateItem, onRemoveItem 
     
     return plainText.length > 30 ? `${plainText.substring(0, 30)}...` : plainText;
   };
+
+  const currentDescription = quoteItem.description || quoteItem.item?.description || '';
 
   return (
     <div className="flex items-start gap-2 p-3 border rounded bg-gray-50">
@@ -87,6 +89,19 @@ export const QuoteItemRow = ({ quoteItem, addresses, onUpdateItem, onRemoveItem 
             className="text-sm font-medium h-8"
           />
           <div className="space-y-1">
+            {/* Rich text description display */}
+            {currentDescription && (
+              <div 
+                className="text-xs text-gray-700 p-2 bg-white border rounded prose prose-xs max-w-none"
+                dangerouslySetInnerHTML={{ __html: currentDescription }}
+                style={{ 
+                  maxHeight: '100px', 
+                  overflowY: 'auto',
+                  fontSize: '11px',
+                  lineHeight: '1.3'
+                }}
+              />
+            )}
             <Dialog open={isDescriptionOpen} onOpenChange={handleDialogOpenChange}>
               <DialogTrigger asChild>
                 <Button
@@ -95,8 +110,8 @@ export const QuoteItemRow = ({ quoteItem, addresses, onUpdateItem, onRemoveItem 
                   className="w-full h-8 justify-start text-xs text-gray-600"
                 >
                   <FileText className="w-3 h-3 mr-1" />
-                  {quoteItem.description || quoteItem.item?.description ? 
-                    getDescriptionPreview(quoteItem.description || quoteItem.item?.description || '') : 
+                  {currentDescription ? 
+                    'Edit description' : 
                     'Add description'
                   }
                 </Button>
