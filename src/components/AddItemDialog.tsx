@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -9,7 +8,7 @@ import { Switch } from "@/components/ui/switch";
 import { Item } from "@/types/items";
 import { useCategories } from "@/hooks/useCategories";
 import { useVendors } from "@/hooks/useVendors";
-import { ReactQuillEditor } from "@/components/ReactQuillEditor";
+import { TiptapEditor } from "@/components/TiptapEditor";
 
 interface AddItemDialogProps {
   open: boolean;
@@ -80,7 +79,7 @@ export const AddItemDialog = ({ open, onOpenChange, onAddItem }: AddItemDialogPr
 
           <div className="space-y-2">
             <Label htmlFor="description">Description</Label>
-            <ReactQuillEditor
+            <TiptapEditor
               value={description}
               onChange={setDescription}
               placeholder="Enter item description..."
