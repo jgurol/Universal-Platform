@@ -2,13 +2,13 @@
 import React, { useRef } from 'react';
 import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
-import Image from '@tiptap/extension-image';
 import Placeholder from '@tiptap/extension-placeholder';
 import { Button } from '@/components/ui/button';
 import { Bold, Italic, List, ListOrdered, Image as ImageIcon } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
+import { ImageResize } from './TiptapImageResize';
 
 interface TiptapEditorProps {
   value: string;
@@ -29,11 +29,7 @@ export const TiptapEditor: React.FC<TiptapEditorProps> = ({
   const editor = useEditor({
     extensions: [
       StarterKit,
-      Image.configure({
-        HTMLAttributes: {
-          class: 'rounded-lg max-w-full h-auto',
-        },
-      }),
+      ImageResize,
       Placeholder.configure({
         placeholder,
       }),
@@ -108,7 +104,14 @@ export const TiptapEditor: React.FC<TiptapEditorProps> = ({
 
     const imageUrl = await uploadImage(file);
     if (imageUrl) {
-      editor.chain().focus().setImage({ src: imageUrl }).run();
+      editor.chain().focus().insertContent({
+        type: 'imageResize',
+        attrs: {
+          src: imageUrl,
+          width: 300,
+          height: null
+        }
+      }).run();
     }
 
     // Reset file input
