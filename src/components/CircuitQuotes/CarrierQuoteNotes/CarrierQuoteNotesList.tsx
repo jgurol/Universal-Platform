@@ -79,12 +79,87 @@ export const CarrierQuoteNotesList = ({
     }
   };
 
+  const getImagePreviewUrl = async (file: NoteFile): Promise<string> => {
+    try {
+      // Extract the file path from the public URL
+      const urlParts = file.url.split('/');
+      const bucketIndex = urlParts.findIndex(part => part === 'carrier-quote-files');
+      if (bucketIndex === -1) {
+        return file.url; // fallback to original URL
+      }
+      
+      const filePath = urlParts.slice(bucketIndex + 1).join('/');
+      
+      // Get a signed URL for better reliability
+      const { data, error } = await supabase.storage
+        .from('carrier-quote-files')
+        .createSignedUrl(filePath, 3600); // 1 hour expiry
+
+      if (error) {
+        console.error('Error creating signed URL:', error);
+        return file.url; // fallback to original URL
+      }
+
+      return data.signedUrl;
+    } catch (error) {
+      console.error('Error getting preview URL:', error);
+      return file.url; // fallback to original URL
+    }
+  };
+
   const formatFileSize = (bytes: number) => {
     if (bytes === 0) return '0 Bytes';
     const k = 1024;
     const sizes = ['Bytes', 'KB', 'MB', 'GB'];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+  };
+
+  const ImagePreview = ({ file }: { file: NoteFile }) => {
+    const [previewUrl, setPreviewUrl] = React.useState(file.url);
+    const [loading, setLoading] = React.useState(true);
+
+    React.useEffect(() => {
+      const loadPreviewUrl = async () => {
+        const url = await getImagePreviewUrl(file);
+        setPreviewUrl(url);
+        setLoading(false);
+      };
+      loadPreviewUrl();
+    }, [file]);
+
+    if (loading) {
+      return (
+        <div className="border rounded-lg overflow-hidden bg-gray-50 p-2">
+          <div className="w-full max-w-md h-32 bg-gray-200 animate-pulse rounded flex items-center justify-center">
+            <span className="text-gray-500 text-sm">Loading preview...</span>
+          </div>
+        </div>
+      );
+    }
+
+    return (
+      <div className="border rounded-lg overflow-hidden bg-gray-50 p-2">
+        <img 
+          src={previewUrl} 
+          alt={file.name}
+          className="w-full max-w-md h-auto object-contain rounded"
+          style={{ maxHeight: '300px' }}
+          onError={(e) => {
+            console.error('Image failed to load:', previewUrl);
+            console.error('Error details:', e);
+            // Show broken image placeholder
+            const target = e.target as HTMLImageElement;
+            target.style.display = 'block';
+            target.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3QgeD0iMyIgeT0iMyIgd2lkdGg9IjE4IiBoZWlnaHQ9IjE4IiByeD0iMiIgc3Ryb2tlPSIjOTk5IiBzdHJva2Utd2lkdGg9IjIiLz4KPGNpcmNsZSBjeD0iOC41IiBjeT0iOC41IiByPSIxLjUiIHN0cm9rZT0iIzk5OSIgc3Ryb2tlLXdpZHRoPSIyIi8+CjxwYXRoIGQ9Im0yMSAxNS0zLjA4Ni0zLjA4NmEyIDIgMCAwIDAtMS4zLjUyOWwtMi40IDE3LjE0M2EyIDIgMCAwIDEtMS4xIC41MzdMMyAxNSIgc3Ryb2tlPSIjOTk5IiBzdHJva2Utd2lkdGg9IjIiLz4KPC9zdmc+';
+            target.alt = 'Failed to load image';
+          }}
+          onLoad={() => {
+            console.log('Image loaded successfully:', previewUrl);
+          }}
+        />
+      </div>
+    );
   };
 
   return (
@@ -136,26 +211,7 @@ export const CarrierQuoteNotesList = ({
                               <Download className="h-3 w-3" />
                             </Button>
                           </div>
-                          <div className="border rounded-lg overflow-hidden bg-gray-50 p-2">
-                            <img 
-                              src={file.url} 
-                              alt={file.name}
-                              className="w-full max-w-md h-auto object-contain rounded"
-                              style={{ maxHeight: '300px' }}
-                              onError={(e) => {
-                                console.error('Image failed to load:', file.url);
-                                console.error('Error details:', e);
-                                // Show broken image placeholder
-                                const target = e.target as HTMLImageElement;
-                                target.style.display = 'block';
-                                target.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3QgeD0iMyIgeT0iMyIgd2lkdGg9IjE4IiBoZWlnaHQ9IjE4IiByeD0iMiIgc3Ryb2tlPSIjOTk5IiBzdHJva2Utd2lkdGg9IjIiLz4KPGNpcmNsZSBjeD0iOC41IiBjeT0iOC41IiByPSIxLjUiIHN0cm9rZT0iIzk5OSIgc3Ryb2tlLXdpZHRoPSIyIi8+CjxwYXRoIGQ9Im0yMSAxNS0zLjA4Ni0zLjA4NmEyIDIgMCAwIDAtMS4zLjUyOWwtMi40IDE3LjE0M2EyIDIgMCAwIDEtMS4xIC41MzdMMyAxNSIgc3Ryb2tlPSIjOTk5IiBzdHJva2Utd2lkdGg9IjIiLz4KPC9zdmc+';
-                                target.alt = 'Failed to load image';
-                              }}
-                              onLoad={() => {
-                                console.log('Image loaded successfully:', file.url);
-                              }}
-                            />
-                          </div>
+                          <ImagePreview file={file} />
                         </div>
                       ) : (
                         <div className="flex items-center justify-between bg-gray-50 p-2 rounded text-sm">
