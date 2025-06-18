@@ -2,17 +2,19 @@
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Plus, Building2, Edit, Trash2, Mail, Phone } from "lucide-react";
+import { Plus, Building2, Edit, Trash2, Mail, Phone, Zap } from "lucide-react";
 import { useVendors } from "@/hooks/useVendors";
 import { AddVendorDialog } from "@/components/AddVendorDialog";
 import { EditVendorDialog } from "@/components/EditVendorDialog";
 import { VendorPriceSheetsList } from "@/components/VendorPriceSheetsList";
+import { SpeedsManagement } from "@/components/SpeedsManagement";
 import { Badge } from "@/components/ui/badge";
 import { Vendor } from "@/types/vendors";
 
 export const VendorsManagement = () => {
   const [isAddVendorOpen, setIsAddVendorOpen] = useState(false);
   const [isEditVendorOpen, setIsEditVendorOpen] = useState(false);
+  const [showSpeedsManagement, setShowSpeedsManagement] = useState(false);
   const [selectedVendor, setSelectedVendor] = useState<Vendor | null>(null);
   const { vendors, isLoading, addVendor, updateVendor } = useVendors();
 
@@ -49,6 +51,23 @@ export const VendorsManagement = () => {
     );
   }
 
+  if (showSpeedsManagement) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center gap-4">
+          <Button 
+            onClick={() => setShowSpeedsManagement(false)}
+            variant="outline"
+          >
+            ← Back to Vendors
+          </Button>
+          <h2 className="text-xl font-semibold">Speed Options Management</h2>
+        </div>
+        <SpeedsManagement />
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       <Card>
@@ -61,10 +80,20 @@ export const VendorsManagement = () => {
                 {vendors.length} vendors
               </Badge>
             </div>
-            <Button onClick={() => setIsAddVendorOpen(true)} className="bg-blue-600 hover:bg-blue-700">
-              <Plus className="h-4 w-4 mr-2" />
-              Add Vendor
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button 
+                onClick={() => setShowSpeedsManagement(true)} 
+                variant="outline"
+                className="text-purple-600 border-purple-200 hover:bg-purple-50"
+              >
+                <Zap className="h-4 w-4 mr-2" />
+                Manage Speeds
+              </Button>
+              <Button onClick={() => setIsAddVendorOpen(true)} className="bg-blue-600 hover:bg-blue-700">
+                <Plus className="h-4 w-4 mr-2" />
+                Add Vendor
+              </Button>
+            </div>
           </div>
         </CardHeader>
         <CardContent>
