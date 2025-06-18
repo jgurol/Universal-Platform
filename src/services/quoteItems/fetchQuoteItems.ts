@@ -1,62 +1,77 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import { QuoteItemData } from "@/types/quoteItems";
+import { Item } from "@/types/items";
+import { ClientAddress } from "@/types/clientAddress";
 
 export const fetchQuoteItems = async (quoteId: string): Promise<QuoteItemData[]> => {
+  console.log('[fetchQuoteItems] Fetching items for quote:', quoteId);
+  
   try {
-    const { data, error } = await supabase
+    const { data: quoteItemsData, error } = await supabase
       .from('quote_items')
       .select(`
         *,
         item:items(*),
         address:client_addresses(*)
       `)
-      .eq('quote_id', quoteId);
+      .eq('quote_id', quoteId)
+      .order('created_at', { ascending: true });
 
     if (error) {
-      console.error('Error fetching quote items:', error);
+      console.error('[fetchQuoteItems] Error fetching quote items:', error);
+      throw error;
+    }
+
+    if (!quoteItemsData) {
+      console.log('[fetchQuoteItems] No quote items found');
       return [];
     }
 
-    console.log('[fetchQuoteItems] Raw data from database:', data);
+    console.log('[fetchQuoteItems] Raw quote items data:', quoteItemsData.length, 'items');
 
-    return data.map(item => {
-      // Construct image URL if we have image_name but no image_url
-      let imageUrl = item.image_url;
-      if (!imageUrl && item.image_name) {
-        imageUrl = supabase.storage.from('quote-item-images').getPublicUrl(item.image_name).data.publicUrl;
-        console.log('[fetchQuoteItems] Constructed image URL:', imageUrl);
-      }
+    const mappedItems: QuoteItemData[] = quoteItemsData.map((quoteItem: any) => {
+      const item = quoteItem.item as Item;
+      const address = quoteItem.address as ClientAddress;
 
       console.log('[fetchQuoteItems] Processing item:', {
-        id: item.id,
-        item_name: item.item?.name,
-        address_id: item.address_id,
-        address_data: item.address,
-        image_url: imageUrl,
-        image_name: item.image_name,
-        original_image_url: item.image_url
+        id: quoteItem.id,
+        itemName: item?.name,
+        itemDescription: item?.description?.substring(0, 100) + '...',
+        addressId: quoteItem.address_id
       });
 
-      return {
-        id: item.id,
-        item_id: item.item_id,
-        quantity: item.quantity,
-        unit_price: item.unit_price,
-        cost_override: item.item?.cost || 0,
-        total_price: item.total_price,
-        charge_type: item.charge_type as 'NRC' | 'MRC',
-        address_id: item.address_id,
-        name: item.item?.name || 'Unknown Item',
-        description: item.item?.description || '',
-        image_url: imageUrl,
-        image_name: item.image_name,
-        item: item.item,
-        address: item.address
+      const mappedItem: QuoteItemData = {
+        id: quoteItem.id,
+        item_id: quoteItem.item_id,
+        quantity: quoteItem.quantity || 1,
+        unit_price: parseFloat(quoteItem.unit_price) || 0,
+        cost_override: item?.cost || 0,
+        total_price: parseFloat(quoteItem.total_price) || 0,
+        charge_type: (quoteItem.charge_type as 'NRC' | 'MRC') || 'NRC',
+        address_id: quoteItem.address_id,
+        name: item?.name || 'Unknown Item',
+        description: item?.description || '', // This now contains the rich text content
+        image_url: quoteItem.image_url,
+        image_name: quoteItem.image_name,
+        item: item,
+        address: address
       };
+
+      console.log('[fetchQuoteItems] Mapped item:', {
+        id: mappedItem.id,
+        name: mappedItem.name,
+        descriptionLength: mappedItem.description?.length || 0,
+        hasRichText: mappedItem.description?.includes('![') || mappedItem.description?.includes('**')
+      });
+
+      return mappedItem;
     });
+
+    console.log('[fetchQuoteItems] Returning', mappedItems.length, 'mapped quote items');
+    return mappedItems;
   } catch (error) {
-    console.error('Error in fetchQuoteItems:', error);
-    return [];
+    console.error('[fetchQuoteItems] Error in fetchQuoteItems:', error);
+    throw error;
   }
 };

@@ -35,11 +35,14 @@ export const updateQuoteItems = async (quoteId: string, items: QuoteItemData[]):
         quantity: item.quantity,
         unit_price: item.unit_price,
         total_price: item.total_price,
+        description: item.description?.substring(0, 100) + '...', // Log first 100 chars
         image_url: item.image_url,
         image_name: item.image_name
       });
 
       let itemId = item.item_id;
+      let itemName = item.name;
+      let itemDescription = item.description;
       
       // Handle carrier quote items - create temporary items if needed
       if (item.item_id.startsWith('carrier-')) {
@@ -66,6 +69,30 @@ export const updateQuoteItems = async (quoteId: string, items: QuoteItemData[]):
         
         itemId = newItem.id;
         console.log('[updateQuoteItems] Created temporary item with ID:', itemId);
+      } else {
+        // For regular items, we need to create a custom item record to store the custom name and description
+        // This ensures the customizations are preserved
+        const { data: customItem, error: customItemError } = await supabase
+          .from('items')
+          .insert({
+            user_id: user.id,
+            name: itemName || item.item?.name || 'Custom Item',
+            description: itemDescription || '',
+            price: item.unit_price,
+            cost: item.cost_override || item.item?.cost || 0,
+            charge_type: item.charge_type,
+            is_active: false // Set to false so it doesn't appear in the catalog
+          })
+          .select()
+          .single();
+
+        if (customItemError) {
+          console.error('[updateQuoteItems] Error creating custom item:', customItemError);
+          throw customItemError;
+        }
+        
+        itemId = customItem.id;
+        console.log('[updateQuoteItems] Created custom item with ID:', itemId, 'for preserving customizations');
       }
 
       // Insert the quote item with image fields
@@ -92,7 +119,7 @@ export const updateQuoteItems = async (quoteId: string, items: QuoteItemData[]):
         throw insertError;
       }
 
-      console.log('[updateQuoteItems] Successfully inserted quote item for:', item.name);
+      console.log('[updateQuoteItems] Successfully inserted quote item for:', item.name, 'with description length:', item.description?.length || 0);
     }
 
     console.log('[updateQuoteItems] Successfully updated all quote items');
