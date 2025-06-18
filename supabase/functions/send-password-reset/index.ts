@@ -17,7 +17,12 @@ const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 const resend = new Resend(Deno.env.get('RESEND_API_KEY'));
 
 // Create admin client with service role key
-const supabase = createClient(supabaseUrl, supabaseServiceKey);
+const supabase = createClient(supabaseUrl, supabaseServiceKey, {
+  auth: {
+    autoRefreshToken: false,
+    persistSession: false
+  }
+});
 
 const handler = async (req: Request): Promise<Response> => {
   if (req.method === 'OPTIONS') {
@@ -60,6 +65,8 @@ const handler = async (req: Request): Promise<Response> => {
     const resetToken = crypto.randomUUID() + '-' + Date.now();
     const expiresAt = new Date(Date.now() + 60 * 60 * 1000); // 1 hour from now
 
+    console.log('Generated reset token for user:', user.id);
+
     // Store reset token in database
     const { error: tokenError } = await supabase
       .from('password_reset_tokens')
@@ -67,6 +74,7 @@ const handler = async (req: Request): Promise<Response> => {
         user_id: user.id,
         token: resetToken,
         expires_at: expiresAt.toISOString(),
+        used: false
       });
 
     if (tokenError) {
@@ -79,6 +87,8 @@ const handler = async (req: Request): Promise<Response> => {
         headers: { 'Content-Type': 'application/json', ...corsHeaders },
       });
     }
+
+    console.log('Reset token stored successfully');
 
     // Get the site URL for the reset link
     const siteUrl = 'https://34d679df-b261-47ea-b136-e7aae591255b.lovableproject.com';
