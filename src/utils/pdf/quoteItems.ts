@@ -78,8 +78,8 @@ const addMRCItems = async (doc: jsPDF, mrcItems: any[], quote: any, yPos: number
       addressText = addressText.substring(0, 37) + '...';
     }
     
-    // Process description to extract images and text
-    const descriptionContent = await processDescriptionContent(item.description || item.item?.description || '');
+    // Process description to extract images and text from HTML
+    const descriptionContent = await processHtmlDescriptionContent(item.description || item.item?.description || '');
     let rowHeight = Math.max(10, descriptionContent.minHeight);
     
     if (index % 2 === 0) {
@@ -151,22 +151,22 @@ const addNRCItems = (doc: jsPDF, nrcItems: any[], yPos: number, colX: any): numb
   return yPos;
 };
 
-// Process description content to extract text and images
-const processDescriptionContent = async (description: string): Promise<{
+// Process HTML description content to extract text and images
+const processHtmlDescriptionContent = async (description: string): Promise<{
   text: string;
   images: Array<{ url: string; alt: string; data?: string }>;
   minHeight: number;
 }> => {
   if (!description) return { text: '', images: [], minHeight: 10 };
   
-  // Extract images using regex
-  const imageRegex = /!\[([^\]]*)\]\(([^)]+)\)/g;
+  // Extract images using regex for HTML img tags
+  const imageRegex = /<img[^>]*src="([^"]*)"[^>]*alt="([^"]*)"[^>]*>/g;
   const images: Array<{ url: string; alt: string; data?: string }> = [];
   let match;
   
   while ((match = imageRegex.exec(description)) !== null) {
-    const alt = match[1] || '';
-    const url = match[2] || '';
+    const url = match[1] || '';
+    const alt = match[2] || '';
     
     try {
       const imageData = await loadImageForPDF(url);
@@ -177,12 +177,15 @@ const processDescriptionContent = async (description: string): Promise<{
     }
   }
   
-  // Extract plain text (remove markdown formatting and image references)
+  // Extract plain text (remove HTML tags)
   const plainText = description
-    .replace(/\*\*(.*?)\*\*/g, '$1') // Remove bold formatting
-    .replace(/\*(.*?)\*/g, '$1') // Remove italic formatting
-    .replace(/!\[([^\]]*)\]\(([^)]+)\)/g, '') // Remove image references
-    .replace(/\n/g, ' ') // Replace newlines with spaces
+    .replace(/<img[^>]*>/g, '') // Remove img tags
+    .replace(/<strong>(.*?)<\/strong>/g, '$1') // Remove strong tags but keep content
+    .replace(/<em>(.*?)<\/em>/g, '$1') // Remove em tags but keep content
+    .replace(/<u>(.*?)<\/u>/g, '$1') // Remove u tags but keep content
+    .replace(/<br\s*\/?>/g, ' ') // Replace br tags with spaces
+    .replace(/<[^>]*>/g, '') // Remove any remaining HTML tags
+    .replace(/\s+/g, ' ') // Normalize whitespace
     .trim();
   
   // Calculate minimum height needed (text + images)

@@ -7,37 +7,62 @@ interface TextSection {
   italic: boolean;
 }
 
-// Enhanced markdown parser for PDF generation with better formatting
+// Enhanced content parser for PDF generation that handles both HTML and markdown
 export const addMarkdownTextToPDF = (
   doc: jsPDF, 
-  markdownContent: string, 
+  content: string, 
   startX: number, 
   startY: number, 
   maxWidth: number, 
-  lineHeight: number = 3.5 // Reduced from 4
+  lineHeight: number = 3.5
 ): number => {
   let currentY = startY;
   const pageHeight = 297;
-  const bottomMargin = 24; // Increased from 10 to 24 (4 lines * 6 points per line)
-  const topMargin = 10; // Reduced from 20
-  const paragraphSpacing = 3; // Reduced from 6
+  const bottomMargin = 24;
+  const topMargin = 10;
+  const paragraphSpacing = 3;
   
-  if (!markdownContent) return currentY;
+  if (!content) return currentY;
   
-  console.log('PDF Generation - Processing markdown content:', markdownContent);
-  console.log('PDF Generation - Content length:', markdownContent.length);
+  console.log('PDF Generation - Processing content:', content);
+  console.log('PDF Generation - Content length:', content.length);
   
-  // Clean up the content thoroughly
-  let cleanContent = markdownContent
-    .replace(/<[^>]*>/g, '') // Remove HTML tags
-    .replace(/&nbsp;/g, ' ') // Replace HTML spaces
-    .replace(/&amp;/g, '&') // Replace HTML entities
-    .replace(/&lt;/g, '<')
-    .replace(/&gt;/g, '>')
-    .replace(/&quot;/g, '"')
-    .replace(/&#39;/g, "'")
-    .replace(/&apos;/g, "'")
-    .trim();
+  // Check if content is HTML (contains HTML tags) or markdown
+  const isHtml = /<\/?[a-z][\s\S]*>/i.test(content);
+  
+  let cleanContent;
+  if (isHtml) {
+    // Handle HTML content from ReactQuill
+    cleanContent = content
+      .replace(/<img[^>]*>/g, '') // Remove image tags
+      .replace(/<strong>(.*?)<\/strong>/g, '**$1**') // Convert strong to markdown
+      .replace(/<em>(.*?)<\/em>/g, '*$1*') // Convert em to markdown
+      .replace(/<u>(.*?)<\/u>/g, '__$1__') // Convert u to markdown
+      .replace(/<br\s*\/?>/g, '\n') // Convert br to newlines
+      .replace(/<\/p><p>/g, '\n\n') // Convert p tags to paragraphs
+      .replace(/<p>/g, '') // Remove opening p tags
+      .replace(/<\/p>/g, '') // Remove closing p tags
+      .replace(/<[^>]*>/g, '') // Remove any remaining HTML tags
+      .replace(/&nbsp;/g, ' ') // Replace HTML spaces
+      .replace(/&amp;/g, '&') // Replace HTML entities
+      .replace(/&lt;/g, '<')
+      .replace(/&gt;/g, '>')
+      .replace(/&quot;/g, '"')
+      .replace(/&#39;/g, "'")
+      .replace(/&apos;/g, "'")
+      .trim();
+  } else {
+    // Handle markdown content
+    cleanContent = content
+      .replace(/&nbsp;/g, ' ') // Replace HTML spaces
+      .replace(/&amp;/g, '&') // Replace HTML entities
+      .replace(/&lt;/g, '<')
+      .replace(/&gt;/g, '>')
+      .replace(/&quot;/g, '"')
+      .replace(/&#39;/g, "'")
+      .replace(/&apos;/g, "'")
+      .trim();
+  }
   
   console.log('PDF Generation - Cleaned content length:', cleanContent.length);
   console.log('PDF Generation - First 200 chars:', cleanContent.substring(0, 200));
@@ -104,7 +129,7 @@ export const addMarkdownTextToPDF = (
           doc.setFontSize(9);
           doc.setFont('helvetica', 'bold');
           doc.text('Terms & Conditions (continued):', startX, currentY);
-          currentY += 8; // Reduced from 10
+          currentY += 8;
         }
         
         // Set font style
@@ -141,7 +166,7 @@ export const addMarkdownTextToPDF = (
                 doc.setFontSize(9);
                 doc.setFont('helvetica', 'bold');
                 doc.text('Terms & Conditions (continued):', startX, currentY);
-                currentY += 8; // Reduced from 10
+                currentY += 8;
                 
                 // Reset font style after header
                 if (section.bold && section.italic) {
@@ -173,7 +198,7 @@ export const addMarkdownTextToPDF = (
               doc.setFontSize(9);
               doc.setFont('helvetica', 'bold');
               doc.text('Terms & Conditions (continued):', startX, currentY);
-              currentY += 8; // Reduced from 10
+              currentY += 8;
               
               // Reset font style after header
               if (section.bold && section.italic) {
@@ -203,7 +228,7 @@ export const addMarkdownTextToPDF = (
     });
     
     // Add paragraph break after each paragraph - reduced spacing
-    currentY += lineHeight + 2; // Reduced from lineHeight + 4
+    currentY += lineHeight + 2;
     console.log(`PDF Generation - Finished paragraph ${paragraphIndex + 1}, current Y:`, currentY);
   });
   
