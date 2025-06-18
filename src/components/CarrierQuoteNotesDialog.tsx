@@ -89,7 +89,7 @@ export const CarrierQuoteNotesDialog = ({
         note: note.content,
         files: (note.carrier_quote_note_files || []).map((file: any) => ({
           id: file.id,
-          name: file.file_name,
+          name: file.name,
           type: file.file_type,
           url: file.file_path,
           size: file.file_size || 0
@@ -302,10 +302,10 @@ export const CarrierQuoteNotesDialog = ({
           <DialogTitle>Notes for {carrierName}</DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-6">
+        <div className="space-y-4">
           {/* Add new note section */}
           <Card>
-            <CardHeader>
+            <CardHeader className="pb-3">
               <h4 className="font-medium">Add New Note</h4>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -359,54 +359,81 @@ export const CarrierQuoteNotesDialog = ({
             </CardContent>
           </Card>
 
-          {/* Existing notes */}
-          <div className="space-y-4">
+          {/* Existing notes - with tighter spacing */}
+          <div className="space-y-2">
             {notes.length > 0 && (
               <h4 className="font-medium">Previous Notes</h4>
             )}
             
             {notes.map((note) => (
-              <Card key={note.id}>
-                <CardHeader>
+              <Card key={note.id} className="border-l-4 border-l-blue-500">
+                <CardHeader className="pb-2">
                   <div className="flex justify-between items-center">
-                    <span className="text-sm text-gray-500">{note.date}</span>
+                    <span className="text-sm text-gray-500 font-medium">{note.date}</span>
                     <Button
                       variant="ghost"
                       size="sm"
                       onClick={() => deleteNote(note.id)}
-                      className="text-red-600 hover:text-red-700"
+                      className="text-red-600 hover:text-red-700 h-6 w-6 p-0"
                     >
-                      <Trash2 className="h-4 w-4" />
+                      <Trash2 className="h-3 w-3" />
                     </Button>
                   </div>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="pt-0">
                   {note.note && (
-                    <p className="text-sm mb-3 whitespace-pre-wrap">{note.note}</p>
+                    <p className="text-sm mb-2 whitespace-pre-wrap">{note.note}</p>
                   )}
                   
                   {note.files.length > 0 && (
                     <div className="space-y-2">
-                      <Label className="text-xs font-medium">Attachments:</Label>
+                      <Label className="text-xs font-medium text-gray-600">Attachments:</Label>
                       <div className="grid grid-cols-1 gap-2">
                         {note.files.map((file) => (
-                          <div key={file.id} className="flex items-center justify-between bg-gray-50 p-2 rounded">
-                            <div className="flex items-center gap-2">
-                              {file.type.startsWith('image/') ? (
-                                <Image className="h-4 w-4" />
-                              ) : (
-                                <FileText className="h-4 w-4" />
-                              )}
-                              <span className="text-sm">{file.name}</span>
-                              <span className="text-xs text-gray-500">({formatFileSize(file.size)})</span>
-                            </div>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => downloadFile(file)}
-                            >
-                              <Download className="h-4 w-4" />
-                            </Button>
+                          <div key={file.id} className="space-y-2">
+                            {file.type.startsWith('image/') ? (
+                              <div className="space-y-1">
+                                <div className="flex items-center justify-between bg-gray-50 p-2 rounded">
+                                  <div className="flex items-center gap-2">
+                                    <Image className="h-4 w-4" />
+                                    <span className="text-sm">{file.name}</span>
+                                    <span className="text-xs text-gray-500">({formatFileSize(file.size)})</span>
+                                  </div>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => downloadFile(file)}
+                                    className="h-6 w-6 p-0"
+                                  >
+                                    <Download className="h-3 w-3" />
+                                  </Button>
+                                </div>
+                                <div className="border rounded-lg overflow-hidden">
+                                  <img 
+                                    src={file.url} 
+                                    alt={file.name}
+                                    className="w-full max-w-md h-auto object-contain"
+                                    style={{ maxHeight: '300px' }}
+                                  />
+                                </div>
+                              </div>
+                            ) : (
+                              <div className="flex items-center justify-between bg-gray-50 p-2 rounded">
+                                <div className="flex items-center gap-2">
+                                  <FileText className="h-4 w-4" />
+                                  <span className="text-sm">{file.name}</span>
+                                  <span className="text-xs text-gray-500">({formatFileSize(file.size)})</span>
+                                </div>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => downloadFile(file)}
+                                  className="h-6 w-6 p-0"
+                                >
+                                  <Download className="h-3 w-3" />
+                                </Button>
+                              </div>
+                            )}
                           </div>
                         ))}
                       </div>
@@ -417,14 +444,14 @@ export const CarrierQuoteNotesDialog = ({
             ))}
 
             {notes.length === 0 && (
-              <div className="text-center text-gray-500 py-8">
+              <div className="text-center text-gray-500 py-6">
                 No notes yet. Add your first note above.
               </div>
             )}
           </div>
         </div>
 
-        <div className="flex justify-end mt-6">
+        <div className="flex justify-end mt-4">
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Close
           </Button>
