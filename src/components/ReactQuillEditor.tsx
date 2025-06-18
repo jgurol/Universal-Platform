@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useCallback, useEffect } from 'react';
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
@@ -72,6 +71,7 @@ export const ReactQuillEditor: React.FC<ReactQuillEditorProps> = ({
   const [editorReady, setEditorReady] = useState(false);
   const [internalValue, setInternalValue] = useState('');
   const [isInitialized, setIsInitialized] = useState(false);
+  const [selectedImage, setSelectedImage] = useState<HTMLImageElement | null>(null);
   const [imageResizeDialog, setImageResizeDialog] = useState<{
     open: boolean;
     element: HTMLImageElement | null;
@@ -95,12 +95,158 @@ export const ReactQuillEditor: React.FC<ReactQuillEditorProps> = ({
     }
   }, [value, isInitialized]);
 
-  // Add event listener for image double-clicks
+  // Add resize handles and event listeners for images
   useEffect(() => {
     if (!editorReady || !quillRef.current) return;
 
     const quill = quillRef.current.getEditor();
-    const editorElement = quill.root; // Changed from quill.container to quill.root
+    const editorElement = quill.root;
+
+    // Add CSS for resize handles
+    const style = document.createElement('style');
+    style.textContent = `
+      .ql-editor img.selected {
+        position: relative;
+        border: 2px solid #007bff;
+      }
+      
+      .image-resize-handle {
+        position: absolute;
+        width: 8px;
+        height: 8px;
+        background: #007bff;
+        border: 1px solid white;
+        cursor: nw-resize;
+        z-index: 10;
+      }
+      
+      .image-resize-handle.bottom-right {
+        bottom: -4px;
+        right: -4px;
+        cursor: se-resize;
+      }
+      
+      .image-resize-handle.bottom-left {
+        bottom: -4px;
+        left: -4px;
+        cursor: sw-resize;
+      }
+      
+      .image-resize-handle.top-right {
+        top: -4px;
+        right: -4px;
+        cursor: ne-resize;
+      }
+      
+      .image-resize-handle.top-left {
+        top: -4px;
+        left: -4px;
+        cursor: nw-resize;
+      }
+    `;
+    document.head.appendChild(style);
+
+    const addResizeHandles = (img: HTMLImageElement) => {
+      // Remove existing handles
+      removeResizeHandles();
+      
+      // Add selected class
+      img.classList.add('selected');
+      setSelectedImage(img);
+      
+      // Create resize handles
+      const handles = ['top-left', 'top-right', 'bottom-left', 'bottom-right'];
+      handles.forEach(position => {
+        const handle = document.createElement('div');
+        handle.className = `image-resize-handle ${position}`;
+        handle.addEventListener('mousedown', (e) => startResize(e, img, position));
+        img.parentElement?.appendChild(handle);
+      });
+    };
+
+    const removeResizeHandles = () => {
+      // Remove all existing handles
+      const handles = editorElement.querySelectorAll('.image-resize-handle');
+      handles.forEach(handle => handle.remove());
+      
+      // Remove selected class from all images
+      const images = editorElement.querySelectorAll('img');
+      images.forEach(img => img.classList.remove('selected'));
+      
+      setSelectedImage(null);
+    };
+
+    const startResize = (e: MouseEvent, img: HTMLImageElement, position: string) => {
+      e.preventDefault();
+      e.stopPropagation();
+      
+      const startX = e.clientX;
+      const startY = e.clientY;
+      const startWidth = img.offsetWidth;
+      const startHeight = img.offsetHeight;
+      const aspectRatio = startWidth / startHeight;
+
+      const handleMouseMove = (e: MouseEvent) => {
+        const deltaX = e.clientX - startX;
+        const deltaY = e.clientY - startY;
+        
+        let newWidth = startWidth;
+        let newHeight = startHeight;
+        
+        switch (position) {
+          case 'bottom-right':
+            newWidth = startWidth + deltaX;
+            newHeight = newWidth / aspectRatio;
+            break;
+          case 'bottom-left':
+            newWidth = startWidth - deltaX;
+            newHeight = newWidth / aspectRatio;
+            break;
+          case 'top-right':
+            newWidth = startWidth + deltaX;
+            newHeight = newWidth / aspectRatio;
+            break;
+          case 'top-left':
+            newWidth = startWidth - deltaX;
+            newHeight = newWidth / aspectRatio;
+            break;
+        }
+        
+        // Ensure minimum size
+        newWidth = Math.max(50, newWidth);
+        newHeight = Math.max(50, newHeight);
+        
+        img.style.width = `${newWidth}px`;
+        img.style.height = `${newHeight}px`;
+      };
+
+      const handleMouseUp = () => {
+        document.removeEventListener('mousemove', handleMouseMove);
+        document.removeEventListener('mouseup', handleMouseUp);
+        
+        // Trigger content update
+        const content = quill.root.innerHTML;
+        setInternalValue(content);
+        const markdownContent = convertHtmlToMarkdown(content);
+        onChange(markdownContent);
+        
+        // Re-add handles after resize
+        setTimeout(() => addResizeHandles(img), 10);
+      };
+
+      document.addEventListener('mousemove', handleMouseMove);
+      document.addEventListener('mouseup', handleMouseUp);
+    };
+
+    const handleImageClick = (event: Event) => {
+      const target = event.target as HTMLElement;
+      if (target.tagName === 'IMG') {
+        const img = target as HTMLImageElement;
+        addResizeHandles(img);
+      } else {
+        removeResizeHandles();
+      }
+    };
 
     const handleImageDoubleClick = (event: Event) => {
       const target = event.target as HTMLElement;
@@ -118,12 +264,16 @@ export const ReactQuillEditor: React.FC<ReactQuillEditorProps> = ({
       }
     };
 
+    editorElement.addEventListener('click', handleImageClick);
     editorElement.addEventListener('dblclick', handleImageDoubleClick);
 
     return () => {
+      editorElement.removeEventListener('click', handleImageClick);
       editorElement.removeEventListener('dblclick', handleImageDoubleClick);
+      document.head.removeChild(style);
+      removeResizeHandles();
     };
-  }, [editorReady]);
+  }, [editorReady, onChange]);
 
   const uploadImage = useCallback(async (file: File) => {
     if (!file.type.startsWith('image/')) {
