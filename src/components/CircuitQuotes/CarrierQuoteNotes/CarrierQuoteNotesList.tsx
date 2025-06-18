@@ -118,7 +118,12 @@ export const CarrierQuoteNotesList = ({
                               style={{ maxHeight: '300px' }}
                               onError={(e) => {
                                 console.error('Image failed to load:', file.url);
-                                e.currentTarget.style.display = 'none';
+                                console.error('Error details:', e);
+                                // Show broken image placeholder
+                                const target = e.target as HTMLImageElement;
+                                target.style.display = 'block';
+                                target.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3QgeD0iMyIgeT0iMyIgd2lkdGg9IjE4IiBoZWlnaHQ9IjE4IiByeD0iMiIgc3Ryb2tlPSIjOTk5IiBzdHJva2Utd2lkdGg9IjIiLz4KPGNpcmNsZSBjeD0iOC41IiBjeT0iOC41IiByPSIxLjUiIHN0cm9rZT0iIzk5OSIgc3Ryb2tlLXdpZHRoPSIyIi8+CjxwYXRoIGQ9Im0yMSAxNS0zLjA4Ni0zLjA4NmEyIDIgMCAwIDAtMS4zLjUyOWwtMi40IDE3LjE0M2EyIDIgMCAwIDEtMS4xIC41MzdMMyAxNSIgc3Ryb2tlPSIjOTk5IiBzdHJva2Utd2lkdGg9IjIiLz4KPC9zdmc+';
+                                target.alt = 'Failed to load image';
                               }}
                               onLoad={() => {
                                 console.log('Image loaded successfully:', file.url);

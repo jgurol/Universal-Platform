@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -99,15 +100,6 @@ export const CarrierQuoteNotesDialog = ({
     }
   };
 
-  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(event.target.files || []);
-    setUploadingFiles(prev => [...prev, ...files]);
-  };
-
-  const removeUploadingFile = (index: number) => {
-    setUploadingFiles(prev => prev.filter((_, i) => i !== index));
-  };
-
   const uploadFile = async (file: File): Promise<NoteFile | null> => {
     try {
       const fileExt = file.name.split('.').pop();
@@ -127,6 +119,7 @@ export const CarrierQuoteNotesDialog = ({
 
       console.log('Upload successful:', uploadData);
 
+      // Get the public URL for the uploaded file
       const { data: urlData } = supabase.storage
         .from('carrier-quote-files')
         .getPublicUrl(filePath);
@@ -269,36 +262,6 @@ export const CarrierQuoteNotesDialog = ({
         variant: "destructive"
       });
     }
-  };
-
-  const downloadFile = async (file: NoteFile) => {
-    try {
-      const response = await fetch(file.url);
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = file.name;
-      document.body.appendChild(a);
-      a.click();
-      window.URL.revokeObjectURL(url);
-      document.body.removeChild(a);
-    } catch (error) {
-      console.error('Error downloading file:', error);
-      toast({
-        title: "Download failed",
-        description: "Failed to download file",
-        variant: "destructive"
-      });
-    }
-  };
-
-  const formatFileSize = (bytes: number) => {
-    if (bytes === 0) return '0 Bytes';
-    const k = 1024;
-    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   };
 
   return (
