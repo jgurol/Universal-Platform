@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { Header } from '@/components/Header';
@@ -13,8 +12,8 @@ import {
   TableCell 
 } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
-import { Shield, UserCheck, UserX, PencilIcon, Plus, Mail } from 'lucide-react';
-import { Navigate } from 'react-router-dom';
+import { Shield, UserCheck, UserX, PencilIcon, Plus, Mail, ArrowLeft } from 'lucide-react';
+import { Navigate, Link } from 'react-router-dom';
 import { EditUserDialog } from '@/components/EditUserDialog';
 import { AssociateUserDialog } from '@/components/AssociateUserDialog';
 import { AddUserDialog } from '@/components/AddUserDialog';
@@ -221,7 +220,15 @@ export default function Admin() {
       <Header />
       
       <div className="mb-6 flex justify-between items-center">
-        <h1 className="text-2xl font-bold text-gray-900">User Management</h1>
+        <div className="flex items-center gap-4">
+          <Link to="/">
+            <Button variant="outline" className="flex items-center gap-2">
+              <ArrowLeft className="h-4 w-4" />
+              Back to Dashboard
+            </Button>
+          </Link>
+          <h1 className="text-2xl font-bold text-gray-900">User Management</h1>
+        </div>
         <div className="flex items-center gap-2">
           <Button onClick={() => setIsAddUserOpen(true)} className="bg-green-600 hover:bg-green-700">
             <Plus className="h-4 w-4 mr-2" />
