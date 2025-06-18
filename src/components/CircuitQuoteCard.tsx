@@ -9,6 +9,7 @@ import { CircuitQuoteHeader } from "@/components/CircuitQuoteHeader";
 import { CircuitQuoteCarriers } from "@/components/CircuitQuoteCarriers";
 import { CircuitQuoteStatusSelect } from "@/components/CircuitQuoteStatusSelect";
 import type { CircuitQuote, CarrierQuote } from "@/hooks/useCircuitQuotes";
+import { useToast } from "@/hooks/use-toast";
 
 interface CircuitQuoteCardProps {
   quote: CircuitQuote & {
@@ -34,6 +35,7 @@ export const CircuitQuoteCard = ({
   const [isAddCarrierDialogOpen, setIsAddCarrierDialogOpen] = useState(false);
   const [isEditCarrierDialogOpen, setIsEditCarrierDialogOpen] = useState(false);
   const [editingCarrier, setEditingCarrier] = useState<CarrierQuote | null>(null);
+  const { toast } = useToast();
 
   const handleStatusChange = (newStatus: string) => {
     const updatedQuote = {
@@ -99,6 +101,26 @@ export const CircuitQuoteCard = ({
     }
   };
 
+  const copyCarrierQuote = (carrier: CarrierQuote) => {
+    const carrierCopy = {
+      carrier: carrier.carrier,
+      type: carrier.type,
+      speed: carrier.speed,
+      price: 0, // Reset price for copied quote
+      term: carrier.term,
+      notes: `Copied from ${carrier.carrier} quote`,
+      color: carrier.color
+    };
+
+    if (onAddCarrier) {
+      onAddCarrier(carrierCopy);
+      toast({
+        title: "Carrier Quote Copied",
+        description: `${carrier.carrier} quote has been copied successfully`,
+      });
+    }
+  };
+
   const handleEditCarrier = (carrier: CarrierQuote) => {
     setEditingCarrier(carrier);
     setIsEditCarrierDialogOpen(true);
@@ -157,6 +179,7 @@ export const CircuitQuoteCard = ({
             onAddCarrier={() => setIsAddCarrierDialogOpen(true)}
             onEditCarrier={handleEditCarrier}
             onDeleteCarrier={deleteCarrierQuote}
+            onCopyCarrier={copyCarrierQuote}
           />
         </CardContent>
       )}

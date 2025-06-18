@@ -1,6 +1,6 @@
 
 import { Button } from "@/components/ui/button";
-import { Plus, Edit, Trash2 } from "lucide-react";
+import { Plus, Edit, Trash2, Copy } from "lucide-react";
 import type { CarrierQuote } from "@/hooks/useCircuitQuotes";
 
 interface CircuitQuoteCarriersProps {
@@ -9,6 +9,7 @@ interface CircuitQuoteCarriersProps {
   onAddCarrier?: () => void;
   onEditCarrier?: (carrier: CarrierQuote) => void;
   onDeleteCarrier?: (carrierId: string) => void;
+  onCopyCarrier?: (carrier: CarrierQuote) => void;
 }
 
 export const CircuitQuoteCarriers = ({ 
@@ -16,7 +17,8 @@ export const CircuitQuoteCarriers = ({
   isMinimized = false, 
   onAddCarrier, 
   onEditCarrier, 
-  onDeleteCarrier 
+  onDeleteCarrier,
+  onCopyCarrier
 }: CircuitQuoteCarriersProps) => {
   if (isMinimized) {
     return (
@@ -92,6 +94,17 @@ export const CircuitQuoteCarriers = ({
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
+                  {onCopyCarrier && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => onCopyCarrier(carrier)}
+                      className="h-8 w-8 p-0 text-gray-500 hover:text-green-600"
+                      title="Copy Carrier Quote"
+                    >
+                      <Copy className="h-4 w-4" />
+                    </Button>
+                  )}
                   {onEditCarrier && (
                     <Button
                       variant="ghost"
