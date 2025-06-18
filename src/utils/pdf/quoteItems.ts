@@ -1,3 +1,4 @@
+
 import jsPDF from 'jspdf';
 import { PDFGenerationContext } from './types';
 
@@ -77,27 +78,26 @@ const addMRCItems = async (doc: jsPDF, mrcItems: any[], quote: any, yPos: number
       addressText = addressText.substring(0, 37) + '...';
     }
     
-    // Process description to extract content with proper text/image separation
-    const descriptionContent = await processHtmlDescriptionContent(item.description || item.item?.description || '');
+    // Process description to extract content with proper order preservation
+    const descriptionContent = await processDescriptionWithOrderPreservation(item.description || item.item?.description || '');
     
-    // Calculate proper row height based on content structure
-    let rowHeight = 10; // Base height
+    // Calculate proper row height based on content
+    let rowHeight = 12; // Base height increased
     
-    // Calculate height for text content (account for line breaks)
-    if (descriptionContent.textSegments && descriptionContent.textSegments.length > 0) {
-      const totalTextLines = descriptionContent.textSegments.reduce((total, segment) => {
-        const lines = Math.ceil(segment.length / 35);
-        return total + Math.max(1, lines);
-      }, 0);
-      rowHeight = Math.max(rowHeight, (totalTextLines * 3) + 8);
-    }
-    
-    // Account for images
-    if (descriptionContent.images && descriptionContent.images.length > 0) {
-      const loadedImages = descriptionContent.images.filter(img => img.data);
-      if (loadedImages.length > 0) {
-        rowHeight = Math.max(rowHeight, 25);
+    // Calculate height needed for all content
+    if (descriptionContent.length > 0) {
+      let contentHeight = 0;
+      
+      for (const contentItem of descriptionContent) {
+        if (contentItem.type === 'text') {
+          const lines = Math.ceil(contentItem.content.length / 35);
+          contentHeight += Math.max(1, lines) * 3;
+        } else if (contentItem.type === 'image' && contentItem.data) {
+          contentHeight += 20; // Fixed height for images
+        }
       }
+      
+      rowHeight = Math.max(rowHeight, contentHeight + 15);
     }
     
     if (index % 2 === 0) {
@@ -114,9 +114,9 @@ const addMRCItems = async (doc: jsPDF, mrcItems: any[], quote: any, yPos: number
     doc.setTextColor(80, 80, 80);
     doc.text(`Location: ${addressText}`, colX.description + 4, yPos + 5);
     
-    // Add description content with proper text/image flow
+    // Add description content in the correct order
     const contentStartY = yPos + 10;
-    await addDescriptionContentWithFlow(doc, descriptionContent, colX.description + 4, contentStartY);
+    await addDescriptionContentInOrder(doc, descriptionContent, colX.description + 4, contentStartY);
     
     doc.setTextColor(0, 0, 0);
     doc.setFontSize(9);
@@ -170,29 +170,38 @@ const addNRCItems = (doc: jsPDF, nrcItems: any[], yPos: number, colX: any): numb
   return yPos;
 };
 
-// Enhanced HTML description processor that preserves text/image flow
-const processHtmlDescriptionContent = async (description: string): Promise<{
-  textSegments: string[];
-  images: Array<{ url: string; alt: string; data?: string; dimensions?: { width: number; height: number }; position: number }>;
-}> => {
-  if (!description) return { textSegments: [], images: [] };
+// New function to process HTML/markdown content while preserving exact order
+const processDescriptionWithOrderPreservation = async (description: string): Promise<Array<{
+  type: 'text' | 'image';
+  content: string;
+  data?: string;
+  dimensions?: { width: number; height: number };
+}>> => {
+  if (!description) return [];
   
-  console.log('[PDF] Processing HTML description with flow preservation:', description.substring(0, 200));
+  console.log('[PDF] Processing description with order preservation:', description.substring(0, 200));
+  
+  const contentItems: Array<{
+    type: 'text' | 'image';
+    content: string;
+    data?: string;
+    dimensions?: { width: number; height: number };
+  }> = [];
   
   // Create a temporary DOM structure to parse HTML properly
   const tempDiv = document.createElement('div');
   tempDiv.innerHTML = description;
   
-  const textSegments: string[] = [];
-  const images: Array<{ url: string; alt: string; data?: string; dimensions?: { width: number; height: number }; position: number }> = [];
-  
-  // Process nodes in order to maintain text/image flow
-  const processNode = async (node: Node, segmentIndex: number): Promise<number> => {
+  // Process nodes in document order to maintain sequence
+  const processNode = async (node: Node): Promise<void> => {
     if (node.nodeType === Node.TEXT_NODE) {
       const text = node.textContent?.trim();
       if (text) {
-        textSegments.push(text);
-        return segmentIndex + 1;
+        contentItems.push({
+          type: 'text',
+          content: text
+        });
+        console.log('[PDF] Found text in order:', text.substring(0, 50));
       }
     } else if (node.nodeType === Node.ELEMENT_NODE) {
       const element = node as Element;
@@ -201,76 +210,79 @@ const processHtmlDescriptionContent = async (description: string): Promise<{
         const url = element.getAttribute('src') || '';
         const alt = element.getAttribute('alt') || 'Image';
         
-        console.log('[PDF] Found image at position:', segmentIndex, { url: url.substring(0, 100), alt });
+        console.log('[PDF] Found image in order:', { url: url.substring(0, 100), alt });
         
         try {
           const imageResult = await loadImageForPDF(url);
           if (imageResult) {
-            images.push({ 
-              url, 
-              alt, 
+            contentItems.push({
+              type: 'image',
+              content: alt,
               data: imageResult.data,
-              dimensions: imageResult.dimensions,
-              position: segmentIndex
+              dimensions: imageResult.dimensions
             });
             console.log('[PDF] Successfully loaded image data for:', alt);
           } else {
-            images.push({ url, alt, position: segmentIndex });
+            contentItems.push({
+              type: 'image',
+              content: alt
+            });
           }
         } catch (error) {
           console.error('[PDF] Error loading embedded image:', error);
-          images.push({ url, alt, position: segmentIndex });
+          contentItems.push({
+            type: 'image',
+            content: alt
+          });
         }
-        
-        return segmentIndex + 1;
       } else {
         // Process child nodes for other elements (p, strong, em, etc.)
-        let currentIndex = segmentIndex;
         for (const child of Array.from(element.childNodes)) {
-          currentIndex = await processNode(child, currentIndex);
+          await processNode(child);
         }
-        return currentIndex;
       }
     }
-    
-    return segmentIndex;
   };
   
   // Process all nodes maintaining order
-  let segmentIndex = 0;
   for (const child of Array.from(tempDiv.childNodes)) {
-    segmentIndex = await processNode(child, segmentIndex);
+    await processNode(child);
   }
   
-  // Clean up text segments
-  const cleanedSegments = textSegments
-    .map(segment => segment
-      .replace(/&nbsp;/g, ' ')
-      .replace(/&amp;/g, '&')
-      .replace(/&lt;/g, '<')
-      .replace(/&gt;/g, '>')
-      .replace(/&quot;/g, '"')
-      .replace(/&#39;/g, "'")
-      .trim()
-    )
-    .filter(segment => segment.length > 0);
+  // Clean up text content
+  const cleanedItems = contentItems.map(item => {
+    if (item.type === 'text') {
+      const cleanedText = item.content
+        .replace(/&nbsp;/g, ' ')
+        .replace(/&amp;/g, '&')
+        .replace(/&lt;/g, '<')
+        .replace(/&gt;/g, '>')
+        .replace(/&quot;/g, '"')
+        .replace(/&#39;/g, "'")
+        .trim();
+      
+      return { ...item, content: cleanedText };
+    }
+    return item;
+  }).filter(item => item.content.length > 0);
   
-  console.log('[PDF] Description processing complete:', { 
-    textSegments: cleanedSegments.length, 
-    imageCount: images.length, 
-    loadedImages: images.filter(img => img.data).length
+  console.log('[PDF] Description processing complete with order preservation:', { 
+    totalItems: cleanedItems.length,
+    sequence: cleanedItems.map((item, i) => `${i + 1}: ${item.type} - ${item.content.substring(0, 30)}`)
   });
   
-  return { textSegments: cleanedSegments, images };
+  return cleanedItems;
 };
 
-// Add description content maintaining proper text/image flow
-const addDescriptionContentWithFlow = async (
+// Add description content maintaining exact order from ReactQuill
+const addDescriptionContentInOrder = async (
   doc: jsPDF, 
-  content: { 
-    textSegments: string[]; 
-    images: Array<{ url: string; alt: string; data?: string; dimensions?: { width: number; height: number }; position: number }> 
-  }, 
+  contentItems: Array<{
+    type: 'text' | 'image';
+    content: string;
+    data?: string;
+    dimensions?: { width: number; height: number };
+  }>, 
   startX: number, 
   startY: number
 ): Promise<void> => {
@@ -278,24 +290,13 @@ const addDescriptionContentWithFlow = async (
   const lineHeight = 3;
   const contentWidth = 120;
   
-  // Create a combined array of content items with their positions
-  const contentItems: Array<{ type: 'text' | 'image'; content: any; position: number }> = [];
+  console.log('[PDF] Adding content in order, total items:', contentItems.length);
   
-  // Add text segments
-  content.textSegments.forEach((text, index) => {
-    contentItems.push({ type: 'text', content: text, position: index });
-  });
-  
-  // Add images with their positions
-  content.images.forEach(image => {
-    contentItems.push({ type: 'image', content: image, position: image.position });
-  });
-  
-  // Sort by position to maintain proper flow
-  contentItems.sort((a, b) => a.position - b.position);
-  
-  // Process items in order
-  for (const item of contentItems) {
+  // Process items in their original order
+  for (let i = 0; i < contentItems.length; i++) {
+    const item = contentItems[i];
+    console.log(`[PDF] Processing item ${i + 1}: ${item.type} - ${item.content.substring(0, 30)}`);
+    
     if (item.type === 'text') {
       doc.setFontSize(7);
       doc.setTextColor(60, 60, 60);
@@ -313,17 +314,16 @@ const addDescriptionContentWithFlow = async (
         currentY += lineHeight;
       }
       
-      // Add small spacing after text
+      // Small spacing after text
       currentY += 1;
       
-    } else if (item.type === 'image' && item.content.data && item.content.dimensions) {
+    } else if (item.type === 'image' && item.data && item.dimensions) {
       try {
-        const image = item.content;
         const maxImageWidth = 20;
         const maxImageHeight = 18;
         
         // Calculate proper dimensions maintaining aspect ratio
-        let { width, height } = image.dimensions;
+        let { width, height } = item.dimensions;
         const aspectRatio = width / height;
         
         if (width > maxImageWidth || height > maxImageHeight) {
@@ -336,38 +336,41 @@ const addDescriptionContentWithFlow = async (
           }
         }
         
-        console.log('[PDF] Adding image with flow at position:', image.position, { 
+        console.log(`[PDF] Adding image ${i + 1} at position:`, { 
           x: startX, 
           y: currentY, 
           width, 
-          height
+          height,
+          content: item.content
         });
         
         // Determine image format
         let format = 'JPEG';
-        if (image.data.includes('data:image/png')) {
+        if (item.data.includes('data:image/png')) {
           format = 'PNG';
-        } else if (image.data.includes('data:image/gif')) {
+        } else if (item.data.includes('data:image/gif')) {
           format = 'GIF';
         }
         
-        doc.addImage(image.data, format, startX, currentY, width, height);
-        console.log('[PDF] Successfully added image with flow:', image.alt);
+        doc.addImage(item.data, format, startX, currentY, width, height);
+        console.log(`[PDF] Successfully added image ${i + 1}:`, item.content);
         
         // Move Y position after image
         currentY += height + 3; // Add spacing after image
         
       } catch (error) {
-        console.error('[PDF] Error adding image with flow to PDF:', error);
+        console.error(`[PDF] Error adding image ${i + 1} to PDF:`, error);
         // Add a placeholder text instead
         doc.setFontSize(6);
         doc.setTextColor(100, 100, 100);
         doc.setFont('helvetica', 'italic');
-        doc.text(`[Image: ${item.content.alt}]`, startX, currentY);
+        doc.text(`[Image: ${item.content}]`, startX, currentY);
         currentY += lineHeight;
       }
     }
   }
+  
+  console.log('[PDF] Finished adding content in order, final Y:', currentY);
 };
 
 // Helper function to load image for PDF with proper dimension tracking
