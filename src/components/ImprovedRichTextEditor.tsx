@@ -49,7 +49,7 @@ export const ImprovedRichTextEditor: React.FC<ImprovedRichTextEditorProps> = ({
       .replace(/\n/g, '<br>');
   };
 
-  // Convert HTML back to markdown
+  // Convert HTML back to markdown - Fixed version
   const htmlToMarkdown = (html: string): string => {
     if (!html) return '';
     
@@ -66,7 +66,9 @@ export const ImprovedRichTextEditor: React.FC<ImprovedRichTextEditorProps> = ({
         const tagName = element.tagName.toLowerCase();
         
         let content = '';
-        for (const child of element.childNodes) {
+        // Process child nodes in correct order
+        const childNodes = Array.from(element.childNodes);
+        for (const child of childNodes) {
           content += processNode(child);
         }
         
@@ -105,6 +107,8 @@ export const ImprovedRichTextEditor: React.FC<ImprovedRichTextEditorProps> = ({
     };
     
     let result = processNode(tempDiv);
+    
+    // Clean up extra newlines
     result = result
       .replace(/\n{3,}/g, '\n\n')
       .replace(/^\n+/, '')
