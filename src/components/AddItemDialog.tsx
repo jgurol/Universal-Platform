@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -8,7 +9,7 @@ import { Switch } from "@/components/ui/switch";
 import { Item } from "@/types/items";
 import { useCategories } from "@/hooks/useCategories";
 import { useVendors } from "@/hooks/useVendors";
-import { TiptapEditor } from "@/components/TiptapEditor";
+import { AdvancedTiptapEditor } from "@/components/AdvancedTiptapEditor";
 
 interface AddItemDialogProps {
   open: boolean;
@@ -58,7 +59,7 @@ export const AddItemDialog = ({ open, onOpenChange, onAddItem }: AddItemDialogPr
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-[800px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Add New Item</DialogTitle>
           <DialogDescription>
@@ -79,11 +80,11 @@ export const AddItemDialog = ({ open, onOpenChange, onAddItem }: AddItemDialogPr
 
           <div className="space-y-2">
             <Label htmlFor="description">Description</Label>
-            <TiptapEditor
+            <AdvancedTiptapEditor
               value={description}
               onChange={setDescription}
               placeholder="Enter item description..."
-              className="min-h-[200px]"
+              className="min-h-[300px]"
             />
           </div>
 
