@@ -34,9 +34,28 @@ export const useCarrierQuoteItems = (clientInfoId: string | null) => {
 
       setLoading(true);
       try {
-        console.log('[useCarrierQuoteItems] Fetching circuit quotes for client:', clientInfoId);
+        console.log('[useCarrierQuoteItems] Fetching ALL circuit quotes for client to debug:', clientInfoId);
         
-        // Get circuit quotes for this client that are completed
+        // First, let's see ALL circuit quotes for this client (regardless of status)
+        const { data: allCircuitQuotes, error: allCircuitError } = await supabase
+          .from('circuit_quotes')
+          .select('id, client_name, location, status, client_info_id')
+          .eq('user_id', user.id)
+          .eq('client_info_id', clientInfoId);
+
+        if (allCircuitError) {
+          console.error('[useCarrierQuoteItems] Error fetching all circuit quotes:', allCircuitError);
+        } else {
+          console.log('[useCarrierQuoteItems] ALL circuit quotes for this client:', allCircuitQuotes);
+          console.log('[useCarrierQuoteItems] Circuit quotes by status:', 
+            allCircuitQuotes?.reduce((acc, quote) => {
+              acc[quote.status] = (acc[quote.status] || 0) + 1;
+              return acc;
+            }, {} as Record<string, number>)
+          );
+        }
+
+        // Now get circuit quotes for this client that are completed
         const { data: circuitQuotes, error: circuitError } = await supabase
           .from('circuit_quotes')
           .select('id, client_name, location, status')
@@ -49,7 +68,7 @@ export const useCarrierQuoteItems = (clientInfoId: string | null) => {
           return;
         }
 
-        console.log('[useCarrierQuoteItems] Found circuit quotes:', circuitQuotes);
+        console.log('[useCarrierQuoteItems] Found COMPLETED circuit quotes:', circuitQuotes);
 
         if (!circuitQuotes || circuitQuotes.length === 0) {
           console.log('[useCarrierQuoteItems] No completed circuit quotes found for this client');
