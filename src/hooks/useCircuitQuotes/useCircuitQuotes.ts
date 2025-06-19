@@ -29,6 +29,7 @@ export const useCircuitQuotes = () => {
         if (!user?.id) {
           console.log('[useCircuitQuotes] Non-admin user without user_id - no quotes to fetch');
           setQuotes([]);
+          setLoading(false);
           return;
         }
         query = query.eq('user_id', user.id);
@@ -46,10 +47,12 @@ export const useCircuitQuotes = () => {
           description: quotesError.message,
           variant: "destructive"
         });
+        setLoading(false);
         return;
       }
 
       console.log('[useCircuitQuotes] Raw data from Supabase:', circuitQuotes);
+      console.log('[useCircuitQuotes] Number of quotes fetched:', circuitQuotes?.length || 0);
 
       // Transform data to match the expected format
       const transformedQuotes: CircuitQuote[] = (circuitQuotes || []).map(quote => ({
@@ -383,9 +386,14 @@ export const useCircuitQuotes = () => {
   };
 
   useEffect(() => {
-    // Fetch quotes on initial load, even if user is not yet available
-    fetchQuotes();
-  }, [fetchQuotes]);
+    // Only fetch if we have auth information
+    if (user !== undefined && isAdmin !== undefined) {
+      console.log('[useCircuitQuotes] useEffect triggered - fetching quotes');
+      fetchQuotes();
+    } else {
+      console.log('[useCircuitQuotes] Waiting for auth information...');
+    }
+  }, [user, isAdmin, fetchQuotes]);
 
   return {
     quotes,
