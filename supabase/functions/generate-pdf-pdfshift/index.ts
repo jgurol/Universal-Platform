@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.50.0';
 
@@ -509,14 +508,25 @@ const generateHTML = (quote: any, clientInfo?: any, salespersonName?: string, lo
         
         .item-description p {
             margin: 4px 0;
+            font-size: 11px;
         }
         
         .item-description strong, .item-description b {
             font-weight: bold;
+            font-size: 11px;
         }
         
         .item-description em, .item-description i {
             font-style: italic;
+            font-size: 11px;
+        }
+        
+        .item-description div {
+            font-size: 11px;
+        }
+        
+        .item-description span {
+            font-size: 11px;
         }
         
         .total-amount {
