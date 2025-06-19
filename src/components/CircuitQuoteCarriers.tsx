@@ -47,16 +47,18 @@ export const CircuitQuoteCarriers = ({
       <div className="flex flex-wrap gap-2 mt-3 pt-3 border-t border-gray-100">
         {sortedCarriers.map((carrier) => {
           const isPending = !carrier.price || carrier.price === 0;
+          const isNoService = carrier.no_service;
           const tickedOptions = getTickedCheckboxes(carrier);
-          const tooltipText = `${carrier.carrier} - ${carrier.type} - ${carrier.speed} - ${carrier.price > 0 ? `$${carrier.price}` : 'Pending quote'}${tickedOptions.length > 0 ? ` - ${tickedOptions.join(', ')}` : ''}`;
+          const priceText = isNoService ? 'No Service' : (carrier.price > 0 ? `$${carrier.price}` : 'Pending quote');
+          const tooltipText = `${carrier.carrier} - ${carrier.type} - ${carrier.speed} - ${priceText}${tickedOptions.length > 0 ? ` - ${tickedOptions.join(', ')}` : ''}`;
           
           return (
             <div
               key={carrier.id}
               className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium text-white shadow-sm ${
-                isPending ? 'animate-pulse' : ''
-              }`}
-              style={{ backgroundColor: carrier.color || '#3B82F6' }}
+                isPending && !isNoService ? 'animate-pulse' : ''
+              } ${isNoService ? 'bg-red-400' : ''}`}
+              style={{ backgroundColor: isNoService ? '#f87171' : (carrier.color || '#3B82F6') }}
               title={tooltipText}
             >
               <span className="mr-1">{carrier.carrier}</span>
@@ -89,17 +91,23 @@ export const CircuitQuoteCarriers = ({
       <div className="grid gap-3">
         {sortedCarriers.map((carrier) => {
           const isPending = !carrier.price || carrier.price === 0;
+          const isNoService = carrier.no_service;
           const tickedOptions = getTickedCheckboxes(carrier);
           
           return (
-            <div key={carrier.id} className="border rounded-lg p-4 bg-gray-50">
+            <div 
+              key={carrier.id} 
+              className={`border rounded-lg p-4 ${
+                isNoService ? 'bg-red-50 border-red-200' : 'bg-gray-50'
+              }`}
+            >
               <div className="grid grid-cols-1 md:grid-cols-8 gap-4 items-center">
                 <div>
                   <div 
                     className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium text-white shadow-sm ${
-                      isPending ? 'animate-pulse' : ''
+                      isPending && !isNoService ? 'animate-pulse' : ''
                     }`}
-                    style={{ backgroundColor: carrier.color || '#3B82F6' }}
+                    style={{ backgroundColor: isNoService ? '#f87171' : (carrier.color || '#3B82F6') }}
                   >
                     {carrier.carrier}
                   </div>
@@ -111,9 +119,11 @@ export const CircuitQuoteCarriers = ({
                   <div className="font-medium">{carrier.speed}</div>
                 </div>
                 <div>
-                  <div className="font-semibold text-lg">
-                    {carrier.price > 0 ? `$${carrier.price}` : (
-                      <span className="text-orange-600 text-sm">Pending</span>
+                  <div className={`font-semibold text-lg ${isNoService ? 'text-red-600' : ''}`}>
+                    {isNoService ? 'No Service' : (
+                      carrier.price > 0 ? `$${carrier.price}` : (
+                        <span className="text-orange-600 text-sm">Pending</span>
+                      )
                     )}
                   </div>
                 </div>
@@ -127,7 +137,12 @@ export const CircuitQuoteCarriers = ({
                     {tickedOptions.length > 0 && (
                       <div className="flex flex-wrap gap-1 mb-1">
                         {tickedOptions.map((option, index) => (
-                          <span key={index} className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-blue-100 text-blue-800">
+                          <span 
+                            key={index} 
+                            className={`inline-flex items-center px-2 py-1 rounded-full text-xs ${
+                              option === 'No Service' ? 'bg-red-100 text-red-800' : 'bg-blue-100 text-blue-800'
+                            }`}
+                          >
                             {option}
                           </span>
                         ))}
