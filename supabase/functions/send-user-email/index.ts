@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.50.0";
 import { Resend } from "npm:resend@2.0.0";
@@ -119,7 +118,7 @@ const handler = async (req: Request): Promise<Response> => {
         ` : `
           <p>Please check your email for the password reset link to set up your account.</p>
         `}
-        <p>You can access the platform at: <a href="${Deno.env.get('SITE_URL') || 'https://your-site.com'}">${Deno.env.get('SITE_URL') || 'https://your-site.com'}</a></p>
+        <p>You can access the platform at: <a href="https://universal.californiatelecom.com">https://universal.californiatelecom.com</a></p>
         <p>Best regards,<br>The Universal Platform Team</p>
       `;
     } else {
