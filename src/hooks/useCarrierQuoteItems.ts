@@ -26,29 +26,47 @@ export const useCarrierQuoteItems = (clientInfoId: string | null) => {
     const fetchCarrierQuoteItems = async () => {
       console.log('[useCarrierQuoteItems] Starting fetch with clientInfoId:', clientInfoId);
       
-      if (!user || !clientInfoId) {
-        console.log('[useCarrierQuoteItems] Missing user or clientInfoId, clearing items');
+      if (!user) {
+        console.log('[useCarrierQuoteItems] Missing user, clearing items');
         setCarrierQuoteItems([]);
         return;
       }
 
       setLoading(true);
       try {
-        // Get circuit quotes for this client (removed status filter to include all statuses)
-        const { data: circuitQuotes, error: circuitError } = await supabase
-          .from('circuit_quotes')
-          .select('id, client_name, location, status')
-          .eq('client_info_id', clientInfoId);
+        let circuitQuotes;
+        let circuitError;
+
+        if (clientInfoId) {
+          // Get circuit quotes for this specific client, including ones with NULL client_info_id
+          const { data, error } = await supabase
+            .from('circuit_quotes')
+            .select('id, client_name, location, status')
+            .or(`client_info_id.eq.${clientInfoId},client_info_id.is.null`)
+            .eq('status', 'completed');
+          
+          circuitQuotes = data;
+          circuitError = error;
+        } else {
+          // If no specific client selected, get all completed circuit quotes
+          const { data, error } = await supabase
+            .from('circuit_quotes')
+            .select('id, client_name, location, status')
+            .eq('status', 'completed');
+          
+          circuitQuotes = data;
+          circuitError = error;
+        }
 
         if (circuitError) {
           console.error('[useCarrierQuoteItems] Error fetching circuit quotes:', circuitError);
           return;
         }
 
-        console.log('[useCarrierQuoteItems] Found circuit quotes (all statuses):', circuitQuotes);
+        console.log('[useCarrierQuoteItems] Found circuit quotes:', circuitQuotes);
 
         if (!circuitQuotes || circuitQuotes.length === 0) {
-          console.log('[useCarrierQuoteItems] No circuit quotes found for this client');
+          console.log('[useCarrierQuoteItems] No circuit quotes found');
           setCarrierQuoteItems([]);
           return;
         }
