@@ -25,6 +25,7 @@ export const CircuitQuotesManagement = () => {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [statsFilter, setStatsFilter] = useState<string | null>(null);
 
   const handleUpdateQuote = (updatedQuote: any) => {
     // Transform the quote to match database format
@@ -48,6 +49,16 @@ export const CircuitQuotesManagement = () => {
     deleteQuote(quoteId);
   };
 
+  const handleStatsFilterChange = (filter: string | null) => {
+    setStatsFilter(filter);
+    // Update the status filter to match the stats filter
+    if (filter) {
+      setStatusFilter(filter);
+    } else {
+      setStatusFilter("all");
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-8">
@@ -63,11 +74,18 @@ export const CircuitQuotesManagement = () => {
         searchTerm={searchTerm}
         onSearchChange={setSearchTerm}
         statusFilter={statusFilter}
-        onStatusFilterChange={setStatusFilter}
+        onStatusFilterChange={(filter) => {
+          setStatusFilter(filter);
+          setStatsFilter(filter === "all" ? null : filter);
+        }}
         onAddQuote={() => setIsAddDialogOpen(true)}
       />
 
-      <CircuitQuotesStats quotes={quotes} />
+      <CircuitQuotesStats 
+        quotes={quotes} 
+        activeFilter={statsFilter}
+        onFilterChange={handleStatsFilterChange}
+      />
 
       <CircuitQuotesList
         quotes={quotes}
