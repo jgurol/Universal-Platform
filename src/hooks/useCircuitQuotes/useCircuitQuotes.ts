@@ -25,10 +25,15 @@ export const useCircuitQuotes = () => {
         .order('created_at', { ascending: false });
 
       // Only filter by user_id for non-admin users
-      if (!isAdmin && user?.id) {
+      if (!isAdmin) {
+        if (!user?.id) {
+          console.log('[useCircuitQuotes] Non-admin user without user_id - no quotes to fetch');
+          setQuotes([]);
+          return;
+        }
         query = query.eq('user_id', user.id);
         console.log('[useCircuitQuotes] Non-admin user - filtering by user_id:', user.id);
-      } else if (isAdmin) {
+      } else {
         console.log('[useCircuitQuotes] Admin user - fetching all quotes');
       }
 
