@@ -29,7 +29,7 @@ const handler = async (req: Request): Promise<Response> => {
     console.log('PDFShift Function - API Key configured:', !!Deno.env.get('PDFSHIFT_API_KEY'));
     
     // Create HTML template
-    const html = generateHTML(quote, clientInfo, salespersonName);
+    const html = generateHTML(quote, clientInfo, salespersonName, req);
     console.log('PDFShift Function - HTML generated, length:', html.length);
     
     // Call PDFShift API with corrected parameters
@@ -44,8 +44,8 @@ const handler = async (req: Request): Promise<Response> => {
         landscape: false,
         format: 'Letter',
         margin: '0.5in',
-        wait_for: 1000
-        // Removed print_background as it's not supported by PDFShift
+        wait_for: "1000ms"
+        // Fixed: wait_for should be a string with units, and removed unsupported print_background
       }),
     });
 
@@ -83,7 +83,7 @@ const handler = async (req: Request): Promise<Response> => {
   }
 };
 
-const generateHTML = (quote: any, clientInfo?: any, salespersonName?: string): string => {
+const generateHTML = (quote: any, clientInfo?: any, salespersonName?: string, req?: Request): string => {
   const mrcItems = quote.quoteItems?.filter((item: any) => item.charge_type === 'MRC') || [];
   const nrcItems = quote.quoteItems?.filter((item: any) => item.charge_type === 'NRC') || [];
   
@@ -94,6 +94,9 @@ const generateHTML = (quote: any, clientInfo?: any, salespersonName?: string): s
   const serviceAddress = quote.serviceAddress || billingAddress || '';
   
   const isApproved = quote.status === 'approved' || quote.status === 'accepted';
+  
+  // Get origin from request headers or use fallback
+  const origin = req?.headers.get('origin') || 'https://your-app-url.com';
   
   return `
 <!DOCTYPE html>
@@ -430,7 +433,7 @@ const generateHTML = (quote: any, clientInfo?: any, salespersonName?: string): s
         <p style="margin-bottom: 25px; font-size: 16px;">
             <strong>🚀 Ready to proceed?</strong> Click the button below to accept this agreement.
         </p>
-        <a href="${req.headers.get('origin') || 'https://your-app-url.com'}/accept-quote/${quote.id}" class="accept-button">
+        <a href="${origin}/accept-quote/${quote.id}" class="accept-button">
             ✍️ ACCEPT AGREEMENT
         </a>
         <p style="margin-top: 20px; font-size: 12px; color: #666;">
