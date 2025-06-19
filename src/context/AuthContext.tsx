@@ -4,6 +4,13 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { initializeTimezone } from '@/utils/dateUtils';
 
+interface UserProfile {
+  full_name?: string;
+  email?: string;
+  role?: string;
+  timezone?: string;
+}
+
 interface AuthContextType {
   session: Session | null;
   user: User | null;
@@ -14,6 +21,7 @@ interface AuthContextType {
   isAdmin: boolean;
   isAssociated: boolean;
   refreshUserProfile: () => Promise<void>;
+  userProfile: UserProfile | null;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -45,6 +53,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = React.useState(true);
   const [isAdmin, setIsAdmin] = React.useState(false);
   const [isAssociated, setIsAssociated] = React.useState(false);
+  const [userProfile, setUserProfile] = React.useState<UserProfile | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -72,6 +81,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setUser(null);
           setIsAdmin(false);
           setIsAssociated(false);
+          setUserProfile(null);
           setLoading(false);
           return;
         }
@@ -83,6 +93,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setUser(null);
           setIsAdmin(false);
           setIsAssociated(false);
+          setUserProfile(null);
           setLoading(false);
           return;
         }
@@ -99,6 +110,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setUser(null);
           setIsAdmin(false);
           setIsAssociated(false);
+          setUserProfile(null);
           setLoading(false);
           return;
         }
@@ -121,6 +133,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         } else {
           setIsAdmin(false);
           setIsAssociated(false);
+          setUserProfile(null);
           setLoading(false);
         }
       }
@@ -142,6 +155,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setUser(null);
           setIsAdmin(false);
           setIsAssociated(false);
+          setUserProfile(null);
           setLoading(false);
         } else if (!currentSession) {
           console.log("AuthProvider: Initial session check: No session found - user is not authenticated");
@@ -150,6 +164,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setUser(null);
           setIsAdmin(false);
           setIsAssociated(false);
+          setUserProfile(null);
           setLoading(false);
         } else {
           console.log("AuthProvider: Initial session check result:", currentSession ? `Session exists for ${currentSession.user?.email}` : "No session found");
@@ -166,6 +181,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             setUser(null);
             setIsAdmin(false);
             setIsAssociated(false);
+            setUserProfile(null);
             setLoading(false);
           } else if (currentSession.user) {
             setSession(currentSession);
@@ -185,6 +201,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setUser(null);
           setIsAdmin(false);
           setIsAssociated(false);
+          setUserProfile(null);
           setLoading(false);
         }
       }
@@ -216,6 +233,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           console.log("AuthProvider: Detected the admin user by email, granting admin access");
           setIsAdmin(true);
           setIsAssociated(true);
+          setUserProfile({
+            full_name: 'Jim',
+            email: user?.email,
+            role: 'admin'
+          });
           return;
         }
         
@@ -234,17 +256,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         console.log("AuthProvider: Setting admin status:", isUserAdmin, "associated:", profileData.is_associated);
         setIsAdmin(isUserAdmin);
         setIsAssociated(profileData.is_associated || false);
+        
+        // Set the user profile data
+        setUserProfile({
+          full_name: profileData.full_name,
+          email: profileData.email,
+          role: profileData.role,
+          timezone: profileData.timezone
+        });
       } else {
         console.log("AuthProvider: No profile data found for user", userId);
         // No profile data found, set safe defaults
         setIsAdmin(false);
         setIsAssociated(false);
+        setUserProfile(null);
       }
     } catch (error) {
       console.error('AuthProvider: Error in profile fetch:', error);
       // Set defaults for failed profile fetch
       setIsAdmin(false);
       setIsAssociated(false);
+      setUserProfile(null);
     }
   };
 
@@ -360,6 +392,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setUser(null);
       setIsAdmin(false);
       setIsAssociated(false);
+      setUserProfile(null);
       
       // Attempt global sign out
       const { error } = await supabase.auth.signOut({ scope: 'global' });
@@ -389,6 +422,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setUser(null);
       setIsAdmin(false);
       setIsAssociated(false);
+      setUserProfile(null);
       window.location.href = '/auth';
     }
   };
@@ -405,6 +439,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     isAdmin,
     isAssociated,
     refreshUserProfile,
+    userProfile,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
