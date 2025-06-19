@@ -144,7 +144,6 @@ export const SpeedsManagement = () => {
                 <TableRow>
                   <TableHead>Name</TableHead>
                   <TableHead>Description</TableHead>
-                  <TableHead>Type</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
@@ -154,11 +153,6 @@ export const SpeedsManagement = () => {
                   <TableRow key={speed.id}>
                     <TableCell className="font-medium">{speed.name}</TableCell>
                     <TableCell>{speed.description || "—"}</TableCell>
-                    <TableCell>
-                      <Badge variant={isSystemDefault(speed.user_id) ? "default" : "secondary"}>
-                        {isSystemDefault(speed.user_id) ? "System Default" : "Custom"}
-                      </Badge>
-                    </TableCell>
                     <TableCell>
                       <Badge variant={speed.is_active ? "default" : "secondary"}>
                         {speed.is_active ? "Active" : "Inactive"}
