@@ -8,7 +8,7 @@ import { Vendor } from "@/types/vendors";
 export const useVendors = () => {
   const [vendors, setVendors] = useState<Vendor[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const { user } = useAuth();
+  const { user, isAdmin } = useAuth();
   const { toast } = useToast();
 
   const fetchVendors = async () => {
@@ -16,11 +16,17 @@ export const useVendors = () => {
     
     try {
       setIsLoading(true);
-      const { data, error } = await supabase
+      let query = supabase
         .from('vendors')
         .select('*')
-        .eq('is_active', true)
-        .order('name');
+        .eq('is_active', true);
+
+      // Only filter by user_id if not admin
+      if (!isAdmin) {
+        query = query.eq('user_id', user.id);
+      }
+
+      const { data, error } = await query.order('name');
 
       if (error) {
         console.error('Error fetching vendors:', error);
@@ -80,11 +86,17 @@ export const useVendors = () => {
     if (!user) return;
 
     try {
-      const { data, error } = await supabase
+      let query = supabase
         .from('vendors')
         .update(updates)
-        .eq('id', vendorId)
-        .eq('user_id', user.id)
+        .eq('id', vendorId);
+
+      // Only filter by user_id if not admin
+      if (!isAdmin) {
+        query = query.eq('user_id', user.id);
+      }
+
+      const { data, error } = await query
         .select('*')
         .single();
 
@@ -114,7 +126,7 @@ export const useVendors = () => {
 
   useEffect(() => {
     fetchVendors();
-  }, [user]);
+  }, [user, isAdmin]);
 
   return {
     vendors,
