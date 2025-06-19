@@ -33,8 +33,10 @@ const Index = () => {
   }
 
   // CRITICAL: Check both session AND user for complete authentication verification
+  // If either is missing, redirect to auth
   if (!session || !user) {
-    console.log('Index page - No valid authentication, redirecting to auth');
+    console.log('Index page - Authentication failed: session exists:', !!session, 'user exists:', !!user);
+    console.log('Index page - Redirecting to /auth due to missing authentication');
     return <Navigate to="/auth" replace />;
   }
 
@@ -53,7 +55,7 @@ const Index = () => {
     return <Navigate to="/auth" replace />;
   }
 
-  console.log('Index page - User authenticated, rendering dashboard');
+  console.log('Index page - User authenticated successfully, rendering dashboard');
   return <IndexPageLayout />;
 };
 

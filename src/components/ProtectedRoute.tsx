@@ -37,8 +37,12 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   }
 
   // CRITICAL: Check both session AND user to ensure complete authentication
+  // Both must be present for authentication to be valid
   if (!session || !user) {
-    console.log('ProtectedRoute - No valid session or user found, redirecting to auth');
+    console.log('ProtectedRoute - Authentication check failed');
+    console.log('ProtectedRoute - Session exists:', !!session);
+    console.log('ProtectedRoute - User exists:', !!user);
+    console.log('ProtectedRoute - Redirecting to /auth');
     return <Navigate to="/auth" replace />;
   }
 
@@ -63,6 +67,6 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
     return <Navigate to="/" replace />;
   }
 
-  console.log('ProtectedRoute - User authenticated successfully, rendering children');
+  console.log('ProtectedRoute - All authentication checks passed, rendering children');
   return <>{children}</>;
 };

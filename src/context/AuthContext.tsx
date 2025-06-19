@@ -76,9 +76,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           return;
         }
         
-        // Handle signed out state
+        // Handle signed out state or no session
         if (event === 'SIGNED_OUT' || !currentSession) {
-          console.log("AuthProvider: User signed out or no session");
+          console.log("AuthProvider: User signed out or no session - clearing all state");
           setSession(null);
           setUser(null);
           setIsAdmin(false);
@@ -142,11 +142,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setUser(null);
           setIsAdmin(false);
           setIsAssociated(false);
+          setLoading(false);
+        } else if (!currentSession) {
+          console.log("AuthProvider: Initial session check: No session found - user is not authenticated");
+          // Explicitly set all auth state to null/false when no session
+          setSession(null);
+          setUser(null);
+          setIsAdmin(false);
+          setIsAssociated(false);
+          setLoading(false);
         } else {
           console.log("AuthProvider: Initial session check result:", currentSession ? `Session exists for ${currentSession.user?.email}` : "No session found");
           
           // CRITICAL: Validate session expiration immediately
-          if (currentSession && currentSession.expires_at && currentSession.expires_at <= Date.now() / 1000) {
+          if (currentSession.expires_at && currentSession.expires_at <= Date.now() / 1000) {
             console.log("AuthProvider: Existing session is expired", {
               expiresAt: currentSession.expires_at,
               currentTime: Date.now() / 1000
@@ -157,19 +166,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             setUser(null);
             setIsAdmin(false);
             setIsAssociated(false);
-          } else if (currentSession && currentSession.user) {
+            setLoading(false);
+          } else if (currentSession.user) {
             setSession(currentSession);
             setUser(currentSession.user);
             console.log("AuthProvider: Valid session found, fetching profile");
             await fetchUserProfile(currentSession.user.id);
             // Initialize timezone for existing session
             await initializeTimezone();
-          } else {
-            console.log("AuthProvider: No valid session, clearing state");
-            setSession(null);
-            setUser(null);
-            setIsAdmin(false);
-            setIsAssociated(false);
+            setLoading(false);
           }
         }
       } catch (error) {
@@ -180,10 +185,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setUser(null);
           setIsAdmin(false);
           setIsAssociated(false);
-        }
-      } finally {
-        if (mounted) {
-          console.log("AuthProvider: Initialization complete, setting loading to false");
           setLoading(false);
         }
       }
