@@ -34,23 +34,21 @@ export const useCarrierQuoteItems = (clientInfoId: string | null) => {
 
       setLoading(true);
       try {
-        // Get circuit quotes for this client that are completed
-        // Note: RLS policies now allow viewing all circuit quotes, not just user's own
+        // Get circuit quotes for this client (removed status filter to include all statuses)
         const { data: circuitQuotes, error: circuitError } = await supabase
           .from('circuit_quotes')
           .select('id, client_name, location, status')
-          .eq('client_info_id', clientInfoId)
-          .eq('status', 'completed');
+          .eq('client_info_id', clientInfoId);
 
         if (circuitError) {
           console.error('[useCarrierQuoteItems] Error fetching circuit quotes:', circuitError);
           return;
         }
 
-        console.log('[useCarrierQuoteItems] Found completed circuit quotes:', circuitQuotes);
+        console.log('[useCarrierQuoteItems] Found circuit quotes (all statuses):', circuitQuotes);
 
         if (!circuitQuotes || circuitQuotes.length === 0) {
-          console.log('[useCarrierQuoteItems] No completed circuit quotes found for this client');
+          console.log('[useCarrierQuoteItems] No circuit quotes found for this client');
           setCarrierQuoteItems([]);
           return;
         }
