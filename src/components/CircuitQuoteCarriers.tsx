@@ -29,6 +29,7 @@ export const CircuitQuoteCarriers = ({
     if (carrier.install_fee) ticked.push("Install Fee");
     if (carrier.site_survey_needed) ticked.push("Site Survey");
     if (carrier.no_service) ticked.push("No Service");
+    if (carrier.static_ip) ticked.push("Includes Static IP");
     return ticked;
   };
 
@@ -197,7 +198,9 @@ export const CircuitQuoteCarriers = ({
                           <span 
                             key={index} 
                             className={`inline-flex items-center px-2 py-1 rounded-full text-xs ${
-                              option === 'No Service' ? 'bg-red-100 text-red-800' : 'bg-blue-100 text-blue-800'
+                              option === 'No Service' ? 'bg-red-100 text-red-800' : 
+                              option === 'Includes Static IP' ? 'bg-green-100 text-green-800' :
+                              'bg-blue-100 text-blue-800'
                             }`}
                           >
                             {option}
