@@ -56,7 +56,8 @@ export const AddressAutocomplete = ({
 
   const handleSuggestionClick = async (suggestion: any) => {
     setInputValue(suggestion.description);
-    setShowSuggestions(false);
+    setShowSuggestions(false); // Immediately hide suggestions
+    setSelectedIndex(-1);
     
     const placeDetails = await getPlaceDetails(suggestion.placeId);
     if (placeDetails) {
@@ -95,6 +96,7 @@ export const AddressAutocomplete = ({
         }
         break;
       case 'Escape':
+        e.preventDefault();
         setShowSuggestions(false);
         setSelectedIndex(-1);
         inputRef.current?.blur();
@@ -102,12 +104,27 @@ export const AddressAutocomplete = ({
     }
   };
 
-  const handleBlur = () => {
-    // Delay hiding suggestions to allow for clicks
+  const handleInputFocus = () => {
+    if (suggestions.length > 0 && inputValue.trim().length >= 3) {
+      setShowSuggestions(true);
+    }
+  };
+
+  const handleInputBlur = (e: React.FocusEvent) => {
+    // Only hide if focus is not moving to a suggestion button
+    const currentTarget = e.currentTarget;
+    const relatedTarget = e.relatedTarget;
+    
+    // Check if the related target is a suggestion button
+    if (relatedTarget && currentTarget.contains(relatedTarget as Node)) {
+      return;
+    }
+    
+    // Delay hiding to allow for clicks on suggestions
     setTimeout(() => {
       setShowSuggestions(false);
       setSelectedIndex(-1);
-    }, 200);
+    }, 150);
   };
 
   return (
@@ -122,7 +139,8 @@ export const AddressAutocomplete = ({
           value={inputValue}
           onChange={handleInputChange}
           onKeyDown={handleKeyDown}
-          onBlur={handleBlur}
+          onFocus={handleInputFocus}
+          onBlur={handleInputBlur}
           placeholder={placeholder}
           required={required}
           className="pr-10"
@@ -145,6 +163,7 @@ export const AddressAutocomplete = ({
               className={`w-full text-left px-4 py-3 hover:bg-gray-50 focus:bg-gray-50 border-none bg-transparent ${
                 index === selectedIndex ? 'bg-gray-50' : ''
               }`}
+              onMouseDown={(e) => e.preventDefault()} // Prevent blur before click
               onClick={() => handleSuggestionClick(suggestion)}
             >
               <div className="flex items-start gap-2">
