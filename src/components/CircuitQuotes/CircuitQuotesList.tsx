@@ -31,7 +31,12 @@ export const CircuitQuotesList = ({
   const filteredQuotes = quotes.filter(quote => {
     const matchesSearch = quote.client_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          quote.location.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStatus = statusFilter === "all" || quote.status === statusFilter;
+    
+    // Filter out "sent_to_customer" quotes when showing "all" (Total Quotes)
+    const matchesStatus = statusFilter === "all" 
+      ? quote.status !== 'sent_to_customer'
+      : quote.status === statusFilter;
+    
     return matchesSearch && matchesStatus;
   });
 
