@@ -49,7 +49,7 @@ export interface QuoteItem {
   id: string;
   quote_id?: string; // Make optional since it's not available when creating quotes
   item_id?: string;
-  name: string;
+  name?: string; // Make optional to match QuoteItemData
   description?: string;
   quantity: number;
   unit_price: number;
