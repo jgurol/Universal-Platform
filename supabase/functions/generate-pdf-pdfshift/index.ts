@@ -306,8 +306,8 @@ const generateHTML = (quote: any, clientInfo?: any, salespersonName?: string, lo
         }
         
         .company-logo-text {
-            font-size: 20px;
-            font-weight: normal;
+            font-size: 11px;
+            font-weight: bold;
             color: #1f4e79;
             display: flex;
             align-items: center;
@@ -324,13 +324,13 @@ const generateHTML = (quote: any, clientInfo?: any, salespersonName?: string, lo
         }
         
         .company-info {
-            font-size: 10px;
+            font-size: 11px;
             color: #666;
             margin-top: 5px;
         }
         
         .agreement-title {
-            font-size: 14px;
+            font-size: 11px;
             font-weight: normal;
             color: #999;
             text-align: right;
@@ -352,7 +352,7 @@ const generateHTML = (quote: any, clientInfo?: any, salespersonName?: string, lo
             border: 1px solid #ddd;
             background: #f9f9f9;
             padding: 8px;
-            font-size: 10px;
+            font-size: 11px;
         }
         
         .agreement-box table {
@@ -366,7 +366,7 @@ const generateHTML = (quote: any, clientInfo?: any, salespersonName?: string, lo
         }
         
         .agreement-box td:first-child {
-            font-weight: normal;
+            font-weight: bold;
             width: 50%;
         }
         
@@ -392,19 +392,19 @@ const generateHTML = (quote: any, clientInfo?: any, salespersonName?: string, lo
         }
         
         .address-title {
-            font-weight: normal;
+            font-weight: bold;
             margin-bottom: 8px;
-            font-size: 12px;
+            font-size: 11px;
         }
         
         .address-content {
-            font-size: 10px;
+            font-size: 11px;
             line-height: 1.5;
         }
         
         .quote-title {
-            font-size: 12px;
-            font-weight: normal;
+            font-size: 11px;
+            font-weight: bold;
             margin: 30px 0 20px 0;
             color: #333;
         }
@@ -414,7 +414,7 @@ const generateHTML = (quote: any, clientInfo?: any, salespersonName?: string, lo
         }
         
         .section-title {
-            font-weight: normal;
+            font-weight: bold;
             margin-bottom: 10px;
             font-size: 11px;
         }
@@ -430,13 +430,13 @@ const generateHTML = (quote: any, clientInfo?: any, salespersonName?: string, lo
             border: 1px solid #ddd;
             padding: 12px 8px;
             text-align: left;
-            font-size: 10px;
+            font-size: 11px;
             vertical-align: top;
         }
         
         .items-table th {
             background: #f8f9fa;
-            font-weight: normal;
+            font-weight: bold;
         }
         
         .description-cell {
@@ -470,14 +470,14 @@ const generateHTML = (quote: any, clientInfo?: any, salespersonName?: string, lo
         }
         
         .item-name {
-            font-weight: normal;
-            font-size: 10px;
+            font-weight: bold;
+            font-size: 11px;
             color: #333;
             margin-bottom: 3px;
         }
         
         .item-location {
-            font-size: 9px;
+            font-size: 11px;
             color: #666;
         }
         
@@ -502,7 +502,7 @@ const generateHTML = (quote: any, clientInfo?: any, salespersonName?: string, lo
         
         .item-description {
             flex: 1;
-            font-size: 9px;
+            font-size: 11px;
             color: #555;
             line-height: 1.4;
         }
@@ -512,16 +512,16 @@ const generateHTML = (quote: any, clientInfo?: any, salespersonName?: string, lo
         }
         
         .item-description strong, .item-description b {
-            font-weight: normal;
+            font-weight: bold;
         }
         
         .item-description em, .item-description i {
-            font-style: normal;
+            font-style: italic;
         }
         
         .total-amount {
             text-align: right;
-            font-weight: normal;
+            font-weight: bold;
             margin-top: 10px;
             font-size: 11px;
         }
@@ -584,7 +584,7 @@ const generateHTML = (quote: any, clientInfo?: any, salespersonName?: string, lo
         <div class="address-block">
             <div class="address-title">Billing Information</div>
             <div class="address-content">
-                <div>${clientCompanyName}</div>
+                <div><strong>${clientCompanyName}</strong></div>
                 <div>Jonathan Conn</div>
                 <div>${billingAddress || 'Address not specified'}</div>
                 ${contactPhone ? `<div>Tel: ${contactPhone}</div>` : ''}
@@ -594,7 +594,7 @@ const generateHTML = (quote: any, clientInfo?: any, salespersonName?: string, lo
         <div class="address-block">
             <div class="address-title">Service Address</div>
             <div class="address-content">
-                <div>${clientCompanyName}</div>
+                <div><strong>${clientCompanyName}</strong></div>
                 <div>Jonathan Conn</div>
                 <div>${serviceAddress || 'Same as billing address'}</div>
                 ${contactPhone ? `<div>Tel: ${contactPhone}</div>` : ''}
