@@ -83,7 +83,16 @@ export const CircuitQuoteCarriers = ({
         const priceText = carrier.no_service ? 'No Service' : (carrier.price > 0 ? `$${carrier.price}` : 'Pending quote');
         return `${carrier.type} - ${carrier.speed} - ${priceText}${carrierTickedOptions.length > 0 ? ` - ${carrierTickedOptions.join(', ')}` : ''}`;
       });
-      const tooltipText = `${vendorName} - ${tooltipParts.join(' | ')}`;
+      
+      // Add quote-level requirements to tooltip if present
+      const quoteRequirements = [];
+      if (staticIp) quoteRequirements.push('Static IP');
+      if (slash29) quoteRequirements.push('/29');
+      
+      let tooltipText = `${vendorName} - ${tooltipParts.join(' | ')}`;
+      if (quoteRequirements.length > 0) {
+        tooltipText += ` | Requirements: ${quoteRequirements.join(', ')}`;
+      }
       
       return {
         vendorName,
@@ -95,22 +104,42 @@ export const CircuitQuoteCarriers = ({
     });
 
     return (
-      <div className="flex flex-wrap gap-2 mt-3 pt-3 border-t border-gray-100">
-        {vendorDisplayData.map(({ vendorName, displayCarrier, tickedOptionsArray, isPending, tooltipText }) => (
-          <div
-            key={vendorName}
-            className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium text-white shadow-sm ${
-              isPending ? 'animate-pulse' : ''
-            }`}
-            style={{ backgroundColor: displayCarrier.color || '#3B82F6' }}
-            title={tooltipText}
-          >
-            <span className="mr-1">{vendorName}</span>
-            {tickedOptionsArray.length > 0 && (
-              <span className="text-xs opacity-75">({tickedOptionsArray.join(', ')})</span>
+      <div className="space-y-3">
+        {/* Quote-level requirements in minimized view */}
+        {(staticIp || slash29) && (
+          <div className="flex flex-wrap gap-2">
+            <span className="text-xs font-medium text-gray-600">Requirements:</span>
+            {staticIp && (
+              <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-blue-100 text-blue-800">
+                Static IP
+              </span>
+            )}
+            {slash29 && (
+              <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-blue-100 text-blue-800">
+                /29
+              </span>
             )}
           </div>
-        ))}
+        )}
+        
+        {/* Carrier badges */}
+        <div className="flex flex-wrap gap-2">
+          {vendorDisplayData.map(({ vendorName, displayCarrier, tickedOptionsArray, isPending, tooltipText }) => (
+            <div
+              key={vendorName}
+              className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium text-white shadow-sm ${
+                isPending ? 'animate-pulse' : ''
+              }`}
+              style={{ backgroundColor: displayCarrier.color || '#3B82F6' }}
+              title={tooltipText}
+            >
+              <span className="mr-1">{vendorName}</span>
+              {tickedOptionsArray.length > 0 && (
+                <span className="text-xs opacity-75">({tickedOptionsArray.join(', ')})</span>
+              )}
+            </div>
+          ))}
+        </div>
       </div>
     );
   }
