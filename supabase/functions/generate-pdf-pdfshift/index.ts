@@ -183,58 +183,84 @@ const processRichTextContent = (content: string): { html: string; images: string
   return { html: cleanHtml, images };
 };
 
-// Enhanced function to process template content specifically for terms & conditions
+// Enhanced function to process template content with proper paragraph and section formatting
 const processTemplateContent = (content: string): string => {
   if (!content) return '';
   
   console.log('PDFShift Function - Processing template content:', content.substring(0, 200));
   
-  // More comprehensive HTML processing for template content
+  // First, clean up the content and normalize HTML
   let processedContent = content
-    // Convert various HTML elements to appropriate formats
-    .replace(/<strong>(.*?)<\/strong>/g, '<b>$1</b>')
-    .replace(/<b>(.*?)<\/b>/g, '<span style="font-weight: bold;">$1</span>')
-    .replace(/<em>(.*?)<\/em>/g, '<i>$1</i>')
-    .replace(/<i>(.*?)<\/i>/g, '<span style="font-style: italic;">$1</span>')
-    .replace(/<u>(.*?)<\/u>/g, '<span style="text-decoration: underline;">$1</span>')
-    
-    // Handle headings
-    .replace(/<h([1-6])[^>]*>(.*?)<\/h[1-6]>/g, '<div style="font-weight: bold; margin: 8px 0 4px 0; font-size: 11px;">$2</div>')
-    
-    // Handle paragraphs with proper spacing
-    .replace(/<p[^>]*>(.*?)<\/p>/g, '<div style="margin: 6px 0; line-height: 1.4;">$1</div>')
-    
-    // Handle line breaks
-    .replace(/<br\s*\/?>/g, '<br>')
-    
-    // Handle lists
-    .replace(/<ul[^>]*>/g, '<div style="margin: 6px 0; padding-left: 16px;">')
-    .replace(/<\/ul>/g, '</div>')
-    .replace(/<ol[^>]*>/g, '<div style="margin: 6px 0; padding-left: 16px;">')
-    .replace(/<\/ol>/g, '</div>')
-    .replace(/<li[^>]*>(.*?)<\/li>/g, '<div style="margin: 2px 0; position: relative;">• $1</div>')
-    
-    // Handle divs
-    .replace(/<div[^>]*>/g, '<div>')
-    
-    // Clean up entities
-    .replace(/&nbsp;/g, ' ')
-    .replace(/&amp;/g, '&')
+    // Remove any existing HTML formatting that might interfere
+    .replace(/<img[^>]*>/g, '') // Remove images
+    .replace(/&nbsp;/g, ' ') // Replace HTML spaces
+    .replace(/&amp;/g, '&') // Replace HTML entities
     .replace(/&lt;/g, '<')
     .replace(/&gt;/g, '>')
     .replace(/&quot;/g, '"')
     .replace(/&#39;/g, "'")
-    .replace(/&apos;/g, "'")
-    
-    // Remove any remaining unwanted tags but keep the content
-    .replace(/<\/?(?:span|font)[^>]*>/g, '')
-    .replace(/<img[^>]*>/g, '') // Remove images from template content
-    
-    .trim();
+    .replace(/&apos;/g, "'");
   
-  console.log('PDFShift Function - Processed template content length:', processedContent.length);
+  // Process bold/strong text patterns - both HTML and markdown-style
+  processedContent = processedContent
+    .replace(/<strong[^>]*>(.*?)<\/strong>/g, '**$1**')
+    .replace(/<b[^>]*>(.*?)<\/b>/g, '**$1**')
+    .replace(/\*\*\*\*\*\*(.*?)\*\*\*\*\*\*/g, '**$1**') // Fix excessive asterisks
+    .replace(/\*\*\*\*(.*?)\*\*\*\*/g, '**$1**'); // Fix quadruple asterisks
   
-  return processedContent;
+  // Handle line breaks and paragraphs properly
+  processedContent = processedContent
+    .replace(/<br\s*\/?>/g, '\n')
+    .replace(/<\/p><p[^>]*>/g, '\n\n')
+    .replace(/<p[^>]*>/g, '')
+    .replace(/<\/p>/g, '')
+    .replace(/<div[^>]*>/g, '')
+    .replace(/<\/div>/g, '');
+  
+  // Clean up remaining HTML tags but preserve content
+  processedContent = processedContent
+    .replace(/<\/?(?:span|font|em|i|u)[^>]*>/g, '')
+    .replace(/<\/?(ul|ol|li)[^>]*>/g, '');
+  
+  // Split into sections and process each one
+  const sections = processedContent.split(/\n\s*\n/);
+  const formattedSections = sections
+    .filter(section => section.trim().length > 0)
+    .map(section => {
+      const trimmed = section.trim();
+      
+      // Check if this looks like a header (starts with **text** or has numbered pattern)
+      const headerMatch = trimmed.match(/^\*\*([^*]+)\*\*(.*)$/);
+      if (headerMatch) {
+        const headerText = headerMatch[1].trim();
+        const bodyText = headerMatch[2].trim();
+        
+        return `<div style="font-weight: bold; margin: 12px 0 6px 0; font-size: 10px; color: #333;">${headerText}</div>` +
+               (bodyText ? `<div style="margin: 6px 0; line-height: 1.5; font-size: 10px;">${bodyText}</div>` : '');
+      }
+      
+      // Check if it's a numbered section (like "1. Term and Renewal")
+      const numberedHeaderMatch = trimmed.match(/^(\d+\.\s*)(.+?)(?:\*\*(.+?)\*\*)?(.*)$/);
+      if (numberedHeaderMatch) {
+        const number = numberedHeaderMatch[1];
+        const title = numberedHeaderMatch[2].trim();
+        const boldPart = numberedHeaderMatch[3] || '';
+        const rest = numberedHeaderMatch[4] || '';
+        
+        const headerText = number + title + (boldPart ? ' ' + boldPart : '');
+        
+        return `<div style="font-weight: bold; margin: 12px 0 6px 0; font-size: 10px; color: #333;">${headerText}</div>` +
+               (rest.trim() ? `<div style="margin: 6px 0; line-height: 1.5; font-size: 10px;">${rest.trim()}</div>` : '');
+      }
+      
+      // Regular paragraph
+      return `<div style="margin: 6px 0; line-height: 1.5; font-size: 10px;">${trimmed}</div>`;
+    });
+  
+  const result = formattedSections.join('');
+  console.log('PDFShift Function - Processed template content length:', result.length);
+  
+  return result;
 };
 
 // Enhanced HTML generation function with template content support
