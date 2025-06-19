@@ -42,7 +42,6 @@ const programs: Program[] = [
 export const ProgramsGrid = () => {
   return (
     <div className="mb-8">
-      <h2 className="text-2xl font-bold text-gray-900 mb-6">Programs & Applications</h2>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6">
         {programs.map((program) => {
           const IconComponent = program.icon;
