@@ -28,8 +28,8 @@ const handler = async (req: Request): Promise<Response> => {
     console.log('PDFShift Function - Processing quote:', quote?.id, 'with status:', quote?.status);
     console.log('PDFShift Function - API Key configured:', !!Deno.env.get('PDFSHIFT_API_KEY'));
     
-    // Create HTML template
-    const html = generateHTML(quote, clientInfo, salespersonName, req);
+    // Create HTML template - avoiding any potential circular references
+    const html = createSafeHTML(quote, clientInfo, salespersonName, req);
     console.log('PDFShift Function - HTML generated, length:', html.length);
     
     // Call PDFShift API with correct parameters according to their documentation
@@ -86,17 +86,44 @@ const handler = async (req: Request): Promise<Response> => {
   }
 };
 
-const generateHTML = (quote: any, clientInfo?: any, salespersonName?: string, req?: Request): string => {
-  const mrcItems = quote.quoteItems?.filter((item: any) => item.charge_type === 'MRC') || [];
-  const nrcItems = quote.quoteItems?.filter((item: any) => item.charge_type === 'NRC') || [];
+// Safe HTML generation function that avoids circular references
+const createSafeHTML = (quote: any, clientInfo?: any, salespersonName?: string, req?: Request): string => {
+  // Safely extract data to avoid circular references
+  const safeQuote = {
+    id: quote?.id || '',
+    quoteNumber: quote?.quoteNumber || '',
+    description: quote?.description || '',
+    status: quote?.status || 'pending',
+    date: quote?.date || new Date().toISOString(),
+    expiresAt: quote?.expiresAt || null,
+    billingAddress: quote?.billingAddress || '',
+    serviceAddress: quote?.serviceAddress || ''
+  };
+
+  const safeClientInfo = {
+    company_name: clientInfo?.company_name || 'Company Name',
+    contact_name: clientInfo?.contact_name || 'Contact Name'
+  };
+
+  // Safely process quote items
+  const quoteItems = Array.isArray(quote?.quoteItems) ? quote.quoteItems : [];
+  const mrcItems = quoteItems.filter((item: any) => item?.charge_type === 'MRC');
+  const nrcItems = quoteItems.filter((item: any) => item?.charge_type === 'NRC');
   
-  const mrcTotal = mrcItems.reduce((total: number, item: any) => total + (Number(item.total_price) || 0), 0);
-  const nrcTotal = nrcItems.reduce((total: number, item: any) => total + (Number(item.total_price) || 0), 0);
+  const mrcTotal = mrcItems.reduce((total: number, item: any) => {
+    const price = parseFloat(item?.total_price) || 0;
+    return total + price;
+  }, 0);
   
-  const billingAddress = quote.billingAddress || '';
-  const serviceAddress = quote.serviceAddress || billingAddress || '';
+  const nrcTotal = nrcItems.reduce((total: number, item: any) => {
+    const price = parseFloat(item?.total_price) || 0;
+    return total + price;
+  }, 0);
   
-  const isApproved = quote.status === 'approved' || quote.status === 'accepted';
+  const billingAddress = safeQuote.billingAddress || '';
+  const serviceAddress = safeQuote.serviceAddress || billingAddress || '';
+  
+  const isApproved = safeQuote.status === 'approved' || safeQuote.status === 'accepted';
   
   // Get origin from request headers or use fallback
   const origin = req?.headers.get('origin') || 'https://your-app-url.com';
@@ -106,7 +133,7 @@ const generateHTML = (quote: any, clientInfo?: any, salespersonName?: string, re
 <html>
 <head>
     <meta charset="UTF-8">
-    <title>Quote ${quote.quoteNumber || quote.id.slice(0, 8)}</title>
+    <title>Quote ${safeQuote.quoteNumber || safeQuote.id.slice(0, 8)}</title>
     <style>
         * {
             margin: 0;
@@ -335,8 +362,8 @@ const generateHTML = (quote: any, clientInfo?: any, salespersonName?: string, re
     
     <div class="quote-header">
         <div>
-            <div class="quote-title">${quote.description || 'Service Agreement'}</div>
-            <div class="quote-number">Quote #${quote.quoteNumber || quote.id.slice(0, 8)}</div>
+            <div class="quote-title">${safeQuote.description || 'Service Agreement'}</div>
+            <div class="quote-number">Quote #${safeQuote.quoteNumber || safeQuote.id.slice(0, 8)}</div>
         </div>
         <div class="status-badge ${isApproved ? 'status-approved' : 'status-pending'}">
             ${isApproved ? '✅ Approved' : '⏳ Pending'}
@@ -347,8 +374,8 @@ const generateHTML = (quote: any, clientInfo?: any, salespersonName?: string, re
         <div class="address-box">
             <div class="address-title">📋 Bill To:</div>
             <div class="address-content">
-                <strong>${clientInfo?.company_name || 'Company Name'}</strong><br>
-                ${clientInfo?.contact_name || 'Contact Name'}<br>
+                <strong>${safeClientInfo.company_name}</strong><br>
+                ${safeClientInfo.contact_name}<br>
                 ${billingAddress || 'Address not specified'}
             </div>
         </div>
@@ -376,12 +403,12 @@ const generateHTML = (quote: any, clientInfo?: any, salespersonName?: string, re
                 ${mrcItems.map((item: any) => `
                 <tr>
                     <td>
-                        <strong>${item.item?.name || item.name || 'Service'}</strong>
-                        ${item.description ? `<br><small style="color: #666; font-style: italic;">${item.description}</small>` : ''}
+                        <strong>${item?.item?.name || item?.name || 'Service'}</strong>
+                        ${item?.description ? `<br><small style="color: #666; font-style: italic;">${item.description}</small>` : ''}
                     </td>
-                    <td><span class="highlight">${item.quantity}</span></td>
-                    <td>$${Number(item.unit_price || 0).toFixed(2)}</td>
-                    <td><strong>$${Number(item.total_price || 0).toFixed(2)}</strong></td>
+                    <td><span class="highlight">${item?.quantity || 1}</span></td>
+                    <td>$${(parseFloat(item?.unit_price) || 0).toFixed(2)}</td>
+                    <td><strong>$${(parseFloat(item?.total_price) || 0).toFixed(2)}</strong></td>
                 </tr>
                 `).join('')}
                 <tr class="total-row">
@@ -409,12 +436,12 @@ const generateHTML = (quote: any, clientInfo?: any, salespersonName?: string, re
                 ${nrcItems.map((item: any) => `
                 <tr>
                     <td>
-                        <strong>${item.item?.name || item.name || 'Setup Fee'}</strong>
-                        ${item.description ? `<br><small style="color: #666; font-style: italic;">${item.description}</small>` : ''}
+                        <strong>${item?.item?.name || item?.name || 'Setup Fee'}</strong>
+                        ${item?.description ? `<br><small style="color: #666; font-style: italic;">${item.description}</small>` : ''}
                     </td>
-                    <td><span class="highlight">${item.quantity}</span></td>
-                    <td>$${Number(item.unit_price || 0).toFixed(2)}</td>
-                    <td><strong>$${Number(item.total_price || 0).toFixed(2)}</strong></td>
+                    <td><span class="highlight">${item?.quantity || 1}</span></td>
+                    <td>$${(parseFloat(item?.unit_price) || 0).toFixed(2)}</td>
+                    <td><strong>$${(parseFloat(item?.total_price) || 0).toFixed(2)}</strong></td>
                 </tr>
                 `).join('')}
                 <tr class="total-row">
@@ -436,7 +463,7 @@ const generateHTML = (quote: any, clientInfo?: any, salespersonName?: string, re
         <p style="margin-bottom: 25px; font-size: 16px;">
             <strong>🚀 Ready to proceed?</strong> Click the button below to accept this agreement.
         </p>
-        <a href="${origin}/accept-quote/${quote.id}" class="accept-button">
+        <a href="${origin}/accept-quote/${safeQuote.id}" class="accept-button">
             ✍️ ACCEPT AGREEMENT
         </a>
         <p style="margin-top: 20px; font-size: 12px; color: #666;">
