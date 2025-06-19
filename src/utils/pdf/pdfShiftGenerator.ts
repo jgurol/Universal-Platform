@@ -21,25 +21,17 @@ export const generateQuotePDFWithPDFShift = async (quote: Quote, clientInfo?: Cl
       throw new Error('No data received from Edge Function');
     }
 
-    // The Edge Function returns the PDF as binary data (ArrayBuffer)
-    // We need to convert it directly to a Blob without trying to decode it
-    let blob: Blob;
-    
-    if (data instanceof ArrayBuffer) {
-      blob = new Blob([data], { type: 'application/pdf' });
-    } else if (data instanceof Uint8Array) {
-      blob = new Blob([data], { type: 'application/pdf' });
-    } else {
-      // If it's any other format, try to convert it to ArrayBuffer first
-      const arrayBuffer = new ArrayBuffer(data.length);
-      const uint8Array = new Uint8Array(arrayBuffer);
-      for (let i = 0; i < data.length; i++) {
-        uint8Array[i] = data[i];
-      }
-      blob = new Blob([arrayBuffer], { type: 'application/pdf' });
-    }
+    // The Edge Function should return raw PDF bytes
+    // Convert the response directly to a Blob
+    const blob = new Blob([data], { type: 'application/pdf' });
     
     console.log('[PDFShift] PDF generated successfully via Edge Function, size:', blob.size, 'bytes');
+    
+    // Validate that we actually got a PDF by checking the blob size
+    if (blob.size === 0) {
+      throw new Error('Received empty PDF data');
+    }
+    
     return blob;
     
   } catch (error) {

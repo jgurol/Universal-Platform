@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 
 const corsHeaders = {
@@ -333,15 +332,17 @@ const handler = async (req: Request): Promise<Response> => {
       throw new Error(`PDFShift API error: ${response.status} - ${errorText}`);
     }
 
-    const pdfBuffer = await response.arrayBuffer();
+    // Get the PDF as a Uint8Array to ensure proper binary handling
+    const pdfBytes = new Uint8Array(await response.arrayBuffer());
     
-    console.log('[PDFShift] PDF generated successfully, size:', pdfBuffer.byteLength, 'bytes');
+    console.log('[PDFShift] PDF generated successfully, size:', pdfBytes.length, 'bytes');
     
-    return new Response(pdfBuffer, {
+    // Return the PDF bytes directly
+    return new Response(pdfBytes, {
       headers: {
         ...corsHeaders,
         'Content-Type': 'application/pdf',
-        'Content-Disposition': `attachment; filename="quote-${quote.quoteNumber || quote.id}.pdf"`
+        'Content-Length': pdfBytes.length.toString(),
       }
     });
     
