@@ -8,7 +8,7 @@ import { VendorPriceSheet } from "@/types/vendorPriceSheets";
 export const useVendorPriceSheets = () => {
   const [priceSheets, setPriceSheets] = useState<VendorPriceSheet[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const { user } = useAuth();
+  const { user, isAdmin } = useAuth();
   const { toast } = useToast();
 
   const fetchPriceSheets = async () => {
@@ -16,10 +16,18 @@ export const useVendorPriceSheets = () => {
     
     try {
       setIsLoading(true);
-      const { data, error } = await supabase
+      console.log('Fetching price sheets for user:', user.id, 'isAdmin:', isAdmin);
+      
+      let query = supabase
         .from('vendor_price_sheets')
-        .select('*')
-        .order('uploaded_at', { ascending: false });
+        .select('*');
+
+      // Only filter by user_id if not admin
+      if (!isAdmin) {
+        query = query.eq('user_id', user.id);
+      }
+
+      const { data, error } = await query.order('uploaded_at', { ascending: false });
 
       if (error) {
         console.error('Error fetching price sheets:', error);
@@ -29,6 +37,7 @@ export const useVendorPriceSheets = () => {
           variant: "destructive"
         });
       } else {
+        console.log('Price sheets fetched:', data);
         setPriceSheets(data || []);
       }
     } catch (err) {
@@ -166,7 +175,7 @@ export const useVendorPriceSheets = () => {
     if (user) {
       fetchPriceSheets();
     }
-  }, [user]);
+  }, [user, isAdmin]);
 
   return {
     priceSheets,
