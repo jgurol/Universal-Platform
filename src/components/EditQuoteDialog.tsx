@@ -1,3 +1,4 @@
+
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Quote, Client, ClientInfo } from "@/pages/Index";
@@ -178,11 +179,21 @@ export const EditQuoteDialog = ({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    console.log('[EditQuoteDialog] Form submitted - checking validation');
+    console.log('[EditQuoteDialog] Form data:', {
+      quote: !!quote,
+      clientId,
+      date,
+      quoteItemsLength: quoteItems.length,
+      clientInfoId
+    });
+    
     if (quote && clientId && date) {
       const selectedClient = clients.find(client => client.id === clientId);
       const selectedClientInfo = clientInfoId && clientInfoId !== "none" ? clientInfos.find(info => info.id === clientInfoId) : null;
       
       if (selectedClient) {
+        console.log('[EditQuoteDialog] Validation passed, updating quote');
         const { totalAmount } = calculateTotalsByChargeType(quoteItems);
         
         console.log('[EditQuoteDialog] Saving quote items before updating quote:', quoteItems.map(item => ({
@@ -221,11 +232,30 @@ export const EditQuoteDialog = ({
         } as Quote);
         
         onOpenChange(false);
+      } else {
+        console.log('[EditQuoteDialog] No selected client found');
       }
+    } else {
+      console.log('[EditQuoteDialog] Form validation failed:', {
+        hasQuote: !!quote,
+        hasClientId: !!clientId,
+        hasDate: !!date
+      });
     }
   };
 
   const selectedSalesperson = clientId ? clients.find(c => c.id === clientId) : null;
+
+  // Check if form is valid for submission
+  const isFormValid = quote && clientId && date && quoteItems.length > 0;
+  
+  console.log('[EditQuoteDialog] Form validation status:', {
+    hasQuote: !!quote,
+    hasClientId: !!clientId,
+    hasDate: !!date,
+    hasQuoteItems: quoteItems.length > 0,
+    isFormValid
+  });
 
   if (!quote) return null;
 
@@ -292,9 +322,16 @@ export const EditQuoteDialog = ({
             <Button 
               type="submit" 
               className="bg-blue-600 hover:bg-blue-700"
+              disabled={!isFormValid}
             >
               Update Quote
             </Button>
+          </div>
+          
+          {/* Debug info */}
+          <div className="text-xs text-muted-foreground">
+            Debug: Form valid = {isFormValid ? 'true' : 'false'} 
+            (Quote: {!!quote ? 'yes' : 'no'}, Client: {!!clientId ? 'yes' : 'no'}, Date: {!!date ? 'yes' : 'no'}, Items: {quoteItems.length})
           </div>
         </form>
       </DialogContent>
