@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Navigate, useLocation } from "react-router-dom";
 import {
@@ -163,6 +162,7 @@ const Auth = () => {
         description: "Your password has been updated. You can now log in with your new password.",
       });
       
+      // Reset state and redirect to login
       setShowUpdatePasswordForm(false);
       setTokenError(null);
       setResetToken(null);
