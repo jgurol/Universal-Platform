@@ -1,4 +1,3 @@
-
 import { Quote, ClientInfo } from '@/pages/Index';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -22,23 +21,22 @@ export const generateQuotePDFWithPDFShift = async (quote: Quote, clientInfo?: Cl
       throw new Error('No data received from Edge Function');
     }
 
-    // Convert the response to a Blob
+    // The Edge Function returns the PDF as binary data (ArrayBuffer)
+    // We need to convert it directly to a Blob without trying to decode it
     let blob: Blob;
-    if (data instanceof Blob) {
-      blob = data;
-    } else if (data instanceof ArrayBuffer) {
+    
+    if (data instanceof ArrayBuffer) {
       blob = new Blob([data], { type: 'application/pdf' });
-    } else if (typeof data === 'string') {
-      // Handle base64 or binary string
-      const binaryString = atob(data);
-      const bytes = new Uint8Array(binaryString.length);
-      for (let i = 0; i < binaryString.length; i++) {
-        bytes[i] = binaryString.charCodeAt(i);
-      }
-      blob = new Blob([bytes], { type: 'application/pdf' });
+    } else if (data instanceof Uint8Array) {
+      blob = new Blob([data], { type: 'application/pdf' });
     } else {
-      // Assume it's already binary data
-      blob = new Blob([data], { type: 'application/pdf' });
+      // If it's any other format, try to convert it to ArrayBuffer first
+      const arrayBuffer = new ArrayBuffer(data.length);
+      const uint8Array = new Uint8Array(arrayBuffer);
+      for (let i = 0; i < data.length; i++) {
+        uint8Array[i] = data[i];
+      }
+      blob = new Blob([arrayBuffer], { type: 'application/pdf' });
     }
     
     console.log('[PDFShift] PDF generated successfully via Edge Function, size:', blob.size, 'bytes');
