@@ -24,10 +24,7 @@ export const useCarrierQuoteItems = (clientInfoId: string | null) => {
 
   useEffect(() => {
     const fetchCarrierQuoteItems = async () => {
-      console.log('[useCarrierQuoteItems] Starting fetch with clientInfoId:', clientInfoId);
-      
       if (!user) {
-        console.log('[useCarrierQuoteItems] Missing user, clearing items');
         setCarrierQuoteItems([]);
         return;
       }
@@ -59,21 +56,17 @@ export const useCarrierQuoteItems = (clientInfoId: string | null) => {
         }
 
         if (circuitError) {
-          console.error('[useCarrierQuoteItems] Error fetching circuit quotes:', circuitError);
+          console.error('Error fetching circuit quotes:', circuitError);
           return;
         }
 
-        console.log('[useCarrierQuoteItems] Found circuit quotes:', circuitQuotes);
-
         if (!circuitQuotes || circuitQuotes.length === 0) {
-          console.log('[useCarrierQuoteItems] No circuit quotes found');
           setCarrierQuoteItems([]);
           return;
         }
 
         // Get carrier quotes for these circuit quotes
         const circuitQuoteIds = circuitQuotes.map(cq => cq.id);
-        console.log('[useCarrierQuoteItems] Fetching carrier quotes for circuit quote IDs:', circuitQuoteIds);
         
         const { data: carrierQuotes, error: carrierError } = await supabase
           .from('carrier_quotes')
@@ -81,16 +74,14 @@ export const useCarrierQuoteItems = (clientInfoId: string | null) => {
           .in('circuit_quote_id', circuitQuoteIds);
 
         if (carrierError) {
-          console.error('[useCarrierQuoteItems] Error fetching carrier quotes:', carrierError);
+          console.error('Error fetching carrier quotes:', carrierError);
           return;
         }
-
-        console.log('[useCarrierQuoteItems] Found carrier quotes:', carrierQuotes);
 
         if (carrierQuotes) {
           const items = carrierQuotes.map(cq => {
             const circuitQuote = circuitQuotes.find(circ => circ.id === cq.circuit_quote_id);
-            const item = {
+            return {
               id: cq.id,
               carrier: cq.carrier,
               type: cq.type,
@@ -103,15 +94,12 @@ export const useCarrierQuoteItems = (clientInfoId: string | null) => {
               location: circuitQuote?.location || '',
               no_service: cq.no_service || false
             };
-            console.log('[useCarrierQuoteItems] Created item:', item);
-            return item;
           });
           
-          console.log('[useCarrierQuoteItems] Final carrier quote items:', items);
           setCarrierQuoteItems(items);
         }
       } catch (error) {
-        console.error('[useCarrierQuoteItems] Error in fetchCarrierQuoteItems:', error);
+        console.error('Error in fetchCarrierQuoteItems:', error);
       } finally {
         setLoading(false);
       }
