@@ -50,6 +50,28 @@ export const useCarrierQuoteItems = (clientInfoId: string | null) => {
           console.log('[useCarrierQuoteItems] Found client info:', clientInfo);
         }
 
+        // Let's check ALL circuit quotes in the system to debug
+        const { data: allCircuitQuotesDebug, error: allDebugError } = await supabase
+          .from('circuit_quotes')
+          .select('id, client_name, location, status, client_info_id, user_id');
+
+        if (allDebugError) {
+          console.error('[useCarrierQuoteItems] Error fetching all circuit quotes for debugging:', allDebugError);
+        } else {
+          console.log('[useCarrierQuoteItems] ALL circuit quotes in system:', allCircuitQuotesDebug);
+          
+          // Find quotes that match the client name
+          const quotesWithMatchingName = allCircuitQuotesDebug?.filter(q => 
+            q.client_name.toLowerCase().includes('easterseals') || 
+            q.client_name.toLowerCase().includes('southern california')
+          );
+          console.log('[useCarrierQuoteItems] Circuit quotes with matching client name:', quotesWithMatchingName);
+          
+          // Check if any quotes belong to current user
+          const userQuotes = allCircuitQuotesDebug?.filter(q => q.user_id === user.id);
+          console.log('[useCarrierQuoteItems] Current user\'s circuit quotes:', userQuotes);
+        }
+
         // Now let's see ALL circuit quotes for this user (to debug)
         const { data: allUserCircuitQuotes, error: allUserError } = await supabase
           .from('circuit_quotes')
