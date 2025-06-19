@@ -3,7 +3,7 @@ import { Quote, ClientInfo } from '@/pages/Index';
 import { supabase } from '@/integrations/supabase/client';
 
 export const generateQuotePDF = async (quote: Quote, clientInfo?: ClientInfo, salespersonName?: string) => {
-  console.log('PDF Generation - Starting PDFShift generation for quote:', quote.id);
+  console.log('PDF Generation - Using PDFShift integration for quote:', quote.id);
   
   try {
     // Call our edge function to generate PDF using PDFShift
@@ -21,15 +21,20 @@ export const generateQuotePDF = async (quote: Quote, clientInfo?: ClientInfo, sa
     }
 
     if (!data || !data.pdf) {
+      console.error('No PDF data received from PDFShift:', data);
       throw new Error('No PDF data received from PDFShift');
     }
 
+    console.log('PDFShift - PDF data length:', data.pdf.length);
+
     // Convert base64 to blob
     const pdfBlob = base64ToBlob(data.pdf, 'application/pdf');
+    console.log('PDFShift - PDF blob created, size:', pdfBlob.size);
     
     // Create a mock jsPDF-like object for compatibility
     const mockPDF = {
       output: (type: string) => {
+        console.log('PDFShift - Output requested, type:', type);
         if (type === 'blob') {
           return pdfBlob;
         }
@@ -48,13 +53,18 @@ export const generateQuotePDF = async (quote: Quote, clientInfo?: ClientInfo, sa
 
 // Helper function to convert base64 to blob
 const base64ToBlob = (base64: string, mimeType: string): Blob => {
-  const byteCharacters = atob(base64);
-  const byteNumbers = new Array(byteCharacters.length);
-  
-  for (let i = 0; i < byteCharacters.length; i++) {
-    byteNumbers[i] = byteCharacters.charCodeAt(i);
+  try {
+    const byteCharacters = atob(base64);
+    const byteNumbers = new Array(byteCharacters.length);
+    
+    for (let i = 0; i < byteCharacters.length; i++) {
+      byteNumbers[i] = byteCharacters.charCodeAt(i);
+    }
+    
+    const byteArray = new Uint8Array(byteNumbers);
+    return new Blob([byteArray], { type: mimeType });
+  } catch (error) {
+    console.error('Error converting base64 to blob:', error);
+    throw new Error('Failed to convert PDF data');
   }
-  
-  const byteArray = new Uint8Array(byteNumbers);
-  return new Blob([byteArray], { type: mimeType });
 };

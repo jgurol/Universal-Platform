@@ -13,18 +13,24 @@ interface PDFRequest {
 }
 
 const handler = async (req: Request): Promise<Response> => {
+  console.log('PDFShift Function - Request received, method:', req.method);
+  
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
+    console.log('PDFShift Function - Handling CORS preflight');
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const { quote, clientInfo, salespersonName }: PDFRequest = await req.json();
+    const requestBody = await req.json();
+    const { quote, clientInfo, salespersonName }: PDFRequest = requestBody;
     
-    console.log('PDFShift - Generating PDF for quote:', quote.id);
+    console.log('PDFShift Function - Processing quote:', quote?.id, 'with status:', quote?.status);
+    console.log('PDFShift Function - API Key configured:', !!Deno.env.get('PDFSHIFT_API_KEY'));
     
     // Create HTML template
     const html = generateHTML(quote, clientInfo, salespersonName);
+    console.log('PDFShift Function - HTML generated, length:', html.length);
     
     // Call PDFShift API
     const pdfShiftResponse = await fetch('https://api.pdfshift.io/v3/convert/pdf', {
@@ -43,6 +49,8 @@ const handler = async (req: Request): Promise<Response> => {
       }),
     });
 
+    console.log('PDFShift Function - API Response status:', pdfShiftResponse.status);
+
     if (!pdfShiftResponse.ok) {
       const errorText = await pdfShiftResponse.text();
       console.error('PDFShift API error:', errorText);
@@ -53,7 +61,7 @@ const handler = async (req: Request): Promise<Response> => {
     const pdfBuffer = await pdfShiftResponse.arrayBuffer();
     const pdfBase64 = btoa(String.fromCharCode(...new Uint8Array(pdfBuffer)));
     
-    console.log('PDFShift - PDF generated successfully');
+    console.log('PDFShift Function - PDF generated successfully, base64 length:', pdfBase64.length);
     
     return new Response(JSON.stringify({ pdf: pdfBase64 }), {
       status: 200,
@@ -64,7 +72,7 @@ const handler = async (req: Request): Promise<Response> => {
     });
     
   } catch (error: any) {
-    console.error('PDFShift generation error:', error);
+    console.error('PDFShift Function - Error:', error);
     return new Response(
       JSON.stringify({ error: error.message }),
       {
@@ -101,34 +109,33 @@ const generateHTML = (quote: any, clientInfo?: any, salespersonName?: string): s
         }
         
         body {
-            font-family: Arial, sans-serif;
-            font-size: 12px;
-            line-height: 1.4;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-size: 14px;
+            line-height: 1.6;
             color: #333;
             background: white;
+            padding: 20px;
         }
         
         .header {
-            background: #f8f9fa;
-            padding: 20px;
-            border-bottom: 3px solid #007bff;
-            margin-bottom: 20px;
-        }
-        
-        .company-info {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            border-radius: 10px;
+            margin-bottom: 30px;
             text-align: center;
         }
         
         .company-name {
-            font-size: 24px;
+            font-size: 32px;
             font-weight: bold;
-            color: #007bff;
             margin-bottom: 10px;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.3);
         }
         
         .company-details {
-            font-size: 14px;
-            color: #666;
+            font-size: 16px;
+            opacity: 0.9;
         }
         
         .quote-header {
@@ -136,101 +143,106 @@ const generateHTML = (quote: any, clientInfo?: any, salespersonName?: string): s
             justify-content: space-between;
             align-items: center;
             margin-bottom: 30px;
-            padding: 15px;
+            padding: 20px;
             background: #f8f9fa;
-            border-radius: 5px;
+            border-radius: 10px;
+            border-left: 5px solid #667eea;
         }
         
         .quote-title {
-            font-size: 20px;
+            font-size: 24px;
             font-weight: bold;
             color: #333;
         }
         
         .quote-number {
-            font-size: 16px;
+            font-size: 18px;
             color: #666;
+            margin-top: 5px;
         }
         
         .status-badge {
-            padding: 8px 16px;
-            border-radius: 20px;
+            padding: 12px 24px;
+            border-radius: 25px;
             font-weight: bold;
             text-transform: uppercase;
-            font-size: 12px;
+            font-size: 14px;
         }
         
         .status-approved {
             background: #d4edda;
             color: #155724;
-            border: 1px solid #c3e6cb;
+            border: 2px solid #c3e6cb;
         }
         
         .status-pending {
             background: #fff3cd;
             color: #856404;
-            border: 1px solid #ffeaa7;
+            border: 2px solid #ffeaa7;
         }
         
         .addresses-section {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 30px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 40px;
         }
         
         .address-box {
-            width: 48%;
-            padding: 15px;
-            border: 1px solid #ddd;
-            border-radius: 5px;
-            background: #fafafa;
+            padding: 20px;
+            border: 2px solid #e9ecef;
+            border-radius: 10px;
+            background: #f8f9fa;
         }
         
         .address-title {
             font-weight: bold;
-            font-size: 14px;
-            margin-bottom: 10px;
-            color: #333;
-            border-bottom: 1px solid #ddd;
-            padding-bottom: 5px;
+            font-size: 16px;
+            margin-bottom: 15px;
+            color: #495057;
+            border-bottom: 2px solid #dee2e6;
+            padding-bottom: 8px;
         }
         
         .address-content {
-            font-size: 12px;
-            line-height: 1.5;
+            font-size: 14px;
+            line-height: 1.8;
         }
         
         .items-section {
-            margin-bottom: 30px;
+            margin-bottom: 40px;
         }
         
         .section-title {
-            font-size: 16px;
+            font-size: 20px;
             font-weight: bold;
-            margin-bottom: 15px;
-            color: #333;
-            border-bottom: 2px solid #007bff;
-            padding-bottom: 5px;
+            margin-bottom: 20px;
+            color: #495057;
+            border-bottom: 3px solid #667eea;
+            padding-bottom: 10px;
         }
         
         .items-table {
             width: 100%;
             border-collapse: collapse;
             margin-bottom: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            border-radius: 10px;
+            overflow: hidden;
         }
         
         .items-table th {
-            background: #007bff;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
-            padding: 12px 8px;
+            padding: 15px 12px;
             font-weight: bold;
             text-align: left;
-            border: 1px solid #0056b3;
+            font-size: 14px;
         }
         
         .items-table td {
-            padding: 10px 8px;
-            border: 1px solid #ddd;
+            padding: 15px 12px;
+            border-bottom: 1px solid #e9ecef;
             vertical-align: top;
         }
         
@@ -244,66 +256,74 @@ const generateHTML = (quote: any, clientInfo?: any, salespersonName?: string): s
         
         .total-row {
             font-weight: bold;
-            background: #f0f8ff !important;
+            background: #e8f4fd !important;
+            font-size: 16px;
         }
         
         .total-row td {
-            border-top: 2px solid #007bff;
+            border-top: 3px solid #667eea;
+            padding: 20px 12px;
         }
         
         .accept-section {
-            margin-top: 30px;
-            padding: 20px;
-            background: #f8f9fa;
-            border-radius: 5px;
+            margin-top: 40px;
+            padding: 30px;
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            border-radius: 15px;
             text-align: center;
+            border: 2px solid #dee2e6;
         }
         
         .accept-button {
             display: inline-block;
-            background: #28a745;
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
             color: white;
-            padding: 15px 30px;
+            padding: 18px 40px;
             text-decoration: none;
-            border-radius: 5px;
+            border-radius: 30px;
             font-weight: bold;
-            font-size: 16px;
-            margin: 10px;
+            font-size: 18px;
+            margin: 15px;
+            box-shadow: 0 4px 15px rgba(40, 167, 69, 0.3);
+            transition: all 0.3s ease;
         }
         
         .accepted-notice {
-            background: #d4edda;
+            background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);
             color: #155724;
-            padding: 15px;
-            border-radius: 5px;
-            border: 1px solid #c3e6cb;
+            padding: 25px;
+            border-radius: 15px;
+            border: 2px solid #c3e6cb;
+            font-size: 18px;
         }
         
         .footer {
-            margin-top: 40px;
-            padding-top: 20px;
-            border-top: 1px solid #ddd;
+            margin-top: 50px;
+            padding-top: 30px;
+            border-top: 2px solid #dee2e6;
             text-align: center;
-            font-size: 11px;
-            color: #666;
+            font-size: 12px;
+            color: #6c757d;
+        }
+        
+        .highlight {
+            background: linear-gradient(120deg, #a8edea 0%, #fed6e3 100%);
+            padding: 2px 6px;
+            border-radius: 4px;
         }
         
         @media print {
-            .accept-button {
-                -webkit-print-color-adjust: exact;
-                color-adjust: exact;
-            }
+            body { padding: 0; }
+            .accept-button { -webkit-print-color-adjust: exact; color-adjust: exact; }
         }
     </style>
 </head>
 <body>
     <div class="header">
-        <div class="company-info">
-            <div class="company-name">California Telecom</div>
-            <div class="company-details">
-                1063 McGaw Avenue, Irvine, CA 92614<br>
-                Phone: (949) 474-7900 | Fax: (949) 474-7901
-            </div>
+        <div class="company-name">🌟 California Telecom</div>
+        <div class="company-details">
+            📍 1063 McGaw Avenue, Irvine, CA 92614<br>
+            📞 (949) 474-7900 | 📠 (949) 474-7901
         </div>
     </div>
     
@@ -313,21 +333,21 @@ const generateHTML = (quote: any, clientInfo?: any, salespersonName?: string): s
             <div class="quote-number">Quote #${quote.quoteNumber || quote.id.slice(0, 8)}</div>
         </div>
         <div class="status-badge ${isApproved ? 'status-approved' : 'status-pending'}">
-            ${isApproved ? 'Approved' : 'Pending'}
+            ${isApproved ? '✅ Approved' : '⏳ Pending'}
         </div>
     </div>
     
     <div class="addresses-section">
         <div class="address-box">
-            <div class="address-title">Bill To:</div>
+            <div class="address-title">📋 Bill To:</div>
             <div class="address-content">
-                ${clientInfo?.company_name || 'Company Name'}<br>
+                <strong>${clientInfo?.company_name || 'Company Name'}</strong><br>
                 ${clientInfo?.contact_name || 'Contact Name'}<br>
                 ${billingAddress || 'Address not specified'}
             </div>
         </div>
         <div class="address-box">
-            <div class="address-title">Service Address:</div>
+            <div class="address-title">🏢 Service Address:</div>
             <div class="address-content">
                 ${serviceAddress || 'Same as billing address'}
             </div>
@@ -336,7 +356,7 @@ const generateHTML = (quote: any, clientInfo?: any, salespersonName?: string): s
     
     ${mrcItems.length > 0 ? `
     <div class="items-section">
-        <div class="section-title">Monthly Recurring Charges</div>
+        <div class="section-title">💰 Monthly Recurring Charges</div>
         <table class="items-table">
             <thead>
                 <tr>
@@ -351,15 +371,15 @@ const generateHTML = (quote: any, clientInfo?: any, salespersonName?: string): s
                 <tr>
                     <td>
                         <strong>${item.item?.name || item.name || 'Service'}</strong>
-                        ${item.description ? `<br><small style="color: #666;">${item.description}</small>` : ''}
+                        ${item.description ? `<br><small style="color: #666; font-style: italic;">${item.description}</small>` : ''}
                     </td>
-                    <td>${item.quantity}</td>
+                    <td><span class="highlight">${item.quantity}</span></td>
                     <td>$${Number(item.unit_price || 0).toFixed(2)}</td>
-                    <td>$${Number(item.total_price || 0).toFixed(2)}</td>
+                    <td><strong>$${Number(item.total_price || 0).toFixed(2)}</strong></td>
                 </tr>
                 `).join('')}
                 <tr class="total-row">
-                    <td colspan="3"><strong>Total Monthly Charges:</strong></td>
+                    <td colspan="3"><strong>💵 Total Monthly Charges:</strong></td>
                     <td><strong>$${mrcTotal.toFixed(2)}</strong></td>
                 </tr>
             </tbody>
@@ -369,7 +389,7 @@ const generateHTML = (quote: any, clientInfo?: any, salespersonName?: string): s
     
     ${nrcItems.length > 0 ? `
     <div class="items-section">
-        <div class="section-title">One-Time Charges</div>
+        <div class="section-title">🔧 One-Time Charges</div>
         <table class="items-table">
             <thead>
                 <tr>
@@ -384,15 +404,15 @@ const generateHTML = (quote: any, clientInfo?: any, salespersonName?: string): s
                 <tr>
                     <td>
                         <strong>${item.item?.name || item.name || 'Setup Fee'}</strong>
-                        ${item.description ? `<br><small style="color: #666;">${item.description}</small>` : ''}
+                        ${item.description ? `<br><small style="color: #666; font-style: italic;">${item.description}</small>` : ''}
                     </td>
-                    <td>${item.quantity}</td>
+                    <td><span class="highlight">${item.quantity}</span></td>
                     <td>$${Number(item.unit_price || 0).toFixed(2)}</td>
-                    <td>$${Number(item.total_price || 0).toFixed(2)}</td>
+                    <td><strong>$${Number(item.total_price || 0).toFixed(2)}</strong></td>
                 </tr>
                 `).join('')}
                 <tr class="total-row">
-                    <td colspan="3"><strong>Total One-Time Charges:</strong></td>
+                    <td colspan="3"><strong>💸 Total One-Time Charges:</strong></td>
                     <td><strong>$${nrcTotal.toFixed(2)}</strong></td>
                 </tr>
             </tbody>
@@ -403,25 +423,25 @@ const generateHTML = (quote: any, clientInfo?: any, salespersonName?: string): s
     <div class="accept-section">
         ${isApproved ? `
         <div class="accepted-notice">
-            <strong>✓ Agreement Accepted</strong><br>
+            <strong>✅ Agreement Accepted!</strong><br>
             This agreement has been digitally accepted and is now active.
         </div>
         ` : `
-        <p style="margin-bottom: 20px;">
-            <strong>Ready to proceed?</strong> Click the button below to accept this agreement.
+        <p style="margin-bottom: 25px; font-size: 16px;">
+            <strong>🚀 Ready to proceed?</strong> Click the button below to accept this agreement.
         </p>
         <a href="${req.headers.get('origin') || 'https://your-app-url.com'}/accept-quote/${quote.id}" class="accept-button">
-            🖊️ ACCEPT AGREEMENT
+            ✍️ ACCEPT AGREEMENT
         </a>
-        <p style="margin-top: 15px; font-size: 11px; color: #666;">
+        <p style="margin-top: 20px; font-size: 12px; color: #666;">
             By clicking "Accept Agreement", you agree to the terms and conditions outlined in this quote.
         </p>
         `}
     </div>
     
     <div class="footer">
-        <p>Generated on ${new Date().toLocaleDateString()} | Prepared by: ${salespersonName || 'Sales Team'}</p>
-        <p>Thank you for your business!</p>
+        <p><strong>Generated on ${new Date().toLocaleDateString()}</strong> | Prepared by: <em>${salespersonName || 'Sales Team'}</em></p>
+        <p>✨ Thank you for choosing California Telecom! ✨</p>
     </div>
 </body>
 </html>

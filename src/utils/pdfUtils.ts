@@ -1,3 +1,3 @@
 
-// Re-export the main function for backward compatibility
+// Direct export to the PDFShift implementation
 export { generateQuotePDF } from './pdf';
