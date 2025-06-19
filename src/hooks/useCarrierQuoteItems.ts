@@ -13,8 +13,8 @@ export interface CarrierQuoteItem {
   notes?: string;
   circuit_quote_id: string;
   client_name: string;
-  location: string; // Added location from circuit quote
-  no_service: boolean; // Added no_service field
+  location: string;
+  no_service: boolean;
 }
 
 export const useCarrierQuoteItems = (clientInfoId: string | null) => {
@@ -24,7 +24,7 @@ export const useCarrierQuoteItems = (clientInfoId: string | null) => {
 
   useEffect(() => {
     const fetchCarrierQuoteItems = async () => {
-      console.log('[useCarrierQuoteItems] Starting fetch with:', { user: user?.id, clientInfoId });
+      console.log('[useCarrierQuoteItems] Starting fetch with clientInfoId:', clientInfoId);
       
       if (!user || !clientInfoId) {
         console.log('[useCarrierQuoteItems] Missing user or clientInfoId, clearing items');
@@ -34,83 +34,11 @@ export const useCarrierQuoteItems = (clientInfoId: string | null) => {
 
       setLoading(true);
       try {
-        // First, let's see what client info we're looking for
-        console.log('[useCarrierQuoteItems] Looking for client_info_id:', clientInfoId);
-        
-        // Get the client info details
-        const { data: clientInfo, error: clientInfoError } = await supabase
-          .from('client_info')
-          .select('id, company_name')
-          .eq('id', clientInfoId)
-          .single();
-          
-        if (clientInfoError) {
-          console.error('[useCarrierQuoteItems] Error fetching client info:', clientInfoError);
-        } else {
-          console.log('[useCarrierQuoteItems] Found client info:', clientInfo);
-        }
-
-        // Let's check ALL circuit quotes in the system to debug
-        const { data: allCircuitQuotesDebug, error: allDebugError } = await supabase
-          .from('circuit_quotes')
-          .select('id, client_name, location, status, client_info_id, user_id');
-
-        if (allDebugError) {
-          console.error('[useCarrierQuoteItems] Error fetching all circuit quotes for debugging:', allDebugError);
-        } else {
-          console.log('[useCarrierQuoteItems] ALL circuit quotes in system:', allCircuitQuotesDebug);
-          
-          // Find quotes that match the client name
-          const quotesWithMatchingName = allCircuitQuotesDebug?.filter(q => 
-            q.client_name.toLowerCase().includes('easterseals') || 
-            q.client_name.toLowerCase().includes('southern california')
-          );
-          console.log('[useCarrierQuoteItems] Circuit quotes with matching client name:', quotesWithMatchingName);
-          
-          // Check if any quotes belong to current user
-          const userQuotes = allCircuitQuotesDebug?.filter(q => q.user_id === user.id);
-          console.log('[useCarrierQuoteItems] Current user\'s circuit quotes:', userQuotes);
-        }
-
-        // Now let's see ALL circuit quotes for this user (to debug)
-        const { data: allUserCircuitQuotes, error: allUserError } = await supabase
-          .from('circuit_quotes')
-          .select('id, client_name, location, status, client_info_id')
-          .eq('user_id', user.id);
-
-        if (allUserError) {
-          console.error('[useCarrierQuoteItems] Error fetching all user circuit quotes:', allUserError);
-        } else {
-          console.log('[useCarrierQuoteItems] ALL circuit quotes for this user:', allUserCircuitQuotes);
-          console.log('[useCarrierQuoteItems] Looking for client_info_id match:', clientInfoId);
-          const matchingQuotes = allUserCircuitQuotes?.filter(q => q.client_info_id === clientInfoId);
-          console.log('[useCarrierQuoteItems] Matching circuit quotes for this client_info_id:', matchingQuotes);
-        }
-
-        // First, let's see ALL circuit quotes for this client (regardless of status)
-        const { data: allCircuitQuotes, error: allCircuitError } = await supabase
-          .from('circuit_quotes')
-          .select('id, client_name, location, status, client_info_id')
-          .eq('user_id', user.id)
-          .eq('client_info_id', clientInfoId);
-
-        if (allCircuitError) {
-          console.error('[useCarrierQuoteItems] Error fetching all circuit quotes:', allCircuitError);
-        } else {
-          console.log('[useCarrierQuoteItems] ALL circuit quotes for this client:', allCircuitQuotes);
-          console.log('[useCarrierQuoteItems] Circuit quotes by status:', 
-            allCircuitQuotes?.reduce((acc, quote) => {
-              acc[quote.status] = (acc[quote.status] || 0) + 1;
-              return acc;
-            }, {} as Record<string, number>)
-          );
-        }
-
-        // Now get circuit quotes for this client that are completed
+        // Get circuit quotes for this client that are completed
+        // Note: RLS policies now allow viewing all circuit quotes, not just user's own
         const { data: circuitQuotes, error: circuitError } = await supabase
           .from('circuit_quotes')
           .select('id, client_name, location, status')
-          .eq('user_id', user.id)
           .eq('client_info_id', clientInfoId)
           .eq('status', 'completed');
 
@@ -119,7 +47,7 @@ export const useCarrierQuoteItems = (clientInfoId: string | null) => {
           return;
         }
 
-        console.log('[useCarrierQuoteItems] Found COMPLETED circuit quotes:', circuitQuotes);
+        console.log('[useCarrierQuoteItems] Found completed circuit quotes:', circuitQuotes);
 
         if (!circuitQuotes || circuitQuotes.length === 0) {
           console.log('[useCarrierQuoteItems] No completed circuit quotes found for this client');
