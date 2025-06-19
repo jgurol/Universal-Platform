@@ -81,23 +81,23 @@ const addMRCItems = async (doc: jsPDF, mrcItems: any[], quote: any, yPos: number
     // Process description to extract content with proper order preservation
     const descriptionContent = await processDescriptionWithOrderPreservation(item.description || item.item?.description || '');
     
-    // Calculate proper row height based on content - reduced spacing
-    let rowHeight = 8; // Reduced base height from 12 to 8
+    // Calculate proper row height based on content - much tighter spacing
+    let rowHeight = 6; // Further reduced base height from 8 to 6
     
-    // Calculate height needed for all content with tighter spacing
+    // Calculate height needed for all content with much tighter spacing
     if (descriptionContent.length > 0) {
       let contentHeight = 0;
       
       for (const contentItem of descriptionContent) {
         if (contentItem.type === 'text') {
           const lines = Math.ceil(contentItem.content.length / 35);
-          contentHeight += Math.max(1, lines) * 2.5; // Reduced from 3 to 2.5
+          contentHeight += Math.max(1, lines) * 2; // Further reduced from 2.5 to 2
         } else if (contentItem.type === 'image' && contentItem.data) {
-          contentHeight += 15; // Reduced from 20 to 15
+          contentHeight += 12; // Further reduced from 15 to 12
         }
       }
       
-      rowHeight = Math.max(rowHeight, contentHeight + 8); // Reduced from 15 to 8
+      rowHeight = Math.max(rowHeight, contentHeight + 4); // Further reduced from 8 to 4
     }
     
     if (index % 2 === 0) {
@@ -112,10 +112,10 @@ const addMRCItems = async (doc: jsPDF, mrcItems: any[], quote: any, yPos: number
     
     doc.setFontSize(8);
     doc.setTextColor(80, 80, 80);
-    doc.text(`Location: ${addressText}`, colX.description + 4, yPos + 4); // Reduced from 5 to 4
+    doc.text(`Location: ${addressText}`, colX.description + 4, yPos + 3); // Further reduced from 4 to 3
     
-    // Add description content in the correct order with tighter spacing
-    const contentStartY = yPos + 8; // Reduced from 10 to 8
+    // Add description content in the correct order with much tighter spacing
+    const contentStartY = yPos + 6; // Further reduced from 8 to 6
     await addDescriptionContentInOrder(doc, descriptionContent, colX.description + 4, contentStartY);
     
     doc.setTextColor(0, 0, 0);
@@ -287,7 +287,7 @@ const addDescriptionContentInOrder = async (
   startY: number
 ): Promise<void> => {
   let currentY = startY;
-  const lineHeight = 2.5; // Reduced from 3 to 2.5
+  const lineHeight = 2; // Further reduced from 2.5 to 2
   const contentWidth = 120;
   
   console.log('[PDF] Adding content in order, total items:', contentItems.length);
@@ -314,13 +314,13 @@ const addDescriptionContentInOrder = async (
         currentY += lineHeight;
       }
       
-      // Reduced spacing after text
-      currentY += 0.5; // Reduced from 1 to 0.5
+      // Minimal spacing after text
+      currentY += 0.2; // Further reduced from 0.5 to 0.2
       
     } else if (item.type === 'image' && item.data && item.dimensions) {
       try {
-        const maxImageWidth = 18; // Reduced from 20 to 18
-        const maxImageHeight = 15; // Reduced from 18 to 15
+        const maxImageWidth = 15; // Further reduced from 18 to 15
+        const maxImageHeight = 12; // Further reduced from 15 to 12
         
         // Calculate proper dimensions maintaining aspect ratio
         let { width, height } = item.dimensions;
@@ -355,8 +355,8 @@ const addDescriptionContentInOrder = async (
         doc.addImage(item.data, format, startX, currentY, width, height);
         console.log(`[PDF] Successfully added image ${i + 1}:`, item.content);
         
-        // Move Y position after image with reduced spacing
-        currentY += height + 2; // Reduced from 3 to 2
+        // Move Y position after image with minimal spacing
+        currentY += height + 1; // Further reduced from 2 to 1
         
       } catch (error) {
         console.error(`[PDF] Error adding image ${i + 1} to PDF:`, error);
