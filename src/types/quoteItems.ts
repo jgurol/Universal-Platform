@@ -4,7 +4,7 @@ import { ClientAddress } from "@/types/clientAddress";
 
 export interface QuoteItemData {
   id: string;
-  item_id: string;
+  item_id?: string; // Make optional to match QuoteItem
   quantity: number;
   unit_price: number;
   cost_override?: number;
