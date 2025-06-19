@@ -143,7 +143,7 @@ export const CircuitQuoteCarriers = ({
                     className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium text-white shadow-sm ${
                       isPending && !isNoService ? 'animate-pulse' : ''
                     }`}
-                    style={{ backgroundColor: isNoService ? '#f87171' : (carrier.color || '#3B82F6') }}
+                    style={{ backgroundColor: carrier.color || '#3B82F6' }}
                   >
                     {carrier.carrier}
                   </div>
