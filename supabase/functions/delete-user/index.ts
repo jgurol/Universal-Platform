@@ -32,6 +32,18 @@ const handler = async (req: Request): Promise<Response> => {
 
     console.log('Attempting to delete user:', userId);
 
+    // First, clean up password reset tokens for this user
+    console.log('Cleaning up password reset tokens for user:', userId);
+    const { error: tokenError } = await supabase
+      .from('password_reset_tokens')
+      .delete()
+      .eq('user_id', userId);
+
+    if (tokenError) {
+      console.log('Warning: Could not clean up password reset tokens:', tokenError.message);
+      // Continue anyway - the tokens might not exist
+    }
+
     // Delete user from Supabase auth using admin API
     const { error } = await supabase.auth.admin.deleteUser(userId);
     
