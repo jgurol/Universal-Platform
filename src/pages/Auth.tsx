@@ -162,11 +162,13 @@ const Auth = () => {
         description: "Your password has been updated. You can now log in with your new password.",
       });
       
-      // Reset state and redirect to login
+      // Reset all password reset related state
       setShowUpdatePasswordForm(false);
       setTokenError(null);
       setResetToken(null);
-      setActiveTab("login");
+      
+      // Don't just set the tab - force a redirect to ensure clean state
+      window.location.href = '/auth';
     } catch (error) {
       console.error("Error updating password:", error);
       toast({
