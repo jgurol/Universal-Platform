@@ -36,7 +36,8 @@ export const CircuitQuoteCardActions = ({
       color: carrier.color,
       install_fee: carrier.install_fee || false,
       site_survey_needed: carrier.site_survey_needed || false,
-      no_service: carrier.no_service || false
+      no_service: carrier.no_service || false,
+      static_ip: carrier.static_ip || false
     };
 
     if (onAddCarrier) {
