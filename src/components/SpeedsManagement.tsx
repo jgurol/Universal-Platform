@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Plus, Pencil, Trash2, Copy } from "lucide-react";
@@ -9,6 +10,7 @@ import { EditSpeedDialog } from "./EditSpeedDialog";
 import { useSpeeds } from "@/hooks/useSpeeds";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/context/AuthContext";
 
 export const SpeedsManagement = () => {
   const [addDialogOpen, setAddDialogOpen] = useState(false);
@@ -17,6 +19,7 @@ export const SpeedsManagement = () => {
   
   const { speeds, loading, refetchSpeeds } = useSpeeds();
   const { toast } = useToast();
+  const { user, isAdmin } = useAuth();
 
   const handleEdit = (speed: any) => {
     setSelectedSpeed(speed);
@@ -24,6 +27,8 @@ export const SpeedsManagement = () => {
   };
 
   const handleDuplicate = async (speed: any) => {
+    if (!user) return;
+    
     try {
       const { error } = await supabase
         .from('speeds')
@@ -31,7 +36,7 @@ export const SpeedsManagement = () => {
           name: `${speed.name} (Copy)`,
           description: speed.description,
           is_active: speed.is_active,
-          user_id: (await supabase.auth.getUser()).data.user?.id
+          user_id: user.id
         });
 
       if (error) throw error;
@@ -52,7 +57,17 @@ export const SpeedsManagement = () => {
     }
   };
 
-  const handleDelete = async (speedId: string) => {
+  const handleDelete = async (speedId: string, speedUserId: string) => {
+    // Only allow deletion if user owns the speed or is admin
+    if (!isAdmin && speedUserId !== user?.id) {
+      toast({
+        title: "Error",
+        description: "You can only delete speed options you created",
+        variant: "destructive"
+      });
+      return;
+    }
+
     if (!confirm("Are you sure you want to delete this speed option?")) {
       return;
     }
@@ -92,6 +107,10 @@ export const SpeedsManagement = () => {
     setSelectedSpeed(null);
   };
 
+  const isSystemDefault = (userId: string) => {
+    return userId === '00000000-0000-0000-0000-000000000000';
+  };
+
   return (
     <div className="space-y-6">
       <Card>
@@ -125,6 +144,7 @@ export const SpeedsManagement = () => {
                 <TableRow>
                   <TableHead>Name</TableHead>
                   <TableHead>Description</TableHead>
+                  <TableHead>Type</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
@@ -134,6 +154,11 @@ export const SpeedsManagement = () => {
                   <TableRow key={speed.id}>
                     <TableCell className="font-medium">{speed.name}</TableCell>
                     <TableCell>{speed.description || "—"}</TableCell>
+                    <TableCell>
+                      <Badge variant={isSystemDefault(speed.user_id) ? "default" : "secondary"}>
+                        {isSystemDefault(speed.user_id) ? "System Default" : "Custom"}
+                      </Badge>
+                    </TableCell>
                     <TableCell>
                       <Badge variant={speed.is_active ? "default" : "secondary"}>
                         {speed.is_active ? "Active" : "Inactive"}
@@ -154,14 +179,18 @@ export const SpeedsManagement = () => {
                           variant="outline"
                           size="sm"
                           onClick={() => handleEdit(speed)}
+                          disabled={isSystemDefault(speed.user_id) && !isAdmin}
+                          title={isSystemDefault(speed.user_id) && !isAdmin ? "Cannot edit system defaults" : "Edit Speed Option"}
                         >
                           <Pencil className="h-4 w-4" />
                         </Button>
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={() => handleDelete(speed.id)}
+                          onClick={() => handleDelete(speed.id, speed.user_id)}
                           className="text-red-600 hover:text-red-700"
+                          disabled={isSystemDefault(speed.user_id) && !isAdmin}
+                          title={isSystemDefault(speed.user_id) && !isAdmin ? "Cannot delete system defaults" : "Delete Speed Option"}
                         >
                           <Trash2 className="h-4 w-4" />
                         </Button>
