@@ -1,3 +1,4 @@
+
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 
 const corsHeaders = {
@@ -332,19 +333,28 @@ const handler = async (req: Request): Promise<Response> => {
       throw new Error(`PDFShift API error: ${response.status} - ${errorText}`);
     }
 
-    // Get the PDF as a Uint8Array to ensure proper binary handling
-    const pdfBytes = new Uint8Array(await response.arrayBuffer());
+    // Get the PDF as ArrayBuffer and convert to base64
+    const pdfArrayBuffer = await response.arrayBuffer();
+    const pdfBytes = new Uint8Array(pdfArrayBuffer);
     
     console.log('[PDFShift] PDF generated successfully, size:', pdfBytes.length, 'bytes');
     
-    // Return the PDF bytes directly
-    return new Response(pdfBytes, {
-      headers: {
-        ...corsHeaders,
-        'Content-Type': 'application/pdf',
-        'Content-Length': pdfBytes.length.toString(),
+    // Convert to base64 for JSON transport
+    const base64String = btoa(String.fromCharCode(...pdfBytes));
+    
+    // Return the PDF as base64 in JSON response
+    return new Response(
+      JSON.stringify({ 
+        pdf: base64String,
+        size: pdfBytes.length 
+      }),
+      {
+        headers: {
+          ...corsHeaders,
+          'Content-Type': 'application/json',
+        }
       }
-    });
+    );
     
   } catch (error) {
     console.error('[PDFShift] Error generating PDF via Edge Function:', error);

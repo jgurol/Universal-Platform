@@ -22,22 +22,18 @@ export const generateQuotePDFWithPDFShift = async (quote: Quote, clientInfo?: Cl
       throw new Error('No data received from Edge Function');
     }
 
-    console.log('[PDFShift] Received data type:', typeof data, 'Data:', data);
+    console.log('[PDFShift] Received response:', data);
 
-    // Handle different data formats that might be returned
-    let pdfBytes: Uint8Array;
+    // The Edge Function now returns { pdf: base64String, size: number }
+    if (!data.pdf) {
+      throw new Error('No PDF data in response');
+    }
     
-    if (data instanceof ArrayBuffer) {
-      pdfBytes = new Uint8Array(data);
-    } else if (data instanceof Uint8Array) {
-      pdfBytes = data;
-    } else if (Array.isArray(data)) {
-      // If it's an array of numbers, convert to Uint8Array
-      pdfBytes = new Uint8Array(data);
-    } else {
-      // Try to handle as binary string or other format
-      console.log('[PDFShift] Unexpected data format, attempting conversion');
-      pdfBytes = new Uint8Array(Object.values(data));
+    // Convert base64 back to binary
+    const binaryString = atob(data.pdf);
+    const pdfBytes = new Uint8Array(binaryString.length);
+    for (let i = 0; i < binaryString.length; i++) {
+      pdfBytes[i] = binaryString.charCodeAt(i);
     }
     
     console.log('[PDFShift] PDF bytes length:', pdfBytes.length);
