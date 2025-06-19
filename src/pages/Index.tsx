@@ -11,6 +11,13 @@ const Index = () => {
   const { user, session, loading } = useAuth();
 
   console.log('Index page - session:', !!session, 'user:', !!user, 'loading:', loading);
+  console.log('Index page - session details:', session ? {
+    userId: session.user?.id,
+    email: session.user?.email,
+    expiresAt: session.expires_at,
+    currentTime: Date.now() / 1000,
+    isExpired: session.expires_at ? session.expires_at <= Date.now() / 1000 : false
+  } : null);
 
   // Show loading state while checking authentication
   if (loading) {
@@ -31,9 +38,18 @@ const Index = () => {
     return <Navigate to="/auth" replace />;
   }
 
-  // Additional session validation
-  if (session.expires_at && session.expires_at < Date.now() / 1000) {
-    console.log('Index page - Session expired, redirecting to auth');
+  // Additional session validation - check if session is expired
+  if (session.expires_at && session.expires_at <= Date.now() / 1000) {
+    console.log('Index page - Session expired, redirecting to auth', {
+      expiresAt: session.expires_at,
+      currentTime: Date.now() / 1000
+    });
+    return <Navigate to="/auth" replace />;
+  }
+
+  // Validate that the session user matches the user state
+  if (!session.user || session.user.id !== user.id) {
+    console.log('Index page - Session user mismatch, redirecting to auth');
     return <Navigate to="/auth" replace />;
   }
 

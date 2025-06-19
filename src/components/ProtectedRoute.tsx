@@ -15,6 +15,13 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   const { user, session, loading, isAdmin } = useAuth();
 
   console.log('ProtectedRoute - session:', !!session, 'user:', !!user, 'loading:', loading, 'isAdmin:', isAdmin);
+  console.log('ProtectedRoute - session details:', session ? {
+    userId: session.user?.id,
+    email: session.user?.email,
+    expiresAt: session.expires_at,
+    currentTime: Date.now() / 1000,
+    isExpired: session.expires_at ? session.expires_at <= Date.now() / 1000 : false
+  } : null);
 
   // Show loading state while checking authentication
   if (loading) {
@@ -36,8 +43,17 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   }
 
   // Verify session is still valid by checking expiration
-  if (session.expires_at && session.expires_at < Date.now() / 1000) {
-    console.log('ProtectedRoute - Session expired, redirecting to auth');
+  if (session.expires_at && session.expires_at <= Date.now() / 1000) {
+    console.log('ProtectedRoute - Session expired, redirecting to auth', {
+      expiresAt: session.expires_at,
+      currentTime: Date.now() / 1000
+    });
+    return <Navigate to="/auth" replace />;
+  }
+
+  // Validate that the session user matches the user state
+  if (!session.user || session.user.id !== user.id) {
+    console.log('ProtectedRoute - Session user mismatch, redirecting to auth');
     return <Navigate to="/auth" replace />;
   }
 

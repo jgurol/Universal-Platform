@@ -20,17 +20,20 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 // Helper function to clean up auth state
 const cleanupAuthState = () => {
+  console.log('AuthProvider: Cleaning up auth state');
   // Remove standard auth tokens
   localStorage.removeItem('supabase.auth.token');
   // Remove all Supabase auth keys from localStorage
   Object.keys(localStorage).forEach((key) => {
     if (key.startsWith('supabase.auth.') || key.includes('sb-')) {
+      console.log('AuthProvider: Removing localStorage key:', key);
       localStorage.removeItem(key);
     }
   });
   // Remove from sessionStorage if in use
   Object.keys(sessionStorage || {}).forEach((key) => {
     if (key.startsWith('supabase.auth.') || key.includes('sb-')) {
+      console.log('AuthProvider: Removing sessionStorage key:', key);
       sessionStorage.removeItem(key);
     }
   });
@@ -52,6 +55,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, currentSession) => {
         console.log("AuthProvider: Auth state change event:", event, "Session exists:", !!currentSession);
+        console.log("AuthProvider: Session details:", currentSession ? {
+          userId: currentSession.user?.id,
+          email: currentSession.user?.email,
+          expiresAt: currentSession.expires_at,
+          currentTime: Date.now() / 1000
+        } : null);
         
         if (!mounted) return;
         
@@ -78,7 +87,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           return;
         }
         
-        console.log("AuthProvider: Setting session and user", currentSession?.user?.email);
+        // Validate session expiration IMMEDIATELY
+        if (currentSession.expires_at && currentSession.expires_at <= Date.now() / 1000) {
+          console.log("AuthProvider: Session expired immediately upon receipt", {
+            expiresAt: currentSession.expires_at,
+            currentTime: Date.now() / 1000
+          });
+          cleanupAuthState();
+          await supabase.auth.signOut({ scope: 'global' });
+          setSession(null);
+          setUser(null);
+          setIsAdmin(false);
+          setIsAssociated(false);
+          setLoading(false);
+          return;
+        }
+        
+        console.log("AuthProvider: Setting valid session and user", currentSession?.user?.email);
         setSession(currentSession);
         setUser(currentSession?.user ?? null);
         
@@ -120,8 +145,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         } else {
           console.log("AuthProvider: Initial session check result:", currentSession ? `Session exists for ${currentSession.user?.email}` : "No session found");
           
-          // CRITICAL: Only set session if we actually have a valid session
-          if (currentSession && currentSession.user) {
+          // CRITICAL: Validate session expiration immediately
+          if (currentSession && currentSession.expires_at && currentSession.expires_at <= Date.now() / 1000) {
+            console.log("AuthProvider: Existing session is expired", {
+              expiresAt: currentSession.expires_at,
+              currentTime: Date.now() / 1000
+            });
+            cleanupAuthState();
+            await supabase.auth.signOut({ scope: 'global' });
+            setSession(null);
+            setUser(null);
+            setIsAdmin(false);
+            setIsAssociated(false);
+          } else if (currentSession && currentSession.user) {
             setSession(currentSession);
             setUser(currentSession.user);
             console.log("AuthProvider: Valid session found, fetching profile");
@@ -313,37 +349,50 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const signOut = async () => {
     try {
       setLoading(true);
+      console.log("AuthProvider: Starting sign out process");
+      
       // Clean up auth state first
       cleanupAuthState();
+      
+      // Clear component state immediately
+      setSession(null);
+      setUser(null);
+      setIsAdmin(false);
+      setIsAssociated(false);
       
       // Attempt global sign out
       const { error } = await supabase.auth.signOut({ scope: 'global' });
       if (error && !error.message.includes('Invalid token')) {
         // Only show error if it's not a token-related issue
+        console.error("AuthProvider: Sign out error:", error);
         toast({
           title: "Sign out failed",
           description: error.message,
           variant: "destructive"
         });
-        throw error;
+      } else {
+        console.log("AuthProvider: Sign out successful");
+        toast({
+          title: "Signed out",
+          description: "You have been successfully signed out.",
+        });
       }
-      
-      toast({
-        title: "Signed out",
-        description: "You have been successfully signed out.",
-      });
       
       // Force page reload to ensure clean state
       window.location.href = '/auth';
     } catch (error: any) {
-      console.error('Error signing out:', error.message);
+      console.error('AuthProvider: Error signing out:', error.message);
       // Even if sign out fails, clean up local state
       cleanupAuthState();
+      setSession(null);
+      setUser(null);
+      setIsAdmin(false);
+      setIsAssociated(false);
       window.location.href = '/auth';
     }
   };
 
-  console.log("AuthProvider: Rendering with state - user:", !!user, "loading:", loading, "isAdmin:", isAdmin);
+  console.log("AuthProvider: Rendering with state - user:", !!user, "session:", !!session, "loading:", loading, "isAdmin:", isAdmin);
 
   const value = {
     session,
