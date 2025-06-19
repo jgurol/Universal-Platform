@@ -1,6 +1,7 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { ChevronDown, ChevronRight, Edit, Trash2 } from "lucide-react";
 import { CircuitQuoteStatusSelect } from "@/components/CircuitQuoteStatusSelect";
 import { EditCircuitQuoteDialog } from "@/components/EditCircuitQuoteDialog";
@@ -63,7 +64,26 @@ export const CircuitQuoteCardHeader = ({
           </div>
         </div>
         
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3">
+          {/* Quote Requirements Badges */}
+          <div className="flex flex-wrap gap-1">
+            {quote.static_ip && (
+              <Badge variant="secondary" className="text-xs bg-blue-100 text-blue-800">
+                /30 IP
+              </Badge>
+            )}
+            {quote.slash_29 && (
+              <Badge variant="secondary" className="text-xs bg-blue-100 text-blue-800">
+                /29 IP
+              </Badge>
+            )}
+            {quote.mikrotik_required && (
+              <Badge variant="secondary" className="text-xs bg-blue-100 text-blue-800">
+                Mikrotik
+              </Badge>
+            )}
+          </div>
+
           <CircuitQuoteStatusSelect
             status={quote.status}
             onStatusChange={onStatusChange}
