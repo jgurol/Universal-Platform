@@ -29,21 +29,38 @@ const Auth = () => {
   const { user, signIn, signUp } = useAuth();
   const { toast } = useToast();
 
-  // Check for reset token in URL
+  // Check for reset token in URL with better error handling
   useEffect(() => {
-    const urlParams = new URLSearchParams(window.location.search);
+    console.log('Current URL:', window.location.href);
+    console.log('Location search:', location.search);
+    
+    const urlParams = new URLSearchParams(location.search);
     const token = urlParams.get('reset_token');
     
+    console.log('Extracted reset token:', token);
+    
     if (token) {
-      console.log('Password reset token found in URL');
+      console.log('Password reset token found in URL:', token);
       setResetToken(token);
       setShowUpdatePasswordForm(true);
       setActiveTab("none");
       
-      // Clean up URL
-      window.history.replaceState(null, '', window.location.pathname);
+      // Clean up URL without refreshing the page
+      const newUrl = window.location.pathname;
+      window.history.replaceState(null, '', newUrl);
+      
+      // Reset any existing errors
+      setTokenError(null);
+    } else {
+      console.log('No reset token found in URL');
+      // If we're expecting a token but don't have one, reset the state
+      if (showUpdatePasswordForm && !token) {
+        setShowUpdatePasswordForm(false);
+        setResetToken(null);
+        setActiveTab("login");
+      }
     }
-  }, []);
+  }, [location.search, showUpdatePasswordForm]);
 
   const handleLoginSubmit = async (email: string, password: string) => {
     try {
@@ -106,7 +123,7 @@ const Auth = () => {
   
   const handleUpdatePasswordSubmit = async (password: string) => {
     try {
-      console.log("Custom password update flow started");
+      console.log("Custom password update flow started with token:", resetToken);
       setIsSubmitting(true);
       
       if (!resetToken) {
@@ -114,6 +131,7 @@ const Auth = () => {
         return;
       }
       
+      console.log('Calling reset-password function with token');
       const { data, error } = await supabase.functions.invoke('reset-password', {
         body: {
           token: resetToken,
@@ -121,19 +139,21 @@ const Auth = () => {
         }
       });
       
+      console.log('Reset password response:', { data, error });
+      
       if (error || !data?.success) {
         console.error("Password update error:", error);
-        const errorMessage = data?.error || "Failed to update password. Please try again.";
+        const errorMessage = data?.error || error?.message || "Failed to update password. Please try again.";
         
         if (errorMessage.includes('Invalid') || errorMessage.includes('expired')) {
           setTokenError(errorMessage);
+        } else {
+          toast({
+            title: "Password Update Failed",
+            description: errorMessage,
+            variant: "destructive"
+          });
         }
-        
-        toast({
-          title: "Password Update Failed",
-          description: errorMessage,
-          variant: "destructive"
-        });
         return;
       }
       
@@ -160,6 +180,7 @@ const Auth = () => {
   };
 
   const handleBackToLogin = () => {
+    console.log('Going back to login');
     setTokenError(null);
     setShowUpdatePasswordForm(false);
     setShowResetForm(false);
@@ -173,6 +194,7 @@ const Auth = () => {
 
   // Render the password update form
   if (showUpdatePasswordForm) {
+    console.log('Rendering update password form with token:', resetToken);
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-blue-50 p-4">
         <div className="w-full max-w-md">
