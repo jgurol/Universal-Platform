@@ -60,9 +60,13 @@ const handler = async (req: Request): Promise<Response> => {
       throw new Error(`PDFShift API error: ${pdfShiftResponse.status} - ${errorText}`);
     }
 
-    // Get PDF as base64
+    // Get PDF as array buffer and convert to base64 efficiently
     const pdfBuffer = await pdfShiftResponse.arrayBuffer();
-    const pdfBase64 = btoa(String.fromCharCode(...new Uint8Array(pdfBuffer)));
+    console.log('PDFShift Function - PDF buffer size:', pdfBuffer.byteLength);
+    
+    // Use Deno's built-in encoder for efficient base64 conversion
+    const uint8Array = new Uint8Array(pdfBuffer);
+    const pdfBase64 = btoa(Array.from(uint8Array, byte => String.fromCharCode(byte)).join(''));
     
     console.log('PDFShift Function - PDF generated successfully, base64 length:', pdfBase64.length);
     
