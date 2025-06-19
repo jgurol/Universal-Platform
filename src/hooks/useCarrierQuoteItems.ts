@@ -34,8 +34,37 @@ export const useCarrierQuoteItems = (clientInfoId: string | null) => {
 
       setLoading(true);
       try {
-        console.log('[useCarrierQuoteItems] Fetching ALL circuit quotes for client to debug:', clientInfoId);
+        // First, let's see what client info we're looking for
+        console.log('[useCarrierQuoteItems] Looking for client_info_id:', clientInfoId);
         
+        // Get the client info details
+        const { data: clientInfo, error: clientInfoError } = await supabase
+          .from('client_info')
+          .select('id, company_name')
+          .eq('id', clientInfoId)
+          .single();
+          
+        if (clientInfoError) {
+          console.error('[useCarrierQuoteItems] Error fetching client info:', clientInfoError);
+        } else {
+          console.log('[useCarrierQuoteItems] Found client info:', clientInfo);
+        }
+
+        // Now let's see ALL circuit quotes for this user (to debug)
+        const { data: allUserCircuitQuotes, error: allUserError } = await supabase
+          .from('circuit_quotes')
+          .select('id, client_name, location, status, client_info_id')
+          .eq('user_id', user.id);
+
+        if (allUserError) {
+          console.error('[useCarrierQuoteItems] Error fetching all user circuit quotes:', allUserError);
+        } else {
+          console.log('[useCarrierQuoteItems] ALL circuit quotes for this user:', allUserCircuitQuotes);
+          console.log('[useCarrierQuoteItems] Looking for client_info_id match:', clientInfoId);
+          const matchingQuotes = allUserCircuitQuotes?.filter(q => q.client_info_id === clientInfoId);
+          console.log('[useCarrierQuoteItems] Matching circuit quotes for this client_info_id:', matchingQuotes);
+        }
+
         // First, let's see ALL circuit quotes for this client (regardless of status)
         const { data: allCircuitQuotes, error: allCircuitError } = await supabase
           .from('circuit_quotes')
