@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -20,6 +19,31 @@ interface QuoteItemRowProps {
 export const QuoteItemRow = ({ quoteItem, addresses, onUpdateItem, onRemoveItem }: QuoteItemRowProps) => {
   const [isDescriptionOpen, setIsDescriptionOpen] = useState(false);
   const [tempDescription, setTempDescription] = useState(quoteItem.description || quoteItem.item?.description || '');
+
+  // Calculate profit margin percentage
+  const calculateProfitMargin = (): string => {
+    const sellPrice = quoteItem.unit_price || 0;
+    const cost = quoteItem.cost_override || quoteItem.item?.cost || 0;
+    
+    if (cost === 0) return '0%';
+    
+    const margin = ((sellPrice - cost) / cost) * 100;
+    return `${margin >= 0 ? '+' : ''}${margin.toFixed(1)}%`;
+  };
+
+  const getProfitMarginColor = (): string => {
+    const sellPrice = quoteItem.unit_price || 0;
+    const cost = quoteItem.cost_override || quoteItem.item?.cost || 0;
+    
+    if (cost === 0) return 'text-gray-500';
+    
+    const margin = ((sellPrice - cost) / cost) * 100;
+    
+    if (margin > 20) return 'text-green-600';
+    if (margin > 0) return 'text-blue-600';
+    if (margin === 0) return 'text-gray-500';
+    return 'text-red-600';
+  };
 
   // Update tempDescription when dialog opens or quoteItem changes
   const handleDialogOpenChange = (open: boolean) => {
@@ -175,7 +199,7 @@ export const QuoteItemRow = ({ quoteItem, addresses, onUpdateItem, onRemoveItem 
           />
         </div>
 
-        {/* Sell Price / Cost */}
+        {/* Sell Price / Cost with Profit Margin */}
         <div className="space-y-1">
           <div className="flex items-center gap-1">
             <span className="text-xs text-gray-500">Sell:</span>
@@ -200,6 +224,11 @@ export const QuoteItemRow = ({ quoteItem, addresses, onUpdateItem, onRemoveItem 
               className="text-xs h-8"
               placeholder="$"
             />
+          </div>
+          <div className="flex items-center justify-center">
+            <span className={`text-xs font-medium ${getProfitMarginColor()}`}>
+              {calculateProfitMargin()}
+            </span>
           </div>
         </div>
 
