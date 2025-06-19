@@ -1,4 +1,3 @@
-
 import { Button } from "@/components/ui/button";
 import { Plus, Edit, Trash2, Copy } from "lucide-react";
 import type { CarrierQuote } from "@/hooks/useCircuitQuotes";
@@ -60,18 +59,23 @@ export const CircuitQuoteCarriers = ({
       const allTickedOptions = new Set<string>();
       let hasNoService = false;
       let hasPendingQuotes = false;
+      let allCarriersNoService = true;
       
       // Aggregate information from all carriers of this vendor
       vendorCarriers.forEach(carrier => {
         const tickedOptions = getTickedCheckboxes(carrier);
         tickedOptions.forEach(option => allTickedOptions.add(option));
         
-        if (carrier.no_service) hasNoService = true;
+        if (carrier.no_service) {
+          hasNoService = true;
+        } else {
+          allCarriersNoService = false;
+        }
         if (!carrier.price || carrier.price === 0) hasPendingQuotes = true;
       });
 
       const tickedOptionsArray = Array.from(allTickedOptions);
-      const isPending = hasPendingQuotes && !hasNoService;
+      const isPending = hasPendingQuotes && !allCarriersNoService;
       
       // Create tooltip with all carrier info for this vendor
       const tooltipParts = vendorCarriers.map(carrier => {
@@ -87,19 +91,20 @@ export const CircuitQuoteCarriers = ({
         tickedOptionsArray,
         isPending,
         hasNoService,
+        allCarriersNoService,
         tooltipText
       };
     });
 
     return (
       <div className="flex flex-wrap gap-2 mt-3 pt-3 border-t border-gray-100">
-        {vendorDisplayData.map(({ vendorName, displayCarrier, tickedOptionsArray, isPending, hasNoService, tooltipText }) => (
+        {vendorDisplayData.map(({ vendorName, displayCarrier, tickedOptionsArray, isPending, hasNoService, allCarriersNoService, tooltipText }) => (
           <div
             key={vendorName}
             className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium text-white shadow-sm ${
-              isPending && !hasNoService ? 'animate-pulse' : ''
-            } ${hasNoService ? 'bg-red-400' : ''}`}
-            style={{ backgroundColor: hasNoService ? '#f87171' : (displayCarrier.color || '#3B82F6') }}
+              isPending && !allCarriersNoService ? 'animate-pulse' : ''
+            }`}
+            style={{ backgroundColor: allCarriersNoService ? '#f87171' : (displayCarrier.color || '#3B82F6') }}
             title={tooltipText}
           >
             <span className="mr-1">{vendorName}</span>
