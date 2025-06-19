@@ -34,8 +34,6 @@ export const CircuitQuoteCardActions = ({
       term: carrier.term,
       notes: `Copied from ${carrier.carrier} quote`,
       color: carrier.color,
-      static_ip: carrier.static_ip || false,
-      slash_29: carrier.slash_29 || false,
       install_fee: carrier.install_fee || false,
       site_survey_needed: carrier.site_survey_needed || false,
       no_service: carrier.no_service || false

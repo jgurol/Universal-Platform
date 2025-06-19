@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -29,8 +30,6 @@ export const AddCarrierQuoteDialog = ({ open, onOpenChange, onAddCarrier }: AddC
   const [price, setPrice] = useState("");
   const [term, setTerm] = useState("");
   const [notes, setNotes] = useState("");
-  const [staticIp, setStaticIp] = useState(false);
-  const [slash29, setSlash29] = useState(false);
   const [installFee, setInstallFee] = useState(false);
   const [siteSurveyNeeded, setSiteSurveyNeeded] = useState(false);
   const [noService, setNoService] = useState(false);
@@ -93,8 +92,6 @@ export const AddCarrierQuoteDialog = ({ open, onOpenChange, onAddCarrier }: AddC
     setPrice("");
     setTerm("");
     setNotes("");
-    setStaticIp(false);
-    setSlash29(false);
     setInstallFee(false);
     setSiteSurveyNeeded(false);
     setNoService(false);
@@ -120,8 +117,6 @@ export const AddCarrierQuoteDialog = ({ open, onOpenChange, onAddCarrier }: AddC
         term,
         notes,
         color: vendorColor,
-        static_ip: staticIp,
-        slash_29: slash29,
         install_fee: installFee,
         site_survey_needed: siteSurveyNeeded,
         no_service: noService
@@ -267,28 +262,6 @@ export const AddCarrierQuoteDialog = ({ open, onOpenChange, onAddCarrier }: AddC
           <div className="space-y-4">
             <Label>Options</Label>
             <div className="grid grid-cols-2 gap-4">
-              <div className="flex items-center space-x-2">
-                <Checkbox
-                  id="static-ip"
-                  checked={staticIp}
-                  onCheckedChange={(checked) => setStaticIp(checked as boolean)}
-                />
-                <Label htmlFor="static-ip" className="text-sm font-normal">
-                  Static IP
-                </Label>
-              </div>
-              
-              <div className="flex items-center space-x-2">
-                <Checkbox
-                  id="slash-29"
-                  checked={slash29}
-                  onCheckedChange={(checked) => setSlash29(checked as boolean)}
-                />
-                <Label htmlFor="slash-29" className="text-sm font-normal">
-                  /29
-                </Label>
-              </div>
-              
               <div className="flex items-center space-x-2">
                 <Checkbox
                   id="install-fee"
