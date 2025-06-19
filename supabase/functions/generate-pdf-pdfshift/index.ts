@@ -328,7 +328,7 @@ const generateHTML = (quote: any, clientInfo?: any, salespersonName?: string, lo
   // Process template content for display with enhanced formatting
   const processedTemplateContent = templateContent ? processTemplateContent(templateContent) : '';
   
-  // Generate items HTML with proper formatting matching the interface
+  // Generate items HTML with proper formatting matching the interface and page break prevention
   const generateItemsHTML = (items: any[], sectionTitle: string) => {
     if (items.length === 0) return '';
     
@@ -349,7 +349,7 @@ const generateHTML = (quote: any, clientInfo?: any, salespersonName?: string, lo
                   const hasDescriptionContent = (item.processedDescription && item.processedDescription.trim()) || item.images.length > 0;
                   
                   return `
-                <tr>
+                <tr class="item-row">
                     <td class="description-cell">
                         <div class="item-content">
                             <div class="item-header${hasDescriptionContent ? ' with-content' : ''}">
@@ -516,6 +516,7 @@ const generateHTML = (quote: any, clientInfo?: any, salespersonName?: string, lo
         
         .items-section {
             margin: 20px 0;
+            page-break-inside: avoid;
         }
         
         .section-title {
@@ -542,6 +543,11 @@ const generateHTML = (quote: any, clientInfo?: any, salespersonName?: string, lo
         .items-table th {
             background: #f8f9fa;
             font-weight: bold;
+        }
+        
+        .item-row {
+            page-break-inside: avoid;
+            break-inside: avoid;
         }
         
         .description-cell {
