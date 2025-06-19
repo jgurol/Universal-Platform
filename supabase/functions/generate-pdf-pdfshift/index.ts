@@ -551,21 +551,21 @@ const generateHTML = (quote: any, clientInfo?: any, salespersonName?: string, lo
         }
         
         .description-cell {
-            width: 50%;
+            width: 60%;
         }
         
         .qty-cell {
-            width: 10%;
+            width: 8%;
             text-align: center;
         }
         
         .price-cell {
-            width: 20%;
+            width: 16%;
             text-align: right;
         }
         
         .total-cell {
-            width: 20%;
+            width: 16%;
             text-align: right;
         }
         
