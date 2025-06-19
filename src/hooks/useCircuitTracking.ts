@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
@@ -14,7 +13,7 @@ export const useCircuitTracking = () => {
     
     try {
       setIsLoading(true);
-      // First get all circuit tracking records
+      // First get all circuit tracking records with better category data fetching
       const { data: trackingData, error: trackingError } = await supabase
         .from('circuit_tracking')
         .select(`
@@ -35,6 +34,7 @@ export const useCircuitTracking = () => {
             quote:quotes(
               id,
               quote_number,
+              accepted_at,
               accepted_by,
               client_info:client_info(
                 company_name
@@ -46,7 +46,7 @@ export const useCircuitTracking = () => {
 
       if (trackingError) throw trackingError;
 
-      console.log('Existing circuit tracking data:', trackingData);
+      console.log('Raw circuit tracking data from database:', trackingData);
 
       // Now get all orders and their quote items to ensure we have complete data
       const { data: ordersData, error: ordersError } = await supabase
@@ -72,7 +72,7 @@ export const useCircuitTracking = () => {
 
       if (ordersError) throw ordersError;
 
-      console.log('Orders data:', ordersData);
+      console.log('Orders data with full category info:', ordersData);
 
       // Create a comprehensive list that includes all quote items for orders
       const allTrackingItems: CircuitTracking[] = [];
@@ -83,7 +83,7 @@ export const useCircuitTracking = () => {
           const itemName = tracking.item_name || tracking.quote_item?.item?.name;
           const categoryType = tracking.quote_item?.item?.category?.type;
           
-          console.log(`Checking existing tracking item: "${itemName}" with category type: "${categoryType}" for order ${tracking.order?.order_number}`);
+          console.log(`Processing existing tracking item: "${itemName}" with category type: "${categoryType}" for order ${tracking.order?.order_number}`);
           
           // Only include items with Circuit category type
           if (categoryType !== 'Circuit') {
@@ -170,6 +170,7 @@ export const useCircuitTracking = () => {
                     quote: {
                       id: order.quote.id,
                       quote_number: order.quote.quote_number,
+                      accepted_at: order.quote.accepted_at,
                       accepted_by: order.quote.accepted_by,
                       client_info: order.quote.client_info
                     }
