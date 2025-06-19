@@ -1,5 +1,6 @@
 
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.50.0';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -28,8 +29,41 @@ const handler = async (req: Request): Promise<Response> => {
     console.log('PDFShift Function - Processing quote:', quote?.id, 'with status:', quote?.status);
     console.log('PDFShift Function - API Key configured:', !!Deno.env.get('PDFSHIFT_API_KEY'));
     
-    // Create HTML template with original design
-    const html = generateHTML(quote, clientInfo, salespersonName);
+    // Initialize Supabase client to fetch system settings
+    const supabase = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+    );
+    
+    // Fetch company logo and settings from system_settings table
+    const { data: settings, error: settingsError } = await supabase
+      .from('system_settings')
+      .select('setting_key, setting_value')
+      .in('setting_key', ['company_logo_url', 'company_name']);
+    
+    if (settingsError) {
+      console.error('Error fetching system settings:', settingsError);
+    }
+    
+    // Extract logo URL and company name from settings
+    let logoUrl = '';
+    let companyName = 'California Telecom, Inc.';
+    
+    if (settings) {
+      const settingsMap = settings.reduce((acc, setting) => {
+        acc[setting.setting_key] = setting.setting_value;
+        return acc;
+      }, {} as Record<string, string>);
+      
+      logoUrl = settingsMap.company_logo_url || '';
+      companyName = settingsMap.company_name || 'California Telecom, Inc.';
+    }
+    
+    console.log('PDFShift Function - Logo URL configured:', !!logoUrl);
+    console.log('PDFShift Function - Company name:', companyName);
+    
+    // Create HTML template with logo and settings
+    const html = generateHTML(quote, clientInfo, salespersonName, logoUrl, companyName);
     console.log('PDFShift Function - HTML generated, length:', html.length);
     
     // Call PDFShift API
@@ -64,9 +98,17 @@ const handler = async (req: Request): Promise<Response> => {
     const pdfBuffer = await pdfShiftResponse.arrayBuffer();
     console.log('PDFShift Function - PDF buffer size:', pdfBuffer.byteLength);
     
-    // Use Deno's built-in encoder for efficient base64 conversion
+    // Use TextDecoder with base64 encoding for efficient conversion
     const uint8Array = new Uint8Array(pdfBuffer);
-    const pdfBase64 = btoa(Array.from(uint8Array, byte => String.fromCharCode(byte)).join(''));
+    let binary = '';
+    const chunkSize = 0x8000; // 32KB chunks to avoid call stack issues
+    
+    for (let i = 0; i < uint8Array.length; i += chunkSize) {
+      const chunk = uint8Array.subarray(i, i + chunkSize);
+      binary += String.fromCharCode.apply(null, Array.from(chunk));
+    }
+    
+    const pdfBase64 = btoa(binary);
     
     console.log('PDFShift Function - PDF generated successfully, base64 length:', pdfBase64.length);
     
@@ -90,8 +132,8 @@ const handler = async (req: Request): Promise<Response> => {
   }
 };
 
-// HTML generation function matching the original design
-const generateHTML = (quote: any, clientInfo?: any, salespersonName?: string): string => {
+// HTML generation function with logo support
+const generateHTML = (quote: any, clientInfo?: any, salespersonName?: string, logoUrl?: string, companyName?: string): string => {
   // Extract data safely
   const quoteId = quote?.id || '';
   const quoteNumber = quote?.quoteNumber || quoteId.slice(0, 4);
@@ -102,7 +144,7 @@ const generateHTML = (quote: any, clientInfo?: any, salespersonName?: string): s
   const billingAddress = quote?.billingAddress || '';
   const serviceAddress = quote?.serviceAddress || billingAddress || '';
   
-  const companyName = clientInfo?.company_name || 'Company Name';
+  const clientCompanyName = clientInfo?.company_name || 'Company Name';
   const contactName = clientInfo?.contact_name || 'Contact Name';
   const contactEmail = clientInfo?.email || '';
   const contactPhone = clientInfo?.phone || '';
@@ -136,6 +178,9 @@ const generateHTML = (quote: any, clientInfo?: any, salespersonName?: string): s
     }
   }
   
+  // Generate logo HTML if available
+  const logoHtml = logoUrl ? `<img src="${logoUrl}" alt="Company Logo" style="max-width: 120px; max-height: 60px; object-fit: contain;">` : `<div class="company-logo-text">${companyName || 'California Telecom, Inc.'}</div>`;
+  
   return `
 <!DOCTYPE html>
 <html>
@@ -166,7 +211,7 @@ const generateHTML = (quote: any, clientInfo?: any, salespersonName?: string): s
             padding-bottom: 10px;
         }
         
-        .company-logo {
+        .company-logo-text {
             font-size: 24px;
             font-weight: bold;
             color: #1f4e79;
@@ -174,12 +219,12 @@ const generateHTML = (quote: any, clientInfo?: any, salespersonName?: string): s
             align-items: center;
         }
         
-        .company-logo::before {
+        .company-logo-text::before {
             content: "CALIFORNIA";
             margin-right: 8px;
         }
         
-        .company-logo::after {
+        .company-logo-text::after {
             content: "TELECOM";
             color: #1f4e79;
         }
@@ -348,9 +393,9 @@ const generateHTML = (quote: any, clientInfo?: any, salespersonName?: string): s
 <body>
     <div class="header">
         <div>
-            <div class="company-logo"></div>
+            ${logoHtml}
             <div class="company-details">
-                <div>California Telecom, Inc.</div>
+                <div>${companyName || 'California Telecom, Inc.'}</div>
                 <div>14538 Central Ave</div>
                 <div>Chino, CA 91710</div>
                 <div>United States</div>
@@ -393,7 +438,7 @@ const generateHTML = (quote: any, clientInfo?: any, salespersonName?: string): s
         <div class="address-block">
             <div class="address-title">Billing Information</div>
             <div class="address-content">
-                <div><strong>${companyName}</strong></div>
+                <div><strong>${clientCompanyName}</strong></div>
                 <div>Jonathan Conn</div>
                 <div>${billingAddress || 'Address not specified'}</div>
                 ${contactPhone ? `<div>Tel: ${contactPhone}</div>` : ''}
@@ -403,7 +448,7 @@ const generateHTML = (quote: any, clientInfo?: any, salespersonName?: string): s
         <div class="address-block">
             <div class="address-title">Service Address</div>
             <div class="address-content">
-                <div><strong>${companyName}</strong></div>
+                <div><strong>${clientCompanyName}</strong></div>
                 <div>Jonathan Conn</div>
                 <div>${serviceAddress || 'Same as billing address'}</div>
                 ${contactPhone ? `<div>Tel: ${contactPhone}</div>` : ''}
