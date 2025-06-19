@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -33,6 +34,7 @@ export const EditCarrierQuoteDialog = ({ open, onOpenChange, carrier, onUpdateCa
   const [installFee, setInstallFee] = useState(false);
   const [siteSurveyNeeded, setSiteSurveyNeeded] = useState(false);
   const [noService, setNoService] = useState(false);
+  const [includesStaticIp, setIncludesStaticIp] = useState(false);
   const [isNotesDialogOpen, setIsNotesDialogOpen] = useState(false);
 
   const { vendors, categories, loading } = useCarrierOptions();
@@ -108,6 +110,7 @@ export const EditCarrierQuoteDialog = ({ open, onOpenChange, carrier, onUpdateCa
       setInstallFee(carrier.install_fee || false);
       setSiteSurveyNeeded(carrier.site_survey_needed || false);
       setNoService(carrier.no_service || false);
+      setIncludesStaticIp(carrier.static_ip || false);
     }
   }, [carrier, vendors, categories, speeds]);
 
@@ -134,7 +137,8 @@ export const EditCarrierQuoteDialog = ({ open, onOpenChange, carrier, onUpdateCa
         color: vendorColor,
         install_fee: installFee,
         site_survey_needed: siteSurveyNeeded,
-        no_service: noService
+        no_service: noService,
+        static_ip: includesStaticIp
       });
       
       onOpenChange(false);
@@ -311,6 +315,17 @@ export const EditCarrierQuoteDialog = ({ open, onOpenChange, carrier, onUpdateCa
                   />
                   <Label htmlFor="no-service" className="text-sm font-normal">
                     No Service
+                  </Label>
+                </div>
+                
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="includes-static-ip"
+                    checked={includesStaticIp}
+                    onCheckedChange={(checked) => setIncludesStaticIp(checked as boolean)}
+                  />
+                  <Label htmlFor="includes-static-ip" className="text-sm font-normal">
+                    Includes Static IP
                   </Label>
                 </div>
               </div>

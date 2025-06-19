@@ -64,7 +64,8 @@ export const useCircuitQuotes = () => {
           color: carrier.color,
           install_fee: carrier.install_fee || false,
           site_survey_needed: carrier.site_survey_needed || false,
-          no_service: carrier.no_service || false
+          no_service: carrier.no_service || false,
+          static_ip: carrier.static_ip || false
         }))
       }));
 
@@ -222,7 +223,8 @@ export const useCircuitQuotes = () => {
           color: carrierQuote.color,
           install_fee: carrierQuote.install_fee,
           site_survey_needed: carrierQuote.site_survey_needed,
-          no_service: carrierQuote.no_service
+          no_service: carrierQuote.no_service,
+          static_ip: carrierQuote.static_ip
         })
         .select()
         .single();
@@ -269,6 +271,7 @@ export const useCircuitQuotes = () => {
           install_fee: carrierQuote.install_fee,
           site_survey_needed: carrierQuote.site_survey_needed,
           no_service: carrierQuote.no_service,
+          static_ip: carrierQuote.static_ip,
           updated_at: new Date().toISOString()
         })
         .eq('id', carrierQuote.id);

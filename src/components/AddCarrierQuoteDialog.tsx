@@ -33,6 +33,7 @@ export const AddCarrierQuoteDialog = ({ open, onOpenChange, onAddCarrier }: AddC
   const [installFee, setInstallFee] = useState(false);
   const [siteSurveyNeeded, setSiteSurveyNeeded] = useState(false);
   const [noService, setNoService] = useState(false);
+  const [includesStaticIp, setIncludesStaticIp] = useState(false);
 
   const { vendors, categories, loading } = useCarrierOptions();
   const { priceSheets } = useVendorPriceSheets();
@@ -95,6 +96,7 @@ export const AddCarrierQuoteDialog = ({ open, onOpenChange, onAddCarrier }: AddC
     setInstallFee(false);
     setSiteSurveyNeeded(false);
     setNoService(false);
+    setIncludesStaticIp(false);
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -119,7 +121,8 @@ export const AddCarrierQuoteDialog = ({ open, onOpenChange, onAddCarrier }: AddC
         color: vendorColor,
         install_fee: installFee,
         site_survey_needed: siteSurveyNeeded,
-        no_service: noService
+        no_service: noService,
+        static_ip: includesStaticIp
       });
       
       resetForm();
@@ -292,6 +295,17 @@ export const AddCarrierQuoteDialog = ({ open, onOpenChange, onAddCarrier }: AddC
                 />
                 <Label htmlFor="no-service" className="text-sm font-normal">
                   No Service
+                </Label>
+              </div>
+              
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="includes-static-ip"
+                  checked={includesStaticIp}
+                  onCheckedChange={(checked) => setIncludesStaticIp(checked as boolean)}
+                />
+                <Label htmlFor="includes-static-ip" className="text-sm font-normal">
+                  Includes Static IP
                 </Label>
               </div>
             </div>

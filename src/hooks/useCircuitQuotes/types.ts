@@ -25,4 +25,5 @@ export interface CarrierQuote {
   install_fee: boolean;
   site_survey_needed: boolean;
   no_service: boolean;
+  static_ip: boolean;
 }
