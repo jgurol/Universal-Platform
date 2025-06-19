@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.50.0';
 
@@ -29,8 +28,9 @@ const handler = async (req: Request): Promise<Response> => {
     console.log('PDFShift Function - Processing quote:', quote?.id, 'with status:', quote?.status);
     console.log('PDFShift Function - Quote items count:', quote?.quoteItems?.length || 0);
     console.log('PDFShift Function - API Key configured:', !!Deno.env.get('PDFSHIFT_API_KEY'));
+    console.log('PDFShift Function - Template ID:', quote?.templateId);
     
-    // Initialize Supabase client to fetch system settings
+    // Initialize Supabase client to fetch system settings and template
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
@@ -44,6 +44,24 @@ const handler = async (req: Request): Promise<Response> => {
     
     if (settingsError) {
       console.error('Error fetching system settings:', settingsError);
+    }
+    
+    // Fetch template content if templateId is provided
+    let templateContent = '';
+    if (quote?.templateId) {
+      console.log('PDFShift Function - Fetching template content for ID:', quote.templateId);
+      const { data: template, error: templateError } = await supabase
+        .from('quote_templates')
+        .select('content, name')
+        .eq('id', quote.templateId)
+        .single();
+      
+      if (templateError) {
+        console.error('PDFShift Function - Error fetching template:', templateError);
+      } else if (template) {
+        templateContent = template.content;
+        console.log('PDFShift Function - Template content loaded:', template.name, 'length:', templateContent.length);
+      }
     }
     
     // Extract logo URL and company name from settings
@@ -63,8 +81,8 @@ const handler = async (req: Request): Promise<Response> => {
     console.log('PDFShift Function - Logo URL configured:', !!logoUrl);
     console.log('PDFShift Function - Company name:', companyName);
     
-    // Create HTML template with logo and settings
-    const html = generateHTML(quote, clientInfo, salespersonName, logoUrl, companyName);
+    // Create HTML template with logo, settings, and template content
+    const html = generateHTML(quote, clientInfo, salespersonName, logoUrl, companyName, templateContent);
     console.log('PDFShift Function - HTML generated, length:', html.length);
     
     // Call PDFShift API
@@ -165,8 +183,8 @@ const processRichTextContent = (content: string): { html: string; images: string
   return { html: cleanHtml, images };
 };
 
-// Enhanced HTML generation function with improved formatting
-const generateHTML = (quote: any, clientInfo?: any, salespersonName?: string, logoUrl?: string, companyName?: string): string => {
+// Enhanced HTML generation function with template content support
+const generateHTML = (quote: any, clientInfo?: any, salespersonName?: string, logoUrl?: string, companyName?: string, templateContent?: string): string => {
   // Extract data safely
   const quoteId = quote?.id || '';
   const quoteNumber = quote?.quoteNumber || quoteId.slice(0, 4);
@@ -226,6 +244,9 @@ const generateHTML = (quote: any, clientInfo?: any, salespersonName?: string, lo
   
   // Generate logo HTML if available
   const logoHtml = logoUrl ? `<img src="${logoUrl}" alt="Company Logo" style="max-width: 120px; max-height: 60px; object-fit: contain;">` : `<div class="company-logo-text">${companyName || 'California Telecom, Inc.'}</div>`;
+  
+  // Process template content for display
+  const processedTemplateContent = templateContent ? processRichTextContent(templateContent).html : '';
   
   // Generate items HTML with proper formatting matching the interface
   const generateItemsHTML = (items: any[], sectionTitle: string) => {
@@ -564,6 +585,64 @@ const generateHTML = (quote: any, clientInfo?: any, salespersonName?: string, lo
             margin: 4px 0;
         }
         
+        .template-content {
+            margin: 30px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            background: #f9f9f9;
+        }
+        
+        .template-title {
+            font-weight: bold;
+            margin-bottom: 10px;
+            font-size: 12px;
+            color: #333;
+        }
+        
+        .template-text {
+            font-size: 10px;
+            line-height: 1.5;
+            color: #555;
+        }
+        
+        .template-text * {
+            font-size: 10px !important;
+            font-family: Arial, sans-serif !important;
+        }
+        
+        .template-text p {
+            margin: 8px 0;
+            font-size: 10px !important;
+        }
+        
+        .template-text ul, .template-text ol {
+            font-size: 10px !important;
+            margin: 8px 0;
+            padding-left: 20px;
+        }
+        
+        .template-text li {
+            font-size: 10px !important;
+            margin: 4px 0;
+        }
+        
+        .template-text strong, .template-text b {
+            font-weight: bold;
+            font-size: 10px !important;
+        }
+        
+        .template-text em, .template-text i {
+            font-style: italic;
+            font-size: 10px !important;
+        }
+        
+        .template-text h1, .template-text h2, .template-text h3, 
+        .template-text h4, .template-text h5, .template-text h6 {
+            font-size: 11px !important;
+            font-weight: bold;
+            margin: 8px 0 4px 0;
+        }
+        
         .total-amount {
             text-align: right;
             font-weight: bold;
@@ -655,6 +734,13 @@ const generateHTML = (quote: any, clientInfo?: any, salespersonName?: string, lo
     
     ${generateItemsHTML(nrcItems, 'One-Time Fees')}
     ${nrcItems.length > 0 ? `<div class="total-amount">Total One-Time: $${nrcTotal.toFixed(2)} USD</div>` : ''}
+    
+    ${processedTemplateContent ? `
+    <div class="template-content">
+        <div class="template-title">Terms & Conditions</div>
+        <div class="template-text">${processedTemplateContent}</div>
+    </div>
+    ` : ''}
     
     ${isApproved ? '' : `
     <div style="margin-top: 30px; text-align: center;">
