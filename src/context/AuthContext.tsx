@@ -46,10 +46,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const { toast } = useToast();
 
   useEffect(() => {
+    let mounted = true;
+
     // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, currentSession) => {
         console.log("Auth state change event:", event);
+        
+        if (!mounted) return;
         
         // Handle token refresh errors
         if (event === 'TOKEN_REFRESHED' && !currentSession) {
@@ -59,6 +63,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setUser(null);
           setIsAdmin(false);
           setIsAssociated(false);
+          setLoading(false);
           return;
         }
         
@@ -69,6 +74,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setUser(null);
           setIsAdmin(false);
           setIsAssociated(false);
+          setLoading(false);
           return;
         }
         
@@ -78,13 +84,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         if (currentSession?.user) {
           // Use setTimeout to avoid deadlocks
           setTimeout(async () => {
-            await fetchUserProfile(currentSession.user.id);
-            // Initialize timezone cache for the logged-in user
-            await initializeTimezone();
+            if (mounted) {
+              await fetchUserProfile(currentSession.user.id);
+              // Initialize timezone cache for the logged-in user
+              await initializeTimezone();
+              setLoading(false);
+            }
           }, 0);
         } else {
           setIsAdmin(false);
           setIsAssociated(false);
+          setLoading(false);
         }
       }
     );
@@ -94,12 +104,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       try {
         const { data: { session: currentSession }, error } = await supabase.auth.getSession();
         
+        if (!mounted) return;
+        
         if (error) {
           console.error("Error getting session:", error);
           // If there's an error with the session, clean up and start fresh
           cleanupAuthState();
           setSession(null);
           setUser(null);
+          setIsAdmin(false);
+          setIsAssociated(false);
         } else {
           console.log("Initial session check:", currentSession ? "Session exists" : "No session");
           setSession(currentSession);
@@ -109,21 +123,33 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             await fetchUserProfile(currentSession.user.id);
             // Initialize timezone for existing session
             await initializeTimezone();
+          } else {
+            setIsAdmin(false);
+            setIsAssociated(false);
           }
         }
       } catch (error) {
         console.error("Error initializing auth:", error);
-        cleanupAuthState();
-        setSession(null);
-        setUser(null);
+        if (mounted) {
+          cleanupAuthState();
+          setSession(null);
+          setUser(null);
+          setIsAdmin(false);
+          setIsAssociated(false);
+        }
       } finally {
-        setLoading(false);
+        if (mounted) {
+          setLoading(false);
+        }
       }
     };
 
     initializeAuth();
 
-    return () => subscription.unsubscribe();
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    };
   }, []);
 
   const fetchUserProfile = async (userId: string) => {
@@ -183,6 +209,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signIn = async (email: string, password: string) => {
     try {
+      setLoading(true);
       // Clean up existing auth state before signing in
       cleanupAuthState();
       
@@ -197,6 +224,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const { error } = await supabase.auth.signInWithPassword({ email, password });
       
       if (error) {
+        setLoading(false);
         // Handle specific token-related errors
         if (error.message.includes('Invalid token') || error.message.includes('signature is invalid')) {
           cleanupAuthState();
@@ -224,12 +252,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       window.location.href = '/';
     } catch (error: any) {
       console.error('Error signing in:', error.message);
+      setLoading(false);
       throw error;
     }
   };
 
   const signUp = async (email: string, password: string, fullName: string) => {
     try {
+      setLoading(true);
       // Clean up existing auth state before signing up
       cleanupAuthState();
       
@@ -244,6 +274,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       });
       
       if (error) {
+        setLoading(false);
         toast({
           title: "Registration failed",
           description: error.message,
@@ -256,14 +287,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         title: "Registration successful",
         description: "Your account has been created! However, you cannot log in until your account is associated with an agent by a system administrator.",
       });
+      setLoading(false);
     } catch (error: any) {
       console.error('Error signing up:', error.message);
+      setLoading(false);
       throw error;
     }
   };
 
   const signOut = async () => {
     try {
+      setLoading(true);
       // Clean up auth state first
       cleanupAuthState();
       

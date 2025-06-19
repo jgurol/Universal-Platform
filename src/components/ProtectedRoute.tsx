@@ -14,6 +14,8 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
 }) => {
   const { user, loading, isAdmin } = useAuth();
 
+  console.log('ProtectedRoute - user:', user, 'loading:', loading, 'isAdmin:', isAdmin);
+
   // Show loading state while checking authentication
   if (loading) {
     return (
@@ -25,13 +27,16 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
 
   // Redirect to auth if not logged in
   if (!user) {
+    console.log('ProtectedRoute - No user found, redirecting to auth');
     return <Navigate to="/auth" replace />;
   }
 
   // Redirect to dashboard if admin required but user is not admin
   if (requireAdmin && !isAdmin) {
+    console.log('ProtectedRoute - Admin required but user is not admin, redirecting to dashboard');
     return <Navigate to="/" replace />;
   }
 
+  console.log('ProtectedRoute - User authenticated, rendering children');
   return <>{children}</>;
 };
