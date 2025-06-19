@@ -306,8 +306,8 @@ const generateHTML = (quote: any, clientInfo?: any, salespersonName?: string, lo
         }
         
         .company-logo-text {
-            font-size: 24px;
-            font-weight: bold;
+            font-size: 20px;
+            font-weight: normal;
             color: #1f4e79;
             display: flex;
             align-items: center;
@@ -330,7 +330,8 @@ const generateHTML = (quote: any, clientInfo?: any, salespersonName?: string, lo
         }
         
         .agreement-title {
-            font-size: 16px;
+            font-size: 14px;
+            font-weight: normal;
             color: #999;
             text-align: right;
         }
@@ -365,7 +366,7 @@ const generateHTML = (quote: any, clientInfo?: any, salespersonName?: string, lo
         }
         
         .agreement-box td:first-child {
-            font-weight: bold;
+            font-weight: normal;
             width: 50%;
         }
         
@@ -375,7 +376,7 @@ const generateHTML = (quote: any, clientInfo?: any, salespersonName?: string, lo
             text-align: center;
             padding: 8px;
             margin-top: 10px;
-            font-weight: bold;
+            font-weight: normal;
             border-radius: 3px;
         }
         
@@ -391,7 +392,7 @@ const generateHTML = (quote: any, clientInfo?: any, salespersonName?: string, lo
         }
         
         .address-title {
-            font-weight: bold;
+            font-weight: normal;
             margin-bottom: 8px;
             font-size: 12px;
         }
@@ -402,8 +403,8 @@ const generateHTML = (quote: any, clientInfo?: any, salespersonName?: string, lo
         }
         
         .quote-title {
-            font-size: 14px;
-            font-weight: bold;
+            font-size: 12px;
+            font-weight: normal;
             margin: 30px 0 20px 0;
             color: #333;
         }
@@ -413,9 +414,9 @@ const generateHTML = (quote: any, clientInfo?: any, salespersonName?: string, lo
         }
         
         .section-title {
-            font-weight: bold;
+            font-weight: normal;
             margin-bottom: 10px;
-            font-size: 12px;
+            font-size: 11px;
         }
         
         .items-table {
@@ -435,7 +436,7 @@ const generateHTML = (quote: any, clientInfo?: any, salespersonName?: string, lo
         
         .items-table th {
             background: #f8f9fa;
-            font-weight: bold;
+            font-weight: normal;
         }
         
         .description-cell {
@@ -469,8 +470,8 @@ const generateHTML = (quote: any, clientInfo?: any, salespersonName?: string, lo
         }
         
         .item-name {
-            font-weight: bold;
-            font-size: 11px;
+            font-weight: normal;
+            font-size: 10px;
             color: #333;
             margin-bottom: 3px;
         }
@@ -511,18 +512,18 @@ const generateHTML = (quote: any, clientInfo?: any, salespersonName?: string, lo
         }
         
         .item-description strong, .item-description b {
-            font-weight: bold;
+            font-weight: normal;
         }
         
         .item-description em, .item-description i {
-            font-style: italic;
+            font-style: normal;
         }
         
         .total-amount {
             text-align: right;
-            font-weight: bold;
+            font-weight: normal;
             margin-top: 10px;
-            font-size: 12px;
+            font-size: 11px;
         }
         
         .status-approved {
@@ -530,7 +531,7 @@ const generateHTML = (quote: any, clientInfo?: any, salespersonName?: string, lo
             color: white;
             text-align: center;
             padding: 8px;
-            font-weight: bold;
+            font-weight: normal;
             border-radius: 3px;
         }
     </style>
@@ -583,7 +584,7 @@ const generateHTML = (quote: any, clientInfo?: any, salespersonName?: string, lo
         <div class="address-block">
             <div class="address-title">Billing Information</div>
             <div class="address-content">
-                <div><strong>${clientCompanyName}</strong></div>
+                <div>${clientCompanyName}</div>
                 <div>Jonathan Conn</div>
                 <div>${billingAddress || 'Address not specified'}</div>
                 ${contactPhone ? `<div>Tel: ${contactPhone}</div>` : ''}
@@ -593,7 +594,7 @@ const generateHTML = (quote: any, clientInfo?: any, salespersonName?: string, lo
         <div class="address-block">
             <div class="address-title">Service Address</div>
             <div class="address-content">
-                <div><strong>${clientCompanyName}</strong></div>
+                <div>${clientCompanyName}</div>
                 <div>Jonathan Conn</div>
                 <div>${serviceAddress || 'Same as billing address'}</div>
                 ${contactPhone ? `<div>Tel: ${contactPhone}</div>` : ''}
