@@ -43,31 +43,71 @@ export const CircuitQuoteCarriers = ({
   });
 
   if (isMinimized) {
+    // Group carriers by vendor name and show only one tag per vendor
+    const carriersByVendor = new Map<string, CarrierQuote[]>();
+    
+    sortedCarriers.forEach(carrier => {
+      if (!carriersByVendor.has(carrier.carrier)) {
+        carriersByVendor.set(carrier.carrier, []);
+      }
+      carriersByVendor.get(carrier.carrier)!.push(carrier);
+    });
+
+    // Create display data for each vendor (showing only one tag)
+    const vendorDisplayData = Array.from(carriersByVendor.entries()).map(([vendorName, vendorCarriers]) => {
+      // Use the first carrier for display properties
+      const displayCarrier = vendorCarriers[0];
+      const allTickedOptions = new Set<string>();
+      let hasNoService = false;
+      let hasPendingQuotes = false;
+      
+      // Aggregate information from all carriers of this vendor
+      vendorCarriers.forEach(carrier => {
+        const tickedOptions = getTickedCheckboxes(carrier);
+        tickedOptions.forEach(option => allTickedOptions.add(option));
+        
+        if (carrier.no_service) hasNoService = true;
+        if (!carrier.price || carrier.price === 0) hasPendingQuotes = true;
+      });
+
+      const tickedOptionsArray = Array.from(allTickedOptions);
+      const isPending = hasPendingQuotes && !hasNoService;
+      
+      // Create tooltip with all carrier info for this vendor
+      const tooltipParts = vendorCarriers.map(carrier => {
+        const carrierTickedOptions = getTickedCheckboxes(carrier);
+        const priceText = carrier.no_service ? 'No Service' : (carrier.price > 0 ? `$${carrier.price}` : 'Pending quote');
+        return `${carrier.type} - ${carrier.speed} - ${priceText}${carrierTickedOptions.length > 0 ? ` - ${carrierTickedOptions.join(', ')}` : ''}`;
+      });
+      const tooltipText = `${vendorName} - ${tooltipParts.join(' | ')}`;
+      
+      return {
+        vendorName,
+        displayCarrier,
+        tickedOptionsArray,
+        isPending,
+        hasNoService,
+        tooltipText
+      };
+    });
+
     return (
       <div className="flex flex-wrap gap-2 mt-3 pt-3 border-t border-gray-100">
-        {sortedCarriers.map((carrier) => {
-          const isPending = !carrier.price || carrier.price === 0;
-          const isNoService = carrier.no_service;
-          const tickedOptions = getTickedCheckboxes(carrier);
-          const priceText = isNoService ? 'No Service' : (carrier.price > 0 ? `$${carrier.price}` : 'Pending quote');
-          const tooltipText = `${carrier.carrier} - ${carrier.type} - ${carrier.speed} - ${priceText}${tickedOptions.length > 0 ? ` - ${tickedOptions.join(', ')}` : ''}`;
-          
-          return (
-            <div
-              key={carrier.id}
-              className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium text-white shadow-sm ${
-                isPending && !isNoService ? 'animate-pulse' : ''
-              } ${isNoService ? 'bg-red-400' : ''}`}
-              style={{ backgroundColor: isNoService ? '#f87171' : (carrier.color || '#3B82F6') }}
-              title={tooltipText}
-            >
-              <span className="mr-1">{carrier.carrier}</span>
-              {tickedOptions.length > 0 && (
-                <span className="text-xs opacity-75">({tickedOptions.join(', ')})</span>
-              )}
-            </div>
-          );
-        })}
+        {vendorDisplayData.map(({ vendorName, displayCarrier, tickedOptionsArray, isPending, hasNoService, tooltipText }) => (
+          <div
+            key={vendorName}
+            className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium text-white shadow-sm ${
+              isPending && !hasNoService ? 'animate-pulse' : ''
+            } ${hasNoService ? 'bg-red-400' : ''}`}
+            style={{ backgroundColor: hasNoService ? '#f87171' : (displayCarrier.color || '#3B82F6') }}
+            title={tooltipText}
+          >
+            <span className="mr-1">{vendorName}</span>
+            {tickedOptionsArray.length > 0 && (
+              <span className="text-xs opacity-75">({tickedOptionsArray.join(', ')})</span>
+            )}
+          </div>
+        ))}
       </div>
     );
   }
