@@ -1,3 +1,4 @@
+
 import { Quote, ClientInfo } from '@/pages/Index';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -21,9 +22,28 @@ export const generateQuotePDFWithPDFShift = async (quote: Quote, clientInfo?: Cl
       throw new Error('No data received from Edge Function');
     }
 
-    // The Edge Function should return raw PDF bytes
-    // Convert the response directly to a Blob
-    const blob = new Blob([data], { type: 'application/pdf' });
+    console.log('[PDFShift] Received data type:', typeof data, 'Data:', data);
+
+    // Handle different data formats that might be returned
+    let pdfBytes: Uint8Array;
+    
+    if (data instanceof ArrayBuffer) {
+      pdfBytes = new Uint8Array(data);
+    } else if (data instanceof Uint8Array) {
+      pdfBytes = data;
+    } else if (Array.isArray(data)) {
+      // If it's an array of numbers, convert to Uint8Array
+      pdfBytes = new Uint8Array(data);
+    } else {
+      // Try to handle as binary string or other format
+      console.log('[PDFShift] Unexpected data format, attempting conversion');
+      pdfBytes = new Uint8Array(Object.values(data));
+    }
+    
+    console.log('[PDFShift] PDF bytes length:', pdfBytes.length);
+    
+    // Create blob from the bytes
+    const blob = new Blob([pdfBytes], { type: 'application/pdf' });
     
     console.log('[PDFShift] PDF generated successfully via Edge Function, size:', blob.size, 'bytes');
     
