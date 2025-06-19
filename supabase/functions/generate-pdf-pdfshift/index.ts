@@ -353,14 +353,14 @@ const generateHTML = (quote: any, clientInfo?: any, salespersonName?: string, lo
                                 <div class="item-name">${item.name}</div>
                                 ${item.address ? `<div class="item-location">Location: ${item.address.street_address}, ${item.address.city}, ${item.address.state} ${item.address.zip_code}</div>` : ''}
                             </div>
-                            ${item.processedDescription || item.images.length > 0 ? `
+                            ${(item.processedDescription && item.processedDescription.trim()) || item.images.length > 0 ? `
                             <div class="item-details">
                                 ${item.images.length > 0 ? item.images.map(imgSrc => `
                                 <div class="item-image-container">
                                     <img src="${imgSrc}" alt="Product Image" class="item-image">
                                 </div>
                                 `).join('') : ''}
-                                ${item.processedDescription ? `<div class="item-description">${item.processedDescription}</div>` : ''}
+                                ${item.processedDescription && item.processedDescription.trim() ? `<div class="item-description">${item.processedDescription}</div>` : ''}
                             </div>
                             ` : ''}
                         </div>
