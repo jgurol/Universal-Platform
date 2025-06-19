@@ -27,6 +27,7 @@ const handler = async (req: Request): Promise<Response> => {
     const { quote, clientInfo, salespersonName }: PDFRequest = requestBody;
     
     console.log('PDFShift Function - Processing quote:', quote?.id, 'with status:', quote?.status);
+    console.log('PDFShift Function - Quote items count:', quote?.quoteItems?.length || 0);
     console.log('PDFShift Function - API Key configured:', !!Deno.env.get('PDFSHIFT_API_KEY'));
     
     // Initialize Supabase client to fetch system settings
@@ -132,7 +133,39 @@ const handler = async (req: Request): Promise<Response> => {
   }
 };
 
-// HTML generation function with logo support
+// Helper function to process HTML/Rich text content and extract images
+const processRichTextContent = (content: string): { html: string; images: string[] } => {
+  if (!content) return { html: '', images: [] };
+  
+  console.log('PDFShift Function - Processing rich text content:', content.substring(0, 200));
+  
+  // Extract image URLs using regex
+  const imageRegex = /<img[^>]+src="([^"]*)"[^>]*>/g;
+  const images: string[] = [];
+  let match;
+  
+  while ((match = imageRegex.exec(content)) !== null) {
+    images.push(match[1]);
+    console.log('PDFShift Function - Found image URL:', match[1].substring(0, 100));
+  }
+  
+  // Convert HTML to a cleaner format for PDF
+  const cleanHtml = content
+    .replace(/<img[^>]*>/g, '') // Remove img tags for now, we'll handle them separately
+    .replace(/<strong>(.*?)<\/strong>/g, '<b>$1</b>')
+    .replace(/<em>(.*?)<\/em>/g, '<i>$1</i>')
+    .replace(/<br\s*\/?>/g, '<br>')
+    .replace(/<\/p><p>/g, '</p><p>')
+    .replace(/&nbsp;/g, ' ')
+    .trim();
+    
+  console.log('PDFShift Function - Processed HTML length:', cleanHtml.length);
+  console.log('PDFShift Function - Found images count:', images.length);
+  
+  return { html: cleanHtml, images };
+};
+
+// Enhanced HTML generation function with proper quote items processing
 const generateHTML = (quote: any, clientInfo?: any, salespersonName?: string, logoUrl?: string, companyName?: string): string => {
   // Extract data safely
   const quoteId = quote?.id || '';
@@ -151,21 +184,32 @@ const generateHTML = (quote: any, clientInfo?: any, salespersonName?: string, lo
   
   const isApproved = status === 'approved' || status === 'accepted';
   
-  // Process quote items
+  // Process quote items with enhanced description and image handling
   let mrcItems = [];
   let nrcItems = [];
   let mrcTotal = 0;
   let nrcTotal = 0;
   
   if (Array.isArray(quote?.quoteItems)) {
+    console.log('PDFShift Function - Processing', quote.quoteItems.length, 'quote items');
+    
     for (const item of quote.quoteItems) {
+      // Process description content
+      const itemDescription = item?.description || item?.item?.description || '';
+      const { html: processedDescription, images } = processRichTextContent(itemDescription);
+      
+      console.log('PDFShift Function - Item:', item?.item?.name || item?.name, 'has description length:', itemDescription.length, 'images:', images.length);
+      
       const itemData = {
         name: item?.item?.name || item?.name || 'Service',
-        description: item?.description || '',
+        description: itemDescription,
+        processedDescription,
+        images,
         quantity: item?.quantity || 1,
         unit_price: parseFloat(item?.unit_price) || 0,
         total_price: parseFloat(item?.total_price) || 0,
-        charge_type: item?.charge_type || 'MRC'
+        charge_type: item?.charge_type || 'MRC',
+        address: item?.address
       };
       
       if (itemData.charge_type === 'MRC') {
@@ -178,8 +222,46 @@ const generateHTML = (quote: any, clientInfo?: any, salespersonName?: string, lo
     }
   }
   
+  console.log('PDFShift Function - Processed items - MRC:', mrcItems.length, 'NRC:', nrcItems.length);
+  
   // Generate logo HTML if available
   const logoHtml = logoUrl ? `<img src="${logoUrl}" alt="Company Logo" style="max-width: 120px; max-height: 60px; object-fit: contain;">` : `<div class="company-logo-text">${companyName || 'California Telecom, Inc.'}</div>`;
+  
+  // Generate items HTML with descriptions and images
+  const generateItemsHTML = (items: any[], sectionTitle: string) => {
+    if (items.length === 0) return '';
+    
+    return `
+    <div class="items-section">
+        <div class="section-title">${sectionTitle}</div>
+        <table class="items-table">
+            <thead>
+                <tr>
+                    <th class="description-cell">Description</th>
+                    <th class="qty-cell">Qty</th>
+                    <th class="price-cell">Price</th>
+                    <th class="total-cell">Total</th>
+                </tr>
+            </thead>
+            <tbody>
+                ${items.map(item => `
+                <tr>
+                    <td class="description-cell">
+                        <div class="item-name"><strong>${item.name}</strong></div>
+                        ${item.address ? `<div class="item-address">Location: ${item.address.street_address}, ${item.address.city}, ${item.address.state} ${item.address.zip_code}</div>` : ''}
+                        ${item.processedDescription ? `<div class="item-description">${item.processedDescription}</div>` : ''}
+                        ${item.images.length > 0 ? item.images.map(imgSrc => `<div class="item-image"><img src="${imgSrc}" alt="Item Image" style="max-width: 200px; max-height: 150px; object-fit: contain; margin: 5px 0;"></div>`).join('') : ''}
+                    </td>
+                    <td class="qty-cell">${item.quantity}</td>
+                    <td class="price-cell">$${item.unit_price.toFixed(2)}</td>
+                    <td class="total-cell">$${item.total_price.toFixed(2)}</td>
+                </tr>
+                `).join('')}
+            </tbody>
+        </table>
+    </div>
+    `;
+  };
   
   return `
 <!DOCTYPE html>
@@ -333,9 +415,10 @@ const generateHTML = (quote: any, clientInfo?: any, salespersonName?: string, lo
         .items-table th,
         .items-table td {
             border: 1px solid #ddd;
-            padding: 6px 8px;
+            padding: 8px;
             text-align: left;
             font-size: 10px;
+            vertical-align: top;
         }
         
         .items-table th {
@@ -343,34 +426,62 @@ const generateHTML = (quote: any, clientInfo?: any, salespersonName?: string, lo
             font-weight: bold;
         }
         
-        .items-table .description-cell {
+        .description-cell {
             width: 50%;
         }
         
-        .items-table .qty-cell {
+        .qty-cell {
             width: 10%;
             text-align: center;
         }
         
-        .items-table .price-cell {
+        .price-cell {
             width: 20%;
             text-align: right;
         }
         
-        .items-table .total-cell {
+        .total-cell {
             width: 20%;
             text-align: right;
         }
         
-        .item-details {
+        .item-name {
+            font-weight: bold;
+            margin-bottom: 4px;
+        }
+        
+        .item-address {
             font-size: 9px;
             color: #666;
-            margin-top: 2px;
+            margin-bottom: 4px;
         }
         
-        .total-row {
+        .item-description {
+            font-size: 9px;
+            color: #555;
+            margin-bottom: 4px;
+            line-height: 1.3;
+        }
+        
+        .item-description p {
+            margin: 4px 0;
+        }
+        
+        .item-description strong, .item-description b {
             font-weight: bold;
-            background: #f8f9fa;
+        }
+        
+        .item-description em, .item-description i {
+            font-style: italic;
+        }
+        
+        .item-image {
+            margin: 4px 0;
+        }
+        
+        .item-image img {
+            border: 1px solid #ddd;
+            border-radius: 4px;
         }
         
         .total-amount {
@@ -459,65 +570,11 @@ const generateHTML = (quote: any, clientInfo?: any, salespersonName?: string, lo
     
     <div class="quote-title">${description}</div>
     
-    ${mrcItems.length > 0 ? `
-    <div class="items-section">
-        <div class="section-title">Monthly Fees</div>
-        <table class="items-table">
-            <thead>
-                <tr>
-                    <th class="description-cell">Description</th>
-                    <th class="qty-cell">Qty</th>
-                    <th class="price-cell">Price</th>
-                    <th class="total-cell">Total</th>
-                </tr>
-            </thead>
-            <tbody>
-                ${mrcItems.map(item => `
-                <tr>
-                    <td class="description-cell">
-                        <div><strong>${item.name}</strong></div>
-                        ${item.description ? `<div class="item-details">${item.description}</div>` : ''}
-                    </td>
-                    <td class="qty-cell">${item.quantity}</td>
-                    <td class="price-cell">$${item.unit_price.toFixed(2)}</td>
-                    <td class="total-cell">$${item.total_price.toFixed(2)}</td>
-                </tr>
-                `).join('')}
-            </tbody>
-        </table>
-        <div class="total-amount">Total Monthly: $${mrcTotal.toFixed(2)} USD</div>
-    </div>
-    ` : ''}
+    ${generateItemsHTML(mrcItems, 'Monthly Fees')}
+    ${mrcItems.length > 0 ? `<div class="total-amount">Total Monthly: $${mrcTotal.toFixed(2)} USD</div>` : ''}
     
-    ${nrcItems.length > 0 ? `
-    <div class="items-section">
-        <div class="section-title">One-Time Fees</div>
-        <table class="items-table">
-            <thead>
-                <tr>
-                    <th class="description-cell">Description</th>
-                    <th class="qty-cell">Qty</th>
-                    <th class="price-cell">Price</th>
-                    <th class="total-cell">Total</th>
-                </tr>
-            </thead>
-            <tbody>
-                ${nrcItems.map(item => `
-                <tr>
-                    <td class="description-cell">
-                        <div><strong>${item.name}</strong></div>
-                        ${item.description ? `<div class="item-details">${item.description}</div>` : ''}
-                    </td>
-                    <td class="qty-cell">${item.quantity}</td>
-                    <td class="price-cell">$${item.unit_price.toFixed(2)}</td>
-                    <td class="total-cell">$${item.total_price.toFixed(2)}</td>
-                </tr>
-                `).join('')}
-            </tbody>
-        </table>
-        <div class="total-amount">Total One-Time: $${nrcTotal.toFixed(2)} USD</div>
-    </div>
-    ` : ''}
+    ${generateItemsHTML(nrcItems, 'One-Time Fees')}
+    ${nrcItems.length > 0 ? `<div class="total-amount">Total One-Time: $${nrcTotal.toFixed(2)} USD</div>` : ''}
     
     ${isApproved ? '' : `
     <div style="margin-top: 30px; text-align: center;">
