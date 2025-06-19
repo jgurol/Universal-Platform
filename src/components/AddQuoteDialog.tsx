@@ -145,24 +145,31 @@ export const AddQuoteDialog = ({ open, onOpenChange, onAddQuote, clients, client
   useEffect(() => {
     const fetchTemplates = async () => {
       if (open && user) {
+        console.log('[AddQuoteDialog] Fetching templates for user:', user.id);
         try {
           const { data, error } = await supabase
             .from('quote_templates')
             .select('*')
-            .eq('user_id', user.id)
             .order('name');
 
-          if (error) throw error;
+          console.log('[AddQuoteDialog] Templates query result:', { data, error });
+          
+          if (error) {
+            console.error('[AddQuoteDialog] Error fetching templates:', error);
+            throw error;
+          }
           
           setTemplates(data || []);
+          console.log('[AddQuoteDialog] Templates set:', data?.length || 0, 'templates');
           
           // Auto-select default template if available
           const defaultTemplate = data?.find(t => t.is_default);
           if (defaultTemplate) {
+            console.log('[AddQuoteDialog] Auto-selecting default template:', defaultTemplate.name);
             setSelectedTemplateId(defaultTemplate.id);
           }
         } catch (error) {
-          console.error('Error loading templates:', error);
+          console.error('[AddQuoteDialog] Error loading templates:', error);
         }
       }
     };
@@ -416,9 +423,12 @@ export const AddQuoteDialog = ({ open, onOpenChange, onAddQuote, clients, client
             </Select>
             {templates.length === 0 && (
               <p className="text-sm text-gray-500">
-                No templates available. Create templates in System Settings.
+                No templates available. Create templates in System Settings → Quote Templates.
               </p>
             )}
+            <p className="text-sm text-muted-foreground">
+              Debug: Found {templates.length} templates
+            </p>
           </div>
 
           <div className="space-y-2">

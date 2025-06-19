@@ -132,17 +132,24 @@ export const EditQuoteDialog = ({
   useEffect(() => {
     const fetchTemplates = async () => {
       if (open && user) {
+        console.log('[EditQuoteDialog] Fetching templates for user:', user.id);
         try {
           const { data, error } = await supabase
             .from('quote_templates')
             .select('*')
-            .eq('user_id', user.id)
             .order('name');
 
-          if (error) throw error;
+          console.log('[EditQuoteDialog] Templates query result:', { data, error });
+
+          if (error) {
+            console.error('[EditQuoteDialog] Error fetching templates:', error);
+            throw error;
+          }
+          
           setTemplates(data || []);
+          console.log('[EditQuoteDialog] Templates set:', data?.length || 0, 'templates');
         } catch (error) {
-          console.error('Error loading templates:', error);
+          console.error('[EditQuoteDialog] Error loading templates:', error);
         }
       }
     };
@@ -269,6 +276,14 @@ export const EditQuoteDialog = ({
             onTemplateChange={setSelectedTemplateId}
             templates={templates}
           />
+          {templates.length === 0 && (
+            <p className="text-sm text-gray-500">
+              No templates available. Create templates in System Settings → Quote Templates.
+            </p>
+          )}
+          <p className="text-sm text-muted-foreground">
+            Debug: Found {templates.length} templates
+          </p>
 
           <div className="flex justify-end space-x-2 mt-6">
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
