@@ -185,14 +185,23 @@ export const EditQuoteDialog = ({
       clientId,
       date,
       quoteItemsLength: quoteItems.length,
-      clientInfoId
+      clientInfoId,
+      clientsLength: clients.length
     });
     
-    if (quote && clientId && date) {
-      const selectedClient = clients.find(client => client.id === clientId);
+    if (quote && date && quoteItems.length > 0) {
+      const selectedClient = clientId ? clients.find(client => client.id === clientId) : null;
       const selectedClientInfo = clientInfoId && clientInfoId !== "none" ? clientInfos.find(info => info.id === clientInfoId) : null;
       
-      if (selectedClient) {
+      console.log('[EditQuoteDialog] Client lookup results:', {
+        clientId,
+        selectedClient: selectedClient ? { id: selectedClient.id, name: selectedClient.name } : null,
+        clientInfoId,
+        selectedClientInfo: selectedClientInfo ? { id: selectedClientInfo.id, company_name: selectedClientInfo.company_name } : null
+      });
+
+      // We can proceed even without a selected client (salesperson), as long as we have client info
+      if (selectedClientInfo) {
         console.log('[EditQuoteDialog] Validation passed, updating quote');
         const { totalAmount } = calculateTotalsByChargeType(quoteItems);
         
@@ -213,9 +222,9 @@ export const EditQuoteDialog = ({
 
         onUpdateQuote({
           ...quote,
-          clientId,
-          clientName: selectedClient.name,
-          companyName: selectedClient.companyName || selectedClient.name,
+          clientId: clientId || "",
+          clientName: selectedClient?.name || "No Salesperson Assigned",
+          companyName: selectedClientInfo.company_name,
           amount: totalAmount,
           date,
           description: description || "",
@@ -233,21 +242,21 @@ export const EditQuoteDialog = ({
         
         onOpenChange(false);
       } else {
-        console.log('[EditQuoteDialog] No selected client found');
+        console.log('[EditQuoteDialog] No client info found - cannot update quote');
       }
     } else {
       console.log('[EditQuoteDialog] Form validation failed:', {
         hasQuote: !!quote,
-        hasClientId: !!clientId,
-        hasDate: !!date
+        hasDate: !!date,
+        hasQuoteItems: quoteItems.length > 0
       });
     }
   };
 
   const selectedSalesperson = clientId ? clients.find(c => c.id === clientId) : null;
 
-  // Check if form is valid for submission
-  const isFormValid = quote && clientId && date && quoteItems.length > 0;
+  // Check if form is valid for submission - removed clientId requirement since it's optional
+  const isFormValid = quote && date && quoteItems.length > 0;
   
   console.log('[EditQuoteDialog] Form validation status:', {
     hasQuote: !!quote,
