@@ -223,6 +223,7 @@ export type Database = {
           id: string
           is_active: boolean
           name: string
+          standard_markup: number | null
           type: Database["public"]["Enums"]["category_type"] | null
           updated_at: string
           user_id: string
@@ -233,6 +234,7 @@ export type Database = {
           id?: string
           is_active?: boolean
           name: string
+          standard_markup?: number | null
           type?: Database["public"]["Enums"]["category_type"] | null
           updated_at?: string
           user_id: string
@@ -243,6 +245,7 @@ export type Database = {
           id?: string
           is_active?: boolean
           name?: string
+          standard_markup?: number | null
           type?: Database["public"]["Enums"]["category_type"] | null
           updated_at?: string
           user_id?: string

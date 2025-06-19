@@ -99,6 +99,11 @@ export const CategoriesManagement = () => {
                           {category.type}
                         </Badge>
                       )}
+                      {category.standard_markup !== undefined && category.standard_markup > 0 && (
+                        <Badge variant="outline" className="text-xs bg-green-50 text-green-700">
+                          {category.standard_markup}% markup
+                        </Badge>
+                      )}
                     </div>
                     {category.description && (
                       <p className="text-sm text-gray-600">{category.description}</p>
