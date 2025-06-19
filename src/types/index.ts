@@ -1,5 +1,4 @@
 
-
 export interface Client {
   id: string;
   firstName: string;
@@ -48,7 +47,7 @@ export interface Quote {
 
 export interface QuoteItem {
   id: string;
-  quote_id: string;
+  quote_id?: string; // Make optional since it's not available when creating quotes
   item_id?: string;
   name: string;
   description?: string;
@@ -97,9 +96,9 @@ export interface Transaction {
   amount: number;
   date: string;
   description?: string;
-  commissionRate: number;
-  commissionAmount: number;
-  status: 'pending' | 'approved' | 'paid';
+  commissionRate?: number; // Make optional
+  commissionAmount?: number; // Make optional
+  status?: 'pending' | 'approved' | 'paid'; // Make optional
   isPaid: boolean;
   paidDate?: string;
   datePaid?: string;
@@ -115,4 +114,3 @@ export interface Transaction {
   invoiceYear?: string;
   invoiceNumber?: string;
 }
-
