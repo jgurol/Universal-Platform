@@ -1,4 +1,5 @@
 
+
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.50.0";
 import { Resend } from "npm:resend@2.0.0";
@@ -59,7 +60,7 @@ const handler = async (req: Request): Promise<Response> => {
     }
 
     const emailResponse = await resend.emails.send({
-      from: 'Universal Platform <onboarding@resend.dev>',
+      from: 'Universal Platform <noreply@californiatelecom.com>',
       to: [email],
       subject,
       html: htmlContent,
@@ -87,3 +88,4 @@ const handler = async (req: Request): Promise<Response> => {
 };
 
 serve(handler);
+
