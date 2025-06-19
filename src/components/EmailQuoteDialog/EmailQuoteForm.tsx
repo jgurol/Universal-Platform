@@ -1,11 +1,14 @@
-import { useState, useEffect } from "react";
+
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Separator } from "@/components/ui/separator";
 import { Quote, ClientInfo } from "@/pages/Index";
-import { useToast } from "@/hooks/use-toast";
-import { useClientContacts } from "@/hooks/useClientContacts";
-import { generateQuotePDF } from "@/utils/pdfUtils";
 import { supabase } from "@/integrations/supabase/client";
-import { Mail } from "lucide-react";
+import { useAuth } from "@/context/AuthContext";
+import { generateQuotePDFWithReactPdf } from "@/utils/pdf/reactPdfGenerator";
 import { EmailContactSelector } from "./EmailContactSelector";
 import { CCContactSelector } from "./CCContactSelector";
 import { EmailFormFields } from "./EmailFormFields";
@@ -19,274 +22,138 @@ interface EmailQuoteFormProps {
   emailStatus: 'idle' | 'success' | 'error';
 }
 
-export const EmailQuoteForm = ({
-  quote,
-  clientInfo,
+export const EmailQuoteForm = ({ 
+  quote, 
+  clientInfo, 
   salespersonName,
   onEmailStatusChange,
   onClose,
-  emailStatus
+  emailStatus 
 }: EmailQuoteFormProps) => {
-  const [recipientEmail, setRecipientEmail] = useState("");
-  const [ccEmails, setCcEmails] = useState<string[]>([]);
-  const [selectedRecipientContact, setSelectedRecipientContact] = useState<string>("custom");
-  const [selectedCcContacts, setSelectedCcContacts] = useState<string[]>([]);
-  const [customRecipientEmail, setCustomRecipientEmail] = useState("");
-  const [subject, setSubject] = useState(`Quote #${quote.quoteNumber || quote.id.slice(0, 8)} - ${quote.description || 'Service Agreement'}`);
-  const [message, setMessage] = useState(`Dear ${clientInfo?.contact_name || 'Valued Customer'},
-
-Please find attached your quote for the requested services. If you have any questions or would like to proceed with this proposal, please don't hesitate to contact us.
-
-Thank you for your business.
-
-Best regards,
-${salespersonName || 'Sales Team'}`);
+  const { user } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
-  const { toast } = useToast();
+  const [selectedContactId, setSelectedContactId] = useState<string>("");
+  const [ccContacts, setCcContacts] = useState<string[]>([]);
+  
+  // Form fields
+  const [toEmail, setToEmail] = useState("");
+  const [ccEmail, setCcEmail] = useState("");
+  const [subject, setSubject] = useState(`Quote ${quote.quoteNumber || quote.id} - ${quote.description || 'Service Agreement'}`);
+  const [message, setMessage] = useState(`Please find attached your quote for the requested services.\n\nThank you for your business!\n\nBest regards,\n${salespersonName || user?.user_metadata?.full_name || 'Sales Team'}`);
 
-  const { contacts, isLoading: contactsLoading } = useClientContacts(clientInfo?.id || null);
-
-  // Set primary contact as default recipient when component mounts
-  useEffect(() => {
-    if (contacts.length > 0) {
-      console.log('EmailQuoteForm - Setting up recipient from contacts:', contacts);
-      const primaryContact = contacts.find(contact => contact.is_primary);
-      if (primaryContact?.email) {
-        console.log('EmailQuoteForm - Found primary contact:', primaryContact);
-        setSelectedRecipientContact(primaryContact.id);
-        setRecipientEmail(primaryContact.email);
-      } else {
-        // If no primary contact with email, use first contact with email
-        const firstContactWithEmail = contacts.find(contact => contact.email);
-        if (firstContactWithEmail) {
-          console.log('EmailQuoteForm - Using first contact with email:', firstContactWithEmail);
-          setSelectedRecipientContact(firstContactWithEmail.id);
-          setRecipientEmail(firstContactWithEmail.email);
-        } else if (clientInfo?.email) {
-          console.log('EmailQuoteForm - Using client info email:', clientInfo.email);
-          setRecipientEmail(clientInfo.email);
-          setCustomRecipientEmail(clientInfo.email);
-        }
-      }
-    } else if (clientInfo?.email) {
-      console.log('EmailQuoteForm - No contacts, using client info email:', clientInfo.email);
-      setRecipientEmail(clientInfo.email);
-      setCustomRecipientEmail(clientInfo.email);
-    }
-  }, [contacts, clientInfo]);
-
-  // Update recipient email when contact selection changes
-  useEffect(() => {
-    if (selectedRecipientContact === "custom") {
-      setRecipientEmail(customRecipientEmail);
-    } else {
-      const selectedContact = contacts.find(c => c.id === selectedRecipientContact);
-      if (selectedContact?.email) {
-        setRecipientEmail(selectedContact.email);
-      }
-    }
-  }, [selectedRecipientContact, customRecipientEmail, contacts]);
-
-  // Update CC emails when CC contact selection changes
-  useEffect(() => {
-    const ccEmailList = selectedCcContacts
-      .map(contactId => contacts.find(c => c.id === contactId)?.email)
-      .filter(email => email && email !== recipientEmail) as string[];
-    setCcEmails(ccEmailList);
-  }, [selectedCcContacts, contacts, recipientEmail]);
-
-  const handleCcContactToggle = (contactId: string, checked: boolean) => {
-    if (checked) {
-      setSelectedCcContacts(prev => [...prev, contactId]);
-    } else {
-      setSelectedCcContacts(prev => prev.filter(id => id !== contactId));
-    }
-  };
-
-  const removeCcEmail = (emailToRemove: string) => {
-    const contactToRemove = contacts.find(c => c.email === emailToRemove);
-    if (contactToRemove) {
-      setSelectedCcContacts(prev => prev.filter(id => id !== contactToRemove.id));
-    }
-  };
-
-  const handleSendEmail = async () => {
-    if (!recipientEmail) {
-      toast({
-        title: "Email required",
-        description: "Please enter a recipient email address.",
-        variant: "destructive"
-      });
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!toEmail.trim()) {
+      alert('Please enter a recipient email address');
       return;
     }
 
     setIsLoading(true);
-    onEmailStatusChange('idle');
     
     try {
-      const pdf = await generateQuotePDF(quote, clientInfo, salespersonName);
-      const pdfBlob = pdf.output('blob');
+      console.log('[EmailQuoteForm] Generating PDF with React PDF renderer for email');
       
+      // Generate PDF using React PDF renderer
+      const pdfBlob = await generateQuotePDFWithReactPdf(quote, clientInfo);
+      
+      // Convert blob to base64
       const reader = new FileReader();
-      reader.onload = async function() {
-        const base64String = (reader.result as string).split(',')[1];
-        
-        try {
-          const { data, error } = await supabase.functions.invoke('send-quote-email', {
-            body: {
-              to: recipientEmail,
-              cc: ccEmails.length > 0 ? ccEmails : undefined,
-              subject,
-              message,
-              pdfBase64: base64String,
-              fileName: `Quote_${quote.quoteNumber || quote.id.slice(0, 8)}.pdf`,
-              quoteId: quote.id
-            }
-          });
-
-          if (error) {
-            console.error('Supabase function error:', error);
-            onEmailStatusChange('error');
-            
-            // Update database with error status
-            await supabase
-              .from('quotes')
-              .update({ email_status: 'error' })
-              .eq('id', quote.id);
-            
-            toast({
-              title: "Failed to send email",
-              description: error.message || "There was an error sending the quote. Please try again.",
-              variant: "destructive"
-            });
-            return;
-          }
-
-          if (data?.success === true) {
-            onEmailStatusChange('success');
-            
-            // Update database with success status
-            await supabase
-              .from('quotes')
-              .update({ email_status: 'success' })
-              .eq('id', quote.id);
-            
-            toast({
-              title: "Email sent successfully",
-              description: `Quote has been sent to ${recipientEmail}${ccEmails.length > 0 ? ` and ${ccEmails.length} CC recipient(s)` : ''}`,
-            });
-            
-            setTimeout(() => {
-              onClose();
-            }, 3000);
-          } else {
-            onEmailStatusChange('error');
-            
-            // Update database with error status
-            await supabase
-              .from('quotes')
-              .update({ email_status: 'error' })
-              .eq('id', quote.id);
-            
-            toast({
-              title: "Failed to send email",
-              description: data?.error || "There was an error sending the quote. Please try again.",
-              variant: "destructive"
-            });
-          }
-        } catch (emailError) {
-          console.error('Error calling email function:', emailError);
-          onEmailStatusChange('error');
-          
-          // Update database with error status
-          await supabase
-            .from('quotes')
-            .update({ email_status: 'error' })
-            .eq('id', quote.id);
-          
-          toast({
-            title: "Failed to send email",
-            description: "There was an error sending the quote. Please try again.",
-            variant: "destructive"
-          });
-        } finally {
-          setIsLoading(false);
-        }
-      };
+      const base64Promise = new Promise<string>((resolve, reject) => {
+        reader.onload = () => {
+          const result = reader.result as string;
+          const base64 = result.split(',')[1];
+          resolve(base64);
+        };
+        reader.onerror = reject;
+      });
+      
       reader.readAsDataURL(pdfBlob);
+      const pdfBase64 = await base64Promise;
+      
+      // Prepare CC emails
+      const allCcEmails = [
+        ...ccContacts,
+        ...(ccEmail.trim() ? ccEmail.split(',').map(email => email.trim()) : [])
+      ].filter(email => email && email.length > 0);
+
+      // Send email via Supabase Edge Function
+      const { data, error } = await supabase.functions.invoke('send-quote-email', {
+        body: {
+          to: toEmail,
+          cc: allCcEmails.length > 0 ? allCcEmails : undefined,
+          subject: subject,
+          message: message,
+          pdfBase64: pdfBase64,
+          quoteId: quote.id,
+          fileName: `quote-${quote.quoteNumber || quote.id}.pdf`
+        }
+      });
+
+      if (error) {
+        throw error;
+      }
+
+      console.log('[EmailQuoteForm] Email sent successfully:', data);
+      onEmailStatusChange('success');
+      
+      // Close dialog after 2 seconds
+      setTimeout(() => {
+        onClose();
+      }, 2000);
       
     } catch (error) {
-      console.error('Error generating PDF:', error);
+      console.error('[EmailQuoteForm] Error sending email:', error);
       onEmailStatusChange('error');
-      
-      // Update database with error status
-      await supabase
-        .from('quotes')
-        .update({ email_status: 'error' })
-        .eq('id', quote.id);
-      
-      toast({
-        title: "Failed to generate PDF",
-        description: "There was an error generating the quote PDF. Please try again.",
-        variant: "destructive"
-      });
+    } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <div className="space-y-4">
+    <form onSubmit={handleSubmit} className="space-y-6">
       <EmailContactSelector
-        contacts={contacts}
-        contactsLoading={contactsLoading}
-        selectedRecipientContact={selectedRecipientContact}
-        onRecipientContactChange={setSelectedRecipientContact}
-        customRecipientEmail={customRecipientEmail}
-        onCustomRecipientEmailChange={setCustomRecipientEmail}
+        clientInfoId={clientInfo?.id}
+        selectedContactId={selectedContactId}
+        onContactSelect={setSelectedContactId}
+        onEmailChange={setToEmail}
+        toEmail={toEmail}
+      />
+      
+      <CCContactSelector
+        clientInfoId={clientInfo?.id}
+        selectedContacts={ccContacts}
+        onContactsChange={setCcContacts}
+        ccEmail={ccEmail}
+        onCcEmailChange={setCcEmail}
       />
 
-      <CCContactSelector
-        contacts={contacts}
-        selectedRecipientContact={selectedRecipientContact}
-        selectedCcContacts={selectedCcContacts}
-        onCcContactToggle={handleCcContactToggle}
-        ccEmails={ccEmails}
-        onRemoveCcEmail={removeCcEmail}
-      />
+      <Separator />
 
       <EmailFormFields
         subject={subject}
         onSubjectChange={setSubject}
         message={message}
         onMessageChange={setMessage}
-        quoteNumber={quote.quoteNumber}
-        quoteId={quote.id}
       />
 
-      <div className="flex justify-end space-x-2 mt-6">
-        <Button 
-          type="button" 
-          variant="outline" 
+      <div className="flex justify-end space-x-2">
+        <Button
+          type="button"
+          variant="outline"
           onClick={onClose}
           disabled={isLoading}
         >
           Cancel
         </Button>
-        <Button 
-          onClick={handleSendEmail}
-          disabled={isLoading || !recipientEmail}
-          className={`transition-colors duration-300 ${
-            emailStatus === 'success' 
-              ? 'bg-green-600 hover:bg-green-700' 
-              : emailStatus === 'error'
-              ? 'bg-red-600 hover:bg-red-700'
-              : 'bg-blue-600 hover:bg-blue-700'
-          }`}
+        <Button
+          type="submit"
+          disabled={isLoading || !toEmail.trim() || emailStatus === 'success'}
+          className="bg-blue-600 hover:bg-blue-700"
         >
-          <Mail className="w-4 h-4 mr-2" />
-          {isLoading ? "Sending..." : emailStatus === 'success' ? "Email Sent!" : "Send Email"}
+          {isLoading ? 'Sending...' : emailStatus === 'success' ? 'Sent!' : 'Send Quote'}
         </Button>
       </div>
-    </div>
+    </form>
   );
 };

@@ -1,3 +1,5 @@
+// Updated to use React PDF renderer as the primary method
+export { generateQuotePDFWithReactPdf as generateQuotePDF, downloadQuotePDF } from './pdf/reactPdfGenerator';
 
-// Re-export the main function for backward compatibility
-export { generateQuotePDF } from './pdf';
+// Keep legacy method available if needed
+export { generateQuotePDF as generateQuotePDFLegacy } from './pdf/index';
