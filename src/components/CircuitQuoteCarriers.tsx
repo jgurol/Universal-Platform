@@ -1,3 +1,4 @@
+
 import { Button } from "@/components/ui/button";
 import { Plus, Edit, Trash2, Copy } from "lucide-react";
 import type { CarrierQuote } from "@/hooks/useCircuitQuotes";
@@ -29,6 +30,22 @@ export const CircuitQuoteCarriers = ({
     if (carrier.site_survey_needed) ticked.push("Site Survey");
     if (carrier.no_service) ticked.push("No Service");
     return ticked;
+  };
+
+  // Get the latest note from a carrier's notes string
+  const getLatestNote = (notes: string | null | undefined): string => {
+    if (!notes) return '';
+    
+    // Split by double newlines to get individual notes
+    const noteEntries = notes.split('\n\n').filter(note => note.trim());
+    if (noteEntries.length === 0) return '';
+    
+    // Get the most recent note (first in the array)
+    const latestNoteEntry = noteEntries[0];
+    
+    // Remove the date prefix if it exists (format: "YYYY-MM-DD: ")
+    const datePattern = /^\d{4}-\d{2}-\d{2}:\s*/;
+    return latestNoteEntry.replace(datePattern, '').trim();
   };
 
   // Sort carriers by carrier name first, then by speed
@@ -79,15 +96,7 @@ export const CircuitQuoteCarriers = ({
         return `${carrier.type} - ${carrier.speed} - ${priceText}${carrierTickedOptions.length > 0 ? ` - ${carrierTickedOptions.join(', ')}` : ''}`;
       });
       
-      // Add quote-level requirements to tooltip if present
-      const quoteRequirements = [];
-      if (staticIp) quoteRequirements.push('Static IP');
-      if (slash29) quoteRequirements.push('/29');
-      
       let tooltipText = `${vendorName} - ${tooltipParts.join(' | ')}`;
-      if (quoteRequirements.length > 0) {
-        tooltipText += ` | Requirements: ${quoteRequirements.join(', ')}`;
-      }
       
       return {
         vendorName,
@@ -140,6 +149,7 @@ export const CircuitQuoteCarriers = ({
           const isPending = !carrier.price || carrier.price === 0;
           const isNoService = carrier.no_service;
           const tickedOptions = getTickedCheckboxes(carrier);
+          const latestNote = getLatestNote(carrier.notes);
           
           return (
             <div 
@@ -195,7 +205,7 @@ export const CircuitQuoteCarriers = ({
                         ))}
                       </div>
                     )}
-                    {carrier.notes}
+                    {latestNote}
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
