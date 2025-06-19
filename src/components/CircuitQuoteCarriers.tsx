@@ -1,4 +1,3 @@
-
 import { Button } from "@/components/ui/button";
 import { Plus, Edit, Trash2, Copy } from "lucide-react";
 import type { CarrierQuote } from "@/hooks/useCircuitQuotes";
@@ -135,25 +134,6 @@ export const CircuitQuoteCarriers = ({
           </Button>
         )}
       </div>
-
-      {/* Quote-level options display */}
-      {(staticIp || slash29) && (
-        <div className="mb-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
-          <div className="text-sm font-medium text-blue-900 mb-2">Quote Requirements:</div>
-          <div className="flex flex-wrap gap-2">
-            {staticIp && (
-              <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-blue-100 text-blue-800">
-                Static IP
-              </span>
-            )}
-            {slash29 && (
-              <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-blue-100 text-blue-800">
-                /29
-              </span>
-            )}
-          </div>
-        </div>
-      )}
       
       <div className="grid gap-3">
         {sortedCarriers.map((carrier) => {
