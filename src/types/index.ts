@@ -28,10 +28,21 @@ export interface Quote {
   quoteNumber?: string;
   quoteMonth?: string;
   quoteYear?: string;
+  term?: string;
   expiresAt?: string;
   acceptedAt?: string;
   commission?: number;
   archived?: boolean;
+  billingAddress?: string;
+  serviceAddress?: string;
+  templateId?: string;
+  emailStatus?: string;
+  acceptanceStatus?: string;
+  acceptedBy?: string;
+  emailSentAt?: string;
+  emailOpened?: boolean;
+  emailOpenedAt?: string;
+  emailOpenCount?: number;
 }
 
 export interface QuoteItem {
@@ -44,6 +55,7 @@ export interface QuoteItem {
   unit_price: number;
   total_price: number;
   charge_type: 'MRC' | 'NRC';
+  address_id?: string;
   item?: {
     id: string;
     name: string;
@@ -73,12 +85,14 @@ export interface ClientInfo {
   created_at: string;
   updated_at: string;
   user_id: string;
+  commission_override?: number;
 }
 
 export interface Transaction {
   id: string;
   clientId: string;
   clientName: string;
+  companyName?: string;
   amount: number;
   date: string;
   description?: string;
@@ -87,7 +101,16 @@ export interface Transaction {
   status: 'pending' | 'approved' | 'paid';
   isPaid: boolean;
   paidDate?: string;
+  datePaid?: string;
   paymentMethod?: string;
   referenceNumber?: string;
   clientInfoId?: string;
+  clientCompanyName?: string;
+  commission?: number;
+  commissionPaidDate?: string;
+  isApproved?: boolean;
+  commissionOverride?: number;
+  invoiceMonth?: string;
+  invoiceYear?: string;
+  invoiceNumber?: string;
 }
