@@ -70,10 +70,6 @@ export const CircuitQuoteCarriers = ({
         if (!carrier.price || carrier.price === 0) hasPendingQuotes = true;
       });
 
-      // Add quote-level options to the display
-      if (staticIp) allTickedOptions.add("Static IP");
-      if (slash29) allTickedOptions.add("/29");
-
       const tickedOptionsArray = Array.from(allTickedOptions);
       const isPending = hasPendingQuotes;
       
