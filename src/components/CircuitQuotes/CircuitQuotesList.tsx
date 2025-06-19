@@ -1,3 +1,4 @@
+
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Plus, Search } from "lucide-react";
@@ -34,10 +35,9 @@ export const CircuitQuotesList = ({
     const matchesSearch = quote.client_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          quote.location.toLowerCase().includes(searchTerm.toLowerCase());
     
-    // For admins showing "all", include all quotes including "sent_to_customer"
-    // For non-admins showing "all", exclude "sent_to_customer" quotes
+    // Filter out "sent_to_customer" quotes when showing "all" (Total Quotes)
     const matchesStatus = statusFilter === "all" 
-      ? (isAdmin ? true : quote.status !== 'sent_to_customer')
+      ? quote.status !== 'sent_to_customer'
       : quote.status === statusFilter;
     
     return matchesSearch && matchesStatus;

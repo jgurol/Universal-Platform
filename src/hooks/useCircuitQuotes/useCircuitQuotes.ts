@@ -7,22 +7,32 @@ import type { CircuitQuote, CarrierQuote } from "./types";
 export const useCircuitQuotes = () => {
   const [quotes, setQuotes] = useState<CircuitQuote[]>([]);
   const [loading, setLoading] = useState(true);
-  const { user } = useAuth();
+  const { user, isAdmin } = useAuth();
   const { toast } = useToast();
 
   const fetchQuotes = useCallback(async () => {
     try {
       setLoading(true);
-      console.log('[useCircuitQuotes] Starting fetch with user:', user?.id);
+      console.log('[useCircuitQuotes] Starting fetch with user:', user?.id, 'isAdmin:', isAdmin);
       
-      // Fetch circuit quotes with their carrier quotes
-      const { data: circuitQuotes, error: quotesError } = await supabase
+      // Build the query - admins see all quotes, non-admins see only their own
+      let query = supabase
         .from('circuit_quotes')
         .select(`
           *,
           carrier_quotes (*)
         `)
         .order('created_at', { ascending: false });
+
+      // Only filter by user_id for non-admin users
+      if (!isAdmin && user?.id) {
+        query = query.eq('user_id', user.id);
+        console.log('[useCircuitQuotes] Non-admin user - filtering by user_id:', user.id);
+      } else if (isAdmin) {
+        console.log('[useCircuitQuotes] Admin user - fetching all quotes');
+      }
+
+      const { data: circuitQuotes, error: quotesError } = await query;
 
       if (quotesError) {
         console.error('Error fetching circuit quotes:', quotesError);
@@ -81,7 +91,7 @@ export const useCircuitQuotes = () => {
     } finally {
       setLoading(false);
     }
-  }, [user?.id, toast]);
+  }, [user?.id, isAdmin, toast]);
 
   const addQuote = async (newQuote: Omit<CircuitQuote, "id" | "created_at" | "carriers">) => {
     if (!user) {
