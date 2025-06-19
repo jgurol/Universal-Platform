@@ -70,12 +70,12 @@ export const CircuitQuoteCardHeader = ({
               <span className="text-xs font-medium text-gray-600">Requirements:</span>
               {quote.static_ip && (
                 <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-blue-100 text-blue-800">
-                  Static IP
+                  /30 IP
                 </span>
               )}
               {quote.slash_29 && (
                 <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-blue-100 text-blue-800">
-                  /29
+                  /29 IP
                 </span>
               )}
             </div>

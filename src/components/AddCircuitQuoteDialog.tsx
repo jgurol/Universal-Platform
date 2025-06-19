@@ -113,7 +113,7 @@ export const AddCircuitQuoteDialog = ({ open, onOpenChange, onAddQuote }: AddCir
                   onCheckedChange={(checked) => setStaticIp(checked as boolean)}
                 />
                 <Label htmlFor="static-ip" className="text-sm font-normal">
-                  Static IP Required
+                  /30 IP Required
                 </Label>
               </div>
               
@@ -124,7 +124,7 @@ export const AddCircuitQuoteDialog = ({ open, onOpenChange, onAddQuote }: AddCir
                   onCheckedChange={(checked) => setSlash29(checked as boolean)}
                 />
                 <Label htmlFor="slash-29" className="text-sm font-normal">
-                  /29 Subnet Required
+                  /29 IP Required
                 </Label>
               </div>
 

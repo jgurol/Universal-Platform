@@ -154,12 +154,12 @@ export const CircuitQuoteCarriers = ({
           <div className="flex flex-wrap gap-2">
             {staticIp && (
               <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-blue-100 text-blue-800">
-                Static IP Required
+                /30 IP Required
               </span>
             )}
             {slash29 && (
               <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-blue-100 text-blue-800">
-                /29 Subnet Required
+                /29 IP Required
               </span>
             )}
             {mikrotikRequired && (
