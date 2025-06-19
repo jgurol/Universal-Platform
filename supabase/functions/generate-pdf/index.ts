@@ -288,18 +288,29 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
-    console.log('[PDFShift] Generating PDF via Edge Function');
+    console.log('[PDFShift] Starting PDF generation via Edge Function');
     
     const apiKey = Deno.env.get('VITE_PDFSHIFT_API_KEY');
     
     if (!apiKey) {
+      console.error('[PDFShift] API key not found in environment variables');
       throw new Error('PDFShift API key not configured. Please add VITE_PDFSHIFT_API_KEY to your Supabase secrets.');
     }
 
+    console.log('[PDFShift] API key found, parsing request body...');
+
     const { quote, clientInfo } = await req.json();
+    
+    if (!quote) {
+      throw new Error('Quote data is required');
+    }
+
+    console.log('[PDFShift] Quote data received, generating HTML...');
     
     // Generate the HTML content for the quote
     const htmlContent = generateQuoteHTML(quote, clientInfo);
+    
+    console.log('[PDFShift] HTML generated, calling PDFShift API...');
     
     const response = await fetch(PDFSHIFT_API_URL, {
       method: 'POST',
@@ -318,12 +329,13 @@ const handler = async (req: Request): Promise<Response> => {
 
     if (!response.ok) {
       const errorText = await response.text();
+      console.error('[PDFShift] API error:', response.status, errorText);
       throw new Error(`PDFShift API error: ${response.status} - ${errorText}`);
     }
 
     const pdfBuffer = await response.arrayBuffer();
     
-    console.log('[PDFShift] PDF generated successfully via Edge Function');
+    console.log('[PDFShift] PDF generated successfully, size:', pdfBuffer.byteLength, 'bytes');
     
     return new Response(pdfBuffer, {
       headers: {
