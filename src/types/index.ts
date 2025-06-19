@@ -1,4 +1,5 @@
 
+
 export interface Client {
   id: string;
   firstName: string;
@@ -114,3 +115,4 @@ export interface Transaction {
   invoiceYear?: string;
   invoiceNumber?: string;
 }
+
