@@ -202,10 +202,7 @@ const generateQuoteHTML = (quote: Quote, clientInfo?: ClientInfo): string => {
           <div class="info-section">
             <h3>Billing Address</h3>
             ${quote.billingAddress ? `
-              <p>
-                ${quote.billingAddress.street_address}<br>
-                ${quote.billingAddress.city}, ${quote.billingAddress.state} ${quote.billingAddress.zip_code}
-              </p>
+              <p>${quote.billingAddress}</p>
             ` : '<p>Not specified</p>'}
           </div>
         </div>
