@@ -14,6 +14,7 @@ export interface CarrierQuoteItem {
   circuit_quote_id: string;
   client_name: string;
   location: string; // Added location from circuit quote
+  no_service: boolean; // Added no_service field
 }
 
 export const useCarrierQuoteItems = (clientInfoId: string | null) => {
@@ -73,7 +74,8 @@ export const useCarrierQuoteItems = (clientInfoId: string | null) => {
               notes: cq.notes,
               circuit_quote_id: cq.circuit_quote_id,
               client_name: circuitQuote?.client_name || '',
-              location: circuitQuote?.location || ''
+              location: circuitQuote?.location || '',
+              no_service: cq.no_service || false
             };
           });
           setCarrierQuoteItems(items);

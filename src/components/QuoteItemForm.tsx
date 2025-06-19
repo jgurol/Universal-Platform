@@ -1,3 +1,4 @@
+
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
@@ -27,7 +28,9 @@ export const QuoteItemForm = ({
 }: QuoteItemFormProps) => {
   const { carrierQuoteItems, loading: carrierLoading } = useCarrierQuoteItems(clientInfoId || null);
 
-  const hasCarrierItems = carrierQuoteItems.length > 0;
+  // Filter out carrier items that have no_service set to true
+  const availableCarrierItems = carrierQuoteItems.filter(item => !item.no_service);
+  const hasCarrierItems = availableCarrierItems.length > 0;
 
   return (
     <div className="space-y-4 p-4 border rounded-lg bg-blue-50">
@@ -93,7 +96,7 @@ export const QuoteItemForm = ({
               </SelectTrigger>
               <SelectContent className="bg-white z-50 min-w-[600px]">
                 {hasCarrierItems ? (
-                  carrierQuoteItems.map((carrierItem) => (
+                  availableCarrierItems.map((carrierItem) => (
                     <SelectItem key={`carrier-${carrierItem.id}`} value={`carrier-${carrierItem.id}`}>
                       <div className="flex items-center gap-3 w-full min-w-0 whitespace-nowrap">
                         <span className="font-medium text-sm">{carrierItem.carrier}</span>
@@ -126,7 +129,7 @@ export const QuoteItemForm = ({
           
           {clientInfoId && hasCarrierItems && (
             <p className="text-sm text-blue-600">
-              {carrierQuoteItems.length} carrier option(s) available from completed circuit quotes
+              {availableCarrierItems.length} carrier option(s) available from completed circuit quotes
             </p>
           )}
         </div>
