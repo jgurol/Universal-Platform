@@ -4,14 +4,36 @@ import { QuoteItemData } from "@/types/quoteItems";
 import { useItems } from "@/hooks/useItems";
 import { useClientAddresses } from "@/hooks/useClientAddresses";
 import { useCarrierQuoteItems } from "@/hooks/useCarrierQuoteItems";
+import { useCategories } from "@/hooks/useCategories";
 import { parseLocationToAddress } from "@/utils/addressParser";
 
 export const useQuoteItemActions = (clientInfoId?: string) => {
   const { items: availableItems, isLoading } = useItems();
   const { addresses, addAddress } = useClientAddresses(clientInfoId || null);
   const { carrierQuoteItems } = useCarrierQuoteItems(clientInfoId || null);
+  const { categories } = useCategories();
   const [selectedItemId, setSelectedItemId] = useState("");
   const [isAddingCarrierItem, setIsAddingCarrierItem] = useState(false);
+
+  const calculateSellPrice = (cost: number, categoryType?: string) => {
+    if (!categoryType || !categories.length) {
+      return cost; // If no category or categories not loaded, return cost as sell price
+    }
+
+    // Find the category that matches the carrier quote type
+    const matchingCategory = categories.find(cat => 
+      cat.type?.toLowerCase() === categoryType.toLowerCase() ||
+      cat.name.toLowerCase().includes(categoryType.toLowerCase())
+    );
+
+    if (matchingCategory && matchingCategory.standard_markup && matchingCategory.standard_markup > 0) {
+      // Apply the markup: sell price = cost * (1 + markup/100)
+      const markup = matchingCategory.standard_markup / 100;
+      return Math.round(cost * (1 + markup) * 100) / 100; // Round to 2 decimal places
+    }
+
+    return cost; // If no matching category or no markup, return cost
+  };
 
   const addCarrierItem = async (carrierQuoteId: string, items: QuoteItemData[], onItemsChange: (items: QuoteItemData[]) => void) => {
     if (!clientInfoId) return;
@@ -63,6 +85,15 @@ export const useQuoteItemActions = (clientInfoId?: string) => {
 
         console.log('[useQuoteItemActions] Final matching address for carrier item:', matchingAddress);
 
+        // Calculate sell price using category markup
+        const sellPrice = calculateSellPrice(carrierItem.price, carrierItem.type);
+        console.log('[useQuoteItemActions] Calculated sell price:', {
+          cost: carrierItem.price,
+          type: carrierItem.type,
+          sellPrice: sellPrice,
+          markup: sellPrice > carrierItem.price ? ((sellPrice - carrierItem.price) / carrierItem.price * 100).toFixed(1) + '%' : 'none'
+        });
+
         // Create a temporary quote item for the carrier quote
         const descriptionParts = [];
         if (carrierItem.notes) {
@@ -73,9 +104,9 @@ export const useQuoteItemActions = (clientInfoId?: string) => {
           id: `temp-carrier-${Date.now()}`,
           item_id: `carrier-${carrierItem.id}`,
           quantity: 1,
-          unit_price: 0,
+          unit_price: sellPrice, // Use calculated sell price with markup
           cost_override: carrierItem.price,
-          total_price: 0,
+          total_price: sellPrice, // Total equals unit price for quantity 1
           charge_type: 'MRC',
           address_id: matchingAddress?.id,
           name: `${carrierItem.carrier} - ${carrierItem.type} - ${carrierItem.speed}`,
@@ -85,7 +116,7 @@ export const useQuoteItemActions = (clientInfoId?: string) => {
             user_id: '',
             name: `${carrierItem.carrier} - ${carrierItem.type} - ${carrierItem.speed}`,
             description: descriptionParts.join(' | '),
-            price: 0,
+            price: sellPrice, // Set price to calculated sell price
             cost: carrierItem.price,
             charge_type: 'MRC',
             is_active: true,
@@ -95,11 +126,14 @@ export const useQuoteItemActions = (clientInfoId?: string) => {
           address: matchingAddress // This should be the address that matches the carrier location
         };
 
-        console.log('[useQuoteItemActions] Adding carrier item with specific location address:', {
+        console.log('[useQuoteItemActions] Adding carrier item with markup-adjusted pricing:', {
           itemName: quoteItem.name,
           carrierLocation: carrierItem.location,
           addressId: quoteItem.address_id,
-          addressDetails: quoteItem.address
+          addressDetails: quoteItem.address,
+          originalCost: carrierItem.price,
+          sellPrice: sellPrice,
+          markupApplied: sellPrice !== carrierItem.price
         });
 
         // Add to items list
