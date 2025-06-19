@@ -66,23 +66,28 @@ export const CircuitQuoteCardHeader = ({
         
         <div className="flex items-center gap-3">
           {/* Quote Requirements Badges */}
-          <div className="flex flex-wrap gap-1">
-            {quote.static_ip && (
-              <Badge variant="secondary" className="text-xs bg-blue-100 text-blue-800">
-                /30 IP
-              </Badge>
-            )}
-            {quote.slash_29 && (
-              <Badge variant="secondary" className="text-xs bg-blue-100 text-blue-800">
-                /29 IP
-              </Badge>
-            )}
-            {quote.mikrotik_required && (
-              <Badge variant="secondary" className="text-xs bg-blue-100 text-blue-800">
-                Mikrotik
-              </Badge>
-            )}
-          </div>
+          {(quote.static_ip || quote.slash_29 || quote.mikrotik_required) && (
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-medium text-gray-700">Requirement:</span>
+              <div className="flex flex-wrap gap-1">
+                {quote.static_ip && (
+                  <Badge variant="secondary" className="text-xs bg-blue-100 text-blue-800">
+                    /30 IP
+                  </Badge>
+                )}
+                {quote.slash_29 && (
+                  <Badge variant="secondary" className="text-xs bg-blue-100 text-blue-800">
+                    /29 IP
+                  </Badge>
+                )}
+                {quote.mikrotik_required && (
+                  <Badge variant="secondary" className="text-xs bg-blue-100 text-blue-800">
+                    Mikrotik
+                  </Badge>
+                )}
+              </div>
+            </div>
+          )}
 
           <CircuitQuoteStatusSelect
             status={quote.status}
