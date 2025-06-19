@@ -14,35 +14,35 @@ export const useClients = (associatedAgentId: string | null) => {
     try {
       console.info('[fetchClients] Fetching clients - isAdmin:', isAdmin, 'associatedAgentId:', associatedAgentId);
       
-      let query = supabase.from('agents').select('*');
+      let query = supabase.from('client_info').select('*');
       
       // If not admin and has associated agent, filter by that agent
       if (!isAdmin && associatedAgentId) {
-        query = query.eq('id', associatedAgentId);
+        query = query.eq('agent_id', associatedAgentId);
       }
       
-      const { data: agentsData, error } = await query;
+      const { data: clientsData, error } = await query.order('company_name', { ascending: true });
       
       if (error) {
-        console.error('Error fetching agents:', error);
+        console.error('Error fetching clients:', error);
         return;
       }
 
-      if (agentsData) {
-        const mappedClients = agentsData.map(agent => ({
-          id: agent.id,
-          firstName: agent.first_name,
-          lastName: agent.last_name,
-          name: `${agent.first_name} ${agent.last_name}`,
-          email: agent.email,
-          companyName: agent.company_name,
-          commissionRate: agent.commission_rate || 0,
-          totalEarnings: agent.total_earnings || 0,
-          lastPayment: agent.last_payment || new Date().toISOString(),
+      if (clientsData) {
+        const mappedClients = clientsData.map(client => ({
+          id: client.id,
+          firstName: '',
+          lastName: '',
+          name: client.company_name,
+          email: client.email || '',
+          companyName: client.company_name,
+          commissionRate: 0,
+          totalEarnings: 0,
+          lastPayment: new Date().toISOString(),
         }));
         
         setClients(mappedClients);
-        console.info('[fetchClients] Fetched agents:', mappedClients.length);
+        console.info('[fetchClients] Fetched clients:', mappedClients.length);
       }
     } catch (err) {
       console.error('Error in fetchClients:', err);
