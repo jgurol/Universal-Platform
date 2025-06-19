@@ -1,3 +1,4 @@
+
 import React, { createContext, useState, useEffect, useContext } from 'react';
 import { Session, User } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
@@ -9,6 +10,17 @@ interface UserProfile {
   email?: string;
   role?: string;
   timezone?: string;
+}
+
+// Type for the RPC response
+interface UserProfileRPCResponse {
+  id: string;
+  full_name: string;
+  email: string;
+  role: string;
+  is_associated: boolean;
+  associated_agent_id: string;
+  timezone: string;
 }
 
 interface AuthContextType {
@@ -223,7 +235,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // Use the security definer RPC function we just created
       const { data, error } = await supabase.rpc('get_user_profile', {
         user_id: userId
-      });
+      }) as { data: UserProfileRPCResponse[] | null; error: any };
 
       if (error) {
         console.error('AuthProvider: Error fetching user profile:', error);
