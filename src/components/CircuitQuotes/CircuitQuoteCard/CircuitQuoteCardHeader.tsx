@@ -64,6 +64,22 @@ export const CircuitQuoteCardHeader = ({
         </div>
         
         <div className="flex items-center gap-2">
+          {/* Requirements badges */}
+          {(quote.static_ip || quote.slash_29) && (
+            <div className="flex items-center gap-2 mr-2">
+              {quote.static_ip && (
+                <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-blue-100 text-blue-800">
+                  Static IP
+                </span>
+              )}
+              {quote.slash_29 && (
+                <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-blue-100 text-blue-800">
+                  /29
+                </span>
+              )}
+            </div>
+          )}
+          
           <CircuitQuoteStatusSelect
             status={quote.status}
             onStatusChange={onStatusChange}
