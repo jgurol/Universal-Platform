@@ -28,9 +28,27 @@ export const QuoteItemForm = ({
 }: QuoteItemFormProps) => {
   const { carrierQuoteItems, loading: carrierLoading } = useCarrierQuoteItems(clientInfoId || null);
 
+  console.log('[QuoteItemForm] Debug info:', {
+    clientInfoId,
+    carrierQuoteItemsCount: carrierQuoteItems.length,
+    carrierLoading,
+    carrierQuoteItems: carrierQuoteItems.map(item => ({
+      id: item.id,
+      carrier: item.carrier,
+      type: item.type,
+      no_service: item.no_service
+    }))
+  });
+
   // Filter out carrier items that have no_service set to true
   const availableCarrierItems = carrierQuoteItems.filter(item => !item.no_service);
   const hasCarrierItems = availableCarrierItems.length > 0;
+
+  console.log('[QuoteItemForm] After filtering no_service items:', {
+    originalCount: carrierQuoteItems.length,
+    filteredCount: availableCarrierItems.length,
+    hasCarrierItems
+  });
 
   return (
     <div className="space-y-4 p-4 border rounded-lg bg-blue-50">
@@ -132,6 +150,12 @@ export const QuoteItemForm = ({
           {clientInfoId && hasCarrierItems && (
             <p className="text-sm text-blue-600">
               {availableCarrierItems.length} carrier option(s) available from completed circuit quotes
+            </p>
+          )}
+          
+          {clientInfoId && !hasCarrierItems && !carrierLoading && (
+            <p className="text-sm text-red-600">
+              No carrier quotes found. Make sure you have completed circuit quotes for this client.
             </p>
           )}
         </div>

@@ -24,47 +24,59 @@ export const useCarrierQuoteItems = (clientInfoId: string | null) => {
 
   useEffect(() => {
     const fetchCarrierQuoteItems = async () => {
+      console.log('[useCarrierQuoteItems] Starting fetch with:', { user: user?.id, clientInfoId });
+      
       if (!user || !clientInfoId) {
+        console.log('[useCarrierQuoteItems] Missing user or clientInfoId, clearing items');
         setCarrierQuoteItems([]);
         return;
       }
 
       setLoading(true);
       try {
+        console.log('[useCarrierQuoteItems] Fetching circuit quotes for client:', clientInfoId);
+        
         // Get circuit quotes for this client that are completed
         const { data: circuitQuotes, error: circuitError } = await supabase
           .from('circuit_quotes')
-          .select('id, client_name, location')
+          .select('id, client_name, location, status')
           .eq('user_id', user.id)
           .eq('client_info_id', clientInfoId)
           .eq('status', 'completed');
 
         if (circuitError) {
-          console.error('Error fetching circuit quotes:', circuitError);
+          console.error('[useCarrierQuoteItems] Error fetching circuit quotes:', circuitError);
           return;
         }
 
+        console.log('[useCarrierQuoteItems] Found circuit quotes:', circuitQuotes);
+
         if (!circuitQuotes || circuitQuotes.length === 0) {
+          console.log('[useCarrierQuoteItems] No completed circuit quotes found for this client');
           setCarrierQuoteItems([]);
           return;
         }
 
         // Get carrier quotes for these circuit quotes
         const circuitQuoteIds = circuitQuotes.map(cq => cq.id);
+        console.log('[useCarrierQuoteItems] Fetching carrier quotes for circuit quote IDs:', circuitQuoteIds);
+        
         const { data: carrierQuotes, error: carrierError } = await supabase
           .from('carrier_quotes')
           .select('*')
           .in('circuit_quote_id', circuitQuoteIds);
 
         if (carrierError) {
-          console.error('Error fetching carrier quotes:', carrierError);
+          console.error('[useCarrierQuoteItems] Error fetching carrier quotes:', carrierError);
           return;
         }
+
+        console.log('[useCarrierQuoteItems] Found carrier quotes:', carrierQuotes);
 
         if (carrierQuotes) {
           const items = carrierQuotes.map(cq => {
             const circuitQuote = circuitQuotes.find(circ => circ.id === cq.circuit_quote_id);
-            return {
+            const item = {
               id: cq.id,
               carrier: cq.carrier,
               type: cq.type,
@@ -77,11 +89,15 @@ export const useCarrierQuoteItems = (clientInfoId: string | null) => {
               location: circuitQuote?.location || '',
               no_service: cq.no_service || false
             };
+            console.log('[useCarrierQuoteItems] Created item:', item);
+            return item;
           });
+          
+          console.log('[useCarrierQuoteItems] Final carrier quote items:', items);
           setCarrierQuoteItems(items);
         }
       } catch (error) {
-        console.error('Error in fetchCarrierQuoteItems:', error);
+        console.error('[useCarrierQuoteItems] Error in fetchCarrierQuoteItems:', error);
       } finally {
         setLoading(false);
       }
