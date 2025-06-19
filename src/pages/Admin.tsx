@@ -12,11 +12,12 @@ import {
   TableCell 
 } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
-import { Shield, UserCheck, UserX, PencilIcon, Plus, Mail } from 'lucide-react';
+import { Shield, UserCheck, UserX, PencilIcon, Plus, Mail, Trash2 } from 'lucide-react';
 import { Navigate } from 'react-router-dom';
 import { EditUserDialog } from '@/components/EditUserDialog';
 import { AssociateUserDialog } from '@/components/AssociateUserDialog';
 import { AddUserDialog } from '@/components/AddUserDialog';
+import { DeleteUserDialog } from '@/components/DeleteUserDialog';
 
 interface UserProfile {
   id: string;
@@ -46,6 +47,8 @@ export default function Admin() {
   const [associatingUser, setAssociatingUser] = useState<UserProfile | null>(null);
   const [isAddUserOpen, setIsAddUserOpen] = useState(false);
   const [agents, setAgents] = useState<Agent[]>([]);
+  const [deletingUser, setDeletingUser] = useState<UserProfile | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   // Redirect non-admin users
   if (!isAdmin) {
@@ -205,6 +208,46 @@ export default function Admin() {
     }
   };
 
+  const handleDeleteUser = async () => {
+    if (!deletingUser) return;
+
+    try {
+      setIsDeleting(true);
+      
+      // Delete user from Supabase auth using admin API
+      const { error: authError } = await supabase.auth.admin.deleteUser(deletingUser.id);
+      
+      if (authError) {
+        console.error('Error deleting user from auth:', authError);
+        toast({
+          title: "Error",
+          description: `Failed to delete user: ${authError.message}`,
+          variant: "destructive"
+        });
+        return;
+      }
+
+      // Remove from local state
+      setUsers(users.filter(u => u.id !== deletingUser.id));
+      
+      toast({
+        title: "Success",
+        description: `User ${deletingUser.full_name || deletingUser.email} has been deleted successfully`,
+      });
+      
+      setDeletingUser(null);
+    } catch (error: any) {
+      console.error('Error deleting user:', error);
+      toast({
+        title: "Error",
+        description: `Failed to delete user: ${error.message}`,
+        variant: "destructive"
+      });
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
   return (
     <div className="container mx-auto p-4 min-h-screen">
       <NavigationBar />
@@ -305,6 +348,18 @@ export default function Admin() {
                           Reset
                         </Button>
                         
+                        {userProfile.id !== user?.id && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => setDeletingUser(userProfile)}
+                            className="text-red-600 hover:bg-red-50"
+                          >
+                            <Trash2 className="w-4 h-4 mr-1" />
+                            Delete
+                          </Button>
+                        )}
+                        
                         {userProfile.role === 'agent' && userProfile.id !== user?.id && (
                           <>
                             {userProfile.is_associated ? (
@@ -370,6 +425,16 @@ export default function Admin() {
           onUpdateUser={handleUpdateUser}
         />
       )}
+
+      <DeleteUserDialog
+        user={deletingUser}
+        open={!!deletingUser}
+        onOpenChange={(open) => {
+          if (!open) setDeletingUser(null);
+        }}
+        onConfirmDelete={handleDeleteUser}
+        isDeleting={isDeleting}
+      />
     </div>
   );
 }
