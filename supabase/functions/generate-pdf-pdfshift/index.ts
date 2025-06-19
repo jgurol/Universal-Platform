@@ -28,7 +28,7 @@ const handler = async (req: Request): Promise<Response> => {
     console.log('PDFShift Function - Processing quote:', quote?.id, 'with status:', quote?.status);
     console.log('PDFShift Function - API Key configured:', !!Deno.env.get('PDFSHIFT_API_KEY'));
     
-    // Create HTML template with minimal data extraction to avoid circular references
+    // Create HTML template with original design
     const html = generateHTML(quote, clientInfo, salespersonName);
     console.log('PDFShift Function - HTML generated, length:', html.length);
     
@@ -90,23 +90,26 @@ const handler = async (req: Request): Promise<Response> => {
   }
 };
 
-// Simplified HTML generation function
+// HTML generation function matching the original design
 const generateHTML = (quote: any, clientInfo?: any, salespersonName?: string): string => {
-  // Extract only the data we need to avoid circular references
+  // Extract data safely
   const quoteId = quote?.id || '';
-  const quoteNumber = quote?.quoteNumber || quoteId.slice(0, 8);
+  const quoteNumber = quote?.quoteNumber || quoteId.slice(0, 4);
   const description = quote?.description || 'Service Agreement';
   const status = quote?.status || 'pending';
   const date = quote?.date || new Date().toISOString();
+  const expiresAt = quote?.expiresAt || '';
   const billingAddress = quote?.billingAddress || '';
   const serviceAddress = quote?.serviceAddress || billingAddress || '';
   
   const companyName = clientInfo?.company_name || 'Company Name';
   const contactName = clientInfo?.contact_name || 'Contact Name';
+  const contactEmail = clientInfo?.email || '';
+  const contactPhone = clientInfo?.phone || '';
   
   const isApproved = status === 'approved' || status === 'accepted';
   
-  // Process quote items safely
+  // Process quote items
   let mrcItems = [];
   let nrcItems = [];
   let mrcTotal = 0;
@@ -138,7 +141,7 @@ const generateHTML = (quote: any, clientInfo?: any, salespersonName?: string): s
 <html>
 <head>
     <meta charset="UTF-8">
-    <title>Quote ${quoteNumber}</title>
+    <title>Agreement ${quoteNumber}</title>
     <style>
         * {
             margin: 0;
@@ -147,288 +150,335 @@ const generateHTML = (quote: any, clientInfo?: any, salespersonName?: string): s
         }
         
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            font-size: 14px;
-            line-height: 1.6;
+            font-family: Arial, sans-serif;
+            font-size: 11px;
+            line-height: 1.4;
             color: #333;
             background: white;
             padding: 20px;
         }
         
         .header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 30px;
-            border-radius: 10px;
-            margin-bottom: 30px;
-            text-align: center;
-        }
-        
-        .company-name {
-            font-size: 32px;
-            font-weight: bold;
-            margin-bottom: 10px;
-            text-shadow: 0 2px 4px rgba(0,0,0,0.3);
-        }
-        
-        .company-details {
-            font-size: 16px;
-            opacity: 0.9;
-        }
-        
-        .quote-header {
             display: flex;
             justify-content: space-between;
-            align-items: center;
-            margin-bottom: 30px;
-            padding: 20px;
-            background: #f8f9fa;
-            border-radius: 10px;
-            border-left: 5px solid #667eea;
+            align-items: flex-start;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
         }
         
-        .quote-title {
+        .company-logo {
             font-size: 24px;
             font-weight: bold;
-            color: #333;
+            color: #1f4e79;
+            display: flex;
+            align-items: center;
         }
         
-        .quote-number {
-            font-size: 18px;
+        .company-logo::before {
+            content: "CALIFORNIA";
+            margin-right: 8px;
+        }
+        
+        .company-logo::after {
+            content: "TELECOM";
+            color: #1f4e79;
+        }
+        
+        .company-info {
+            font-size: 10px;
             color: #666;
             margin-top: 5px;
         }
         
-        .status-badge {
-            padding: 12px 24px;
-            border-radius: 25px;
+        .agreement-title {
+            font-size: 16px;
+            color: #999;
+            text-align: right;
+        }
+        
+        .company-details {
+            margin-bottom: 20px;
+        }
+        
+        .company-details div {
+            margin-bottom: 2px;
+        }
+        
+        .agreement-box {
+            position: absolute;
+            right: 20px;
+            top: 80px;
+            width: 180px;
+            border: 1px solid #ddd;
+            background: #f9f9f9;
+            padding: 8px;
+            font-size: 10px;
+        }
+        
+        .agreement-box table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        .agreement-box td {
+            padding: 2px 4px;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .agreement-box td:first-child {
             font-weight: bold;
-            text-transform: uppercase;
-            font-size: 14px;
+            width: 50%;
         }
         
-        .status-approved {
-            background: #d4edda;
-            color: #155724;
-            border: 2px solid #c3e6cb;
-        }
-        
-        .status-pending {
-            background: #fff3cd;
-            color: #856404;
-            border: 2px solid #ffeaa7;
+        .accept-button {
+            background: #28a745;
+            color: white;
+            text-align: center;
+            padding: 8px;
+            margin-top: 10px;
+            font-weight: bold;
+            border-radius: 3px;
         }
         
         .addresses-section {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
+            display: flex;
+            justify-content: space-between;
+            margin: 30px 0;
             gap: 20px;
-            margin-bottom: 40px;
         }
         
-        .address-box {
-            padding: 20px;
-            border: 2px solid #e9ecef;
-            border-radius: 10px;
-            background: #f8f9fa;
+        .address-block {
+            flex: 1;
         }
         
         .address-title {
             font-weight: bold;
-            font-size: 16px;
-            margin-bottom: 15px;
-            color: #495057;
-            border-bottom: 2px solid #dee2e6;
-            padding-bottom: 8px;
+            margin-bottom: 8px;
+            font-size: 12px;
         }
         
         .address-content {
+            font-size: 10px;
+            line-height: 1.5;
+        }
+        
+        .quote-title {
             font-size: 14px;
-            line-height: 1.8;
+            font-weight: bold;
+            margin: 30px 0 20px 0;
+            color: #333;
         }
         
         .items-section {
-            margin-bottom: 40px;
+            margin: 20px 0;
         }
         
         .section-title {
-            font-size: 20px;
             font-weight: bold;
-            margin-bottom: 20px;
-            color: #495057;
-            border-bottom: 3px solid #667eea;
-            padding-bottom: 10px;
+            margin-bottom: 10px;
+            font-size: 12px;
         }
         
         .items-table {
             width: 100%;
             border-collapse: collapse;
-            margin-bottom: 20px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-            border-radius: 10px;
-            overflow: hidden;
+            margin-bottom: 15px;
+        }
+        
+        .items-table th,
+        .items-table td {
+            border: 1px solid #ddd;
+            padding: 6px 8px;
+            text-align: left;
+            font-size: 10px;
         }
         
         .items-table th {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 15px 12px;
-            font-weight: bold;
-            text-align: left;
-            font-size: 14px;
-        }
-        
-        .items-table td {
-            padding: 15px 12px;
-            border-bottom: 1px solid #e9ecef;
-            vertical-align: top;
-        }
-        
-        .items-table tbody tr:nth-child(even) {
             background: #f8f9fa;
+            font-weight: bold;
         }
         
-        .items-table tbody tr:hover {
-            background: #e3f2fd;
+        .items-table .description-cell {
+            width: 50%;
+        }
+        
+        .items-table .qty-cell {
+            width: 10%;
+            text-align: center;
+        }
+        
+        .items-table .price-cell {
+            width: 20%;
+            text-align: right;
+        }
+        
+        .items-table .total-cell {
+            width: 20%;
+            text-align: right;
+        }
+        
+        .item-details {
+            font-size: 9px;
+            color: #666;
+            margin-top: 2px;
         }
         
         .total-row {
             font-weight: bold;
-            background: #e8f4fd !important;
-            font-size: 16px;
+            background: #f8f9fa;
         }
         
-        .total-row td {
-            border-top: 3px solid #667eea;
-            padding: 20px 12px;
-        }
-        
-        .footer {
-            margin-top: 50px;
-            padding-top: 30px;
-            border-top: 2px solid #dee2e6;
-            text-align: center;
+        .total-amount {
+            text-align: right;
+            font-weight: bold;
+            margin-top: 10px;
             font-size: 12px;
-            color: #6c757d;
         }
         
-        .highlight {
-            background: linear-gradient(120deg, #a8edea 0%, #fed6e3 100%);
-            padding: 2px 6px;
-            border-radius: 4px;
-        }
-        
-        @media print {
-            body { padding: 0; }
+        .status-approved {
+            background: #28a745;
+            color: white;
+            text-align: center;
+            padding: 8px;
+            font-weight: bold;
+            border-radius: 3px;
         }
     </style>
 </head>
 <body>
     <div class="header">
-        <div class="company-name">🌟 California Telecom</div>
-        <div class="company-details">
-            📍 1063 McGaw Avenue, Irvine, CA 92614<br>
-            📞 (949) 474-7900 | 📠 (949) 474-7901
+        <div>
+            <div class="company-logo"></div>
+            <div class="company-details">
+                <div>California Telecom, Inc.</div>
+                <div>14538 Central Ave</div>
+                <div>Chino, CA 91710</div>
+                <div>United States</div>
+                <div style="margin-top: 8px;">
+                    <div>Tel: 213-270-1349</div>
+                    <div>Fax: 213-232-3304</div>
+                </div>
+            </div>
         </div>
+        <div class="agreement-title">Agreement</div>
     </div>
     
-    <div class="quote-header">
-        <div>
-            <div class="quote-title">${description}</div>
-            <div class="quote-number">Quote #${quoteNumber}</div>
-        </div>
-        <div class="status-badge ${isApproved ? 'status-approved' : 'status-pending'}">
-            ${isApproved ? '✅ Approved' : '⏳ Pending'}
-        </div>
+    <div class="agreement-box">
+        <table>
+            <tr>
+                <td>Agreement</td>
+                <td>${quoteNumber} v2</td>
+            </tr>
+            <tr>
+                <td>Date:</td>
+                <td>${new Date(date).toLocaleDateString('en-US', { month: '2-digit', day: '2-digit', year: 'numeric' })}</td>
+            </tr>
+            <tr>
+                <td>Expires</td>
+                <td>${expiresAt ? new Date(expiresAt).toLocaleDateString('en-US', { month: '2-digit', day: '2-digit', year: 'numeric' }) : 'N/A'}</td>
+            </tr>
+            <tr>
+                <td>Account Manager</td>
+                <td>${salespersonName || 'N/A'}</td>
+            </tr>
+        </table>
+        
+        ${isApproved ? 
+          '<div class="status-approved">APPROVED</div>' : 
+          '<div class="accept-button">ACCEPT AGREEMENT</div>'
+        }
     </div>
     
     <div class="addresses-section">
-        <div class="address-box">
-            <div class="address-title">📋 Bill To:</div>
+        <div class="address-block">
+            <div class="address-title">Billing Information</div>
             <div class="address-content">
-                <strong>${companyName}</strong><br>
-                ${contactName}<br>
-                ${billingAddress || 'Address not specified'}
+                <div><strong>${companyName}</strong></div>
+                <div>Jonathan Conn</div>
+                <div>${billingAddress || 'Address not specified'}</div>
+                ${contactPhone ? `<div>Tel: ${contactPhone}</div>` : ''}
+                ${contactEmail ? `<div>Email: ${contactEmail}</div>` : ''}
             </div>
         </div>
-        <div class="address-box">
-            <div class="address-title">🏢 Service Address:</div>
+        <div class="address-block">
+            <div class="address-title">Service Address</div>
             <div class="address-content">
-                ${serviceAddress || 'Same as billing address'}
+                <div><strong>${companyName}</strong></div>
+                <div>Jonathan Conn</div>
+                <div>${serviceAddress || 'Same as billing address'}</div>
+                ${contactPhone ? `<div>Tel: ${contactPhone}</div>` : ''}
+                ${contactEmail ? `<div>Email: ${contactEmail}</div>` : ''}
             </div>
         </div>
     </div>
     
+    <div class="quote-title">${description}</div>
+    
     ${mrcItems.length > 0 ? `
     <div class="items-section">
-        <div class="section-title">💰 Monthly Recurring Charges</div>
+        <div class="section-title">Monthly Fees</div>
         <table class="items-table">
             <thead>
                 <tr>
-                    <th style="width: 50%">Description</th>
-                    <th style="width: 10%">Qty</th>
-                    <th style="width: 20%">Unit Price</th>
-                    <th style="width: 20%">Total</th>
+                    <th class="description-cell">Description</th>
+                    <th class="qty-cell">Qty</th>
+                    <th class="price-cell">Price</th>
+                    <th class="total-cell">Total</th>
                 </tr>
             </thead>
             <tbody>
                 ${mrcItems.map(item => `
                 <tr>
-                    <td>
-                        <strong>${item.name}</strong>
-                        ${item.description ? `<br><small style="color: #666; font-style: italic;">${item.description}</small>` : ''}
+                    <td class="description-cell">
+                        <div><strong>${item.name}</strong></div>
+                        ${item.description ? `<div class="item-details">${item.description}</div>` : ''}
                     </td>
-                    <td><span class="highlight">${item.quantity}</span></td>
-                    <td>$${item.unit_price.toFixed(2)}</td>
-                    <td><strong>$${item.total_price.toFixed(2)}</strong></td>
+                    <td class="qty-cell">${item.quantity}</td>
+                    <td class="price-cell">$${item.unit_price.toFixed(2)}</td>
+                    <td class="total-cell">$${item.total_price.toFixed(2)}</td>
                 </tr>
                 `).join('')}
-                <tr class="total-row">
-                    <td colspan="3"><strong>💵 Total Monthly Charges:</strong></td>
-                    <td><strong>$${mrcTotal.toFixed(2)}</strong></td>
-                </tr>
             </tbody>
         </table>
+        <div class="total-amount">Total Monthly: $${mrcTotal.toFixed(2)} USD</div>
     </div>
     ` : ''}
     
     ${nrcItems.length > 0 ? `
     <div class="items-section">
-        <div class="section-title">🔧 One-Time Charges</div>
+        <div class="section-title">One-Time Fees</div>
         <table class="items-table">
             <thead>
                 <tr>
-                    <th style="width: 50%">Description</th>
-                    <th style="width: 10%">Qty</th>
-                    <th style="width: 20%">Unit Price</th>
-                    <th style="width: 20%">Total</th>
+                    <th class="description-cell">Description</th>
+                    <th class="qty-cell">Qty</th>
+                    <th class="price-cell">Price</th>
+                    <th class="total-cell">Total</th>
                 </tr>
             </thead>
             <tbody>
                 ${nrcItems.map(item => `
                 <tr>
-                    <td>
-                        <strong>${item.name}</strong>
-                        ${item.description ? `<br><small style="color: #666; font-style: italic;">${item.description}</small>` : ''}
+                    <td class="description-cell">
+                        <div><strong>${item.name}</strong></div>
+                        ${item.description ? `<div class="item-details">${item.description}</div>` : ''}
                     </td>
-                    <td><span class="highlight">${item.quantity}</span></td>
-                    <td>$${item.unit_price.toFixed(2)}</td>
-                    <td><strong>$${item.total_price.toFixed(2)}</strong></td>
+                    <td class="qty-cell">${item.quantity}</td>
+                    <td class="price-cell">$${item.unit_price.toFixed(2)}</td>
+                    <td class="total-cell">$${item.total_price.toFixed(2)}</td>
                 </tr>
                 `).join('')}
-                <tr class="total-row">
-                    <td colspan="3"><strong>💸 Total One-Time Charges:</strong></td>
-                    <td><strong>$${nrcTotal.toFixed(2)}</strong></td>
-                </tr>
             </tbody>
         </table>
+        <div class="total-amount">Total One-Time: $${nrcTotal.toFixed(2)} USD</div>
     </div>
     ` : ''}
     
-    <div class="footer">
-        <p><strong>Generated on ${new Date().toLocaleDateString()}</strong> | Prepared by: <em>${salespersonName || 'Sales Team'}</em></p>
-        <p>✨ Thank you for choosing California Telecom! ✨</p>
+    ${isApproved ? '' : `
+    <div style="margin-top: 30px; text-align: center;">
+        <div class="accept-button">ACCEPT AGREEMENT</div>
     </div>
+    `}
 </body>
 </html>
   `;
