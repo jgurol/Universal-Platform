@@ -81,23 +81,23 @@ const addMRCItems = async (doc: jsPDF, mrcItems: any[], quote: any, yPos: number
     // Process description to extract content with proper order preservation
     const descriptionContent = await processDescriptionWithOrderPreservation(item.description || item.item?.description || '');
     
-    // Calculate proper row height based on content - much tighter spacing
-    let rowHeight = 6; // Further reduced base height from 8 to 6
+    // Calculate proper row height based on content
+    let rowHeight = 12; // Base height increased
     
-    // Calculate height needed for all content with much tighter spacing
+    // Calculate height needed for all content
     if (descriptionContent.length > 0) {
       let contentHeight = 0;
       
       for (const contentItem of descriptionContent) {
         if (contentItem.type === 'text') {
           const lines = Math.ceil(contentItem.content.length / 35);
-          contentHeight += Math.max(1, lines) * 2; // Further reduced from 2.5 to 2
+          contentHeight += Math.max(1, lines) * 3;
         } else if (contentItem.type === 'image' && contentItem.data) {
-          contentHeight += 12; // Further reduced from 15 to 12
+          contentHeight += 20; // Fixed height for images
         }
       }
       
-      rowHeight = Math.max(rowHeight, contentHeight + 4); // Further reduced from 8 to 4
+      rowHeight = Math.max(rowHeight, contentHeight + 15);
     }
     
     if (index % 2 === 0) {
@@ -112,10 +112,10 @@ const addMRCItems = async (doc: jsPDF, mrcItems: any[], quote: any, yPos: number
     
     doc.setFontSize(8);
     doc.setTextColor(80, 80, 80);
-    doc.text(`Location: ${addressText}`, colX.description + 4, yPos + 3); // Further reduced from 4 to 3
+    doc.text(`Location: ${addressText}`, colX.description + 4, yPos + 5);
     
-    // Add description content in the correct order with much tighter spacing
-    const contentStartY = yPos + 6; // Further reduced from 8 to 6
+    // Add description content in the correct order
+    const contentStartY = yPos + 10;
     await addDescriptionContentInOrder(doc, descriptionContent, colX.description + 4, contentStartY);
     
     doc.setTextColor(0, 0, 0);
@@ -287,7 +287,7 @@ const addDescriptionContentInOrder = async (
   startY: number
 ): Promise<void> => {
   let currentY = startY;
-  const lineHeight = 2; // Further reduced from 2.5 to 2
+  const lineHeight = 3;
   const contentWidth = 120;
   
   console.log('[PDF] Adding content in order, total items:', contentItems.length);
@@ -314,13 +314,13 @@ const addDescriptionContentInOrder = async (
         currentY += lineHeight;
       }
       
-      // Minimal spacing after text
-      currentY += 0.2; // Further reduced from 0.5 to 0.2
+      // Small spacing after text
+      currentY += 1;
       
     } else if (item.type === 'image' && item.data && item.dimensions) {
       try {
-        const maxImageWidth = 15; // Further reduced from 18 to 15
-        const maxImageHeight = 12; // Further reduced from 15 to 12
+        const maxImageWidth = 20;
+        const maxImageHeight = 18;
         
         // Calculate proper dimensions maintaining aspect ratio
         let { width, height } = item.dimensions;
@@ -355,8 +355,8 @@ const addDescriptionContentInOrder = async (
         doc.addImage(item.data, format, startX, currentY, width, height);
         console.log(`[PDF] Successfully added image ${i + 1}:`, item.content);
         
-        // Move Y position after image with minimal spacing
-        currentY += height + 1; // Further reduced from 2 to 1
+        // Move Y position after image
+        currentY += height + 3; // Add spacing after image
         
       } catch (error) {
         console.error(`[PDF] Error adding image ${i + 1} to PDF:`, error);
