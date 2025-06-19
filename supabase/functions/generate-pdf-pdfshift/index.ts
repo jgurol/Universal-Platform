@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 
 const corsHeaders = {
@@ -32,7 +31,7 @@ const handler = async (req: Request): Promise<Response> => {
     const html = generateHTML(quote, clientInfo, salespersonName, req);
     console.log('PDFShift Function - HTML generated, length:', html.length);
     
-    // Call PDFShift API with corrected parameters
+    // Call PDFShift API with minimal parameters
     const pdfShiftResponse = await fetch('https://api.pdfshift.io/v3/convert/pdf', {
       method: 'POST',
       headers: {
@@ -43,9 +42,8 @@ const handler = async (req: Request): Promise<Response> => {
         source: html,
         landscape: false,
         format: 'Letter',
-        margin: '0.5in',
-        wait_for: "1000ms"
-        // Fixed: wait_for should be a string with units, and removed unsupported print_background
+        margin: '0.5in'
+        // Removed wait_for parameter as it's not supported by PDFShift
       }),
     });
 
