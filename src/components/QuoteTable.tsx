@@ -6,7 +6,7 @@ import { QuoteTableHeader } from "./QuoteTable/QuoteTableHeader";
 import { QuoteTableRow } from "./QuoteTable/QuoteTableRow";
 import { Quote, Client, ClientInfo } from "@/pages/Index";
 
-type SortField = 'salesperson' | 'quoteNumber' | 'customerName' | 'status' | 'dateApproved';
+type SortField = 'salesperson' | 'quoteNumber' | 'customerName' | 'status';
 type SortDirection = 'asc' | 'desc';
 
 interface QuoteTableProps {
@@ -76,10 +76,6 @@ export const QuoteTable = ({
       case 'status':
         aValue = a.status || '';
         bValue = b.status || '';
-        break;
-      case 'dateApproved':
-        aValue = a.acceptedAt || '';
-        bValue = b.acceptedAt || '';
         break;
       default:
         aValue = '';

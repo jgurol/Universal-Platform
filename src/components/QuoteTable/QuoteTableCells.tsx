@@ -25,7 +25,7 @@ const getInitials = (name: string): string => {
 };
 
 const formatDate = (dateString?: string): string => {
-  if (!dateString) return '-';
+  if (!dateString) return '';
   try {
     const date = new Date(dateString);
     return date.toLocaleDateString('en-US', {
@@ -34,7 +34,7 @@ const formatDate = (dateString?: string): string => {
       day: 'numeric'
     });
   } catch {
-    return '-';
+    return '';
   }
 };
 
@@ -51,6 +51,7 @@ export const QuoteTableCells = ({
 }: QuoteTableCellsProps) => {
   const mrcTotal = getMRCTotal(quote);
   const nrcTotal = getNRCTotal(quote);
+  const approvedDate = formatDate(quote.acceptedAt);
 
   return (
     <>
@@ -81,16 +82,18 @@ export const QuoteTableCells = ({
         ${mrcTotal.toLocaleString()}
       </TableCell>
       <TableCell>
-        <QuoteStatusBadge
-          quoteId={quote.id}
-          status={quote.status || 'pending'}
-          onStatusUpdate={onStatusUpdate}
-        />
-      </TableCell>
-      <TableCell className="text-center">
-        <span className="text-sm text-gray-600">
-          {formatDate(quote.acceptedAt)}
-        </span>
+        <div className="flex flex-col gap-1">
+          <QuoteStatusBadge
+            quoteId={quote.id}
+            status={quote.status || 'pending'}
+            onStatusUpdate={onStatusUpdate}
+          />
+          {approvedDate && (
+            <span className="text-xs text-gray-500">
+              {approvedDate}
+            </span>
+          )}
+        </div>
       </TableCell>
       <TableCell className="text-center">
         <QuoteActions

@@ -3,7 +3,7 @@ import { TableHead } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
 
-type SortField = 'salesperson' | 'quoteNumber' | 'customerName' | 'status' | 'dateApproved';
+type SortField = 'salesperson' | 'quoteNumber' | 'customerName' | 'status';
 type SortDirection = 'asc' | 'desc';
 
 interface QuoteTableHeaderProps {
@@ -56,16 +56,6 @@ export const QuoteTableHeader = ({ sortField, sortDirection, onSort }: QuoteTabl
         >
           Status
           {getSortIcon('status')}
-        </Button>
-      </TableHead>
-      <TableHead>
-        <Button
-          variant="ghost"
-          onClick={() => onSort('dateApproved')}
-          className="h-auto p-0 font-medium text-left justify-start"
-        >
-          Date Approved
-          {getSortIcon('dateApproved')}
         </Button>
       </TableHead>
       <TableHead>Actions</TableHead>
