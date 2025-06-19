@@ -15,42 +15,6 @@ export const useCircuitQuotes = () => {
       setLoading(true);
       console.log('[useCircuitQuotes] Starting fetch with user:', user?.id, 'isAdmin:', isAdmin);
       
-      // First, let's check the current user's profile to confirm admin status
-      if (user?.id) {
-        const { data: profileData, error: profileError } = await supabase
-          .from('profiles')
-          .select('id, email, role, full_name')
-          .eq('id', user.id)
-          .single();
-        
-        console.log('[useCircuitQuotes] User profile:', profileData);
-        if (profileError) {
-          console.error('[useCircuitQuotes] Profile error:', profileError);
-        }
-      }
-      
-      // Let's first check what data exists in the table without RLS filtering
-      console.log('[useCircuitQuotes] Checking raw table data...');
-      const { data: rawData, error: rawError } = await supabase
-        .from('circuit_quotes')
-        .select('id, user_id, client_name, created_at, status')
-        .limit(10);
-      
-      console.log('[useCircuitQuotes] Raw circuit_quotes data:', rawData);
-      if (rawError) {
-        console.error('[useCircuitQuotes] Raw data error:', rawError);
-      }
-      
-      // Test if RLS is blocking us by trying a simple count
-      const { count, error: countError } = await supabase
-        .from('circuit_quotes')
-        .select('*', { count: 'exact', head: true });
-      
-      console.log('[useCircuitQuotes] Count query result:', count);
-      if (countError) {
-        console.error('[useCircuitQuotes] Count error:', countError);
-      }
-      
       // Build the query - admins see all quotes, non-admins see only their own
       let query = supabase
         .from('circuit_quotes')
@@ -74,18 +38,11 @@ export const useCircuitQuotes = () => {
         console.log('[useCircuitQuotes] Admin user - fetching all quotes');
       }
 
-      console.log('[useCircuitQuotes] About to execute main query...');
+      console.log('[useCircuitQuotes] Executing query...');
       const { data: circuitQuotes, error: quotesError } = await query;
-      console.log('[useCircuitQuotes] Main query completed');
 
       if (quotesError) {
         console.error('[useCircuitQuotes] Error fetching circuit quotes:', quotesError);
-        console.error('[useCircuitQuotes] Error details:', {
-          message: quotesError.message,
-          details: quotesError.details,
-          hint: quotesError.hint,
-          code: quotesError.code
-        });
         toast({
           title: "Error fetching quotes",
           description: quotesError.message,
@@ -95,7 +52,7 @@ export const useCircuitQuotes = () => {
         return;
       }
 
-      console.log('[useCircuitQuotes] Main query result:', circuitQuotes);
+      console.log('[useCircuitQuotes] Query result:', circuitQuotes);
       console.log('[useCircuitQuotes] Number of quotes fetched:', circuitQuotes?.length || 0);
 
       // Transform data to match the expected format
