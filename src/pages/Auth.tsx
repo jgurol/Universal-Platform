@@ -1,23 +1,16 @@
-import React, { useState, useEffect } from "react";
-import { Navigate, useLocation } from "react-router-dom";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+
+import React, { useState } from "react";
+import { Navigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { LoginForm } from "@/components/auth/LoginForm";
-import { RegisterForm } from "@/components/auth/RegisterForm";
+import { AuthContainer } from "@/components/auth/AuthContainer";
+import { AuthTabs } from "@/components/auth/AuthTabs";
 import { ResetPasswordForm } from "@/components/auth/ResetPasswordForm";
 import { UpdatePasswordForm } from "@/components/auth/UpdatePasswordForm";
+import { usePasswordResetHandler } from "@/components/auth/PasswordResetHandler";
 
 const Auth = () => {
-  const location = useLocation();
   const [activeTab, setActiveTab] = useState<string>("login");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showResetForm, setShowResetForm] = useState(false);
@@ -28,38 +21,15 @@ const Auth = () => {
   const { user, signIn, signUp } = useAuth();
   const { toast } = useToast();
 
-  // Check for reset token in URL with better error handling
-  useEffect(() => {
-    console.log('Current URL:', window.location.href);
-    console.log('Location search:', location.search);
-    
-    const urlParams = new URLSearchParams(location.search);
-    const token = urlParams.get('reset_token');
-    
-    console.log('Extracted reset token:', token);
-    
-    if (token) {
-      console.log('Password reset token found in URL:', token);
+  usePasswordResetHandler({
+    onShowUpdatePasswordForm: (token: string) => {
       setResetToken(token);
       setShowUpdatePasswordForm(true);
       setActiveTab("none");
-      
-      // Clean up URL without refreshing the page
-      const newUrl = window.location.pathname;
-      window.history.replaceState(null, '', newUrl);
-      
-      // Reset any existing errors
       setTokenError(null);
-    } else {
-      console.log('No reset token found in URL');
-      // If we're expecting a token but don't have one, reset the state
-      if (showUpdatePasswordForm && !token) {
-        setShowUpdatePasswordForm(false);
-        setResetToken(null);
-        setActiveTab("login");
-      }
-    }
-  }, [location.search, showUpdatePasswordForm]);
+    },
+    onTokenError: setTokenError
+  });
 
   const handleLoginSubmit = async (email: string, password: string) => {
     try {
@@ -90,7 +60,6 @@ const Auth = () => {
       
       console.log('Sending custom password reset request for:', email);
       
-      // Use our custom edge function instead of Supabase's built-in method
       const { data, error } = await supabase.functions.invoke('send-password-reset', {
         body: { email }
       });
@@ -198,107 +167,52 @@ const Auth = () => {
   if (showUpdatePasswordForm) {
     console.log('Rendering update password form with token:', resetToken);
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-blue-50 p-4">
-        <div className="w-full max-w-md">
-          <Card className="border-0 shadow-xl">
-            <CardHeader className="text-center">
-              <div className="flex justify-center mb-4">
-                <img 
-                  src="/lovable-uploads/e5be9154-ed00-490e-b242-16319351487f.png" 
-                  alt="California Telecom" 
-                  className="h-16 w-auto"
-                />
-              </div>
-              <CardTitle className="text-2xl font-bold">Set New Password</CardTitle>
-              <CardDescription>Please enter your new password</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <UpdatePasswordForm 
-                onUpdatePassword={handleUpdatePasswordSubmit}
-                onCancel={handleBackToLogin}
-                isSubmitting={isSubmitting}
-                tokenError={tokenError}
-                isCheckingSession={isCheckingSession}
-              />
-            </CardContent>
-          </Card>
-        </div>
-      </div>
+      <AuthContainer 
+        title="Set New Password" 
+        description="Please enter your new password"
+      >
+        <UpdatePasswordForm 
+          onUpdatePassword={handleUpdatePasswordSubmit}
+          onCancel={handleBackToLogin}
+          isSubmitting={isSubmitting}
+          tokenError={tokenError}
+          isCheckingSession={isCheckingSession}
+        />
+      </AuthContainer>
     );
   }
 
   // Render the password reset form
   if (showResetForm) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-blue-50 p-4">
-        <div className="w-full max-w-md">
-          <Card className="border-0 shadow-xl">
-            <CardHeader className="text-center">
-              <div className="flex justify-center mb-4">
-                <img 
-                  src="/lovable-uploads/e5be9154-ed00-490e-b242-16319351487f.png" 
-                  alt="California Telecom" 
-                  className="h-16 w-auto"
-                />
-              </div>
-              <CardTitle className="text-2xl font-bold">Reset Password</CardTitle>
-              <CardDescription>Enter your email to receive a password reset link</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <ResetPasswordForm 
-                onResetPassword={handleResetPasswordSubmit}
-                onCancel={() => setShowResetForm(false)}
-                isSubmitting={isSubmitting}
-              />
-            </CardContent>
-          </Card>
-        </div>
-      </div>
+      <AuthContainer 
+        title="Reset Password" 
+        description="Enter your email to receive a password reset link"
+      >
+        <ResetPasswordForm 
+          onResetPassword={handleResetPasswordSubmit}
+          onCancel={() => setShowResetForm(false)}
+          isSubmitting={isSubmitting}
+        />
+      </AuthContainer>
     );
   }
 
   // Render the login/register tabs
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-blue-50 p-4">
-      <div className="w-full max-w-md">
-        <Card className="border-0 shadow-xl">
-          <CardHeader className="text-center">
-            <div className="flex justify-center mb-4">
-              <img 
-                src="/lovable-uploads/e5be9154-ed00-490e-b242-16319351487f.png" 
-                alt="California Telecom" 
-                className="h-16 w-auto"
-              />
-            </div>
-            <CardTitle className="text-2xl font-bold">Universal Platform</CardTitle>
-            <CardDescription>Sign in to manage your business operations</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-              <TabsList className="grid w-full grid-cols-2 mb-6">
-                <TabsTrigger value="login">Login</TabsTrigger>
-                <TabsTrigger value="register">Register</TabsTrigger>
-              </TabsList>
-
-              <TabsContent value="login">
-                <LoginForm 
-                  onLogin={handleLoginSubmit}
-                  onForgotPassword={() => setShowResetForm(true)}
-                  isSubmitting={isSubmitting}
-                />
-              </TabsContent>
-
-              <TabsContent value="register">
-                <RegisterForm
-                  onRegister={handleRegisterSubmit}
-                  isSubmitting={isSubmitting}
-                />
-              </TabsContent>
-            </Tabs>
-          </CardContent>
-        </Card>
-      </div>
-    </div>
+    <AuthContainer 
+      title="Universal Platform" 
+      description="Sign in to manage your business operations"
+    >
+      <AuthTabs
+        activeTab={activeTab}
+        onTabChange={setActiveTab}
+        onLogin={handleLoginSubmit}
+        onRegister={handleRegisterSubmit}
+        onForgotPassword={() => setShowResetForm(true)}
+        isSubmitting={isSubmitting}
+      />
+    </AuthContainer>
   );
 };
 
