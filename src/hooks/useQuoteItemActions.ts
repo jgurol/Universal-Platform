@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { QuoteItemData } from "@/types/quoteItems";
 import { useItems } from "@/hooks/useItems";
@@ -94,12 +93,7 @@ export const useQuoteItemActions = (clientInfoId?: string) => {
           markup: sellPrice > carrierItem.price ? ((sellPrice - carrierItem.price) / carrierItem.price * 100).toFixed(1) + '%' : 'none'
         });
 
-        // Create a temporary quote item for the carrier quote
-        const descriptionParts = [];
-        if (carrierItem.notes) {
-          descriptionParts.push(`Notes: ${carrierItem.notes}`);
-        }
-
+        // Create a temporary quote item for the carrier quote - DO NOT include notes in description
         const quoteItem: QuoteItemData = {
           id: `temp-carrier-${Date.now()}`,
           item_id: `carrier-${carrierItem.id}`,
@@ -110,12 +104,12 @@ export const useQuoteItemActions = (clientInfoId?: string) => {
           charge_type: 'MRC',
           address_id: matchingAddress?.id,
           name: `${carrierItem.carrier} - ${carrierItem.type} - ${carrierItem.speed}`,
-          description: descriptionParts.join(' | '),
+          description: '', // Leave description blank - do not include notes
           item: {
             id: `carrier-${carrierItem.id}`,
             user_id: '',
             name: `${carrierItem.carrier} - ${carrierItem.type} - ${carrierItem.speed}`,
-            description: descriptionParts.join(' | '),
+            description: '', // Leave description blank - do not include notes
             price: sellPrice, // Set price to calculated sell price
             cost: carrierItem.price,
             charge_type: 'MRC',
