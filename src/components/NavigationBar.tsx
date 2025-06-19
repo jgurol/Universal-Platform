@@ -24,7 +24,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 
 export function NavigationBar() {
-  const { isAdmin, user, signOut } = useAuth();
+  const { isAdmin, user, signOut, userProfile } = useAuth();
 
   const handleSignOut = async () => {
     try {
@@ -34,8 +34,21 @@ export function NavigationBar() {
     }
   };
 
-  const getUserInitials = (email: string) => {
-    return email.split('@')[0].substring(0, 2).toUpperCase();
+  const getDisplayName = () => {
+    if (userProfile?.full_name) {
+      return userProfile.full_name;
+    }
+    return user?.email?.split('@')[0] || '';
+  };
+
+  const getUserInitials = (name: string) => {
+    if (!name) return 'U';
+    
+    const words = name.trim().split(' ');
+    if (words.length >= 2) {
+      return (words[0][0] + words[words.length - 1][0]).toUpperCase();
+    }
+    return name.substring(0, 2).toUpperCase();
   };
 
   return (
@@ -106,7 +119,7 @@ export function NavigationBar() {
                 <Button variant="ghost" className="relative h-10 w-10 rounded-full">
                   <Avatar className="h-10 w-10">
                     <AvatarFallback className="bg-blue-100 text-blue-700 font-medium">
-                      {getUserInitials(user.email || '')}
+                      {getUserInitials(getDisplayName())}
                     </AvatarFallback>
                   </Avatar>
                 </Button>
@@ -115,7 +128,7 @@ export function NavigationBar() {
                 <DropdownMenuLabel className="font-normal">
                   <div className="flex flex-col space-y-1">
                     <p className="text-sm font-medium leading-none">
-                      {user.email?.split('@')[0]}
+                      {getDisplayName()}
                     </p>
                     <p className="text-xs leading-none text-muted-foreground">
                       {user.email}
