@@ -345,15 +345,18 @@ const generateHTML = (quote: any, clientInfo?: any, salespersonName?: string, lo
                 </tr>
             </thead>
             <tbody>
-                ${items.map(item => `
+                ${items.map(item => {
+                  const hasDescriptionContent = (item.processedDescription && item.processedDescription.trim()) || item.images.length > 0;
+                  
+                  return `
                 <tr>
                     <td class="description-cell">
                         <div class="item-content">
-                            <div class="item-header">
+                            <div class="item-header${hasDescriptionContent ? ' with-content' : ''}">
                                 <div class="item-name">${item.name}</div>
                                 ${item.address ? `<div class="item-location">Location: ${item.address.street_address}, ${item.address.city}, ${item.address.state} ${item.address.zip_code}</div>` : ''}
                             </div>
-                            ${(item.processedDescription && item.processedDescription.trim()) || item.images.length > 0 ? `
+                            ${hasDescriptionContent ? `
                             <div class="item-details">
                                 ${item.images.length > 0 ? item.images.map(imgSrc => `
                                 <div class="item-image-container">
@@ -369,7 +372,8 @@ const generateHTML = (quote: any, clientInfo?: any, salespersonName?: string, lo
                     <td class="price-cell">$${item.unit_price.toFixed(2)}</td>
                     <td class="total-cell">$${item.total_price.toFixed(2)}</td>
                 </tr>
-                `).join('')}
+                `;
+                }).join('')}
             </tbody>
         </table>
     </div>
@@ -562,12 +566,16 @@ const generateHTML = (quote: any, clientInfo?: any, salespersonName?: string, lo
         .item-content {
             display: flex;
             flex-direction: column;
-            gap: 8px;
         }
         
         .item-header {
+            /* No default spacing */
+        }
+        
+        .item-header.with-content {
             border-bottom: 1px solid #eee;
             padding-bottom: 6px;
+            margin-bottom: 8px;
         }
         
         .item-name {
