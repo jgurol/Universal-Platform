@@ -8,7 +8,7 @@ interface Program {
   title: string;
   description: string;
   icon: React.ComponentType<{ className?: string }>;
-  route: string;
+  route?: string; // Make route optional
   color: string;
 }
 
@@ -42,7 +42,7 @@ const programs: Program[] = [
     title: "Track Commissions",
     description: "Track your client payments & commissions",
     icon: DollarSign,
-    route: "/billing",
+    // No route - placeholder card
     color: "bg-green-500 hover:bg-green-600"
   }
 ];
@@ -54,24 +54,33 @@ export const ProgramsGrid = () => {
         {programs.map((program) => {
           const IconComponent = program.icon;
           
-          return (
+          const cardContent = (
+            <Card className="bg-white shadow-lg border-0 hover:shadow-xl transition-all duration-300 cursor-pointer transform hover:scale-105 h-full">
+              <CardHeader className="text-center pb-4">
+                <div className={`w-16 h-16 mx-auto rounded-full ${program.color} flex items-center justify-center mb-4 transition-all duration-300 group-hover:scale-110`}>
+                  <IconComponent className="h-8 w-8 text-white" />
+                </div>
+                <CardTitle className="text-lg font-semibold text-gray-900 group-hover:text-blue-600 transition-colors">
+                  {program.title}
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="pt-0">
+                <CardDescription className="text-center text-gray-600 text-sm">
+                  {program.description}
+                </CardDescription>
+              </CardContent>
+            </Card>
+          );
+
+          // If the program has a route, wrap it in a Link, otherwise return the card directly
+          return program.route ? (
             <Link key={program.id} to={program.route} className="group">
-              <Card className="bg-white shadow-lg border-0 hover:shadow-xl transition-all duration-300 cursor-pointer transform hover:scale-105 h-full">
-                <CardHeader className="text-center pb-4">
-                  <div className={`w-16 h-16 mx-auto rounded-full ${program.color} flex items-center justify-center mb-4 transition-all duration-300 group-hover:scale-110`}>
-                    <IconComponent className="h-8 w-8 text-white" />
-                  </div>
-                  <CardTitle className="text-lg font-semibold text-gray-900 group-hover:text-blue-600 transition-colors">
-                    {program.title}
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="pt-0">
-                  <CardDescription className="text-center text-gray-600 text-sm">
-                    {program.description}
-                  </CardDescription>
-                </CardContent>
-              </Card>
+              {cardContent}
             </Link>
+          ) : (
+            <div key={program.id} className="group">
+              {cardContent}
+            </div>
           );
         })}
       </div>
