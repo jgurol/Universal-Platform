@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
@@ -52,6 +51,7 @@ export const useCircuitQuotes = () => {
         status: quote.status as 'new_pricing' | 'researching' | 'completed' | 'sent_to_customer',
         static_ip: quote.static_ip || false,
         slash_29: quote.slash_29 || false,
+        mikrotik_required: quote.mikrotik_required || false,
         carriers: (quote.carrier_quotes || []).map((carrier: any) => ({
           id: carrier.id,
           circuit_quote_id: carrier.circuit_quote_id,
@@ -104,7 +104,8 @@ export const useCircuitQuotes = () => {
           suite: newQuote.suite,
           status: newQuote.status,
           static_ip: newQuote.static_ip,
-          slash_29: newQuote.slash_29
+          slash_29: newQuote.slash_29,
+          mikrotik_required: newQuote.mikrotik_required
         })
         .select()
         .single();
@@ -147,6 +148,7 @@ export const useCircuitQuotes = () => {
           status: updatedQuote.status,
           static_ip: updatedQuote.static_ip,
           slash_29: updatedQuote.slash_29,
+          mikrotik_required: updatedQuote.mikrotik_required,
           updated_at: new Date().toISOString()
         })
         .eq('id', updatedQuote.id);

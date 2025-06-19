@@ -10,6 +10,7 @@ export interface CircuitQuote {
   status: 'new_pricing' | 'researching' | 'completed' | 'sent_to_customer';
   static_ip: boolean;
   slash_29: boolean;
+  mikrotik_required: boolean;
 }
 
 export interface CarrierQuote {

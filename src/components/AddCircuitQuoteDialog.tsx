@@ -1,173 +1,144 @@
-import { useState, useEffect } from "react";
+
+import { useState } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { AddressAutocomplete } from "@/components/AddressAutocomplete";
-import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/context/AuthContext";
+import { Checkbox } from "@/components/ui/checkbox";
+import { CircuitQuote } from "@/hooks/useCircuitQuotes";
 
 interface AddCircuitQuoteDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onAddQuote: (quote: any) => void;
-}
-
-interface ClientOption {
-  id: string;
-  company_name: string;
-  contact_name: string | null;
-}
-
-interface AddressData {
-  street_address: string;
-  city: string;
-  state: string;
-  zip_code: string;
-  country: string;
+  onAddQuote: (quote: Omit<CircuitQuote, "id" | "created_at" | "carriers">) => void;
 }
 
 export const AddCircuitQuoteDialog = ({ open, onOpenChange, onAddQuote }: AddCircuitQuoteDialogProps) => {
-  const [clientId, setClientId] = useState("");
+  const [clientName, setClientName] = useState("");
   const [location, setLocation] = useState("");
   const [suite, setSuite] = useState("");
-  const [status, setStatus] = useState<"new_pricing" | "researching" | "completed" | "sent_to_customer">("new_pricing");
-  const [clients, setClients] = useState<ClientOption[]>([]);
-  const [isLoadingClients, setIsLoadingClients] = useState(false);
-  const [validatedAddress, setValidatedAddress] = useState<AddressData | null>(null);
-  const { user } = useAuth();
-
-  useEffect(() => {
-    if (open) {
-      fetchClients();
-    }
-  }, [open]);
-
-  const fetchClients = async () => {
-    if (!user) return;
-    
-    setIsLoadingClients(true);
-    try {
-      const { data: clientInfoData, error: clientInfoError } = await supabase
-        .from('client_info')
-        .select('id, company_name, contact_name')
-        .order('company_name', { ascending: true });
-
-      if (clientInfoError) {
-        console.error('Error fetching client info:', clientInfoError);
-        return;
-      }
-
-      setClients(clientInfoData || []);
-    } catch (error) {
-      console.error('Error fetching clients:', error);
-    } finally {
-      setIsLoadingClients(false);
-    }
-  };
-
-  const handleAddressSelect = (address: AddressData) => {
-    setValidatedAddress(address);
-    // Format the full address for storage
-    const fullAddress = `${address.street_address}, ${address.city}, ${address.state} ${address.zip_code}`;
-    setLocation(fullAddress);
-  };
-
-  const resetForm = () => {
-    setClientId("");
-    setLocation("");
-    setSuite("");
-    setStatus("new_pricing");
-    setValidatedAddress(null);
-  };
+  const [status, setStatus] = useState<'new_pricing' | 'researching' | 'completed' | 'sent_to_customer'>('new_pricing');
+  const [staticIp, setStaticIp] = useState(false);
+  const [slash29, setSlash29] = useState(false);
+  const [mikrotikRequired, setMikrotikRequired] = useState(false);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (clientId && location && validatedAddress) {
-      const selectedClient = clients.find(c => c.id === clientId);
-      const clientName = selectedClient ? 
-        (selectedClient.company_name || selectedClient.contact_name) : 
-        "Unknown Client";
-
-      onAddQuote({
-        client_info_id: clientId,
-        client_name: clientName,
-        location,
-        suite,
-        status
-      });
-      
-      resetForm();
-      onOpenChange(false);
-    }
+    onAddQuote({
+      client_name: clientName,
+      client_info_id: null,
+      location,
+      suite,
+      status,
+      static_ip: staticIp,
+      slash_29: slash29,
+      mikrotik_required: mikrotikRequired
+    });
+    
+    // Reset form
+    setClientName("");
+    setLocation("");
+    setSuite("");
+    setStatus('new_pricing');
+    setStaticIp(false);
+    setSlash29(false);
+    setMikrotikRequired(false);
+    onOpenChange(false);
   };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
-          <DialogTitle>Add Circuit Quote</DialogTitle>
+          <DialogTitle>Create Circuit Quote</DialogTitle>
           <DialogDescription>
-            Create a new circuit quote to research carrier pricing.
+            Create a new circuit quote to research carrier pricing and options.
           </DialogDescription>
         </DialogHeader>
         
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="client">Client (Required)</Label>
-            <Select value={clientId} onValueChange={setClientId} required>
-              <SelectTrigger>
-                <SelectValue placeholder={isLoadingClients ? "Loading clients..." : "Select a client"} />
-              </SelectTrigger>
-              <SelectContent className="bg-white z-50">
-                {clients.map((client) => (
-                  <SelectItem key={client.id} value={client.id}>
-                    {client.company_name || client.contact_name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="space-y-2">
-            <AddressAutocomplete
-              label="Address (Required)"
-              placeholder="Start typing a street address..."
-              onAddressSelect={handleAddressSelect}
+            <Label htmlFor="client-name">Client Name (Required)</Label>
+            <Input
+              id="client-name"
+              value={clientName}
+              onChange={(e) => setClientName(e.target.value)}
               required
             />
-            {!validatedAddress && location && (
-              <p className="text-sm text-orange-600">
-                Please select a valid address from the dropdown suggestions.
-              </p>
-            )}
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="suite">Suite/Unit</Label>
+            <Label htmlFor="location">Location (Required)</Label>
+            <Input
+              id="location"
+              value={location}
+              onChange={(e) => setLocation(e.target.value)}
+              required
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="suite">Suite</Label>
             <Input
               id="suite"
               value={suite}
               onChange={(e) => setSuite(e.target.value)}
-              placeholder="Enter suite or unit number"
             />
           </div>
 
           <div className="space-y-2">
             <Label htmlFor="status">Status</Label>
-            <Select value={status} onValueChange={(value: "new_pricing" | "researching" | "completed" | "sent_to_customer") => setStatus(value)}>
+            <Select value={status} onValueChange={(value) => setStatus(value as 'new_pricing' | 'researching' | 'completed' | 'sent_to_customer')}>
               <SelectTrigger>
                 <SelectValue placeholder="Select status" />
               </SelectTrigger>
-              <SelectContent className="bg-white z-50">
+              <SelectContent className="bg-white">
                 <SelectItem value="new_pricing">New Pricing</SelectItem>
                 <SelectItem value="researching">Researching</SelectItem>
                 <SelectItem value="completed">Completed</SelectItem>
                 <SelectItem value="sent_to_customer">Sent to Customer</SelectItem>
               </SelectContent>
             </Select>
+          </div>
+
+          <div className="space-y-4">
+            <Label>Quote Requirements</Label>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="static-ip"
+                  checked={staticIp}
+                  onCheckedChange={(checked) => setStaticIp(checked as boolean)}
+                />
+                <Label htmlFor="static-ip" className="text-sm font-normal">
+                  Static IP Required
+                </Label>
+              </div>
+              
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="slash-29"
+                  checked={slash29}
+                  onCheckedChange={(checked) => setSlash29(checked as boolean)}
+                />
+                <Label htmlFor="slash-29" className="text-sm font-normal">
+                  /29 Subnet Required
+                </Label>
+              </div>
+
+              <div className="flex items-center space-x-2 col-span-2">
+                <Checkbox
+                  id="mikrotik-required"
+                  checked={mikrotikRequired}
+                  onCheckedChange={(checked) => setMikrotikRequired(checked as boolean)}
+                />
+                <Label htmlFor="mikrotik-required" className="text-sm font-normal">
+                  Mikrotik Required
+                </Label>
+              </div>
+            </div>
           </div>
           
           <div className="flex justify-end space-x-2 mt-6">
@@ -177,7 +148,7 @@ export const AddCircuitQuoteDialog = ({ open, onOpenChange, onAddQuote }: AddCir
             <Button 
               type="submit" 
               className="bg-purple-600 hover:bg-purple-700"
-              disabled={!clientId || !location || !validatedAddress}
+              disabled={!clientName || !location}
             >
               Create Quote
             </Button>

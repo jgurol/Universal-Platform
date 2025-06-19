@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { CircuitQuoteCardHeader } from "./CircuitQuoteCardHeader";
@@ -91,6 +92,7 @@ export const CircuitQuoteCard = ({
             isMinimized={true}
             staticIp={quote.static_ip}
             slash29={quote.slash_29}
+            mikrotikRequired={quote.mikrotik_required}
           />
         </CardContent>
       )}
@@ -108,6 +110,7 @@ export const CircuitQuoteCard = ({
             onCopyCarrier={actions.copyCarrierQuote}
             staticIp={quote.static_ip}
             slash29={quote.slash_29}
+            mikrotikRequired={quote.mikrotik_required}
           />
         </CardContent>
       )}

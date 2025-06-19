@@ -12,6 +12,7 @@ interface CircuitQuoteCarriersProps {
   onCopyCarrier?: (carrier: CarrierQuote) => void;
   staticIp?: boolean;
   slash29?: boolean;
+  mikrotikRequired?: boolean;
 }
 
 export const CircuitQuoteCarriers = ({ 
@@ -22,7 +23,8 @@ export const CircuitQuoteCarriers = ({
   onDeleteCarrier,
   onCopyCarrier,
   staticIp = false,
-  slash29 = false
+  slash29 = false,
+  mikrotikRequired = false
 }: CircuitQuoteCarriersProps) => {
   const getTickedCheckboxes = (carrier: CarrierQuote) => {
     const ticked = [];
@@ -97,7 +99,7 @@ export const CircuitQuoteCarriers = ({
         return `${carrier.type} - ${carrier.speed} - ${priceText}${carrierTickedOptions.length > 0 ? ` - ${carrierTickedOptions.join(', ')}` : ''}`;
       });
       
-      let tooltipText = `${vendorName} - ${tooltipParts.join(' | ')}`;
+      let tooltipText = `${vendorName} - ${tooltipParts.join('   | ')}`;
       
       return {
         vendorName,
@@ -144,6 +146,30 @@ export const CircuitQuoteCarriers = ({
           </Button>
         )}
       </div>
+
+      {/* Quote Requirements Display */}
+      {(staticIp || slash29 || mikrotikRequired) && (
+        <div className="bg-blue-50 p-3 rounded-lg">
+          <h5 className="text-sm font-medium text-blue-900 mb-2">Quote Requirements:</h5>
+          <div className="flex flex-wrap gap-2">
+            {staticIp && (
+              <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-blue-100 text-blue-800">
+                Static IP Required
+              </span>
+            )}
+            {slash29 && (
+              <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-blue-100 text-blue-800">
+                /29 Subnet Required
+              </span>
+            )}
+            {mikrotikRequired && (
+              <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-blue-100 text-blue-800">
+                Mikrotik Required
+              </span>
+            )}
+          </div>
+        </div>
+      )}
       
       <div className="grid gap-3">
         {sortedCarriers.map((carrier) => {

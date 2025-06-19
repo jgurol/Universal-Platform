@@ -306,6 +306,7 @@ export type Database = {
           created_at: string
           id: string
           location: string
+          mikrotik_required: boolean | null
           slash_29: boolean | null
           static_ip: boolean | null
           status: string
@@ -319,6 +320,7 @@ export type Database = {
           created_at?: string
           id?: string
           location: string
+          mikrotik_required?: boolean | null
           slash_29?: boolean | null
           static_ip?: boolean | null
           status?: string
@@ -332,6 +334,7 @@ export type Database = {
           created_at?: string
           id?: string
           location?: string
+          mikrotik_required?: boolean | null
           slash_29?: boolean | null
           static_ip?: boolean | null
           status?: string

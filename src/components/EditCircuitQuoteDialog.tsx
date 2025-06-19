@@ -22,6 +22,7 @@ export const EditCircuitQuoteDialog = ({ open, onOpenChange, quote, onUpdateQuot
   const [status, setStatus] = useState("");
   const [staticIp, setStaticIp] = useState(false);
   const [slash29, setSlash29] = useState(false);
+  const [mikrotikRequired, setMikrotikRequired] = useState(false);
 
   useEffect(() => {
     if (quote) {
@@ -31,6 +32,7 @@ export const EditCircuitQuoteDialog = ({ open, onOpenChange, quote, onUpdateQuot
       setStatus(quote.status);
       setStaticIp(quote.static_ip || false);
       setSlash29(quote.slash_29 || false);
+      setMikrotikRequired(quote.mikrotik_required || false);
     }
   }, [quote]);
 
@@ -44,7 +46,8 @@ export const EditCircuitQuoteDialog = ({ open, onOpenChange, quote, onUpdateQuot
       suite,
       status: status as 'new_pricing' | 'researching' | 'completed' | 'sent_to_customer',
       static_ip: staticIp,
-      slash_29: slash29
+      slash_29: slash29,
+      mikrotik_required: mikrotikRequired
     });
     
     onOpenChange(false);
@@ -127,6 +130,17 @@ export const EditCircuitQuoteDialog = ({ open, onOpenChange, quote, onUpdateQuot
                 />
                 <Label htmlFor="slash-29" className="text-sm font-normal">
                   /29 Subnet Required
+                </Label>
+              </div>
+
+              <div className="flex items-center space-x-2 col-span-2">
+                <Checkbox
+                  id="mikrotik-required"
+                  checked={mikrotikRequired}
+                  onCheckedChange={(checked) => setMikrotikRequired(checked as boolean)}
+                />
+                <Label htmlFor="mikrotik-required" className="text-sm font-normal">
+                  Mikrotik Required
                 </Label>
               </div>
             </div>
