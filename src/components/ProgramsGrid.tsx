@@ -1,6 +1,6 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { FileText, Zap, Search } from "lucide-react";
+import { FileText, Zap, Search, DollarSign } from "lucide-react";
 import { Link } from "react-router-dom";
 
 interface Program {
@@ -36,6 +36,14 @@ const programs: Program[] = [
     icon: Zap,
     route: "/circuit-tracking",
     color: "bg-orange-500 hover:bg-orange-600"
+  },
+  {
+    id: "commissions",
+    title: "Track Commissions",
+    description: "Track your client payments & commissions",
+    icon: DollarSign,
+    route: "/billing",
+    color: "bg-green-500 hover:bg-green-600"
   }
 ];
 
