@@ -12,22 +12,32 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   children, 
   requireAdmin = false 
 }) => {
-  const { user, loading, isAdmin } = useAuth();
+  const { user, session, loading, isAdmin } = useAuth();
 
-  console.log('ProtectedRoute - user:', user, 'loading:', loading, 'isAdmin:', isAdmin);
+  console.log('ProtectedRoute - session:', !!session, 'user:', !!user, 'loading:', loading, 'isAdmin:', isAdmin);
 
   // Show loading state while checking authentication
   if (loading) {
+    console.log('ProtectedRoute - Still loading, showing spinner');
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-2 text-gray-600">Checking authentication...</p>
+        </div>
       </div>
     );
   }
 
-  // Redirect to auth if not logged in
-  if (!user) {
-    console.log('ProtectedRoute - No user found, redirecting to auth');
+  // CRITICAL: Check both session AND user to ensure complete authentication
+  if (!session || !user) {
+    console.log('ProtectedRoute - No valid session or user found, redirecting to auth');
+    return <Navigate to="/auth" replace />;
+  }
+
+  // Verify session is still valid by checking expiration
+  if (session.expires_at && session.expires_at < Date.now() / 1000) {
+    console.log('ProtectedRoute - Session expired, redirecting to auth');
     return <Navigate to="/auth" replace />;
   }
 
@@ -37,6 +47,6 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
     return <Navigate to="/" replace />;
   }
 
-  console.log('ProtectedRoute - User authenticated, rendering children');
+  console.log('ProtectedRoute - User authenticated successfully, rendering children');
   return <>{children}</>;
 };

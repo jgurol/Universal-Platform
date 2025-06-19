@@ -1,4 +1,3 @@
-
 import React, { createContext, useState, useEffect, useContext } from 'react';
 import { Session, User } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
@@ -47,17 +46,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     let mounted = true;
+    console.log('AuthProvider: Starting initialization');
 
     // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, currentSession) => {
-        console.log("Auth state change event:", event);
+        console.log("AuthProvider: Auth state change event:", event, "Session exists:", !!currentSession);
         
         if (!mounted) return;
         
         // Handle token refresh errors
         if (event === 'TOKEN_REFRESHED' && !currentSession) {
-          console.log("Token refresh failed, cleaning up auth state");
+          console.log("AuthProvider: Token refresh failed, cleaning up auth state");
           cleanupAuthState();
           setSession(null);
           setUser(null);
@@ -69,7 +69,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         
         // Handle signed out state
         if (event === 'SIGNED_OUT' || !currentSession) {
-          console.log("User signed out or no session");
+          console.log("AuthProvider: User signed out or no session");
           setSession(null);
           setUser(null);
           setIsAdmin(false);
@@ -78,6 +78,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           return;
         }
         
+        console.log("AuthProvider: Setting session and user", currentSession?.user?.email);
         setSession(currentSession);
         setUser(currentSession?.user ?? null);
         
@@ -85,6 +86,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           // Use setTimeout to avoid deadlocks
           setTimeout(async () => {
             if (mounted) {
+              console.log("AuthProvider: Fetching user profile for", currentSession.user.id);
               await fetchUserProfile(currentSession.user.id);
               // Initialize timezone cache for the logged-in user
               await initializeTimezone();
@@ -102,12 +104,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // THEN check for existing session
     const initializeAuth = async () => {
       try {
+        console.log("AuthProvider: Checking for existing session");
         const { data: { session: currentSession }, error } = await supabase.auth.getSession();
         
         if (!mounted) return;
         
         if (error) {
-          console.error("Error getting session:", error);
+          console.error("AuthProvider: Error getting session:", error);
           // If there's an error with the session, clean up and start fresh
           cleanupAuthState();
           setSession(null);
@@ -115,21 +118,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setIsAdmin(false);
           setIsAssociated(false);
         } else {
-          console.log("Initial session check:", currentSession ? "Session exists" : "No session");
-          setSession(currentSession);
-          setUser(currentSession?.user ?? null);
+          console.log("AuthProvider: Initial session check result:", currentSession ? `Session exists for ${currentSession.user?.email}` : "No session found");
           
-          if (currentSession?.user) {
+          // CRITICAL: Only set session if we actually have a valid session
+          if (currentSession && currentSession.user) {
+            setSession(currentSession);
+            setUser(currentSession.user);
+            console.log("AuthProvider: Valid session found, fetching profile");
             await fetchUserProfile(currentSession.user.id);
             // Initialize timezone for existing session
             await initializeTimezone();
           } else {
+            console.log("AuthProvider: No valid session, clearing state");
+            setSession(null);
+            setUser(null);
             setIsAdmin(false);
             setIsAssociated(false);
           }
         }
       } catch (error) {
-        console.error("Error initializing auth:", error);
+        console.error("AuthProvider: Error initializing auth:", error);
         if (mounted) {
           cleanupAuthState();
           setSession(null);
@@ -139,6 +147,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
       } finally {
         if (mounted) {
+          console.log("AuthProvider: Initialization complete, setting loading to false");
           setLoading(false);
         }
       }
@@ -147,6 +156,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     initializeAuth();
 
     return () => {
+      console.log("AuthProvider: Cleaning up");
       mounted = false;
       subscription.unsubscribe();
     };
@@ -154,7 +164,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const fetchUserProfile = async (userId: string) => {
     try {
-      console.log("Fetching user profile for ID:", userId);
+      console.log("AuthProvider: Fetching user profile for ID:", userId);
       
       // Use the security definer RPC function we just created
       const { data, error } = await supabase.rpc('get_user_profile', {
@@ -162,11 +172,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       });
 
       if (error) {
-        console.error('Error fetching user profile:', error);
+        console.error('AuthProvider: Error fetching user profile:', error);
         
         // If we still get an error with the RPC call, fall back to direct check using email
         if (user?.email === 'jim@californiatelecom.com') {
-          console.log("Detected the admin user by email, granting admin access");
+          console.log("AuthProvider: Detected the admin user by email, granting admin access");
           setIsAdmin(true);
           setIsAssociated(true);
           return;
@@ -181,19 +191,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
 
       if (data && data.length > 0) {
-        console.log("Profile data retrieved:", data);
+        console.log("AuthProvider: Profile data retrieved:", data);
         const profileData = data[0];
         const isUserAdmin = profileData.role === 'admin';
+        console.log("AuthProvider: Setting admin status:", isUserAdmin, "associated:", profileData.is_associated);
         setIsAdmin(isUserAdmin);
         setIsAssociated(profileData.is_associated || false);
       } else {
-        console.log("No profile data found for user", userId);
+        console.log("AuthProvider: No profile data found for user", userId);
         // No profile data found, set safe defaults
         setIsAdmin(false);
         setIsAssociated(false);
       }
     } catch (error) {
-      console.error('Error in profile fetch:', error);
+      console.error('AuthProvider: Error in profile fetch:', error);
       // Set defaults for failed profile fetch
       setIsAdmin(false);
       setIsAssociated(false);
@@ -210,6 +221,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const signIn = async (email: string, password: string) => {
     try {
       setLoading(true);
+      console.log("AuthProvider: Starting sign in process for", email);
+      
       // Clean up existing auth state before signing in
       cleanupAuthState();
       
@@ -218,12 +231,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         await supabase.auth.signOut({ scope: 'global' });
       } catch (signOutError) {
         // Continue even if this fails
-        console.log('Sign out before login failed, continuing anyway');
+        console.log('AuthProvider: Sign out before login failed, continuing anyway');
       }
 
       const { error } = await supabase.auth.signInWithPassword({ email, password });
       
       if (error) {
+        console.error("AuthProvider: Sign in error:", error);
         setLoading(false);
         // Handle specific token-related errors
         if (error.message.includes('Invalid token') || error.message.includes('signature is invalid')) {
@@ -243,6 +257,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         throw error;
       }
       
+      console.log("AuthProvider: Sign in successful");
       toast({
         title: "Login successful",
         description: "Welcome back!",
@@ -251,7 +266,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // Force page reload to ensure clean state
       window.location.href = '/';
     } catch (error: any) {
-      console.error('Error signing in:', error.message);
+      console.error('AuthProvider: Error signing in:', error.message);
       setLoading(false);
       throw error;
     }
@@ -327,6 +342,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       window.location.href = '/auth';
     }
   };
+
+  console.log("AuthProvider: Rendering with state - user:", !!user, "loading:", loading, "isAdmin:", isAdmin);
 
   const value = {
     session,
