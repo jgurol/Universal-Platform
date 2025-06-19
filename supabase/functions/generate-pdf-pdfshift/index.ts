@@ -32,7 +32,7 @@ const handler = async (req: Request): Promise<Response> => {
     const html = generateHTML(quote, clientInfo, salespersonName);
     console.log('PDFShift Function - HTML generated, length:', html.length);
     
-    // Call PDFShift API
+    // Call PDFShift API with corrected parameters
     const pdfShiftResponse = await fetch('https://api.pdfshift.io/v3/convert/pdf', {
       method: 'POST',
       headers: {
@@ -44,8 +44,8 @@ const handler = async (req: Request): Promise<Response> => {
         landscape: false,
         format: 'Letter',
         margin: '0.5in',
-        print_background: true,
         wait_for: 1000
+        // Removed print_background as it's not supported by PDFShift
       }),
     });
 
