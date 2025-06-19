@@ -77,47 +77,13 @@ export const useCircuitTracking = () => {
       // Create a comprehensive list that includes all quote items for orders
       const allTrackingItems: CircuitTracking[] = [];
 
-      // Filter existing circuit tracking records to exclude unwanted items
+      // Include ALL existing circuit tracking records without filtering by category type
       if (trackingData) {
-        const filteredTrackingData = trackingData.filter(tracking => {
-          const itemName = tracking.item_name || tracking.quote_item?.item?.name;
-          const categoryType = tracking.quote_item?.item?.category?.type;
-          
-          console.log(`Processing existing tracking item: "${itemName}" with category type: "${categoryType}" for order ${tracking.order?.order_number}`);
-          
-          // Only include items with Circuit category type
-          if (categoryType !== 'Circuit') {
-            console.log(`Filtering out non-Circuit item: ${itemName} (type: ${categoryType})`);
-            return false;
-          }
-          
-          // Skip if it's a generic broadband or category-only item
-          if (!itemName) return false;
-          if (itemName.toLowerCase() === 'broadband') {
-            console.log(`Filtering out generic broadband item for order ${tracking.order?.order_number}`);
-            return false;
-          }
-          if (itemName.toLowerCase() === tracking.quote_item?.item?.category?.name?.toLowerCase()) {
-            console.log(`Filtering out category-only item: ${itemName}`);
-            return false;
-          }
-          if (itemName.toLowerCase().includes('general')) {
-            console.log(`Filtering out general item: ${itemName}`);
-            return false;
-          }
-          if (itemName.trim().length <= 3) {
-            console.log(`Filtering out short item name: ${itemName}`);
-            return false;
-          }
-          
-          return true;
-        });
-        
-        allTrackingItems.push(...filteredTrackingData);
+        console.log(`Found ${trackingData.length} existing circuit tracking records`);
+        allTrackingItems.push(...trackingData);
       }
 
       // For each order, ensure all quote items are represented, but only if they don't already exist
-      // and only if they have meaningful item data AND are Circuit type
       if (ordersData) {
         ordersData.forEach(order => {
           if (order.quote?.quote_items) {
@@ -128,34 +94,29 @@ export const useCircuitTracking = () => {
               );
 
               const categoryType = quoteItem.item?.category?.type;
+              const categoryName = quoteItem.item?.category?.name;
               console.log(`Checking quote item for order ${order.order_number}:`, {
                 itemName: quoteItem.item?.name,
-                categoryName: quoteItem.item?.category?.name,
+                categoryName: categoryName,
                 categoryType: categoryType,
                 hasExistingTracking: !!existingTracking
               });
 
-              // Only create virtual tracking if:
-              // 1. No existing tracking exists
-              // 2. The category type is "Circuit"
-              // 3. The quote item has an actual item with a name (not just a category)
-              // 4. The item name is not just a generic category name or "broadband"
-              // 5. The item name has more substance than just the category
+              // Only create virtual tracking if no existing tracking exists and item has meaningful data
               if (!existingTracking && 
-                  categoryType === 'Circuit' &&
                   quoteItem.item?.name && 
                   quoteItem.item.name.toLowerCase() !== 'broadband' &&
-                  quoteItem.item.name.toLowerCase() !== quoteItem.item?.category?.name?.toLowerCase() &&
+                  quoteItem.item.name.toLowerCase() !== categoryName?.toLowerCase() &&
                   quoteItem.item.name.trim().length > 3 &&
                   !quoteItem.item.name.toLowerCase().includes('general')) {
                 
-                console.log(`Creating virtual tracking for Circuit type item: ${quoteItem.item.name} in order ${order.order_number}`);
+                console.log(`Creating virtual tracking for item: ${quoteItem.item.name} in order ${order.order_number}`);
                 
                 allTrackingItems.push({
                   id: `virtual-${quoteItem.id}`,
                   order_id: order.id,
                   quote_item_id: quoteItem.id,
-                  circuit_type: quoteItem.item?.category?.name || 'Circuit',
+                  circuit_type: categoryName || 'Circuit',
                   stage: 'Ready to Order',
                   progress_percentage: 0,
                   created_at: order.created_at,
@@ -176,11 +137,6 @@ export const useCircuitTracking = () => {
                     }
                   }
                 });
-              } else {
-                const reason = !existingTracking ? 
-                  (categoryType !== 'Circuit' ? `wrong category type (${categoryType})` : 'other filtering criteria') : 
-                  'existing tracking found';
-                console.log(`Skipping virtual tracking for: ${quoteItem.item?.name || 'unnamed'} in order ${order.order_number} - ${reason}`);
               }
             });
           }
