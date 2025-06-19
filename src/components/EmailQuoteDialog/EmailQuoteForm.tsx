@@ -1,14 +1,12 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { Separator } from "@/components/ui/separator";
 import { Quote, ClientInfo } from "@/pages/Index";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
 import { generateQuotePDFWithReactPdf } from "@/utils/pdf/reactPdfGenerator";
+import { useQuery } from "@tanstack/react-query";
 import { EmailContactSelector } from "./EmailContactSelector";
 import { CCContactSelector } from "./CCContactSelector";
 import { EmailFormFields } from "./EmailFormFields";
@@ -32,19 +30,68 @@ export const EmailQuoteForm = ({
 }: EmailQuoteFormProps) => {
   const { user } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
-  const [selectedContactId, setSelectedContactId] = useState<string>("");
-  const [ccContacts, setCcContacts] = useState<string[]>([]);
+  
+  // Contact selection state
+  const [selectedRecipientContact, setSelectedRecipientContact] = useState<string>("custom");
+  const [customRecipientEmail, setCustomRecipientEmail] = useState("");
+  const [selectedCcContacts, setSelectedCcContacts] = useState<string[]>([]);
+  const [ccEmails, setCcEmails] = useState<string[]>([]);
   
   // Form fields
-  const [toEmail, setToEmail] = useState("");
-  const [ccEmail, setCcEmail] = useState("");
   const [subject, setSubject] = useState(`Quote ${quote.quoteNumber || quote.id} - ${quote.description || 'Service Agreement'}`);
   const [message, setMessage] = useState(`Please find attached your quote for the requested services.\n\nThank you for your business!\n\nBest regards,\n${salespersonName || user?.user_metadata?.full_name || 'Sales Team'}`);
+
+  // Fetch contacts for the client
+  const { data: contacts = [], isLoading: contactsLoading } = useQuery({
+    queryKey: ['client-contacts', clientInfo?.id],
+    queryFn: async () => {
+      if (!clientInfo?.id) return [];
+      
+      const { data, error } = await supabase
+        .from('client_contacts')
+        .select('*')
+        .eq('client_info_id', clientInfo.id)
+        .order('is_primary', { ascending: false });
+      
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!clientInfo?.id
+  });
+
+  const handleCcContactToggle = (contactId: string, checked: boolean) => {
+    if (checked) {
+      setSelectedCcContacts(prev => [...prev, contactId]);
+    } else {
+      setSelectedCcContacts(prev => prev.filter(id => id !== contactId));
+    }
+  };
+
+  const handleRemoveCcEmail = (emailToRemove: string) => {
+    setCcEmails(prev => prev.filter(email => email !== emailToRemove));
+  };
+
+  const getRecipientEmail = () => {
+    if (selectedRecipientContact === "custom") {
+      return customRecipientEmail;
+    }
+    const contact = contacts.find(c => c.id === selectedRecipientContact);
+    return contact?.email || "";
+  };
+
+  const getAllCcEmails = () => {
+    const contactEmails = selectedCcContacts
+      .map(contactId => contacts.find(c => c.id === contactId)?.email)
+      .filter(Boolean) as string[];
+    
+    return [...contactEmails, ...ccEmails];
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!toEmail.trim()) {
+    const recipientEmail = getRecipientEmail();
+    if (!recipientEmail.trim()) {
       alert('Please enter a recipient email address');
       return;
     }
@@ -72,15 +119,12 @@ export const EmailQuoteForm = ({
       const pdfBase64 = await base64Promise;
       
       // Prepare CC emails
-      const allCcEmails = [
-        ...ccContacts,
-        ...(ccEmail.trim() ? ccEmail.split(',').map(email => email.trim()) : [])
-      ].filter(email => email && email.length > 0);
+      const allCcEmails = getAllCcEmails().filter(email => email && email.length > 0);
 
       // Send email via Supabase Edge Function
       const { data, error } = await supabase.functions.invoke('send-quote-email', {
         body: {
-          to: toEmail,
+          to: recipientEmail,
           cc: allCcEmails.length > 0 ? allCcEmails : undefined,
           subject: subject,
           message: message,
@@ -113,19 +157,21 @@ export const EmailQuoteForm = ({
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
       <EmailContactSelector
-        clientInfoId={clientInfo?.id}
-        selectedContactId={selectedContactId}
-        onContactSelect={setSelectedContactId}
-        onEmailChange={setToEmail}
-        toEmail={toEmail}
+        contacts={contacts}
+        contactsLoading={contactsLoading}
+        selectedRecipientContact={selectedRecipientContact}
+        onRecipientContactChange={setSelectedRecipientContact}
+        customRecipientEmail={customRecipientEmail}
+        onCustomRecipientEmailChange={setCustomRecipientEmail}
       />
       
       <CCContactSelector
-        clientInfoId={clientInfo?.id}
-        selectedContacts={ccContacts}
-        onContactsChange={setCcContacts}
-        ccEmail={ccEmail}
-        onCcEmailChange={setCcEmail}
+        contacts={contacts}
+        selectedRecipientContact={selectedRecipientContact}
+        selectedCcContacts={selectedCcContacts}
+        onCcContactToggle={handleCcContactToggle}
+        ccEmails={ccEmails}
+        onRemoveCcEmail={handleRemoveCcEmail}
       />
 
       <Separator />
@@ -135,6 +181,8 @@ export const EmailQuoteForm = ({
         onSubjectChange={setSubject}
         message={message}
         onMessageChange={setMessage}
+        quoteNumber={quote.quoteNumber}
+        quoteId={quote.id}
       />
 
       <div className="flex justify-end space-x-2">
@@ -148,7 +196,7 @@ export const EmailQuoteForm = ({
         </Button>
         <Button
           type="submit"
-          disabled={isLoading || !toEmail.trim() || emailStatus === 'success'}
+          disabled={isLoading || !getRecipientEmail().trim() || emailStatus === 'success'}
           className="bg-blue-600 hover:bg-blue-700"
         >
           {isLoading ? 'Sending...' : emailStatus === 'success' ? 'Sent!' : 'Send Quote'}
