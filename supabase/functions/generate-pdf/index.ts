@@ -57,6 +57,10 @@ const generateQuoteHTML = (quote: Quote, clientInfo?: ClientInfo): string => {
       .trim();
   };
 
+  // Calculate totals
+  const mrcTotal = mrcItems.reduce((total, item) => total + Number(item.total_price), 0);
+  const nrcTotal = nrcItems.reduce((total, item) => total + Number(item.total_price), 0);
+
   return `
     <!DOCTYPE html>
     <html>
@@ -64,141 +68,226 @@ const generateQuoteHTML = (quote: Quote, clientInfo?: ClientInfo): string => {
       <meta charset="UTF-8">
       <title>Quote ${quote.quoteNumber || quote.id}</title>
       <style>
+        @page {
+          margin: 0.75in;
+          size: A4;
+        }
+        
         body {
-          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-          line-height: 1.6;
+          font-family: 'Helvetica', 'Arial', sans-serif;
+          line-height: 1.4;
           color: #333;
-          max-width: 800px;
-          margin: 0 auto;
-          padding: 40px 20px;
+          margin: 0;
+          padding: 0;
+          font-size: 11px;
         }
+        
         .header {
-          text-align: center;
-          margin-bottom: 40px;
-          border-bottom: 3px solid #2563eb;
-          padding-bottom: 20px;
+          margin-bottom: 30px;
+          border-bottom: 2px solid #2563eb;
+          padding-bottom: 15px;
         }
+        
         .header h1 {
           color: #1e40af;
-          margin: 0;
-          font-size: 28px;
+          margin: 0 0 8px 0;
+          font-size: 24px;
           font-weight: 700;
         }
+        
+        .quote-number {
+          color: #6b7280;
+          font-size: 14px;
+          margin: 0;
+        }
+        
         .quote-info {
           background: #f8fafc;
-          padding: 20px;
-          border-radius: 8px;
-          margin-bottom: 30px;
+          padding: 15px;
+          border-radius: 6px;
+          margin-bottom: 25px;
+          border: 1px solid #e5e7eb;
         }
-        .client-info {
+        
+        .quote-info-row {
+          display: flex;
+          justify-content: space-between;
+          margin-bottom: 8px;
+        }
+        
+        .quote-info-row:last-child {
+          margin-bottom: 0;
+        }
+        
+        .quote-info strong {
+          color: #374151;
+        }
+        
+        .client-section {
           display: grid;
           grid-template-columns: 1fr 1fr;
-          gap: 30px;
+          gap: 40px;
           margin-bottom: 30px;
         }
-        .info-section h3 {
+        
+        .info-box h3 {
           color: #1e40af;
-          margin-bottom: 10px;
-          font-size: 16px;
-          border-bottom: 1px solid #e5e7eb;
-          padding-bottom: 5px;
-        }
-        .items-section {
-          margin-bottom: 30px;
-        }
-        .section-title {
-          color: #1e40af;
-          font-size: 20px;
+          margin: 0 0 12px 0;
+          font-size: 14px;
           font-weight: 600;
-          margin-bottom: 15px;
-          border-bottom: 2px solid #2563eb;
-          padding-bottom: 5px;
-        }
-        table {
-          width: 100%;
-          border-collapse: collapse;
-          margin-bottom: 20px;
-          background: white;
-          box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-        }
-        th {
-          background: #1e40af;
-          color: white;
-          padding: 12px;
-          text-align: left;
-          font-weight: 600;
-        }
-        td {
-          padding: 12px;
           border-bottom: 1px solid #e5e7eb;
+          padding-bottom: 6px;
         }
-        tr:nth-child(even) {
-          background: #f9fafb;
+        
+        .info-box p {
+          margin: 0 0 6px 0;
+          font-size: 11px;
+          line-height: 1.4;
         }
-        .item-name {
+        
+        .info-box p:last-child {
+          margin-bottom: 0;
+        }
+        
+        .company-name {
           font-weight: 600;
           color: #1f2937;
         }
-        .item-description {
+        
+        .items-section {
+          margin-bottom: 25px;
+        }
+        
+        .section-title {
+          background: #1e40af;
+          color: white;
+          padding: 10px 15px;
+          margin: 0 0 0 0;
           font-size: 14px;
-          color: #6b7280;
-          margin-top: 4px;
-        }
-        .item-location {
-          font-size: 12px;
-          color: #9ca3af;
-          font-style: italic;
-          margin-top: 2px;
-        }
-        .price {
-          text-align: right;
           font-weight: 600;
         }
+        
+        .items-table {
+          width: 100%;
+          border-collapse: collapse;
+          margin-bottom: 0;
+          border: 1px solid #d1d5db;
+        }
+        
+        .items-table th {
+          background: #f3f4f6;
+          padding: 10px 12px;
+          text-align: left;
+          font-weight: 600;
+          font-size: 11px;
+          border-bottom: 1px solid #d1d5db;
+          border-right: 1px solid #d1d5db;
+        }
+        
+        .items-table th:last-child {
+          border-right: none;
+        }
+        
+        .items-table th.text-center {
+          text-align: center;
+        }
+        
+        .items-table th.text-right {
+          text-align: right;
+        }
+        
+        .items-table td {
+          padding: 12px;
+          border-bottom: 1px solid #e5e7eb;
+          border-right: 1px solid #e5e7eb;
+          vertical-align: top;
+        }
+        
+        .items-table td:last-child {
+          border-right: none;
+        }
+        
+        .items-table tr:nth-child(even) {
+          background: #f9fafb;
+        }
+        
+        .item-name {
+          font-weight: 600;
+          color: #1f2937;
+          margin-bottom: 4px;
+        }
+        
+        .item-location {
+          font-size: 9px;
+          color: #6b7280;
+          font-style: italic;
+          margin-bottom: 4px;
+        }
+        
+        .item-description {
+          font-size: 10px;
+          color: #4b5563;
+          line-height: 1.3;
+        }
+        
+        .text-center {
+          text-align: center;
+        }
+        
+        .text-right {
+          text-align: right;
+        }
+        
         .total-row {
           background: #1e40af !important;
           color: white;
           font-weight: 700;
-          font-size: 16px;
         }
+        
         .total-row td {
-          border: none;
-          padding: 15px 12px;
+          border-color: #1e40af;
         }
+        
         .footer {
           margin-top: 40px;
           padding-top: 20px;
           border-top: 1px solid #e5e7eb;
           text-align: center;
           color: #6b7280;
-          font-size: 14px;
+          font-size: 10px;
+        }
+        
+        .footer p {
+          margin: 5px 0;
         }
       </style>
     </head>
     <body>
       <div class="header">
         <h1>${quote.description || (clientInfo?.company_name ? `${clientInfo.company_name} - Service Agreement` : 'Service Agreement')}</h1>
-        ${quote.quoteNumber ? `<p style="margin: 10px 0; color: #6b7280;">Quote #${quote.quoteNumber}</p>` : ''}
+        ${quote.quoteNumber ? `<p class="quote-number">Quote #${quote.quoteNumber}</p>` : ''}
       </div>
 
       <div class="quote-info">
-        <strong>Date:</strong> ${new Date().toLocaleDateString()}<br>
-        ${clientInfo?.company_name ? `<strong>Company:</strong> ${clientInfo.company_name}<br>` : ''}
-        ${quote.status ? `<strong>Status:</strong> ${quote.status.charAt(0).toUpperCase() + quote.status.slice(1)}<br>` : ''}
+        <div class="quote-info-row">
+          <span><strong>Date:</strong> ${new Date().toLocaleDateString()}</span>
+          <span><strong>Status:</strong> ${quote.status ? quote.status.charAt(0).toUpperCase() + quote.status.slice(1) : 'Draft'}</span>
+        </div>
       </div>
 
       ${clientInfo ? `
-        <div class="client-info">
-          <div class="info-section">
+        <div class="client-section">
+          <div class="info-box">
             <h3>Client Information</h3>
-            <p><strong>${clientInfo.company_name || 'N/A'}</strong></p>
+            <p class="company-name">${clientInfo.company_name || 'N/A'}</p>
             ${clientInfo.contact_name ? `<p>${clientInfo.contact_name}</p>` : ''}
             ${clientInfo.email ? `<p>${clientInfo.email}</p>` : ''}
             ${clientInfo.phone ? `<p>${clientInfo.phone}</p>` : ''}
           </div>
-          <div class="info-section">
+          <div class="info-box">
             <h3>Billing Address</h3>
             ${quote.billingAddress ? `
-              <p>${quote.billingAddress}</p>
+              <p>${quote.billingAddress.split(',').map(line => line.trim()).join('<br>')}</p>
             ` : '<p>Not specified</p>'}
           </div>
         </div>
@@ -207,13 +296,13 @@ const generateQuoteHTML = (quote: Quote, clientInfo?: ClientInfo): string => {
       ${mrcItems.length > 0 ? `
         <div class="items-section">
           <h2 class="section-title">Monthly Recurring Charges</h2>
-          <table>
+          <table class="items-table">
             <thead>
               <tr>
-                <th style="width: 40%">Description</th>
-                <th style="width: 10%; text-align: center">Qty</th>
-                <th style="width: 15%; text-align: right">Unit Price</th>
-                <th style="width: 15%; text-align: right">Total</th>
+                <th style="width: 50%">Description</th>
+                <th class="text-center" style="width: 8%">Qty</th>
+                <th class="text-right" style="width: 21%">Unit Price</th>
+                <th class="text-right" style="width: 21%">Total</th>
               </tr>
             </thead>
             <tbody>
@@ -224,14 +313,14 @@ const generateQuoteHTML = (quote: Quote, clientInfo?: ClientInfo): string => {
                     ${item.address ? `<div class="item-location">Location: ${item.address.street_address}, ${item.address.city}, ${item.address.state} ${item.address.zip_code}</div>` : ''}
                     ${(item.description || item.item?.description) ? `<div class="item-description">${stripHtml(item.description || item.item?.description || '')}</div>` : ''}
                   </td>
-                  <td style="text-align: center">${item.quantity}</td>
-                  <td class="price">$${Number(item.unit_price).toFixed(2)}</td>
-                  <td class="price">$${Number(item.total_price).toFixed(2)}</td>
+                  <td class="text-center">${item.quantity}</td>
+                  <td class="text-right">$${Number(item.unit_price).toFixed(2)}</td>
+                  <td class="text-right">$${Number(item.total_price).toFixed(2)}</td>
                 </tr>
               `).join('')}
               <tr class="total-row">
-                <td colspan="3">Total Monthly Recurring</td>
-                <td class="price">$${mrcItems.reduce((total, item) => total + Number(item.total_price), 0).toFixed(2)}</td>
+                <td colspan="3"><strong>Total Monthly Recurring</strong></td>
+                <td class="text-right"><strong>$${mrcTotal.toFixed(2)}</strong></td>
               </tr>
             </tbody>
           </table>
@@ -241,13 +330,13 @@ const generateQuoteHTML = (quote: Quote, clientInfo?: ClientInfo): string => {
       ${nrcItems.length > 0 ? `
         <div class="items-section">
           <h2 class="section-title">One-Time Setup Charges</h2>
-          <table>
+          <table class="items-table">
             <thead>
               <tr>
-                <th style="width: 40%">Description</th>
-                <th style="width: 10%; text-align: center">Qty</th>
-                <th style="width: 15%; text-align: right">Unit Price</th>
-                <th style="width: 15%; text-align: right">Total</th>
+                <th style="width: 50%">Description</th>
+                <th class="text-center" style="width: 8%">Qty</th>
+                <th class="text-right" style="width: 21%">Unit Price</th>
+                <th class="text-right" style="width: 21%">Total</th>
               </tr>
             </thead>
             <tbody>
@@ -258,14 +347,14 @@ const generateQuoteHTML = (quote: Quote, clientInfo?: ClientInfo): string => {
                     ${item.address ? `<div class="item-location">Location: ${item.address.street_address}, ${item.address.city}, ${item.address.state} ${item.address.zip_code}</div>` : ''}
                     ${(item.description || item.item?.description) ? `<div class="item-description">${stripHtml(item.description || item.item?.description || '')}</div>` : ''}
                   </td>
-                  <td style="text-align: center">${item.quantity}</td>
-                  <td class="price">$${Number(item.unit_price).toFixed(2)}</td>
-                  <td class="price">$${Number(item.total_price).toFixed(2)}</td>
+                  <td class="text-center">${item.quantity}</td>
+                  <td class="text-right">$${Number(item.unit_price).toFixed(2)}</td>
+                  <td class="text-right">$${Number(item.total_price).toFixed(2)}</td>
                 </tr>
               `).join('')}
               <tr class="total-row">
-                <td colspan="3">Total One-Time Setup</td>
-                <td class="price">$${nrcItems.reduce((total, item) => total + Number(item.total_price), 0).toFixed(2)}</td>
+                <td colspan="3"><strong>Total One-Time Setup</strong></td>
+                <td class="text-right"><strong>$${nrcTotal.toFixed(2)}</strong></td>
               </tr>
             </tbody>
           </table>
