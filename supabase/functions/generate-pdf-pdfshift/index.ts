@@ -165,7 +165,7 @@ const processRichTextContent = (content: string): { html: string; images: string
   return { html: cleanHtml, images };
 };
 
-// Enhanced HTML generation function with proper quote items processing
+// Enhanced HTML generation function with improved formatting
 const generateHTML = (quote: any, clientInfo?: any, salespersonName?: string, logoUrl?: string, companyName?: string): string => {
   // Extract data safely
   const quoteId = quote?.id || '';
@@ -227,7 +227,7 @@ const generateHTML = (quote: any, clientInfo?: any, salespersonName?: string, lo
   // Generate logo HTML if available
   const logoHtml = logoUrl ? `<img src="${logoUrl}" alt="Company Logo" style="max-width: 120px; max-height: 60px; object-fit: contain;">` : `<div class="company-logo-text">${companyName || 'California Telecom, Inc.'}</div>`;
   
-  // Generate items HTML with descriptions and images
+  // Generate items HTML with proper formatting matching the interface
   const generateItemsHTML = (items: any[], sectionTitle: string) => {
     if (items.length === 0) return '';
     
@@ -247,10 +247,22 @@ const generateHTML = (quote: any, clientInfo?: any, salespersonName?: string, lo
                 ${items.map(item => `
                 <tr>
                     <td class="description-cell">
-                        <div class="item-name"><strong>${item.name}</strong></div>
-                        ${item.address ? `<div class="item-address">Location: ${item.address.street_address}, ${item.address.city}, ${item.address.state} ${item.address.zip_code}</div>` : ''}
-                        ${item.processedDescription ? `<div class="item-description">${item.processedDescription}</div>` : ''}
-                        ${item.images.length > 0 ? item.images.map(imgSrc => `<div class="item-image"><img src="${imgSrc}" alt="Item Image" style="max-width: 200px; max-height: 150px; object-fit: contain; margin: 5px 0;"></div>`).join('') : ''}
+                        <div class="item-content">
+                            <div class="item-header">
+                                <div class="item-name">${item.name}</div>
+                                ${item.address ? `<div class="item-location">Location: ${item.address.street_address}, ${item.address.city}, ${item.address.state} ${item.address.zip_code}</div>` : ''}
+                            </div>
+                            ${item.processedDescription || item.images.length > 0 ? `
+                            <div class="item-details">
+                                ${item.images.length > 0 ? item.images.map(imgSrc => `
+                                <div class="item-image-container">
+                                    <img src="${imgSrc}" alt="Product Image" class="item-image">
+                                </div>
+                                `).join('') : ''}
+                                ${item.processedDescription ? `<div class="item-description">${item.processedDescription}</div>` : ''}
+                            </div>
+                            ` : ''}
+                        </div>
                     </td>
                     <td class="qty-cell">${item.quantity}</td>
                     <td class="price-cell">$${item.unit_price.toFixed(2)}</td>
@@ -415,7 +427,7 @@ const generateHTML = (quote: any, clientInfo?: any, salespersonName?: string, lo
         .items-table th,
         .items-table td {
             border: 1px solid #ddd;
-            padding: 8px;
+            padding: 12px 8px;
             text-align: left;
             font-size: 10px;
             vertical-align: top;
@@ -445,22 +457,53 @@ const generateHTML = (quote: any, clientInfo?: any, salespersonName?: string, lo
             text-align: right;
         }
         
-        .item-name {
-            font-weight: bold;
-            margin-bottom: 4px;
+        .item-content {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
         }
         
-        .item-address {
+        .item-header {
+            border-bottom: 1px solid #eee;
+            padding-bottom: 6px;
+        }
+        
+        .item-name {
+            font-weight: bold;
+            font-size: 11px;
+            color: #333;
+            margin-bottom: 3px;
+        }
+        
+        .item-location {
             font-size: 9px;
             color: #666;
-            margin-bottom: 4px;
+        }
+        
+        .item-details {
+            display: flex;
+            gap: 10px;
+            align-items: flex-start;
+        }
+        
+        .item-image-container {
+            flex-shrink: 0;
+        }
+        
+        .item-image {
+            max-width: 80px;
+            max-height: 80px;
+            object-fit: contain;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            background: white;
         }
         
         .item-description {
+            flex: 1;
             font-size: 9px;
             color: #555;
-            margin-bottom: 4px;
-            line-height: 1.3;
+            line-height: 1.4;
         }
         
         .item-description p {
@@ -473,15 +516,6 @@ const generateHTML = (quote: any, clientInfo?: any, salespersonName?: string, lo
         
         .item-description em, .item-description i {
             font-style: italic;
-        }
-        
-        .item-image {
-            margin: 4px 0;
-        }
-        
-        .item-image img {
-            border: 1px solid #ddd;
-            border-radius: 4px;
         }
         
         .total-amount {
