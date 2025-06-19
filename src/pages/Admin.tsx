@@ -214,14 +214,28 @@ export default function Admin() {
     try {
       setIsDeleting(true);
       
-      // Delete user from Supabase auth using admin API
-      const { error: authError } = await supabase.auth.admin.deleteUser(deletingUser.id);
+      console.log('Calling delete-user edge function for:', deletingUser.id);
       
-      if (authError) {
-        console.error('Error deleting user from auth:', authError);
+      // Use our custom edge function to delete the user
+      const { data, error } = await supabase.functions.invoke('delete-user', {
+        body: { userId: deletingUser.id }
+      });
+
+      if (error) {
+        console.error('Error calling delete-user function:', error);
         toast({
           title: "Error",
-          description: `Failed to delete user: ${authError.message}`,
+          description: `Failed to delete user: ${error.message}`,
+          variant: "destructive"
+        });
+        return;
+      }
+
+      if (!data?.success) {
+        console.error('Delete user function returned error:', data?.error);
+        toast({
+          title: "Error",
+          description: `Failed to delete user: ${data?.error || 'Unknown error'}`,
           variant: "destructive"
         });
         return;
