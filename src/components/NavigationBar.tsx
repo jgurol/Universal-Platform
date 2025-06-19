@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
@@ -12,10 +11,32 @@ import {
   navigationMenuTriggerStyle,
 } from "@/components/ui/navigation-menu";
 import { cn } from "@/lib/utils";
-import { Settings, Users, FileText, Home, UserPlus, Building, UserCog, Zap } from 'lucide-react';
+import { Settings, Users, FileText, Home, UserPlus, Building, UserCog, Zap, LogOut, User } from 'lucide-react';
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 export function NavigationBar() {
-  const { isAdmin } = useAuth();
+  const { isAdmin, user, signOut } = useAuth();
+
+  const handleSignOut = async () => {
+    try {
+      await signOut();
+    } catch (error) {
+      console.error('Error signing out:', error);
+    }
+  };
+
+  const getUserInitials = (email: string) => {
+    return email.split('@')[0].substring(0, 2).toUpperCase();
+  };
 
   return (
     <div className="w-full bg-white border-b border-gray-200 py-2 px-4 mb-6">
@@ -29,54 +50,94 @@ export function NavigationBar() {
           <h1 className="text-2xl font-bold text-gray-900">Universal Platform</h1>
         </Link>
 
-        <NavigationMenu>
-          <NavigationMenuList>
-            <NavigationMenuItem>
-              <Link to="/">
-                <NavigationMenuLink className={navigationMenuTriggerStyle()}>
-                  Dashboard
-                </NavigationMenuLink>
-              </Link>
-            </NavigationMenuItem>
+        <div className="flex items-center gap-4">
+          <NavigationMenu>
+            <NavigationMenuList>
+              <NavigationMenuItem>
+                <Link to="/">
+                  <NavigationMenuLink className={navigationMenuTriggerStyle()}>
+                    Dashboard
+                  </NavigationMenuLink>
+                </Link>
+              </NavigationMenuItem>
 
-            <NavigationMenuItem>
-              <NavigationMenuTrigger>System Settings</NavigationMenuTrigger>
-              <NavigationMenuContent>
-                <ul className="grid w-[300px] gap-3 p-4">
-                  <ListItem href="/settings/profile" title="Profile Settings" Icon={Settings}>
-                    Manage your account preferences and personal information
-                  </ListItem>
-                  
-                  <ListItem href="/vendors" title="Vendor Management" Icon={Building}>
-                    Manage vendors and supplier information
-                  </ListItem>
-                  
-                  {isAdmin && (
-                    <>
-                      <ListItem href="/client-management" title="Client Management" Icon={Building}>
-                        Manage your clients' information and details
-                      </ListItem>
-                      
-                      {/* Agent Management hidden for now - will build later
-                      <ListItem href="/agent-management" title="Agent Management" Icon={UserCog}>
-                        Manage commission agents and their rates
-                      </ListItem>
-                      */}
-                      
-                      <ListItem href="/admin" title="User Management" Icon={Users}>
-                        Manage users, set permissions, and control access
-                      </ListItem>
-                      
-                      <ListItem href="/system-settings" title="System Configuration" Icon={Settings}>
-                        Configure global system settings and defaults
-                      </ListItem>
-                    </>
-                  )}
-                </ul>
-              </NavigationMenuContent>
-            </NavigationMenuItem>
-          </NavigationMenuList>
-        </NavigationMenu>
+              <NavigationMenuItem>
+                <NavigationMenuTrigger>System Settings</NavigationMenuTrigger>
+                <NavigationMenuContent>
+                  <ul className="grid w-[300px] gap-3 p-4">
+                    <ListItem href="/settings/profile" title="Profile Settings" Icon={Settings}>
+                      Manage your account preferences and personal information
+                    </ListItem>
+                    
+                    <ListItem href="/vendors" title="Vendor Management" Icon={Building}>
+                      Manage vendors and supplier information
+                    </ListItem>
+                    
+                    {isAdmin && (
+                      <>
+                        <ListItem href="/client-management" title="Client Management" Icon={Building}>
+                          Manage your clients' information and details
+                        </ListItem>
+                        
+                        {/* Agent Management hidden for now - will build later
+                        <ListItem href="/agent-management" title="Agent Management" Icon={UserCog}>
+                          Manage commission agents and their rates
+                        </ListItem>
+                        */}
+                        
+                        <ListItem href="/admin" title="User Management" Icon={Users}>
+                          Manage users, set permissions, and control access
+                        </ListItem>
+                        
+                        <ListItem href="/system-settings" title="System Configuration" Icon={Settings}>
+                          Configure global system settings and defaults
+                        </ListItem>
+                      </>
+                    )}
+                  </ul>
+                </NavigationMenuContent>
+              </NavigationMenuItem>
+            </NavigationMenuList>
+          </NavigationMenu>
+
+          {user && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" className="relative h-10 w-10 rounded-full">
+                  <Avatar className="h-10 w-10">
+                    <AvatarFallback className="bg-blue-100 text-blue-700 font-medium">
+                      {getUserInitials(user.email || '')}
+                    </AvatarFallback>
+                  </Avatar>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent className="w-56" align="end" forceMount>
+                <DropdownMenuLabel className="font-normal">
+                  <div className="flex flex-col space-y-1">
+                    <p className="text-sm font-medium leading-none">
+                      {user.email?.split('@')[0]}
+                    </p>
+                    <p className="text-xs leading-none text-muted-foreground">
+                      {user.email}
+                    </p>
+                  </div>
+                </DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem asChild>
+                  <Link to="/settings/profile" className="flex items-center">
+                    <User className="mr-2 h-4 w-4" />
+                    Profile Settings
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={handleSignOut} className="flex items-center text-red-600">
+                  <LogOut className="mr-2 h-4 w-4" />
+                  Sign Out
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
+        </div>
       </div>
     </div>
   );
