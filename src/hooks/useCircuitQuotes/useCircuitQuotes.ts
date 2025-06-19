@@ -49,6 +49,8 @@ export const useCircuitQuotes = () => {
           day: 'numeric' 
         }),
         status: quote.status as 'new_pricing' | 'researching' | 'completed' | 'sent_to_customer',
+        static_ip: quote.static_ip || false,
+        slash_29: quote.slash_29 || false,
         carriers: (quote.carrier_quotes || []).map((carrier: any) => ({
           id: carrier.id,
           circuit_quote_id: carrier.circuit_quote_id,
@@ -59,8 +61,6 @@ export const useCircuitQuotes = () => {
           notes: carrier.notes || '',
           term: carrier.term || '',
           color: carrier.color,
-          static_ip: carrier.static_ip || false,
-          slash_29: carrier.slash_29 || false,
           install_fee: carrier.install_fee || false,
           site_survey_needed: carrier.site_survey_needed || false,
           no_service: carrier.no_service || false
@@ -100,7 +100,9 @@ export const useCircuitQuotes = () => {
           client_name: newQuote.client_name,
           location: newQuote.location,
           suite: newQuote.suite,
-          status: newQuote.status
+          status: newQuote.status,
+          static_ip: newQuote.static_ip,
+          slash_29: newQuote.slash_29
         })
         .select()
         .single();
@@ -141,6 +143,8 @@ export const useCircuitQuotes = () => {
           location: updatedQuote.location,
           suite: updatedQuote.suite,
           status: updatedQuote.status,
+          static_ip: updatedQuote.static_ip,
+          slash_29: updatedQuote.slash_29,
           updated_at: new Date().toISOString()
         })
         .eq('id', updatedQuote.id);
@@ -215,8 +219,6 @@ export const useCircuitQuotes = () => {
           term: carrierQuote.term,
           notes: carrierQuote.notes,
           color: carrierQuote.color,
-          static_ip: carrierQuote.static_ip,
-          slash_29: carrierQuote.slash_29,
           install_fee: carrierQuote.install_fee,
           site_survey_needed: carrierQuote.site_survey_needed,
           no_service: carrierQuote.no_service
@@ -263,8 +265,6 @@ export const useCircuitQuotes = () => {
           term: carrierQuote.term,
           notes: carrierQuote.notes,
           color: carrierQuote.color,
-          static_ip: carrierQuote.static_ip,
-          slash_29: carrierQuote.slash_29,
           install_fee: carrierQuote.install_fee,
           site_survey_needed: carrierQuote.site_survey_needed,
           no_service: carrierQuote.no_service,

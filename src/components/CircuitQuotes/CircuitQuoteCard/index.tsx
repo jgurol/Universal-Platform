@@ -42,6 +42,10 @@ export const CircuitQuoteCard = ({
     }
   };
 
+  const handleUpdateQuote = (updatedQuote: CircuitQuote) => {
+    onUpdate(updatedQuote);
+  };
+
   const deleteCarrierQuote = (carrierId: string) => {
     if (onDeleteCarrier) {
       onDeleteCarrier(carrierId);
@@ -69,8 +73,20 @@ export const CircuitQuoteCard = ({
           onToggleExpanded={() => setIsExpanded(!isExpanded)}
           onStatusChange={handleStatusChange}
           onDeleteQuote={handleDeleteQuote}
+          onUpdateQuote={handleUpdateQuote}
         />
       </CardHeader>
+
+      {!isExpanded && (
+        <CardContent className="pt-0">
+          <CircuitQuoteCarriers 
+            carriers={quote.carriers}
+            isMinimized={true}
+            staticIp={quote.static_ip}
+            slash29={quote.slash_29}
+          />
+        </CardContent>
+      )}
 
       {isExpanded && (
         <CardContent className="pt-0">
@@ -80,6 +96,8 @@ export const CircuitQuoteCard = ({
             onEditCarrier={actions.handleEditCarrier}
             onDeleteCarrier={deleteCarrierQuote}
             onCopyCarrier={actions.copyCarrierQuote}
+            staticIp={quote.static_ip}
+            slash29={quote.slash_29}
           />
         </CardContent>
       )}

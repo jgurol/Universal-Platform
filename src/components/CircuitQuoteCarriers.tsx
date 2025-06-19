@@ -1,3 +1,4 @@
+
 import { Button } from "@/components/ui/button";
 import { Plus, Edit, Trash2, Copy } from "lucide-react";
 import type { CarrierQuote } from "@/hooks/useCircuitQuotes";
@@ -9,6 +10,8 @@ interface CircuitQuoteCarriersProps {
   onEditCarrier?: (carrier: CarrierQuote) => void;
   onDeleteCarrier?: (carrierId: string) => void;
   onCopyCarrier?: (carrier: CarrierQuote) => void;
+  staticIp?: boolean;
+  slash29?: boolean;
 }
 
 export const CircuitQuoteCarriers = ({ 
@@ -17,12 +20,12 @@ export const CircuitQuoteCarriers = ({
   onAddCarrier, 
   onEditCarrier, 
   onDeleteCarrier,
-  onCopyCarrier
+  onCopyCarrier,
+  staticIp = false,
+  slash29 = false
 }: CircuitQuoteCarriersProps) => {
   const getTickedCheckboxes = (carrier: CarrierQuote) => {
     const ticked = [];
-    if (carrier.static_ip) ticked.push("Static IP");
-    if (carrier.slash_29) ticked.push("/29");
     if (carrier.install_fee) ticked.push("Install Fee");
     if (carrier.site_survey_needed) ticked.push("Site Survey");
     if (carrier.no_service) ticked.push("No Service");
@@ -66,6 +69,10 @@ export const CircuitQuoteCarriers = ({
         
         if (!carrier.price || carrier.price === 0) hasPendingQuotes = true;
       });
+
+      // Add quote-level options to the display
+      if (staticIp) allTickedOptions.add("Static IP");
+      if (slash29) allTickedOptions.add("/29");
 
       const tickedOptionsArray = Array.from(allTickedOptions);
       const isPending = hasPendingQuotes;
@@ -123,6 +130,25 @@ export const CircuitQuoteCarriers = ({
           </Button>
         )}
       </div>
+
+      {/* Quote-level options display */}
+      {(staticIp || slash29) && (
+        <div className="mb-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
+          <div className="text-sm font-medium text-blue-900 mb-2">Quote Requirements:</div>
+          <div className="flex flex-wrap gap-2">
+            {staticIp && (
+              <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-blue-100 text-blue-800">
+                Static IP
+              </span>
+            )}
+            {slash29 && (
+              <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-blue-100 text-blue-800">
+                /29
+              </span>
+            )}
+          </div>
+        </div>
+      )}
       
       <div className="grid gap-3">
         {sortedCarriers.map((carrier) => {

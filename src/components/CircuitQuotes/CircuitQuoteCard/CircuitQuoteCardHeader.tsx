@@ -1,9 +1,9 @@
 
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { ChevronDown, ChevronRight, Trash2 } from "lucide-react";
-import { CircuitQuoteHeader } from "@/components/CircuitQuoteHeader";
+import { ChevronDown, ChevronRight, Edit, Trash2 } from "lucide-react";
 import { CircuitQuoteStatusSelect } from "@/components/CircuitQuoteStatusSelect";
-import { CircuitQuoteCarriers } from "@/components/CircuitQuoteCarriers";
+import { EditCircuitQuoteDialog } from "@/components/EditCircuitQuoteDialog";
 import type { CircuitQuote } from "@/hooks/useCircuitQuotes";
 
 interface CircuitQuoteCardHeaderProps {
@@ -14,16 +14,30 @@ interface CircuitQuoteCardHeaderProps {
   isExpanded: boolean;
   onToggleExpanded: () => void;
   onStatusChange: (status: string) => void;
-  onDeleteQuote?: () => void;
+  onDeleteQuote: () => void;
+  onUpdateQuote?: (quote: CircuitQuote) => void;
 }
 
-export const CircuitQuoteCardHeader = ({
-  quote,
-  isExpanded,
-  onToggleExpanded,
+export const CircuitQuoteCardHeader = ({ 
+  quote, 
+  isExpanded, 
+  onToggleExpanded, 
   onStatusChange,
-  onDeleteQuote
+  onDeleteQuote,
+  onUpdateQuote
 }: CircuitQuoteCardHeaderProps) => {
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+
+  const handleEditQuote = () => {
+    setIsEditDialogOpen(true);
+  };
+
+  const handleUpdateQuote = (updatedQuote: CircuitQuote) => {
+    if (onUpdateQuote) {
+      onUpdateQuote(updatedQuote);
+    }
+  };
+
   return (
     <>
       <div className="flex items-center justify-between">
@@ -32,39 +46,57 @@ export const CircuitQuoteCardHeader = ({
             variant="ghost"
             size="sm"
             onClick={onToggleExpanded}
-            className="p-1 h-8 w-8"
+            className="p-1"
           >
             {isExpanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
           </Button>
-          <CircuitQuoteHeader quote={quote} />
-        </div>
-        <div className="flex items-center gap-3">
-          <CircuitQuoteHeader quote={quote} showPriceDisplay />
-          <div className="flex items-center gap-2">
-            <CircuitQuoteStatusSelect 
-              status={quote.status} 
-              onStatusChange={onStatusChange} 
-            />
-            {onDeleteQuote && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={onDeleteQuote}
-                className="h-8 w-8 p-0 text-red-600 hover:text-red-700"
-                title="Delete Quote"
-              >
-                <Trash2 className="h-4 w-4" />
-              </Button>
-            )}
+          
+          <div>
+            <h3 className="font-semibold text-lg">{quote.client_name}</h3>
+            <p className="text-sm text-gray-600">
+              {quote.location}
+              {quote.suite && ` - Suite ${quote.suite}`}
+            </p>
+            <p className="text-xs text-gray-500">
+              Created: {quote.created_at}
+            </p>
           </div>
         </div>
+        
+        <div className="flex items-center gap-2">
+          <CircuitQuoteStatusSelect
+            status={quote.status}
+            onStatusChange={onStatusChange}
+          />
+          
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={handleEditQuote}
+            className="h-8 w-8 p-0"
+            title="Edit Quote"
+          >
+            <Edit className="h-4 w-4" />
+          </Button>
+          
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={onDeleteQuote}
+            className="h-8 w-8 p-0 text-red-600 hover:text-red-700"
+            title="Delete Quote"
+          >
+            <Trash2 className="h-4 w-4" />
+          </Button>
+        </div>
       </div>
-      
-      {/* Show vendor badges when minimized */}
-      {!isExpanded && quote.carriers.length > 0 && (
-        <CircuitQuoteCarriers 
-          carriers={quote.carriers} 
-          isMinimized 
+
+      {onUpdateQuote && (
+        <EditCircuitQuoteDialog
+          open={isEditDialogOpen}
+          onOpenChange={setIsEditDialogOpen}
+          quote={quote}
+          onUpdateQuote={handleUpdateQuote}
         />
       )}
     </>

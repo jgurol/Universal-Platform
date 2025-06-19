@@ -306,6 +306,8 @@ export type Database = {
           created_at: string
           id: string
           location: string
+          slash_29: boolean | null
+          static_ip: boolean | null
           status: string
           suite: string | null
           updated_at: string
@@ -317,6 +319,8 @@ export type Database = {
           created_at?: string
           id?: string
           location: string
+          slash_29?: boolean | null
+          static_ip?: boolean | null
           status?: string
           suite?: string | null
           updated_at?: string
@@ -328,6 +332,8 @@ export type Database = {
           created_at?: string
           id?: string
           location?: string
+          slash_29?: boolean | null
+          static_ip?: boolean | null
           status?: string
           suite?: string | null
           updated_at?: string

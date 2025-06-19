@@ -8,6 +8,8 @@ export interface CircuitQuote {
   created_at: string;
   carriers: CarrierQuote[];
   status: 'new_pricing' | 'researching' | 'completed' | 'sent_to_customer';
+  static_ip: boolean;
+  slash_29: boolean;
 }
 
 export interface CarrierQuote {
@@ -20,8 +22,6 @@ export interface CarrierQuote {
   notes: string;
   term: string;
   color: string;
-  static_ip: boolean;
-  slash_29: boolean;
   install_fee: boolean;
   site_survey_needed: boolean;
   no_service: boolean;
