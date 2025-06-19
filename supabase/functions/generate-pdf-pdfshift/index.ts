@@ -1,3 +1,4 @@
+
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.50.0';
 
@@ -501,7 +502,7 @@ const generateHTML = (quote: any, clientInfo?: any, salespersonName?: string, lo
         
         .item-description {
             flex: 1;
-            font-size: 11px;
+            font-size: 11px !important;
             color: #555;
             line-height: 1.4;
             word-break: normal;
@@ -509,33 +510,58 @@ const generateHTML = (quote: any, clientInfo?: any, salespersonName?: string, lo
             white-space: normal;
         }
         
+        .item-description * {
+            font-size: 11px !important;
+            font-family: Arial, sans-serif !important;
+            word-break: normal !important;
+            overflow-wrap: break-word !important;
+        }
+        
         .item-description p {
             margin: 4px 0;
-            font-size: 11px;
+            font-size: 11px !important;
             word-break: normal;
             overflow-wrap: break-word;
         }
         
         .item-description strong, .item-description b {
             font-weight: bold;
-            font-size: 11px;
+            font-size: 11px !important;
         }
         
         .item-description em, .item-description i {
             font-style: italic;
-            font-size: 11px;
+            font-size: 11px !important;
         }
         
         .item-description div {
-            font-size: 11px;
+            font-size: 11px !important;
             word-break: normal;
             overflow-wrap: break-word;
         }
         
         .item-description span {
-            font-size: 11px;
+            font-size: 11px !important;
             word-break: normal;
             overflow-wrap: break-word;
+        }
+        
+        .item-description ul, .item-description ol {
+            font-size: 11px !important;
+            margin: 4px 0;
+            padding-left: 20px;
+        }
+        
+        .item-description li {
+            font-size: 11px !important;
+            margin: 2px 0;
+        }
+        
+        .item-description h1, .item-description h2, .item-description h3, 
+        .item-description h4, .item-description h5, .item-description h6 {
+            font-size: 11px !important;
+            font-weight: bold;
+            margin: 4px 0;
         }
         
         .total-amount {
