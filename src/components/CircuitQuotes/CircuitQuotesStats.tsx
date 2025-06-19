@@ -1,4 +1,3 @@
-
 import { Card, CardContent } from "@/components/ui/card";
 import { Building, Search, Clock, CheckCircle, Zap } from "lucide-react";
 import { CircuitQuote } from "@/hooks/useCircuitQuotes";
@@ -14,7 +13,7 @@ export const CircuitQuotesStats = ({ quotes, activeFilter, onFilterChange }: Cir
     {
       icon: Building,
       label: "Total Quotes",
-      value: quotes.length,
+      value: quotes.filter(q => q.status !== 'sent_to_customer').length,
       color: "text-purple-600",
       filter: null
     },
