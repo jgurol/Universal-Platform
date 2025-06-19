@@ -1,4 +1,3 @@
-
 export interface Client {
   id: string;
   firstName: string;
@@ -58,10 +57,18 @@ export interface QuoteItem {
   address_id?: string;
   item?: {
     id: string;
+    user_id: string;
     name: string;
     description?: string;
     price: number;
+    cost: number;
     sku?: string;
+    charge_type?: string;
+    category_id?: string;
+    vendor_id?: string;
+    is_active: boolean;
+    created_at: string;
+    updated_at: string;
   };
   address?: {
     id: string;
