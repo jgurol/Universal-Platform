@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { CircuitQuoteCardHeader } from "./CircuitQuoteCardHeader";
@@ -59,9 +58,17 @@ export const CircuitQuoteCard = ({
     }
   };
 
+  const handleUpdateCarrier = (carrier: CarrierQuote) => {
+    if (onUpdateCarrier) {
+      onUpdateCarrier(carrier);
+    }
+    // Keep the card expanded after updating a carrier
+    setIsExpanded(true);
+  };
+
   const actions = CircuitQuoteCardActions({
     onAddCarrier,
-    onUpdateCarrier
+    onUpdateCarrier: handleUpdateCarrier
   });
 
   return (
@@ -92,7 +99,10 @@ export const CircuitQuoteCard = ({
         <CardContent className="pt-0">
           <CircuitQuoteCarriers 
             carriers={quote.carriers}
-            onAddCarrier={() => actions.setIsAddCarrierDialogOpen(true)}
+            onAddCarrier={() => {
+              actions.setIsAddCarrierDialogOpen(true);
+              setIsExpanded(true); // Ensure it stays expanded when adding
+            }}
             onEditCarrier={actions.handleEditCarrier}
             onDeleteCarrier={deleteCarrierQuote}
             onCopyCarrier={actions.copyCarrierQuote}
