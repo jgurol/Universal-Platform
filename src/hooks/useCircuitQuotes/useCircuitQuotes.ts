@@ -15,6 +15,20 @@ export const useCircuitQuotes = () => {
       setLoading(true);
       console.log('[useCircuitQuotes] Starting fetch with user:', user?.id, 'isAdmin:', isAdmin);
       
+      // First, let's check the current user's profile to confirm admin status
+      if (user?.id) {
+        const { data: profileData, error: profileError } = await supabase
+          .from('profiles')
+          .select('id, email, role, full_name')
+          .eq('id', user.id)
+          .single();
+        
+        console.log('[useCircuitQuotes] User profile:', profileData);
+        if (profileError) {
+          console.error('[useCircuitQuotes] Profile error:', profileError);
+        }
+      }
+      
       // Build the query - admins see all quotes, non-admins see only their own
       let query = supabase
         .from('circuit_quotes')
@@ -38,10 +52,18 @@ export const useCircuitQuotes = () => {
         console.log('[useCircuitQuotes] Admin user - fetching all quotes');
       }
 
+      console.log('[useCircuitQuotes] About to execute query...');
       const { data: circuitQuotes, error: quotesError } = await query;
+      console.log('[useCircuitQuotes] Query completed');
 
       if (quotesError) {
-        console.error('Error fetching circuit quotes:', quotesError);
+        console.error('[useCircuitQuotes] Error fetching circuit quotes:', quotesError);
+        console.error('[useCircuitQuotes] Error details:', {
+          message: quotesError.message,
+          details: quotesError.details,
+          hint: quotesError.hint,
+          code: quotesError.code
+        });
         toast({
           title: "Error fetching quotes",
           description: quotesError.message,
@@ -53,6 +75,17 @@ export const useCircuitQuotes = () => {
 
       console.log('[useCircuitQuotes] Raw data from Supabase:', circuitQuotes);
       console.log('[useCircuitQuotes] Number of quotes fetched:', circuitQuotes?.length || 0);
+
+      // Let's also check if there's ANY data in the table at all
+      const { data: allData, error: countError } = await supabase
+        .from('circuit_quotes')
+        .select('id, user_id, client_name, created_at')
+        .limit(5);
+      
+      console.log('[useCircuitQuotes] Sample of all circuit_quotes in database:', allData);
+      if (countError) {
+        console.error('[useCircuitQuotes] Error checking all data:', countError);
+      }
 
       // Transform data to match the expected format
       const transformedQuotes: CircuitQuote[] = (circuitQuotes || []).map(quote => ({
@@ -90,7 +123,7 @@ export const useCircuitQuotes = () => {
       console.log('[useCircuitQuotes] Transformed quotes:', transformedQuotes);
       setQuotes(transformedQuotes);
     } catch (error) {
-      console.error('Error in fetchQuotes:', error);
+      console.error('[useCircuitQuotes] Unexpected error in fetchQuotes:', error);
       toast({
         title: "Error",
         description: "Failed to fetch circuit quotes",
