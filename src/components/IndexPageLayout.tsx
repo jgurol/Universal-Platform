@@ -3,36 +3,21 @@ import { useState } from "react";
 import { Header } from "@/components/Header";
 import { ProgramsGrid } from "@/components/ProgramsGrid";
 import { AddClientDialog } from "@/components/AddClientDialog";
-import { Client, Quote, ClientInfo } from "@/pages/Index";
+import { Client, Quote, ClientInfo } from "@/types/index";
 import { useAuth } from "@/context/AuthContext";
 
-interface IndexPageLayoutProps {
-  clients: Client[];
-  quotes: Quote[];
-  clientInfos: ClientInfo[];
-  associatedAgentId: string | null;
-  onAddClient: (client: Omit<Client, "id" | "totalEarnings" | "lastPayment">) => Promise<void>;
-  onAddQuote: (quote: Omit<Quote, "id">) => void;
-  onUpdateQuote: (quote: Quote) => void;
-  onDeleteQuote: (quoteId: string) => void;
-  onUnarchiveQuote: (quoteId: string) => void;
-  onFetchClients: () => Promise<void>;
-}
-
-export const IndexPageLayout = ({
-  clients,
-  quotes,
-  clientInfos,
-  associatedAgentId,
-  onAddClient,
-  onAddQuote,
-  onUpdateQuote,
-  onDeleteQuote,
-  onUnarchiveQuote,
-  onFetchClients
-}: IndexPageLayoutProps) => {
+export const IndexPageLayout = () => {
   const [isAddClientOpen, setIsAddClientOpen] = useState(false);
   const { isAdmin } = useAuth();
+
+  // Placeholder functions for now - these will be implemented when the full dashboard functionality is needed
+  const handleAddClient = async (client: Omit<Client, "id" | "totalEarnings" | "lastPayment">) => {
+    console.log('Add client:', client);
+  };
+
+  const handleFetchClients = async () => {
+    console.log('Fetch clients');
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
@@ -49,8 +34,8 @@ export const IndexPageLayout = ({
         <AddClientDialog 
           open={isAddClientOpen}
           onOpenChange={setIsAddClientOpen}
-          onAddClient={onAddClient}
-          onFetchClients={onFetchClients}
+          onAddClient={handleAddClient}
+          onFetchClients={handleFetchClients}
         />
       )}
     </div>

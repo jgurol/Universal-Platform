@@ -2,7 +2,7 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { DollarSign, TrendingUp, Calendar, Users } from "lucide-react";
-import { Client, Quote } from "@/pages/Index";
+import { Client, Quote } from "@/types/index";
 
 interface AgentSummaryProps {
   clients: Client[];
@@ -17,9 +17,9 @@ export const AgentSummary = ({ clients, quotes, allQuotes, isAdmin, activeFilter
   const safeAllQuotes = allQuotes || [];
   
   // Calculate summary stats from quotes
-  const totalCommission = safeQuotes.reduce((sum, quote) => sum + (quote.commission || 0), 0);
+  const totalCommission = safeQuotes.reduce((sum, quote) => sum + (Number(quote.commission) || 0), 0);
   const avgQuoteValue = safeQuotes.length > 0 
-    ? safeQuotes.reduce((sum, quote) => sum + quote.amount, 0) / safeQuotes.length 
+    ? safeQuotes.reduce((sum, quote) => sum + Number(quote.amount || 0), 0) / safeQuotes.length 
     : 0;
   
   // Get top performing agent from all quotes
@@ -27,12 +27,12 @@ export const AgentSummary = ({ clients, quotes, allQuotes, isAdmin, activeFilter
     if (!acc[quote.clientName]) {
       acc[quote.clientName] = 0;
     }
-    acc[quote.clientName] += quote.commission || 0;
+    acc[quote.clientName] += Number(quote.commission) || 0;
     return acc;
   }, {} as Record<string, number>);
   
   const topAgent = Object.entries(agentPerformance)
-    .sort(([,a], [,b]) => b - a)[0];
+    .sort(([,a], [,b]) => Number(b) - Number(a))[0];
   
   const getFilterLabel = () => {
     switch (activeFilter) {
@@ -99,7 +99,7 @@ export const AgentSummary = ({ clients, quotes, allQuotes, isAdmin, activeFilter
             <div className="flex items-center justify-between">
               <span className="text-sm text-yellow-700">{topAgent[0]}</span>
               <Badge variant="outline" className="bg-yellow-100 text-yellow-800 border-yellow-300">
-                ${topAgent[1].toLocaleString()}
+                ${Number(topAgent[1]).toLocaleString()}
               </Badge>
             </div>
           </div>
