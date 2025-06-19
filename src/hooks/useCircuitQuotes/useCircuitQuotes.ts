@@ -239,8 +239,28 @@ export const useCircuitQuotes = () => {
         return;
       }
 
-      // Refresh quotes to get updated data
-      await fetchQuotes();
+      // Update local state instead of fetching all quotes
+      const newCarrier = {
+        id: data.id,
+        circuit_quote_id: data.circuit_quote_id,
+        carrier: data.carrier,
+        type: data.type,
+        speed: data.speed,
+        price: data.price,
+        notes: data.notes || '',
+        term: data.term || '',
+        color: data.color,
+        install_fee: data.install_fee || false,
+        site_survey_needed: data.site_survey_needed || false,
+        no_service: data.no_service || false,
+        static_ip: data.static_ip || false
+      };
+
+      setQuotes(prev => prev.map(quote => 
+        quote.id === circuitQuoteId 
+          ? { ...quote, carriers: [...quote.carriers, newCarrier] }
+          : quote
+      ));
       
       toast({
         title: "Success",
@@ -286,8 +306,13 @@ export const useCircuitQuotes = () => {
         return;
       }
 
-      // Refresh quotes to get updated data
-      await fetchQuotes();
+      // Update local state instead of fetching all quotes
+      setQuotes(prev => prev.map(quote => ({
+        ...quote,
+        carriers: quote.carriers.map(carrier => 
+          carrier.id === carrierQuote.id ? carrierQuote : carrier
+        )
+      })));
       
       toast({
         title: "Success",
@@ -320,8 +345,11 @@ export const useCircuitQuotes = () => {
         return;
       }
 
-      // Refresh quotes to get updated data
-      await fetchQuotes();
+      // Update local state instead of fetching all quotes
+      setQuotes(prev => prev.map(quote => ({
+        ...quote,
+        carriers: quote.carriers.filter(carrier => carrier.id !== carrierId)
+      })));
       
       toast({
         title: "Success",
