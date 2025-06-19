@@ -5,6 +5,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/context/AuthContext";
+import { ProtectedRoute } from "@/components/ProtectedRoute";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import Admin from "./pages/Admin";
@@ -31,20 +32,68 @@ const App = () => (
           <Toaster />
           <Sonner />
           <Routes>
-            <Route path="/" element={<Index />} />
             <Route path="/auth" element={<Auth />} />
-            <Route path="/admin" element={<Admin />} />
-            <Route path="/quoting-system" element={<QuotingSystem />} />
-            <Route path="/agent-management" element={<AgentManagement />} />
-            <Route path="/client-management" element={<ClientManagement />} />
-            <Route path="/system-settings" element={<SystemSettings />} />
-            <Route path="/settings/profile" element={<ProfileSettings />} />
-            <Route path="/billing" element={<Billing />} />
-            <Route path="/fix-account" element={<FixAccount />} />
             <Route path="/accept-quote/:quoteId" element={<AcceptQuote />} />
-            <Route path="/circuit-tracking" element={<CircuitTracking />} />
-            <Route path="/circuit-quotes" element={<CircuitQuotes />} />
-            <Route path="/vendors" element={<Vendors />} />
+            <Route path="/" element={
+              <ProtectedRoute>
+                <Index />
+              </ProtectedRoute>
+            } />
+            <Route path="/admin" element={
+              <ProtectedRoute requireAdmin>
+                <Admin />
+              </ProtectedRoute>
+            } />
+            <Route path="/quoting-system" element={
+              <ProtectedRoute>
+                <QuotingSystem />
+              </ProtectedRoute>
+            } />
+            <Route path="/agent-management" element={
+              <ProtectedRoute requireAdmin>
+                <AgentManagement />
+              </ProtectedRoute>
+            } />
+            <Route path="/client-management" element={
+              <ProtectedRoute>
+                <ClientManagement />
+              </ProtectedRoute>
+            } />
+            <Route path="/system-settings" element={
+              <ProtectedRoute requireAdmin>
+                <SystemSettings />
+              </ProtectedRoute>
+            } />
+            <Route path="/settings/profile" element={
+              <ProtectedRoute>
+                <ProfileSettings />
+              </ProtectedRoute>
+            } />
+            <Route path="/billing" element={
+              <ProtectedRoute>
+                <Billing />
+              </ProtectedRoute>
+            } />
+            <Route path="/fix-account" element={
+              <ProtectedRoute>
+                <FixAccount />
+              </ProtectedRoute>
+            } />
+            <Route path="/circuit-tracking" element={
+              <ProtectedRoute>
+                <CircuitTracking />
+              </ProtectedRoute>
+            } />
+            <Route path="/circuit-quotes" element={
+              <ProtectedRoute>
+                <CircuitQuotes />
+              </ProtectedRoute>
+            } />
+            <Route path="/vendors" element={
+              <ProtectedRoute>
+                <Vendors />
+              </ProtectedRoute>
+            } />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </TooltipProvider>
