@@ -29,6 +29,28 @@ export const useCircuitQuotes = () => {
         }
       }
       
+      // Let's first check what data exists in the table without RLS filtering
+      console.log('[useCircuitQuotes] Checking raw table data...');
+      const { data: rawData, error: rawError } = await supabase
+        .from('circuit_quotes')
+        .select('id, user_id, client_name, created_at, status')
+        .limit(10);
+      
+      console.log('[useCircuitQuotes] Raw circuit_quotes data:', rawData);
+      if (rawError) {
+        console.error('[useCircuitQuotes] Raw data error:', rawError);
+      }
+      
+      // Test if RLS is blocking us by trying a simple count
+      const { count, error: countError } = await supabase
+        .from('circuit_quotes')
+        .select('*', { count: 'exact', head: true });
+      
+      console.log('[useCircuitQuotes] Count query result:', count);
+      if (countError) {
+        console.error('[useCircuitQuotes] Count error:', countError);
+      }
+      
       // Build the query - admins see all quotes, non-admins see only their own
       let query = supabase
         .from('circuit_quotes')
@@ -52,9 +74,9 @@ export const useCircuitQuotes = () => {
         console.log('[useCircuitQuotes] Admin user - fetching all quotes');
       }
 
-      console.log('[useCircuitQuotes] About to execute query...');
+      console.log('[useCircuitQuotes] About to execute main query...');
       const { data: circuitQuotes, error: quotesError } = await query;
-      console.log('[useCircuitQuotes] Query completed');
+      console.log('[useCircuitQuotes] Main query completed');
 
       if (quotesError) {
         console.error('[useCircuitQuotes] Error fetching circuit quotes:', quotesError);
@@ -73,19 +95,8 @@ export const useCircuitQuotes = () => {
         return;
       }
 
-      console.log('[useCircuitQuotes] Raw data from Supabase:', circuitQuotes);
+      console.log('[useCircuitQuotes] Main query result:', circuitQuotes);
       console.log('[useCircuitQuotes] Number of quotes fetched:', circuitQuotes?.length || 0);
-
-      // Let's also check if there's ANY data in the table at all
-      const { data: allData, error: countError } = await supabase
-        .from('circuit_quotes')
-        .select('id, user_id, client_name, created_at')
-        .limit(5);
-      
-      console.log('[useCircuitQuotes] Sample of all circuit_quotes in database:', allData);
-      if (countError) {
-        console.error('[useCircuitQuotes] Error checking all data:', countError);
-      }
 
       // Transform data to match the expected format
       const transformedQuotes: CircuitQuote[] = (circuitQuotes || []).map(quote => ({
