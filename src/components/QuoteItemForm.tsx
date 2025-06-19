@@ -94,7 +94,7 @@ export const QuoteItemForm = ({
                         : "Select from carrier quotes"
                 } />
               </SelectTrigger>
-              <SelectContent className="bg-white z-50 min-w-[600px]">
+              <SelectContent className="bg-white z-50 min-w-[700px]">
                 {hasCarrierItems ? (
                   availableCarrierItems.map((carrierItem) => (
                     <SelectItem key={`carrier-${carrierItem.id}`} value={`carrier-${carrierItem.id}`}>
@@ -106,6 +106,8 @@ export const QuoteItemForm = ({
                         <span className="text-xs text-gray-600">{carrierItem.speed}</span>
                         <span className="text-xs text-gray-600">•</span>
                         <span className="text-xs text-green-600 font-medium">${carrierItem.price.toFixed(2)}/month</span>
+                        <span className="text-xs text-gray-600">•</span>
+                        <span className="text-xs text-blue-600">{carrierItem.location}</span>
                         <Badge variant="outline" className="text-xs whitespace-nowrap ml-auto">
                           Circuit Quote
                         </Badge>
