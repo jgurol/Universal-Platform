@@ -1,10 +1,9 @@
-
 import { Button } from "@/components/ui/button";
 import { Pencil, Trash2, FileText, Copy } from "lucide-react";
 import { ArchiveRestore } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { Quote, ClientInfo } from "@/pages/Index";
-import { generateQuotePDFWithReactPdf } from "@/utils/pdf/reactPdfGenerator";
+import { generateQuotePDFWithPDFShift } from "@/utils/pdf/pdfShiftGenerator";
 import { useToast } from "@/hooks/use-toast";
 import { EmailStatusButton } from "./EmailStatusButton";
 
@@ -34,20 +33,20 @@ export const QuoteActions = ({
 
   const handlePreviewPDF = async () => {
     try {
-      console.log('[QuoteActions] Generating PDF with React PDF renderer');
-      const pdfBlob = await generateQuotePDFWithReactPdf(quote, clientInfo);
+      console.log('[QuoteActions] Generating PDF with PDFShift');
+      const pdfBlob = await generateQuotePDFWithPDFShift(quote, clientInfo);
       const pdfUrl = URL.createObjectURL(pdfBlob);
       window.open(pdfUrl, '_blank');
       
       toast({
         title: "PDF Generated",
-        description: "Quote PDF has been opened in a new tab using React PDF renderer",
+        description: "Professional quote PDF has been opened in a new tab",
       });
     } catch (error) {
-      console.error('Error generating PDF with React PDF:', error);
+      console.error('Error generating PDF with PDFShift:', error);
       toast({
         title: "Error",
-        description: "Failed to generate PDF preview",
+        description: error instanceof Error ? error.message : "Failed to generate PDF preview",
         variant: "destructive"
       });
     }

@@ -1,11 +1,10 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Quote, ClientInfo } from "@/pages/Index";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
-import { generateQuotePDFWithReactPdf } from "@/utils/pdf/reactPdfGenerator";
+import { generateQuotePDFWithPDFShift } from "@/utils/pdf/pdfShiftGenerator";
 import { useQuery } from "@tanstack/react-query";
 import { EmailContactSelector } from "./EmailContactSelector";
 import { CCContactSelector } from "./CCContactSelector";
@@ -99,10 +98,10 @@ export const EmailQuoteForm = ({
     setIsLoading(true);
     
     try {
-      console.log('[EmailQuoteForm] Generating PDF with React PDF renderer for email');
+      console.log('[EmailQuoteForm] Generating PDF with PDFShift for email');
       
-      // Generate PDF using React PDF renderer
-      const pdfBlob = await generateQuotePDFWithReactPdf(quote, clientInfo);
+      // Generate PDF using PDFShift
+      const pdfBlob = await generateQuotePDFWithPDFShift(quote, clientInfo);
       
       // Convert blob to base64
       const reader = new FileReader();
