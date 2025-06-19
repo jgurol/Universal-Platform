@@ -6,11 +6,37 @@ import { Resend } from "npm:resend@2.0.0";
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'X-Content-Type-Options': 'nosniff',
+  'X-Frame-Options': 'DENY',
+  'X-XSS-Protection': '1; mode=block',
 };
 
 interface PasswordResetRequest {
   email: string;
 }
+
+// Email validation
+const validateEmail = (email: string): boolean => {
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  const dangerousChars = /[\r\n\0%]/;
+  return emailRegex.test(email) && !dangerousChars.test(email) && email.length <= 254;
+};
+
+// Secure token generation
+const generateSecureToken = (): string => {
+  const array = new Uint8Array(32);
+  crypto.getRandomValues(array);
+  return Array.from(array, byte => byte.toString(16).padStart(2, '0')).join('');
+};
+
+// Hash token for storage
+const hashToken = async (token: string): Promise<string> => {
+  const encoder = new TextEncoder();
+  const data = encoder.encode(token);
+  const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+  const hashArray = new Uint8Array(hashBuffer);
+  return Array.from(hashArray, b => b.toString(16).padStart(2, '0')).join('');
+};
 
 const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
 const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
@@ -30,9 +56,32 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
-    const { email }: PasswordResetRequest = await req.json();
+    // Parse and validate request body
+    const body = await req.text();
+    if (body.length > 1000) { // Prevent DoS via large payloads
+      return new Response(JSON.stringify({ 
+        success: false, 
+        error: "Request payload too large" 
+      }), {
+        status: 413,
+        headers: { 'Content-Type': 'application/json', ...corsHeaders },
+      });
+    }
 
-    console.log('Processing password reset request for:', email);
+    const { email }: PasswordResetRequest = JSON.parse(body);
+
+    // Validate email
+    if (!validateEmail(email)) {
+      return new Response(JSON.stringify({ 
+        success: true, // Don't reveal if email exists
+        message: "If an account with that email exists, a password reset link has been sent." 
+      }), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json', ...corsHeaders },
+      });
+    }
+
+    console.log('Processing password reset request for:', email.toLowerCase());
 
     // Find user by email using admin API
     const { data: users, error: userError } = await supabase.auth.admin.listUsers();
@@ -48,7 +97,7 @@ const handler = async (req: Request): Promise<Response> => {
       });
     }
 
-    const user = users.users.find(u => u.email === email);
+    const user = users.users.find(u => u.email?.toLowerCase() === email.toLowerCase());
     
     if (!user) {
       // Don't reveal if email exists or not for security
@@ -62,19 +111,20 @@ const handler = async (req: Request): Promise<Response> => {
     }
 
     // Generate secure reset token
-    const resetToken = crypto.randomUUID() + '-' + Date.now();
+    const resetToken = generateSecureToken();
+    const hashedToken = await hashToken(resetToken);
     const expiresAt = new Date(Date.now() + 60 * 60 * 1000); // 1 hour from now
 
     console.log('Generated reset token for user:', user.id);
     console.log('Token expires at:', expiresAt.toISOString());
 
-    // Store reset token in database
+    // Store hashed token in database
     console.log('Attempting to store reset token...');
     const { data: tokenData, error: tokenError } = await supabase
       .from('password_reset_tokens')
       .insert({
         user_id: user.id,
-        token: resetToken,
+        token: hashedToken, // Store hashed token
         expires_at: expiresAt.toISOString(),
         used: false
       })
@@ -97,23 +147,24 @@ const handler = async (req: Request): Promise<Response> => {
 
     console.log('Reset token stored successfully:', tokenData);
 
-    // Get the site URL for the reset link
+    // Get the site URL for the reset link (use plain token in URL, hashed version is stored)
     const siteUrl = 'https://34d679df-b261-47ea-b136-e7aae591255b.lovableproject.com';
     const resetUrl = `${siteUrl}/auth?reset_token=${resetToken}`;
 
-    // Send password reset email via Resend using californiatelecom.com domain
-    console.log('Sending email to:', email);
+    // Sanitize email for safe inclusion in email content
+    const sanitizedEmail = email.replace(/[<>"'&]/g, '');
+
+    // Send password reset email via Resend
+    console.log('Sending email to:', sanitizedEmail);
     const emailResponse = await resend.emails.send({
-      from: 'California Telecom <noreply@californiatelecom.com>',
-      to: [email],
+      from: 'Universal Platform <noreply@californiatelecom.com>',
+      to: [sanitizedEmail],
       subject: 'Password Reset - Universal Platform',
       html: `
         <h1>Password Reset Request</h1>
         <p>You have requested to reset your password for your Universal Platform account.</p>
         <p>Click the link below to reset your password:</p>
         <p><a href="${resetUrl}" style="background-color: #3B82F6; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">Reset Password</a></p>
-        <p>Or copy and paste this link into your browser:</p>
-        <p>${resetUrl}</p>
         <p>This link will expire in 1 hour.</p>
         <p>If you didn't request this password reset, please ignore this email.</p>
         <p>Best regards,<br>The Universal Platform Team</p>
@@ -135,8 +186,7 @@ const handler = async (req: Request): Promise<Response> => {
     console.error("Error stack:", error.stack);
     return new Response(JSON.stringify({ 
       success: false, 
-      error: "An unexpected error occurred",
-      details: error.message
+      error: "An unexpected error occurred"
     }), {
       status: 500,
       headers: { 'Content-Type': 'application/json', ...corsHeaders },
