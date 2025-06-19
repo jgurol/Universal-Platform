@@ -1,3 +1,4 @@
+
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 
 const corsHeaders = {
@@ -69,14 +70,14 @@ const generateQuoteHTML = (quote: Quote, clientInfo?: ClientInfo): string => {
       <title>Agreement ${quote.quoteNumber || quote.id}</title>
       <style>
         @page {
-          margin: 0.5in;
+          margin: 0.75in;
           size: A4;
         }
         
         body {
           font-family: Arial, sans-serif;
-          font-size: 11px;
-          line-height: 1.3;
+          font-size: 12px;
+          line-height: 1.4;
           color: #000;
           margin: 0;
           padding: 0;
@@ -86,9 +87,9 @@ const generateQuoteHTML = (quote: Quote, clientInfo?: ClientInfo): string => {
           display: flex;
           justify-content: space-between;
           align-items: flex-start;
-          margin-bottom: 20px;
-          border-bottom: 1px solid #ccc;
-          padding-bottom: 15px;
+          margin-bottom: 30px;
+          border-bottom: 2px solid #000;
+          padding-bottom: 20px;
         }
         
         .company-info {
@@ -96,106 +97,126 @@ const generateQuoteHTML = (quote: Quote, clientInfo?: ClientInfo): string => {
         }
         
         .company-name {
-          font-size: 24px;
+          font-size: 28px;
           font-weight: bold;
-          color: #1e3a8a;
-          margin-bottom: 8px;
+          color: #000;
+          margin-bottom: 10px;
+          text-transform: uppercase;
         }
         
         .company-details {
-          font-size: 10px;
-          line-height: 1.2;
-          margin-bottom: 0;
+          font-size: 11px;
+          line-height: 1.4;
+          color: #333;
         }
         
         .agreement-box {
           text-align: center;
-          border: 2px solid #000;
-          padding: 8px;
-          margin-left: 20px;
-          min-width: 120px;
+          border: 3px solid #000;
+          padding: 15px;
+          margin-left: 30px;
+          min-width: 160px;
+          background: #f8f8f8;
         }
         
         .agreement-title {
-          font-size: 14px;
+          font-size: 16px;
           font-weight: bold;
-          margin-bottom: 8px;
+          margin-bottom: 12px;
+          text-transform: uppercase;
         }
         
         .agreement-details {
-          font-size: 10px;
+          font-size: 11px;
           text-align: left;
+          line-height: 1.6;
+        }
+        
+        .agreement-details strong {
+          font-weight: bold;
         }
         
         .info-section {
           display: flex;
           justify-content: space-between;
-          margin-bottom: 20px;
-          gap: 30px;
+          margin-bottom: 30px;
+          gap: 40px;
         }
         
         .info-box {
           flex: 1;
+          padding: 15px;
+          background: #f9f9f9;
+          border: 1px solid #ddd;
         }
         
         .info-box h3 {
-          font-size: 12px;
+          font-size: 14px;
           font-weight: bold;
-          margin: 0 0 8px 0;
+          margin: 0 0 12px 0;
           text-decoration: underline;
+          color: #000;
         }
         
         .info-box p {
-          margin: 2px 0;
-          font-size: 10px;
+          margin: 4px 0;
+          font-size: 11px;
+          line-height: 1.4;
         }
         
         .accept-button {
-          background: #22c55e;
+          background: #4CAF50;
           color: white;
-          padding: 8px 16px;
+          padding: 12px 20px;
           border: none;
-          border-radius: 4px;
+          border-radius: 6px;
           font-weight: bold;
           font-size: 12px;
-          margin-top: 10px;
+          margin-top: 15px;
+          cursor: pointer;
+          text-transform: uppercase;
         }
         
         .service-title {
-          font-size: 16px;
+          font-size: 18px;
           font-weight: bold;
-          margin: 25px 0 15px 0;
+          margin: 30px 0 20px 0;
           text-align: center;
+          color: #000;
+          text-transform: uppercase;
         }
         
         .section-title {
-          font-size: 14px;
+          font-size: 16px;
           font-weight: bold;
-          margin: 20px 0 10px 0;
+          margin: 25px 0 15px 0;
           text-decoration: underline;
+          color: #000;
         }
         
         .items-table {
           width: 100%;
           border-collapse: collapse;
-          margin-bottom: 20px;
-          border: 1px solid #000;
+          margin-bottom: 25px;
+          border: 2px solid #000;
         }
         
         .items-table th {
-          background: #f5f5f5;
+          background: #e8e8e8;
           border: 1px solid #000;
-          padding: 8px;
+          padding: 12px 8px;
           text-align: left;
           font-weight: bold;
-          font-size: 11px;
+          font-size: 12px;
+          text-transform: uppercase;
         }
         
         .items-table td {
           border: 1px solid #000;
-          padding: 8px;
-          font-size: 10px;
+          padding: 10px 8px;
+          font-size: 11px;
           vertical-align: top;
+          line-height: 1.3;
         }
         
         .items-table .center {
@@ -207,31 +228,48 @@ const generateQuoteHTML = (quote: Quote, clientInfo?: ClientInfo): string => {
         }
         
         .item-description {
-          margin-top: 4px;
-          font-size: 9px;
-          color: #333;
-        }
-        
-        .item-details {
-          margin-left: 15px;
-          font-size: 9px;
-          margin-top: 3px;
-        }
-        
-        .item-details li {
-          margin-bottom: 1px;
+          margin-top: 6px;
+          font-size: 10px;
+          color: #555;
+          font-style: italic;
         }
         
         .total-row {
           font-weight: bold;
-          background: #f9f9f9;
+          background: #f0f0f0;
+          font-size: 12px;
+        }
+        
+        .total-row td {
+          padding: 15px 8px;
+          border-top: 2px solid #000;
         }
         
         .final-accept-section {
           text-align: center;
-          margin-top: 30px;
-          padding-top: 20px;
-          border-top: 1px solid #ccc;
+          margin-top: 40px;
+          padding-top: 30px;
+          border-top: 2px solid #000;
+        }
+        
+        .final-accept-button {
+          background: #4CAF50;
+          color: white;
+          padding: 15px 30px;
+          border: none;
+          border-radius: 8px;
+          font-weight: bold;
+          font-size: 14px;
+          cursor: pointer;
+          text-transform: uppercase;
+          box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+        
+        .location-info {
+          font-size: 10px;
+          color: #666;
+          margin-top: 4px;
+          font-style: italic;
         }
       </style>
     </head>
@@ -242,19 +280,20 @@ const generateQuoteHTML = (quote: Quote, clientInfo?: ClientInfo): string => {
           <div class="company-name">YOUR COMPANY NAME</div>
           <div class="company-details">
             Your Company Address<br>
-            City, State ZIP<br>
+            City, State ZIP Code<br>
             United States<br><br>
-            Tel: XXX-XXX-XXXX<br>
-            Email: contact@yourcompany.com
+            <strong>Tel:</strong> (XXX) XXX-XXXX<br>
+            <strong>Email:</strong> contact@yourcompany.com<br>
+            <strong>Website:</strong> www.yourcompany.com
           </div>
         </div>
         <div class="agreement-box">
           <div class="agreement-title">Agreement</div>
           <div class="agreement-details">
-            <strong>Agreement:</strong> ${quote.quoteNumber || quote.id}<br>
-            <strong>Date:</strong> ${new Date().toLocaleDateString()}<br>
-            <strong>Expires:</strong> ${new Date(Date.now() + 30*24*60*60*1000).toLocaleDateString()}<br>
-            <strong>Account Manager:</strong> ${clientInfo?.contact_name || 'N/A'}
+            <strong>Agreement #:</strong><br>${quote.quoteNumber || quote.id}<br><br>
+            <strong>Date:</strong><br>${new Date().toLocaleDateString('en-US', { month: '2-digit', day: '2-digit', year: 'numeric' })}<br><br>
+            <strong>Expires:</strong><br>${new Date(Date.now() + 30*24*60*60*1000).toLocaleDateString('en-US', { month: '2-digit', day: '2-digit', year: 'numeric' })}<br><br>
+            <strong>Account Manager:</strong><br>${clientInfo?.contact_name || 'N/A'}
           </div>
           <button class="accept-button">ACCEPT AGREEMENT</button>
         </div>
@@ -268,8 +307,8 @@ const generateQuoteHTML = (quote: Quote, clientInfo?: ClientInfo): string => {
             <p><strong>${clientInfo.company_name || 'N/A'}</strong></p>
             ${clientInfo.contact_name ? `<p>${clientInfo.contact_name}</p>` : ''}
             ${quote.billingAddress ? quote.billingAddress.split(',').map(line => `<p>${line.trim()}</p>`).join('') : '<p>Billing address not specified</p>'}
-            ${clientInfo.phone ? `<p>Tel: ${clientInfo.phone}</p>` : ''}
-            ${clientInfo.email ? `<p>Email: ${clientInfo.email}</p>` : ''}
+            ${clientInfo.phone ? `<p><strong>Tel:</strong> ${clientInfo.phone}</p>` : ''}
+            ${clientInfo.email ? `<p><strong>Email:</strong> ${clientInfo.email}</p>` : ''}
           ` : '<p>Client information not available</p>'}
         </div>
         <div class="info-box">
@@ -286,19 +325,19 @@ const generateQuoteHTML = (quote: Quote, clientInfo?: ClientInfo): string => {
 
       <!-- Service Title -->
       <div class="service-title">
-        ${quote.description || `${clientInfo?.company_name || 'Customer'} - Internet Circuits`}
+        ${quote.description || `${clientInfo?.company_name || 'Customer'} - Internet Services Agreement`}
       </div>
 
       <!-- Monthly Fees Section -->
       ${mrcItems.length > 0 ? `
-        <div class="section-title">Monthly Fees</div>
+        <div class="section-title">Monthly Recurring Charges</div>
         <table class="items-table">
           <thead>
             <tr>
-              <th style="width: 50%;">Description</th>
-              <th class="center" style="width: 10%;">Qty</th>
-              <th class="right" style="width: 20%;">Price</th>
-              <th class="right" style="width: 20%;">Total</th>
+              <th style="width: 45%;">Service Description</th>
+              <th class="center" style="width: 8%;">Qty</th>
+              <th class="right" style="width: 15%;">Unit Price</th>
+              <th class="right" style="width: 15%;">Monthly Total</th>
             </tr>
           </thead>
           <tbody>
@@ -313,19 +352,19 @@ const generateQuoteHTML = (quote: Quote, clientInfo?: ClientInfo): string => {
                     <strong>${itemName}</strong>
                     ${cleanDescription ? `<div class="item-description">${cleanDescription}</div>` : ''}
                     ${item.address ? `
-                      <div class="item-description">
-                        Location: ${item.address.street_address}, ${item.address.city}, ${item.address.state} ${item.address.zip_code}
+                      <div class="location-info">
+                        <strong>Service Location:</strong> ${item.address.street_address}, ${item.address.city}, ${item.address.state} ${item.address.zip_code}
                       </div>
                     ` : ''}
                   </td>
                   <td class="center">${item.quantity}</td>
                   <td class="right">$${Number(item.unit_price).toFixed(2)}</td>
-                  <td class="right">$${Number(item.total_price).toFixed(2)}</td>
+                  <td class="right"><strong>$${Number(item.total_price).toFixed(2)}</strong></td>
                 </tr>
               `;
             }).join('')}
             <tr class="total-row">
-              <td colspan="3" class="right"><strong>Total Monthly</strong></td>
+              <td colspan="3" class="right"><strong>TOTAL MONTHLY RECURRING CHARGES</strong></td>
               <td class="right"><strong>$${mrcTotal.toFixed(2)} USD</strong></td>
             </tr>
           </tbody>
@@ -334,14 +373,14 @@ const generateQuoteHTML = (quote: Quote, clientInfo?: ClientInfo): string => {
 
       <!-- One-Time Setup Fees Section -->
       ${nrcItems.length > 0 ? `
-        <div class="section-title">One-Time Setup Fees</div>
+        <div class="section-title">One-Time Installation & Setup Fees</div>
         <table class="items-table">
           <thead>
             <tr>
-              <th style="width: 50%;">Description</th>
-              <th class="center" style="width: 10%;">Qty</th>
-              <th class="right" style="width: 20%;">Price</th>
-              <th class="right" style="width: 20%;">Total</th>
+              <th style="width: 45%;">Service Description</th>
+              <th class="center" style="width: 8%;">Qty</th>
+              <th class="right" style="width: 15%;">Unit Price</th>
+              <th class="right" style="width: 15%;">One-Time Total</th>
             </tr>
           </thead>
           <tbody>
@@ -356,19 +395,19 @@ const generateQuoteHTML = (quote: Quote, clientInfo?: ClientInfo): string => {
                     <strong>${itemName}</strong>
                     ${cleanDescription ? `<div class="item-description">${cleanDescription}</div>` : ''}
                     ${item.address ? `
-                      <div class="item-description">
-                        Location: ${item.address.street_address}, ${item.address.city}, ${item.address.state} ${item.address.zip_code}
+                      <div class="location-info">
+                        <strong>Service Location:</strong> ${item.address.street_address}, ${item.address.city}, ${item.address.state} ${item.address.zip_code}
                       </div>
                     ` : ''}
                   </td>
                   <td class="center">${item.quantity}</td>
                   <td class="right">$${Number(item.unit_price).toFixed(2)}</td>
-                  <td class="right">$${Number(item.total_price).toFixed(2)}</td>
+                  <td class="right"><strong>$${Number(item.total_price).toFixed(2)}</strong></td>
                 </tr>
               `;
             }).join('')}
             <tr class="total-row">
-              <td colspan="3" class="right"><strong>Total One-Time Setup</strong></td>
+              <td colspan="3" class="right"><strong>TOTAL ONE-TIME CHARGES</strong></td>
               <td class="right"><strong>$${nrcTotal.toFixed(2)} USD</strong></td>
             </tr>
           </tbody>
@@ -377,7 +416,10 @@ const generateQuoteHTML = (quote: Quote, clientInfo?: ClientInfo): string => {
 
       <!-- Final Accept Button -->
       <div class="final-accept-section">
-        <button class="accept-button">ACCEPT AGREEMENT</button>
+        <button class="final-accept-button">ACCEPT AGREEMENT</button>
+        <p style="margin-top: 20px; font-size: 11px; color: #666;">
+          By accepting this agreement, you agree to the terms and conditions outlined above.
+        </p>
       </div>
     </body>
     </html>
