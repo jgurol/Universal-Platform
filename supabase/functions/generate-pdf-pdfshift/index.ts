@@ -183,6 +183,60 @@ const processRichTextContent = (content: string): { html: string; images: string
   return { html: cleanHtml, images };
 };
 
+// Enhanced function to process template content specifically for terms & conditions
+const processTemplateContent = (content: string): string => {
+  if (!content) return '';
+  
+  console.log('PDFShift Function - Processing template content:', content.substring(0, 200));
+  
+  // More comprehensive HTML processing for template content
+  let processedContent = content
+    // Convert various HTML elements to appropriate formats
+    .replace(/<strong>(.*?)<\/strong>/g, '<b>$1</b>')
+    .replace(/<b>(.*?)<\/b>/g, '<span style="font-weight: bold;">$1</span>')
+    .replace(/<em>(.*?)<\/em>/g, '<i>$1</i>')
+    .replace(/<i>(.*?)<\/i>/g, '<span style="font-style: italic;">$1</span>')
+    .replace(/<u>(.*?)<\/u>/g, '<span style="text-decoration: underline;">$1</span>')
+    
+    // Handle headings
+    .replace(/<h([1-6])[^>]*>(.*?)<\/h[1-6]>/g, '<div style="font-weight: bold; margin: 8px 0 4px 0; font-size: 11px;">$2</div>')
+    
+    // Handle paragraphs with proper spacing
+    .replace(/<p[^>]*>(.*?)<\/p>/g, '<div style="margin: 6px 0; line-height: 1.4;">$1</div>')
+    
+    // Handle line breaks
+    .replace(/<br\s*\/?>/g, '<br>')
+    
+    // Handle lists
+    .replace(/<ul[^>]*>/g, '<div style="margin: 6px 0; padding-left: 16px;">')
+    .replace(/<\/ul>/g, '</div>')
+    .replace(/<ol[^>]*>/g, '<div style="margin: 6px 0; padding-left: 16px;">')
+    .replace(/<\/ol>/g, '</div>')
+    .replace(/<li[^>]*>(.*?)<\/li>/g, '<div style="margin: 2px 0; position: relative;">• $1</div>')
+    
+    // Handle divs
+    .replace(/<div[^>]*>/g, '<div>')
+    
+    // Clean up entities
+    .replace(/&nbsp;/g, ' ')
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/&apos;/g, "'")
+    
+    // Remove any remaining unwanted tags but keep the content
+    .replace(/<\/?(?:span|font)[^>]*>/g, '')
+    .replace(/<img[^>]*>/g, '') // Remove images from template content
+    
+    .trim();
+  
+  console.log('PDFShift Function - Processed template content length:', processedContent.length);
+  
+  return processedContent;
+};
+
 // Enhanced HTML generation function with template content support
 const generateHTML = (quote: any, clientInfo?: any, salespersonName?: string, logoUrl?: string, companyName?: string, templateContent?: string): string => {
   // Extract data safely
@@ -245,8 +299,8 @@ const generateHTML = (quote: any, clientInfo?: any, salespersonName?: string, lo
   // Generate logo HTML if available
   const logoHtml = logoUrl ? `<img src="${logoUrl}" alt="Company Logo" style="max-width: 120px; max-height: 60px; object-fit: contain;">` : `<div class="company-logo-text">${companyName || 'California Telecom, Inc.'}</div>`;
   
-  // Process template content for display
-  const processedTemplateContent = templateContent ? processRichTextContent(templateContent).html : '';
+  // Process template content for display with enhanced formatting
+  const processedTemplateContent = templateContent ? processTemplateContent(templateContent) : '';
   
   // Generate items HTML with proper formatting matching the interface
   const generateItemsHTML = (items: any[], sectionTitle: string) => {
@@ -600,47 +654,55 @@ const generateHTML = (quote: any, clientInfo?: any, salespersonName?: string, lo
         }
         
         .template-text {
-            font-size: 10px;
+            font-size: 10px !important;
             line-height: 1.5;
             color: #555;
+            font-family: Arial, sans-serif !important;
         }
         
         .template-text * {
             font-size: 10px !important;
             font-family: Arial, sans-serif !important;
+            line-height: 1.4 !important;
+        }
+        
+        .template-text div {
+            margin: 6px 0 !important;
+            font-size: 10px !important;
         }
         
         .template-text p {
-            margin: 8px 0;
+            margin: 6px 0 !important;
             font-size: 10px !important;
         }
         
         .template-text ul, .template-text ol {
             font-size: 10px !important;
-            margin: 8px 0;
-            padding-left: 20px;
+            margin: 6px 0 !important;
+            padding-left: 16px !important;
         }
         
         .template-text li {
             font-size: 10px !important;
-            margin: 4px 0;
+            margin: 2px 0 !important;
         }
         
-        .template-text strong, .template-text b {
-            font-weight: bold;
+        .template-text span {
             font-size: 10px !important;
         }
         
-        .template-text em, .template-text i {
-            font-style: italic;
+        .template-text b, .template-text strong {
+            font-weight: bold !important;
             font-size: 10px !important;
         }
         
-        .template-text h1, .template-text h2, .template-text h3, 
-        .template-text h4, .template-text h5, .template-text h6 {
-            font-size: 11px !important;
-            font-weight: bold;
-            margin: 8px 0 4px 0;
+        .template-text i, .template-text em {
+            font-style: italic !important;
+            font-size: 10px !important;
+        }
+        
+        .template-text br {
+            line-height: 1.4 !important;
         }
         
         .total-amount {
