@@ -6,6 +6,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
+import { AddressAutocomplete } from "@/components/AddressAutocomplete";
+import { useClients } from "@/hooks/useClients";
+import { useAuth } from "@/context/AuthContext";
 import { CircuitQuote } from "@/hooks/useCircuitQuotes";
 
 interface AddCircuitQuoteDialogProps {
@@ -14,8 +17,18 @@ interface AddCircuitQuoteDialogProps {
   onAddQuote: (quote: Omit<CircuitQuote, "id" | "created_at" | "carriers">) => void;
 }
 
+interface AddressData {
+  street_address: string;
+  city: string;
+  state: string;
+  zip_code: string;
+  country: string;
+}
+
 export const AddCircuitQuoteDialog = ({ open, onOpenChange, onAddQuote }: AddCircuitQuoteDialogProps) => {
-  const [clientName, setClientName] = useState("");
+  const { user, isAdmin } = useAuth();
+  const { clients, fetchClients } = useClients(user?.id);
+  const [clientId, setClientId] = useState("");
   const [location, setLocation] = useState("");
   const [suite, setSuite] = useState("");
   const [status, setStatus] = useState<'new_pricing' | 'researching' | 'completed' | 'sent_to_customer'>('new_pricing');
@@ -23,8 +36,27 @@ export const AddCircuitQuoteDialog = ({ open, onOpenChange, onAddQuote }: AddCir
   const [slash29, setSlash29] = useState(false);
   const [mikrotikRequired, setMikrotikRequired] = useState(false);
 
+  // Fetch clients when dialog opens
+  React.useEffect(() => {
+    if (open && clients.length === 0) {
+      fetchClients();
+    }
+  }, [open, clients.length, fetchClients]);
+
+  const handleAddressSelect = (address: AddressData) => {
+    const fullAddress = `${address.street_address}, ${address.city}, ${address.state} ${address.zip_code}`;
+    setLocation(fullAddress);
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    
+    const selectedClient = clients.find(client => client.id === clientId);
+    const clientName = selectedClient ? selectedClient.name : "";
+    
+    if (!clientName || !location) {
+      return;
+    }
     
     onAddQuote({
       client_name: clientName,
@@ -38,7 +70,7 @@ export const AddCircuitQuoteDialog = ({ open, onOpenChange, onAddQuote }: AddCir
     });
     
     // Reset form
-    setClientName("");
+    setClientId("");
     setLocation("");
     setSuite("");
     setStatus('new_pricing');
@@ -60,24 +92,28 @@ export const AddCircuitQuoteDialog = ({ open, onOpenChange, onAddQuote }: AddCir
         
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="client-name">Client Name (Required)</Label>
-            <Input
-              id="client-name"
-              value={clientName}
-              onChange={(e) => setClientName(e.target.value)}
-              required
-            />
+            <Label htmlFor="client">Client (Required)</Label>
+            <Select value={clientId} onValueChange={setClientId}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select a client" />
+              </SelectTrigger>
+              <SelectContent className="bg-white">
+                {clients.map((client) => (
+                  <SelectItem key={client.id} value={client.id}>
+                    {client.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="location">Location (Required)</Label>
-            <Input
-              id="location"
-              value={location}
-              onChange={(e) => setLocation(e.target.value)}
-              required
-            />
-          </div>
+          <AddressAutocomplete
+            label="Location (Required)"
+            placeholder="Start typing an address..."
+            onAddressSelect={handleAddressSelect}
+            initialValue={location}
+            required
+          />
 
           <div className="space-y-2">
             <Label htmlFor="suite">Suite</Label>
@@ -85,6 +121,7 @@ export const AddCircuitQuoteDialog = ({ open, onOpenChange, onAddQuote }: AddCir
               id="suite"
               value={suite}
               onChange={(e) => setSuite(e.target.value)}
+              placeholder="Suite number (optional)"
             />
           </div>
 
@@ -148,7 +185,7 @@ export const AddCircuitQuoteDialog = ({ open, onOpenChange, onAddQuote }: AddCir
             <Button 
               type="submit" 
               className="bg-purple-600 hover:bg-purple-700"
-              disabled={!clientName || !location}
+              disabled={!clientId || !location}
             >
               Create Quote
             </Button>
