@@ -504,11 +504,14 @@ const generateHTML = (quote: any, clientInfo?: any, salespersonName?: string, lo
             font-size: 11px;
             color: #555;
             line-height: 1.4;
+            word-wrap: break-word;
+            hyphens: auto;
         }
         
         .item-description p {
             margin: 4px 0;
             font-size: 11px;
+            word-wrap: break-word;
         }
         
         .item-description strong, .item-description b {
@@ -523,10 +526,12 @@ const generateHTML = (quote: any, clientInfo?: any, salespersonName?: string, lo
         
         .item-description div {
             font-size: 11px;
+            word-wrap: break-word;
         }
         
         .item-description span {
             font-size: 11px;
+            word-wrap: break-word;
         }
         
         .total-amount {
