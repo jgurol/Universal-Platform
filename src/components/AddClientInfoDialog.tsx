@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -49,13 +48,19 @@ export const AddClientInfoDialog = ({
     setIsLoading(true);
     try {
       console.log('Fetching users from profiles table...');
+      console.log('Current user session:', await supabase.auth.getSession());
+      
       const { data, error } = await supabase
         .from('profiles')
         .select('id, full_name, email')
         .order('full_name', { ascending: true });
       
+      console.log('Supabase response - data:', data);
+      console.log('Supabase response - error:', error);
+      
       if (error) {
         console.error('Error fetching users:', error);
+        console.error('Error details:', error.details, error.hint, error.message);
       } else {
         console.log('Fetched users:', data);
         setUsers(data || []);
@@ -175,7 +180,8 @@ export const AddClientInfoDialog = ({
               </SelectContent>
             </Select>
             {isLoading && <p className="text-sm text-muted-foreground">Loading users...</p>}
-            {!isLoading && users.length === 0 && <p className="text-sm text-muted-foreground">No users found</p>}
+            {!isLoading && users.length === 0 && <p className="text-sm text-muted-foreground">No users found. Check console for details.</p>}
+            <p className="text-xs text-muted-foreground">Debug: Found {users.length} users</p>
           </div>
 
           <div className="space-y-2">
