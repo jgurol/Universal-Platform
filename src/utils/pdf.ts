@@ -4,12 +4,33 @@ import { supabase } from '@/integrations/supabase/client';
 
 export const generateQuotePDF = async (quote: Quote, clientInfo?: ClientInfo, salespersonName?: string) => {
   console.log('PDF Generation - Using PDFShift integration for quote:', quote.id);
+  console.log('PDF Generation - Quote user_id before sending:', quote.user_id);
   
   try {
+    // Ensure we have the user_id in the quote object
+    let quoteWithUserId = quote;
+    
+    // If user_id is missing, fetch it from the database
+    if (!quote.user_id) {
+      console.log('PDF Generation - user_id missing, fetching from database');
+      const { data: quoteData, error } = await supabase
+        .from('quotes')
+        .select('user_id')
+        .eq('id', quote.id)
+        .single();
+      
+      if (error) {
+        console.error('PDF Generation - Error fetching user_id:', error);
+      } else if (quoteData?.user_id) {
+        quoteWithUserId = { ...quote, user_id: quoteData.user_id };
+        console.log('PDF Generation - Fetched user_id:', quoteData.user_id);
+      }
+    }
+    
     // Call our edge function to generate PDF using PDFShift
     const { data, error } = await supabase.functions.invoke('generate-pdf-pdfshift', {
       body: {
-        quote,
+        quote: quoteWithUserId,
         clientInfo,
         salespersonName
       }
