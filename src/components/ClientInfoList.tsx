@@ -15,10 +15,12 @@ interface ClientInfoListProps {
   agentMapping: Record<string, string>;
 }
 
-interface User {
+interface Agent {
   id: string;
-  full_name: string;
+  first_name: string;
+  last_name: string;
   email: string;
+  company_name: string;
 }
 
 export const ClientInfoList = ({ 
@@ -27,37 +29,38 @@ export const ClientInfoList = ({
   agentMapping 
 }: ClientInfoListProps) => {
   const [editingClientInfo, setEditingClientInfo] = useState<ClientInfo | null>(null);
-  const [users, setUsers] = useState<User[]>([]);
-  const [userMapping, setUserMapping] = useState<Record<string, string>>({});
+  const [agents, setAgents] = useState<Agent[]>([]);
+  const [agentMap, setAgentMap] = useState<Record<string, string>>({});
   const { toast } = useToast();
 
-  // Fetch users to create mapping
+  // Fetch agents to create mapping
   useEffect(() => {
-    const fetchUsers = async () => {
+    const fetchAgents = async () => {
       try {
         const { data, error } = await supabase
-          .from('profiles')
-          .select('id, full_name, email');
+          .from('agents')
+          .select('id, first_name, last_name, email, company_name');
         
         if (error) {
-          console.error('Error fetching users:', error);
+          console.error('Error fetching agents:', error);
           return;
         }
 
-        setUsers(data || []);
+        setAgents(data || []);
         
-        // Create user mapping
+        // Create agent mapping
         const mapping: Record<string, string> = {};
-        data?.forEach(user => {
-          mapping[user.id] = user.full_name || user.email;
+        data?.forEach(agent => {
+          const displayName = `${agent.first_name} ${agent.last_name}${agent.company_name ? ` (${agent.company_name})` : ''}`;
+          mapping[agent.id] = displayName;
         });
-        setUserMapping(mapping);
+        setAgentMap(mapping);
       } catch (err) {
-        console.error('Error in user fetch:', err);
+        console.error('Error in agent fetch:', err);
       }
     };
 
-    fetchUsers();
+    fetchAgents();
   }, []);
 
   const handleDelete = async (clientInfo: ClientInfo) => {
@@ -112,10 +115,15 @@ export const ClientInfoList = ({
                     <div className="flex-1">
                       <div className="flex items-center gap-3 mb-2">
                         <h3 className="font-semibold text-gray-900">{clientInfo.company_name}</h3>
-                        {clientInfo.agent_id && (
+                        {clientInfo.agent_id && agentMap[clientInfo.agent_id] && (
                           <Badge variant="secondary" className="bg-blue-100 text-blue-800">
                             <User className="w-3 h-3 mr-1" />
-                            {userMapping[clientInfo.agent_id] || 'Unknown User'}
+                            {agentMap[clientInfo.agent_id]}
+                          </Badge>
+                        )}
+                        {clientInfo.commission_override && (
+                          <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+                            {clientInfo.commission_override}% Override
                           </Badge>
                         )}
                       </div>

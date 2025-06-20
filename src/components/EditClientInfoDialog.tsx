@@ -17,10 +17,12 @@ interface EditClientInfoDialogProps {
   clientInfo: ClientInfo | null;
 }
 
-interface User {
+interface Agent {
   id: string;
-  full_name: string;
+  first_name: string;
+  last_name: string;
   email: string;
+  company_name: string;
 }
 
 export const EditClientInfoDialog = ({ 
@@ -29,9 +31,9 @@ export const EditClientInfoDialog = ({
   onUpdateClientInfo, 
   clientInfo 
 }: EditClientInfoDialogProps) => {
-  const [users, setUsers] = useState<User[]>([]);
+  const [agents, setAgents] = useState<Agent[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [selectedUserId, setSelectedUserId] = useState<string>("");
+  const [selectedAgentId, setSelectedAgentId] = useState<string>("");
   
   const { register, handleSubmit, reset, setValue, formState: { errors } } = useForm<ClientInfo>({
     defaultValues: {
@@ -53,42 +55,44 @@ export const EditClientInfoDialog = ({
         ...clientInfo,
         agent_id: clientInfo.agent_id || null
       });
-      setSelectedUserId(clientInfo.agent_id || "none");
+      setSelectedAgentId(clientInfo.agent_id || "none");
     }
   }, [clientInfo, open, reset]);
 
-  // Fetch users when dialog opens
-  const fetchUsers = async () => {
+  // Fetch agents when dialog opens
+  const fetchAgents = async () => {
     if (isLoading) return;
     
     setIsLoading(true);
     try {
       const { data, error } = await supabase
-        .from('profiles')
-        .select('id, full_name, email')
-        .order('full_name', { ascending: true });
+        .from('agents')
+        .select('id, first_name, last_name, email, company_name')
+        .order('last_name', { ascending: true });
       
       if (error) {
-        console.error('Error fetching users:', error);
-        setUsers([]);
+        console.error('Error fetching agents:', error);
+        setAgents([]);
       } else {
         if (data && Array.isArray(data)) {
-          const processedUsers = data
-            .filter(user => user && (user.full_name || user.email))
-            .map(user => ({
-              id: user.id,
-              full_name: user.full_name || '',
-              email: user.email || ''
+          const processedAgents = data
+            .filter(agent => agent && (agent.first_name || agent.last_name))
+            .map(agent => ({
+              id: agent.id,
+              first_name: agent.first_name || '',
+              last_name: agent.last_name || '',
+              email: agent.email || '',
+              company_name: agent.company_name || ''
             }));
           
-          setUsers(processedUsers);
+          setAgents(processedAgents);
         } else {
-          setUsers([]);
+          setAgents([]);
         }
       }
     } catch (err) {
-      console.error('Exception in user fetch:', err);
-      setUsers([]);
+      console.error('Exception in agent fetch:', err);
+      setAgents([]);
     } finally {
       setIsLoading(false);
     }
@@ -96,16 +100,16 @@ export const EditClientInfoDialog = ({
 
   const handleOpenChange = (newOpen: boolean) => {
     if (newOpen) {
-      fetchUsers();
+      fetchAgents();
     } else {
       reset();
-      setSelectedUserId("");
+      setSelectedAgentId("");
     }
     onOpenChange(newOpen);
   };
 
-  const handleUserSelect = (value: string) => {
-    setSelectedUserId(value);
+  const handleAgentSelect = (value: string) => {
+    setSelectedAgentId(value);
     setValue("agent_id", value === "none" ? null : value);
   };
 
@@ -114,7 +118,7 @@ export const EditClientInfoDialog = ({
       const updatedData = {
         ...clientInfo,
         ...data,
-        agent_id: selectedUserId === "none" || selectedUserId === "" ? null : selectedUserId
+        agent_id: selectedAgentId === "none" || selectedAgentId === "" ? null : selectedAgentId
       };
       
       onUpdateClientInfo(updatedData);
@@ -130,7 +134,7 @@ export const EditClientInfoDialog = ({
         <DialogHeader>
           <DialogTitle>Edit Client</DialogTitle>
           <DialogDescription>
-            Update the client details.
+            Update the client details and associate with an agent.
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
@@ -192,16 +196,16 @@ export const EditClientInfoDialog = ({
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="edit-agent_id">Associated User</Label>
-            <Select value={selectedUserId} onValueChange={handleUserSelect}>
+            <Label htmlFor="edit-agent_id">Associated Agent</Label>
+            <Select value={selectedAgentId} onValueChange={handleAgentSelect}>
               <SelectTrigger>
-                <SelectValue placeholder={isLoading ? "Loading users..." : "Select a user"} />
+                <SelectValue placeholder={isLoading ? "Loading agents..." : "Select an agent"} />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="none">None</SelectItem>
-                {users.map((user) => (
-                  <SelectItem key={user.id} value={user.id}>
-                    {user.full_name || user.email || `User ${user.id.slice(0, 8)}`}
+                {agents.map((agent) => (
+                  <SelectItem key={agent.id} value={agent.id}>
+                    {`${agent.first_name} ${agent.last_name}${agent.company_name ? ` (${agent.company_name})` : ''}`}
                   </SelectItem>
                 ))}
               </SelectContent>
