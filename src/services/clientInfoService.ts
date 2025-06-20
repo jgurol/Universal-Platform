@@ -21,7 +21,8 @@ export const clientInfoService = {
   async addClientInfo(clientData: AddClientInfoData, userId: string): Promise<ClientInfo> {
     const clientInfoToInsert = {
       ...clientData,
-      agent_id: clientData.agent_id === "none" ? null : clientData.agent_id,
+      // Fix: Handle empty string and "none" values properly
+      agent_id: (!clientData.agent_id || clientData.agent_id === "none" || clientData.agent_id === "") ? null : clientData.agent_id,
       user_id: userId
     };
 
@@ -42,7 +43,8 @@ export const clientInfoService = {
   async updateClientInfo(clientData: UpdateClientInfoData): Promise<ClientInfo> {
     const clientInfoToUpdate = {
       ...clientData,
-      agent_id: clientData.agent_id === "none" ? null : clientData.agent_id,
+      // Fix: Handle empty string and "none" values properly
+      agent_id: (!clientData.agent_id || clientData.agent_id === "none" || clientData.agent_id === "") ? null : clientData.agent_id,
     };
 
     const { data, error } = await supabase
