@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { NavigationBar } from "@/components/NavigationBar";
 import { Header } from "@/components/Header";
@@ -9,8 +8,9 @@ import { useToast } from "@/hooks/use-toast";
 import { Client, Transaction } from "@/pages/Index";
 import { useAuth } from "@/context/AuthContext";
 import { Button } from "@/components/ui/button";
-import { Plus } from "lucide-react";
+import { Plus, User, Building } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 
 export default function AgentManagement() {
   const [clients, setClients] = useState<Client[]>([]);
@@ -18,6 +18,11 @@ export default function AgentManagement() {
   const [isAddClientOpen, setIsAddClientOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [associatedAgentId, setAssociatedAgentId] = useState<string | null>(null);
+  const [associatedAgentInfo, setAssociatedAgentInfo] = useState<{
+    name: string;
+    company: string;
+    email: string;
+  } | null>(null);
   const { toast } = useToast();
   const { user, isAdmin } = useAuth();
 
@@ -44,8 +49,39 @@ export default function AgentManagement() {
       
       console.log("[fetchUserProfile] User profile data:", data);
       setAssociatedAgentId(data?.associated_agent_id || null);
+      
+      // If user has an associated agent, fetch agent details
+      if (data?.associated_agent_id) {
+        fetchAssociatedAgentInfo(data.associated_agent_id);
+      }
     } catch (err) {
       console.error('[fetchUserProfile] Exception fetching user profile:', err);
+    }
+  };
+
+  // Fetch associated agent information
+  const fetchAssociatedAgentInfo = async (agentId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('agents')
+        .select('first_name, last_name, company_name, email')
+        .eq('id', agentId)
+        .single();
+      
+      if (error) {
+        console.error('[fetchAssociatedAgentInfo] Error fetching agent info:', error);
+        return;
+      }
+      
+      if (data) {
+        setAssociatedAgentInfo({
+          name: `${data.first_name} ${data.last_name}`,
+          company: data.company_name || '',
+          email: data.email || ''
+        });
+      }
+    } catch (err) {
+      console.error('[fetchAssociatedAgentInfo] Exception fetching agent info:', err);
     }
   };
 
@@ -254,6 +290,41 @@ export default function AgentManagement() {
       <NavigationBar />
       <div className="container mx-auto px-4 py-8">
         <Header />
+        
+        {/* Associated Agent Info Card - Show for non-admin users */}
+        {!isAdmin && associatedAgentInfo && (
+          <Card className="bg-gradient-to-r from-blue-50 to-indigo-50 shadow-lg border-0 mt-8 mb-6">
+            <CardHeader>
+              <CardTitle className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+                <User className="h-5 w-5 text-blue-600" />
+                Your Associated Agent
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="flex flex-col md:flex-row gap-4">
+                <div className="flex items-center gap-2">
+                  <Badge variant="secondary" className="bg-blue-100 text-blue-800">
+                    <User className="w-3 h-3 mr-1" />
+                    {associatedAgentInfo.name}
+                  </Badge>
+                </div>
+                {associatedAgentInfo.company && (
+                  <div className="flex items-center gap-2">
+                    <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+                      <Building className="w-3 h-3 mr-1" />
+                      {associatedAgentInfo.company}
+                    </Badge>
+                  </div>
+                )}
+                {associatedAgentInfo.email && (
+                  <div className="text-sm text-gray-600">
+                    Contact: {associatedAgentInfo.email}
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        )}
         
         <Card className="bg-white shadow-lg border-0 mt-8">
           <CardHeader>
