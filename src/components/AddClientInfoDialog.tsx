@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -31,6 +30,7 @@ export const AddClientInfoDialog = ({
   const [isLoading, setIsLoading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [selectedUserId, setSelectedUserId] = useState<string>("");
+  const [debugInfo, setDebugInfo] = useState<string>("");
 
   const { register, handleSubmit, reset, setValue, formState: { errors } } = useForm<AddClientInfoData>({
     defaultValues: {
@@ -50,18 +50,23 @@ export const AddClientInfoDialog = ({
     if (isLoading) return;
     
     setIsLoading(true);
+    let debugLog = "Starting fetchUsers...\n";
+    
     try {
-      console.log('[AddClient] Starting to fetch profiles...');
+      debugLog += "Checking authentication...\n";
       
       // First check authentication status
       const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-      console.log('[AddClient] Session check - Session:', session, 'Error:', sessionError);
+      debugLog += `Session check - Session exists: ${!!session}, Error: ${sessionError}\n`;
       
       if (!session) {
-        console.log('[AddClient] No active session found');
+        debugLog += "No active session found\n";
         setUsers([]);
+        setDebugInfo(debugLog);
         return;
       }
+      
+      debugLog += "Fetching profiles...\n";
       
       // Fetch profiles with specific fields
       const { data: profileData, error: profileError } = await supabase
@@ -69,35 +74,42 @@ export const AddClientInfoDialog = ({
         .select('id, full_name, email')
         .order('full_name', { ascending: true, nullsFirst: false });
       
-      console.log('[AddClient] Profiles query - Data:', profileData);
-      console.log('[AddClient] Profiles query - Error:', profileError);
+      debugLog += `Profiles query result - Data count: ${profileData?.length || 0}, Error: ${profileError}\n`;
+      debugLog += `Raw profile data: ${JSON.stringify(profileData, null, 2)}\n`;
       
       if (profileError) {
-        console.error('[AddClient] Error fetching profiles:', profileError);
+        debugLog += `Profile error details: ${JSON.stringify(profileError, null, 2)}\n`;
         setUsers([]);
       } else if (profileData && Array.isArray(profileData)) {
-        console.log('[AddClient] Processing profiles:', profileData.length);
+        debugLog += `Processing ${profileData.length} profiles...\n`;
         
-        // Process the profiles into users format with less restrictive filtering
-        const processedUsers = profileData
-          .map(profile => ({
+        // Process the profiles into users format
+        const processedUsers = profileData.map((profile, index) => {
+          debugLog += `Profile ${index}: id=${profile.id}, full_name="${profile.full_name}", email="${profile.email}"\n`;
+          return {
             id: profile.id,
             full_name: profile.full_name || '',
             email: profile.email || ''
-          }))
-          .filter(user => user.id); // Only filter out if no ID (which shouldn't happen)
+          };
+        });
           
-        console.log('[AddClient] Processed users:', processedUsers);
+        debugLog += `Processed users count: ${processedUsers.length}\n`;
+        debugLog += `Processed users: ${JSON.stringify(processedUsers, null, 2)}\n`;
+        
         setUsers(processedUsers);
+        debugLog += "Users state updated successfully\n";
       } else {
-        console.log('[AddClient] No profiles found');
+        debugLog += "No profiles found or profileData is not an array\n";
         setUsers([]);
       }
     } catch (err) {
-      console.error('[AddClient] Exception in user fetch:', err);
+      debugLog += `Exception in fetchUsers: ${JSON.stringify(err, null, 2)}\n`;
       setUsers([]);
     } finally {
       setIsLoading(false);
+      setDebugInfo(debugLog);
+      debugLog += "fetchUsers completed\n";
+      console.log('[AddClient] Complete debug log:', debugLog);
     }
   };
 
@@ -113,6 +125,7 @@ export const AddClientInfoDialog = ({
   };
 
   const handleUserSelect = (value: string) => {
+    console.log('[AddClient] User selected:', value);
     setSelectedUserId(value);
     setValue("agent_id", value === "none" ? null : value);
   };
@@ -136,6 +149,9 @@ export const AddClientInfoDialog = ({
     }
   };
 
+  console.log('[AddClient] Component render - users.length:', users.length, 'isLoading:', isLoading);
+  console.log('[AddClient] Current users state:', users);
+
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto">
@@ -147,6 +163,23 @@ export const AddClientInfoDialog = ({
         </DialogHeader>
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+          {/* Enhanced Debug section */}
+          <div className="p-3 bg-blue-50 border border-blue-200 rounded text-sm">
+            <strong>Debug Info:</strong><br/>
+            Users found: {users.length}<br/>
+            Loading: {isLoading ? 'Yes' : 'No'}<br/>
+            Selected User ID: {selectedUserId || 'None'}<br/>
+            Dialog Open: {open ? 'Yes' : 'No'}<br/>
+            <details className="mt-2">
+              <summary>Full Debug Log</summary>
+              <pre className="text-xs mt-1 whitespace-pre-wrap">{debugInfo}</pre>
+            </details>
+            <details className="mt-2">
+              <summary>Users Array</summary>
+              <pre className="text-xs mt-1">{JSON.stringify(users, null, 2)}</pre>
+            </details>
+          </div>
+
           <div className="space-y-2">
             <Label htmlFor="company_name" className="required">Company Name</Label>
             <Input
@@ -206,25 +239,33 @@ export const AddClientInfoDialog = ({
 
           <div className="space-y-2">
             <Label htmlFor="agent_id">Associated User</Label>
-            <Select value={selectedUserId} onValueChange={handleUserSelect}>
-              <SelectTrigger>
-                <SelectValue placeholder={isLoading ? "Loading users..." : "Select a user"} />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="none">None</SelectItem>
-                {users.length > 0 ? (
-                  users.map((user) => (
-                    <SelectItem key={user.id} value={user.id}>
-                      {user.full_name || user.email || `User ${user.id.slice(0, 8)}`}
+            <div className="space-y-2">
+              <div className="text-xs text-gray-500">
+                Debug: {users.length} users available, loading: {isLoading ? 'true' : 'false'}
+              </div>
+              <Select value={selectedUserId} onValueChange={handleUserSelect}>
+                <SelectTrigger>
+                  <SelectValue placeholder={isLoading ? "Loading users..." : "Select a user"} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">None</SelectItem>
+                  {users.length > 0 ? (
+                    users.map((user) => {
+                      console.log('[AddClient] Rendering user option:', user);
+                      return (
+                        <SelectItem key={user.id} value={user.id}>
+                          {user.full_name || user.email || `User ${user.id.slice(0, 8)}`}
+                        </SelectItem>
+                      );
+                    })
+                  ) : (
+                    <SelectItem value="no-users" disabled>
+                      {isLoading ? 'Loading...' : 'No users found'}
                     </SelectItem>
-                  ))
-                ) : (
-                  <SelectItem value="no-users" disabled>
-                    {isLoading ? 'Loading...' : 'No users found'}
-                  </SelectItem>
-                )}
-              </SelectContent>
-            </Select>
+                  )}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
 
           <div className="space-y-2">
