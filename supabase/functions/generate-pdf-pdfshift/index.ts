@@ -26,9 +26,8 @@ const handler = async (req: Request): Promise<Response> => {
     const { quote, clientInfo, salespersonName }: PDFRequest = requestBody;
     
     console.log('PDFShift Function - Processing quote:', quote?.id, 'with status:', quote?.status);
+    console.log('PDFShift Function - Quote user_id:', quote?.user_id);
     console.log('PDFShift Function - Quote items count:', quote?.quoteItems?.length || 0);
-    console.log('PDFShift Function - API Key configured:', !!Deno.env.get('PDFSHIFT_API_KEY'));
-    console.log('PDFShift Function - Template ID:', quote?.templateId);
     
     // Initialize Supabase client to fetch system settings and template
     const supabase = createClient(
@@ -81,7 +80,7 @@ const handler = async (req: Request): Promise<Response> => {
     console.log('PDFShift Function - Logo URL configured:', !!logoUrl);
     console.log('PDFShift Function - Company name:', companyName);
     
-    // Fetch the quote creator's name from profiles table
+    // Fetch the quote creator's name from profiles table - this is the main fix
     let accountManagerName = 'N/A';
     
     if (quote?.user_id) {
@@ -97,19 +96,11 @@ const handler = async (req: Request): Promise<Response> => {
       } else if (profile?.full_name) {
         accountManagerName = profile.full_name;
         console.log('PDFShift Function - Found user profile name:', accountManagerName);
+      } else {
+        console.log('PDFShift Function - Profile found but no full_name set');
       }
-    }
-    
-    // Fallback to salespersonName parameter if provided and no profile name found
-    if (accountManagerName === 'N/A' && salespersonName && salespersonName !== 'Unknown' && salespersonName !== 'N/A') {
-      accountManagerName = salespersonName;
-      console.log('PDFShift Function - Using salespersonName fallback:', accountManagerName);
-    }
-    
-    // Try clientInfo agent_name as another fallback
-    if (accountManagerName === 'N/A' && clientInfo?.agent_name) {
-      accountManagerName = clientInfo.agent_name;
-      console.log('PDFShift Function - Using clientInfo.agent_name fallback:', accountManagerName);
+    } else {
+      console.log('PDFShift Function - No user_id found in quote');
     }
     
     console.log('PDFShift Function - Final account manager name:', accountManagerName);

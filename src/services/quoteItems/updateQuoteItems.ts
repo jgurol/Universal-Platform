@@ -94,10 +94,11 @@ export const updateQuoteItems = async (quoteId: string, quoteItems: QuoteItemDat
       const isCarrierItem = quoteItem.item?.id?.startsWith('carrier-');
       const isValidUUID = itemId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(itemId);
 
-      // For carrier items, create a temporary item in the catalog
+      // For carrier items, DON'T create catalog items - just create a placeholder item temporarily
       if (isCarrierItem) {
-        console.log('[updateQuoteItems] Creating catalog item for carrier quote item:', quoteItem.name);
+        console.log('[updateQuoteItems] Handling carrier quote item - creating temporary placeholder:', quoteItem.name);
         
+        // Create a temporary placeholder item that won't persist in the catalog
         const tempItemData = {
           user_id: user.id,
           name: quoteItem.name || 'Carrier Item',
@@ -105,7 +106,7 @@ export const updateQuoteItems = async (quoteId: string, quoteItems: QuoteItemDat
           price: quoteItem.unit_price || 0,
           cost: quoteItem.cost_override || 0,
           charge_type: quoteItem.charge_type || 'MRC',
-          is_active: true
+          is_active: false // Mark as inactive so it doesn't show in catalog
         };
 
         const { data: tempItem, error: tempItemError } = await supabase
@@ -115,15 +116,15 @@ export const updateQuoteItems = async (quoteId: string, quoteItems: QuoteItemDat
           .single();
 
         if (tempItemError) {
-          console.error('[updateQuoteItems] Error creating carrier item:', tempItemError);
+          console.error('[updateQuoteItems] Error creating temporary carrier item:', tempItemError);
           throw tempItemError;
         }
 
         itemId = tempItem.id;
-        console.log('[updateQuoteItems] Created catalog item for carrier with ID:', itemId);
+        console.log('[updateQuoteItems] Created temporary placeholder item (inactive) for carrier with ID:', itemId);
       } else if (!isValidUUID) {
-        // Only create temporary items for non-carrier items that don't have valid UUIDs
-        console.log('[updateQuoteItems] Creating temporary item for quote item:', quoteItem.name);
+        // Only create catalog items for non-carrier items that don't have valid UUIDs
+        console.log('[updateQuoteItems] Creating catalog item for regular quote item:', quoteItem.name);
         
         const tempItemData = {
           user_id: user.id,
@@ -132,7 +133,7 @@ export const updateQuoteItems = async (quoteId: string, quoteItems: QuoteItemDat
           price: quoteItem.unit_price || 0,
           cost: quoteItem.cost_override || 0,
           charge_type: quoteItem.charge_type || 'MRC',
-          is_active: true
+          is_active: true // Regular items should be active in catalog
         };
 
         const { data: tempItem, error: tempItemError } = await supabase
@@ -142,12 +143,12 @@ export const updateQuoteItems = async (quoteId: string, quoteItems: QuoteItemDat
           .single();
 
         if (tempItemError) {
-          console.error('[updateQuoteItems] Error creating temporary item:', tempItemError);
+          console.error('[updateQuoteItems] Error creating catalog item:', tempItemError);
           throw tempItemError;
         }
 
         itemId = tempItem.id;
-        console.log('[updateQuoteItems] Created temporary item with ID:', itemId);
+        console.log('[updateQuoteItems] Created catalog item with ID:', itemId);
       }
 
       if (!itemId) {
