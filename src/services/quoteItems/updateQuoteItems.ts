@@ -29,7 +29,7 @@ export const updateQuoteItems = async (quoteId: string, quoteItems: QuoteItemDat
     for (const quoteItem of quoteItems) {
       console.log('[updateQuoteItems] Processing item:', {
         name: quoteItem.name,
-        item_id: quoteItem.item?.id || 'carrier-' + quoteItem.id,
+        item_id: quoteItem.item?.id,
         address_id: quoteItem.address_id,
         quantity: quoteItem.quantity,
         unit_price: quoteItem.unit_price,
@@ -39,19 +39,20 @@ export const updateQuoteItems = async (quoteId: string, quoteItems: QuoteItemDat
         image_name: quoteItem.image_name
       });
 
+      // Use the item_id from the item object, not from a separate field
       let itemId = quoteItem.item?.id;
 
-      // Handle carrier quote items by creating temporary items
-      if (!itemId && quoteItem.name && quoteItem.name.includes(' - ')) {
-        console.log('[updateQuoteItems] Creating temporary item for carrier quote item:', quoteItem.name);
+      // If we don't have an item ID, we need to create a temporary item
+      if (!itemId && quoteItem.name) {
+        console.log('[updateQuoteItems] Creating temporary item for quote item:', quoteItem.name);
         
         const tempItemData = {
-          user_id: user.id, // Add user_id here
+          user_id: user.id,
           name: quoteItem.name,
           description: quoteItem.description || '',
           price: quoteItem.unit_price || 0,
           cost: 0,
-          charge_type: 'MRC',
+          charge_type: quoteItem.charge_type || 'MRC',
           is_active: true
         };
 
