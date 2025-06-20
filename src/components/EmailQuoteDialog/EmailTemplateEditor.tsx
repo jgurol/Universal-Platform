@@ -24,7 +24,7 @@ export const EmailTemplateEditor = ({
 
   const defaultTemplate = `${contactName ? `Hi ${contactName},` : 'Hi,'}
 
-Please find attached your quote for the requested services. If you have any questions or would like to proceed with this proposal, please don't hesitate to contact us.
+Please find attached your quote for the requested services. If would like to proceed with this proposal click the green accept button on the PDF agreement. If you have any questions please don't hesitate to contact us.
 
 Thank you for your business.
 
