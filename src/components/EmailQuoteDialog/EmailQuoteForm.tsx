@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Quote, ClientInfo } from "@/pages/Index";
@@ -49,7 +48,7 @@ export const EmailQuoteForm = ({
       console.log('EmailQuoteForm - Provided salespersonName:', salespersonName);
       console.log('EmailQuoteForm - Quote user_id:', quote.user_id);
       
-      if (salespersonName) {
+      if (salespersonName && salespersonName.trim() !== '' && salespersonName !== 'Unknown Client') {
         console.log('EmailQuoteForm - Using provided salesperson name:', salespersonName);
         setActualSalespersonName(salespersonName);
         setSalespersonLoaded(true);
@@ -67,7 +66,7 @@ export const EmailQuoteForm = ({
           
           console.log('EmailQuoteForm - Profile query result:', { profile, error });
           
-          if (!error && profile?.full_name) {
+          if (!error && profile?.full_name && profile.full_name.trim() !== '') {
             console.log('EmailQuoteForm - Found salesperson name:', profile.full_name);
             setActualSalespersonName(profile.full_name);
           } else {
@@ -98,6 +97,11 @@ export const EmailQuoteForm = ({
     console.log('EmailQuoteForm - Creating message template with salesperson:', actualSalespersonName);
     console.log('EmailQuoteForm - Client contact name:', clientInfo?.contact_name);
 
+    // Ensure we have a valid salesperson name
+    const finalSalespersonName = actualSalespersonName && actualSalespersonName.trim() !== '' && actualSalespersonName !== 'Unknown Client' 
+      ? actualSalespersonName 
+      : 'Sales Team';
+
     const messageTemplate = `Dear ${clientInfo?.contact_name || 'Valued Customer'},
 
 Please find attached your quote for the requested services. If you have any questions or would like to proceed with this proposal, please don't hesitate to contact us.
@@ -105,9 +109,9 @@ Please find attached your quote for the requested services. If you have any ques
 Thank you for your business.
 
 Best regards,
-${actualSalespersonName}`;
+${finalSalespersonName}`;
 
-    console.log('EmailQuoteForm - Setting message template:', messageTemplate);
+    console.log('EmailQuoteForm - Setting message template with final name:', finalSalespersonName);
     setMessage(messageTemplate);
   }, [clientInfo?.contact_name, actualSalespersonName, salespersonLoaded]);
 
@@ -189,7 +193,12 @@ ${actualSalespersonName}`;
     onEmailStatusChange('idle');
     
     try {
-      const pdf = await generateQuotePDF(quote, clientInfo, actualSalespersonName);
+      // Use the final salesperson name, ensuring it's not "Unknown Client"
+      const finalSalespersonName = actualSalespersonName && actualSalespersonName.trim() !== '' && actualSalespersonName !== 'Unknown Client' 
+        ? actualSalespersonName 
+        : 'Sales Team';
+        
+      const pdf = await generateQuotePDF(quote, clientInfo, finalSalespersonName);
       const pdfBlob = pdf.output('blob');
       
       const reader = new FileReader();
@@ -213,7 +222,6 @@ ${actualSalespersonName}`;
             console.error('Supabase function error:', error);
             onEmailStatusChange('error');
             
-            // Update database with error status
             await supabase
               .from('quotes')
               .update({ email_status: 'error' })
@@ -230,7 +238,6 @@ ${actualSalespersonName}`;
           if (data?.success === true) {
             onEmailStatusChange('success');
             
-            // Update database with success status
             await supabase
               .from('quotes')
               .update({ email_status: 'success' })
@@ -247,7 +254,6 @@ ${actualSalespersonName}`;
           } else {
             onEmailStatusChange('error');
             
-            // Update database with error status
             await supabase
               .from('quotes')
               .update({ email_status: 'error' })
@@ -263,7 +269,6 @@ ${actualSalespersonName}`;
           console.error('Error calling email function:', emailError);
           onEmailStatusChange('error');
           
-          // Update database with error status
           await supabase
             .from('quotes')
             .update({ email_status: 'error' })
@@ -284,7 +289,6 @@ ${actualSalespersonName}`;
       console.error('Error generating PDF:', error);
       onEmailStatusChange('error');
       
-      // Update database with error status
       await supabase
         .from('quotes')
         .update({ email_status: 'error' })

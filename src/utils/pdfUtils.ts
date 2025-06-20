@@ -1,3 +1,101 @@
 
-// Direct export to the PDFShift implementation
-export { generateQuotePDF } from './pdf';
+import { Quote, ClientInfo } from '@/pages/Index';
+import { supabase } from '@/integrations/supabase/client';
+
+export const generateQuotePDF = async (quote: Quote, clientInfo?: ClientInfo, salespersonName?: string) => {
+  console.log('PDF Generation - Using PDFShift integration for quote:', quote.id);
+  console.log('PDF Generation - Quote user_id before sending:', quote.user_id);
+  console.log('PDF Generation - Provided salespersonName:', salespersonName);
+  
+  try {
+    // Ensure we have the user_id in the quote object
+    let quoteWithUserId = quote;
+    
+    // If user_id is missing, fetch it from the database
+    if (!quote.user_id) {
+      console.log('PDF Generation - user_id missing, fetching from database');
+      const { data: quoteData, error } = await supabase
+        .from('quotes')
+        .select('user_id')
+        .eq('id', quote.id)
+        .single();
+      
+      if (error) {
+        console.error('PDF Generation - Error fetching user_id:', error);
+      } else if (quoteData?.user_id) {
+        quoteWithUserId = { ...quote, user_id: quoteData.user_id };
+        console.log('PDF Generation - Fetched user_id:', quoteData.user_id);
+      }
+    }
+    
+    // Ensure we don't pass "Unknown Client" as salesperson name
+    let finalSalespersonName = salespersonName;
+    if (!finalSalespersonName || finalSalespersonName.trim() === '' || finalSalespersonName === 'Unknown Client') {
+      console.log('PDF Generation - Invalid salesperson name, using fallback');
+      finalSalespersonName = 'Sales Team';
+    }
+    
+    console.log('PDF Generation - Final salesperson name:', finalSalespersonName);
+    
+    // Call our edge function to generate PDF using PDFShift
+    const { data, error } = await supabase.functions.invoke('generate-pdf-pdfshift', {
+      body: {
+        quote: quoteWithUserId,
+        clientInfo,
+        salespersonName: finalSalespersonName
+      }
+    });
+
+    if (error) {
+      console.error('PDFShift generation error:', error);
+      throw new Error(`Failed to generate PDF: ${error.message}`);
+    }
+
+    if (!data || !data.pdf) {
+      console.error('No PDF data received from PDFShift:', data);
+      throw new Error('No PDF data received from PDFShift');
+    }
+
+    console.log('PDFShift - PDF data length:', data.pdf.length);
+
+    // Convert base64 to blob
+    const pdfBlob = base64ToBlob(data.pdf, 'application/pdf');
+    console.log('PDFShift - PDF blob created, size:', pdfBlob.size);
+    
+    // Create a mock jsPDF-like object for compatibility
+    const mockPDF = {
+      output: (type: string) => {
+        console.log('PDFShift - Output requested, type:', type);
+        if (type === 'blob') {
+          return pdfBlob;
+        }
+        return pdfBlob;
+      }
+    };
+
+    console.log('PDF Generation - PDFShift PDF generated successfully');
+    return mockPDF;
+    
+  } catch (error) {
+    console.error('Error generating PDF with PDFShift:', error);
+    throw error;
+  }
+};
+
+// Helper function to convert base64 to blob
+const base64ToBlob = (base64: string, mimeType: string): Blob => {
+  try {
+    const byteCharacters = atob(base64);
+    const byteNumbers = new Array(byteCharacters.length);
+    
+    for (let i = 0; i < byteCharacters.length; i++) {
+      byteNumbers[i] = byteCharacters.charCodeAt(i);
+    }
+    
+    const byteArray = new Uint8Array(byteNumbers);
+    return new Blob([byteArray], { type: mimeType });
+  } catch (error) {
+    console.error('Error converting base64 to blob:', error);
+    throw new Error('Failed to convert PDF data');
+  }
+};
