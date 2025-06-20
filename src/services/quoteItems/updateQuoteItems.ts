@@ -12,6 +12,21 @@ export const updateQuoteItems = async (quoteId: string, quoteItems: QuoteItemDat
       throw new Error('User not authenticated');
     }
 
+    // Verify quote ownership before proceeding
+    const { data: quote, error: quoteError } = await supabase
+      .from('quotes')
+      .select('id, user_id')
+      .eq('id', quoteId)
+      .eq('user_id', user.id)
+      .single();
+
+    if (quoteError || !quote) {
+      console.error('[updateQuoteItems] Quote not found or access denied:', quoteError);
+      throw new Error('Quote not found or access denied');
+    }
+
+    console.log('[updateQuoteItems] Quote ownership verified for user:', user.id);
+
     // First, delete existing quote items for this quote
     const { error: deleteError } = await supabase
       .from('quote_items')
