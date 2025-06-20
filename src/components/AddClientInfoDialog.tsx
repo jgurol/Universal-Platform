@@ -63,44 +63,34 @@ export const AddClientInfoDialog = ({
         return;
       }
       
-      // Test a simple query first
-      const { data: testData, error: testError, count } = await supabase
-        .from('profiles')
-        .select('*', { count: 'exact' });
-      
-      console.log('[AddClient] Test query - Data:', testData);
-      console.log('[AddClient] Test query - Error:', testError);
-      console.log('[AddClient] Test query - Count:', count);
-      
-      // Try a more specific query
-      const { data: specificData, error: specificError } = await supabase
+      // Fetch profiles with specific fields
+      const { data: profileData, error: profileError } = await supabase
         .from('profiles')
         .select('id, full_name, email')
-        .not('id', 'is', null)
-        .order('full_name', { ascending: true });
+        .order('full_name', { ascending: true, nullsFirst: false });
       
-      console.log('[AddClient] Specific query - Data:', specificData);
-      console.log('[AddClient] Specific query - Error:', specificError);
+      console.log('[AddClient] Profiles query - Data:', profileData);
+      console.log('[AddClient] Profiles query - Error:', profileError);
       
-      if (specificError) {
-        console.error('[AddClient] Error fetching profiles:', specificError);
+      if (profileError) {
+        console.error('[AddClient] Error fetching profiles:', profileError);
         setUsers([]);
-      } else if (specificData && specificData.length > 0) {
-        console.log('[AddClient] Processing profiles:', specificData.length);
+      } else if (profileData && Array.isArray(profileData)) {
+        console.log('[AddClient] Processing profiles:', profileData.length);
         
-        // Process the profiles into users format
-        const processedUsers = specificData
-          .filter(profile => profile && (profile.full_name || profile.email))
+        // Process the profiles into users format with less restrictive filtering
+        const processedUsers = profileData
           .map(profile => ({
             id: profile.id,
             full_name: profile.full_name || '',
             email: profile.email || ''
-          }));
+          }))
+          .filter(user => user.id); // Only filter out if no ID (which shouldn't happen)
           
         console.log('[AddClient] Processed users:', processedUsers);
         setUsers(processedUsers);
       } else {
-        console.log('[AddClient] No profiles found in specific query');
+        console.log('[AddClient] No profiles found');
         setUsers([]);
       }
     } catch (err) {
@@ -157,14 +147,6 @@ export const AddClientInfoDialog = ({
         </DialogHeader>
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-          {/* Debug section - remove after fixing */}
-          <div className="p-3 bg-yellow-50 border border-yellow-200 rounded text-sm">
-            <strong>Debug Info:</strong><br/>
-            Users found: {users.length}<br/>
-            Loading: {isLoading ? 'Yes' : 'No'}<br/>
-            Selected User ID: {selectedUserId || 'None'}
-          </div>
-
           <div className="space-y-2">
             <Label htmlFor="company_name" className="required">Company Name</Label>
             <Input
