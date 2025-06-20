@@ -16,11 +16,10 @@ interface AddClientInfoDialogProps {
   onAddClientInfo: (newClientInfo: AddClientInfoData) => Promise<void>;
 }
 
-interface Agent {
+interface User {
   id: string;
-  company_name: string;
-  first_name: string;
-  last_name: string;
+  full_name: string;
+  email: string;
 }
 
 export const AddClientInfoDialog = ({ 
@@ -28,7 +27,7 @@ export const AddClientInfoDialog = ({
   onOpenChange, 
   onAddClientInfo 
 }: AddClientInfoDialogProps) => {
-  const [agents, setAgents] = useState<Agent[]>([]);
+  const [users, setUsers] = useState<User[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -45,22 +44,22 @@ export const AddClientInfoDialog = ({
     }
   });
 
-  // Fetch agents when dialog opens
-  const fetchAgents = async () => {
+  // Fetch users when dialog opens
+  const fetchUsers = async () => {
     setIsLoading(true);
     try {
       const { data, error } = await supabase
-        .from('agents')
-        .select('id, company_name, first_name, last_name')
-        .order('company_name', { ascending: true });
+        .from('profiles')
+        .select('id, full_name, email')
+        .order('full_name', { ascending: true });
       
       if (error) {
-        console.error('Error fetching agents:', error);
+        console.error('Error fetching users:', error);
       } else {
-        setAgents(data || []);
+        setUsers(data || []);
       }
     } catch (err) {
-      console.error('Error in agent fetch:', err);
+      console.error('Error in user fetch:', err);
     } finally {
       setIsLoading(false);
     }
@@ -68,7 +67,7 @@ export const AddClientInfoDialog = ({
 
   const handleOpenChange = (newOpen: boolean) => {
     if (newOpen) {
-      fetchAgents();
+      fetchUsers();
     } else {
       reset();
     }
@@ -156,24 +155,24 @@ export const AddClientInfoDialog = ({
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="agent_id">Associated Agent</Label>
+            <Label htmlFor="agent_id">Associated User</Label>
             <Select 
               onValueChange={(value) => setValue("agent_id", value === "none" ? null : value)}
               defaultValue="none"
             >
               <SelectTrigger id="agent_id" className="w-full">
-                <SelectValue placeholder="Select agent" />
+                <SelectValue placeholder="Select user" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="none">None</SelectItem>
-                {agents.map((agent) => (
-                  <SelectItem key={agent.id} value={agent.id}>
-                    {agent.company_name || `${agent.first_name} ${agent.last_name}`}
+                {users.map((user) => (
+                  <SelectItem key={user.id} value={user.id}>
+                    {user.full_name || user.email}
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
-            {isLoading && <p className="text-sm text-muted-foreground">Loading agents...</p>}
+            {isLoading && <p className="text-sm text-muted-foreground">Loading users...</p>}
           </div>
 
           <div className="space-y-2">

@@ -1,185 +1,159 @@
 
-import { useState } from "react";
-import { 
-  Table, 
-  TableBody, 
-  TableCell, 
-  TableHead, 
-  TableHeader, 
-  TableRow 
-} from "@/components/ui/table";
+import { useState, useEffect } from "react";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Edit, MapPin, Trash2, Users, Mail, User } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Edit, Trash2, Mail, Building, User } from "lucide-react";
 import { ClientInfo } from "@/pages/Index";
 import { EditClientInfoDialog } from "@/components/EditClientInfoDialog";
-import { ClientAddressList } from "@/components/ClientAddressList";
-import { ClientContactsList } from "@/components/ClientContactsList";
-import { useClientAddresses } from "@/hooks/useClientAddresses";
-import { useClientContacts } from "@/hooks/useClientContacts";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
 interface ClientInfoListProps {
   clientInfos: ClientInfo[];
   onUpdateClientInfo: (clientInfo: ClientInfo) => void;
-  agentMapping?: Record<string, string>;
+  agentMapping: Record<string, string>;
 }
 
-export const ClientInfoList = ({ clientInfos, onUpdateClientInfo, agentMapping = {} }: ClientInfoListProps) => {
+interface User {
+  id: string;
+  full_name: string;
+  email: string;
+}
+
+export const ClientInfoList = ({ 
+  clientInfos, 
+  onUpdateClientInfo,
+  agentMapping 
+}: ClientInfoListProps) => {
   const [editingClientInfo, setEditingClientInfo] = useState<ClientInfo | null>(null);
-  const [deletingClientId, setDeletingClientId] = useState<string | null>(null);
-  const [viewingAddressesClientId, setViewingAddressesClientId] = useState<string | null>(null);
-  const [viewingContactsClientId, setViewingContactsClientId] = useState<string | null>(null);
+  const [users, setUsers] = useState<User[]>([]);
+  const [userMapping, setUserMapping] = useState<Record<string, string>>({});
   const { toast } = useToast();
 
-  const { 
-    addresses, 
-    addAddress, 
-    updateAddress, 
-    deleteAddress 
-  } = useClientAddresses(viewingAddressesClientId);
+  // Fetch users to create mapping
+  useEffect(() => {
+    const fetchUsers = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('id, full_name, email');
+        
+        if (error) {
+          console.error('Error fetching users:', error);
+          return;
+        }
 
-  const {
-    contacts,
-    addContact,
-    updateContact,
-    deleteContact
-  } = useClientContacts(viewingContactsClientId);
-
-  console.log("ClientInfoList received clientInfos:", clientInfos);
-  console.log("ClientInfoList received agentMapping:", agentMapping);
-
-  const handleDelete = async (clientId: string) => {
-    try {
-      const { error } = await supabase
-        .from('client_info')
-        .delete()
-        .eq('id', clientId);
-
-      if (error) {
-        console.error('Error deleting client info:', error);
-        toast({
-          title: "Failed to delete client",
-          description: error.message,
-          variant: "destructive"
+        setUsers(data || []);
+        
+        // Create user mapping
+        const mapping: Record<string, string> = {};
+        data?.forEach(user => {
+          mapping[user.id] = user.full_name || user.email;
         });
-      } else {
+        setUserMapping(mapping);
+      } catch (err) {
+        console.error('Error in user fetch:', err);
+      }
+    };
+
+    fetchUsers();
+  }, []);
+
+  const handleDelete = async (clientInfo: ClientInfo) => {
+    if (window.confirm(`Are you sure you want to delete ${clientInfo.company_name}?`)) {
+      try {
+        const { error } = await supabase
+          .from('client_info')
+          .delete()
+          .eq('id', clientInfo.id);
+
+        if (error) throw error;
+
+        // Signal deletion to parent component
+        onUpdateClientInfo({ ...clientInfo, _delete: true } as any);
+        
         toast({
           title: "Client deleted",
-          description: "Client has been deleted successfully.",
-          variant: "default"
+          description: `${clientInfo.company_name} has been deleted successfully.`,
         });
-        
-        // Update the client list in the parent component
-        onUpdateClientInfo({
-          ...clientInfos.find(client => client.id === clientId)!, 
-          _delete: true
-        } as any);
+      } catch (err) {
+        console.error('Error deleting client:', err);
+        toast({
+          title: "Failed to delete client",
+          description: err instanceof Error ? err.message : "An error occurred",
+          variant: "destructive"
+        });
       }
-    } catch (err) {
-      console.error('Error in delete operation:', err);
-      toast({
-        title: "Error",
-        description: "Failed to delete client information",
-        variant: "destructive"
-      });
     }
-    setDeletingClientId(null);
   };
-
-  const getSalespersonName = (agentId: string | null) => {
-    if (!agentId || agentId === "none") return "-";
-    return agentMapping[agentId] || "Unknown salesperson";
-  };
-
-  const selectedClient = viewingAddressesClientId 
-    ? clientInfos.find(client => client.id === viewingAddressesClientId)
-    : null;
-
-  const selectedContactsClient = viewingContactsClientId
-    ? clientInfos.find(client => client.id === viewingContactsClientId)
-    : null;
 
   return (
     <>
-      {clientInfos.length === 0 ? (
-        <div className="text-center py-8 text-gray-500">
-          <MapPin className="w-12 h-12 mx-auto mb-4 text-gray-300" />
-          <p>No clients added yet. Click "Add Client" to get started!</p>
-        </div>
-      ) : (
-        <div className="overflow-x-auto">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Company Name</TableHead>
-                <TableHead>Contact Name</TableHead>
-                <TableHead>Email</TableHead>
-                <TableHead>Phone</TableHead>
-                <TableHead>Revio ID</TableHead>
-                <TableHead>Associated Salesperson</TableHead>
-                <TableHead>Last Updated</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {clientInfos.map((clientInfo) => (
-                <TableRow key={clientInfo.id}>
-                  <TableCell className="font-medium">{clientInfo.company_name}</TableCell>
-                  <TableCell>
-                    <div className="flex items-center gap-2">
-                      {clientInfo.contact_name ? (
-                        <>
-                          <User className="w-4 h-4 text-gray-400" />
-                          {clientInfo.contact_name}
-                        </>
-                      ) : (
-                        <span className="text-gray-400">-</span>
-                      )}
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex items-center gap-2">
-                      {clientInfo.email ? (
-                        <>
-                          <Mail className="w-4 h-4 text-gray-400" />
-                          <a href={`mailto:${clientInfo.email}`} className="text-blue-600 hover:underline">
-                            {clientInfo.email}
-                          </a>
-                        </>
-                      ) : (
-                        <span className="text-gray-400">-</span>
-                      )}
-                    </div>
-                  </TableCell>
-                  <TableCell>{clientInfo.phone || "-"}</TableCell>
-                  <TableCell className="font-mono text-sm">{clientInfo.revio_id || "-"}</TableCell>
-                  <TableCell>{getSalespersonName(clientInfo.agent_id)}</TableCell>
-                  <TableCell>{new Date(clientInfo.updated_at).toLocaleDateString()}</TableCell>
-                  <TableCell className="text-right">
-                    <div className="flex justify-end gap-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setViewingContactsClientId(clientInfo.id)}
-                        className="hover:bg-green-50 hover:border-green-300"
-                        title="Manage Contacts"
-                      >
-                        <Users className="w-4 h-4" />
-                      </Button>
-
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setViewingAddressesClientId(clientInfo.id)}
-                        className="hover:bg-purple-50 hover:border-purple-300"
-                        title="Manage Addresses"
-                      >
-                        <MapPin className="w-4 h-4" />
-                      </Button>
+      <Card className="bg-white shadow-lg border-0">
+        <CardHeader>
+          <CardTitle className="text-xl font-semibold text-gray-900">Client Management</CardTitle>
+          <CardDescription>Manage your clients and their information</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            {clientInfos.length === 0 ? (
+              <div className="text-center py-8 text-gray-500">
+                <Building className="w-12 h-12 mx-auto mb-4 text-gray-300" />
+                <p>No clients added yet. Click "Add Client" to get started!</p>
+              </div>
+            ) : (
+              clientInfos.map((clientInfo) => (
+                <div
+                  key={clientInfo.id}
+                  className="flex flex-col p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors duration-200"
+                >
+                  <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-4">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-3 mb-2">
+                        <h3 className="font-semibold text-gray-900">{clientInfo.company_name}</h3>
+                        {clientInfo.agent_id && (
+                          <Badge variant="secondary" className="bg-blue-100 text-blue-800">
+                            <User className="w-3 h-3 mr-1" />
+                            {userMapping[clientInfo.agent_id] || 'Unknown User'}
+                          </Badge>
+                        )}
+                      </div>
                       
+                      <div className="flex flex-col sm:flex-row gap-4 text-sm text-gray-600">
+                        {clientInfo.contact_name && (
+                          <div className="flex items-center gap-1">
+                            <User className="w-4 h-4" />
+                            {clientInfo.contact_name}
+                          </div>
+                        )}
+                        {clientInfo.email && (
+                          <div className="flex items-center gap-1">
+                            <Mail className="w-4 h-4" />
+                            {clientInfo.email}
+                          </div>
+                        )}
+                        {clientInfo.phone && (
+                          <div className="text-gray-500">
+                            Phone: {clientInfo.phone}
+                          </div>
+                        )}
+                      </div>
+                      
+                      {clientInfo.notes && (
+                        <div className="mt-2 text-sm text-gray-600">
+                          <strong>Notes:</strong> {clientInfo.notes}
+                        </div>
+                      )}
+                      
+                      {clientInfo.revio_id && (
+                        <div className="mt-1 text-sm text-gray-500">
+                          Revio ID: {clientInfo.revio_id}
+                        </div>
+                      )}
+                    </div>
+                    
+                    <div className="flex gap-2 mt-3 md:mt-0">
                       <Button
                         variant="outline"
                         size="sm"
@@ -188,44 +162,22 @@ export const ClientInfoList = ({ clientInfos, onUpdateClientInfo, agentMapping =
                       >
                         <Edit className="w-4 h-4" />
                       </Button>
-                      
-                      <AlertDialog open={deletingClientId === clientInfo.id} onOpenChange={(open) => !open && setDeletingClientId(null)}>
-                        <AlertDialogTrigger asChild>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => setDeletingClientId(clientInfo.id)}
-                            className="hover:bg-red-50 hover:border-red-300 text-red-600 hover:text-red-700"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </Button>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent>
-                          <AlertDialogHeader>
-                            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                            <AlertDialogDescription>
-                              This action will permanently delete the client "{clientInfo.company_name}" and all associated addresses. This cannot be undone.
-                            </AlertDialogDescription>
-                          </AlertDialogHeader>
-                          <AlertDialogFooter>
-                            <AlertDialogCancel>Cancel</AlertDialogCancel>
-                            <AlertDialogAction 
-                              onClick={() => handleDelete(clientInfo.id)}
-                              className="bg-red-600 hover:bg-red-700"
-                            >
-                              Delete
-                            </AlertDialogAction>
-                          </AlertDialogFooter>
-                        </AlertDialogContent>
-                      </AlertDialog>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleDelete(clientInfo)}
+                        className="hover:bg-red-50 hover:border-red-300 text-red-600"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
                     </div>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </div>
-      )}
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        </CardContent>
+      </Card>
 
       {editingClientInfo && (
         <EditClientInfoDialog
@@ -235,40 +187,6 @@ export const ClientInfoList = ({ clientInfos, onUpdateClientInfo, agentMapping =
           onUpdateClientInfo={onUpdateClientInfo}
         />
       )}
-
-      <Dialog open={!!viewingAddressesClientId} onOpenChange={(open) => !open && setViewingAddressesClientId(null)}>
-        <DialogContent className="sm:max-w-[700px] max-h-[80vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>
-              Manage Addresses - {selectedClient?.company_name}
-            </DialogTitle>
-          </DialogHeader>
-          <ClientAddressList
-            addresses={addresses}
-            clientInfoId={viewingAddressesClientId!}
-            onAddAddress={addAddress}
-            onUpdateAddress={updateAddress}
-            onDeleteAddress={deleteAddress}
-          />
-        </DialogContent>
-      </Dialog>
-
-      <Dialog open={!!viewingContactsClientId} onOpenChange={(open) => !open && setViewingContactsClientId(null)}>
-        <DialogContent className="sm:max-w-[700px] max-h-[80vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>
-              Manage Contacts - {selectedContactsClient?.company_name}
-            </DialogTitle>
-          </DialogHeader>
-          <ClientContactsList
-            clientInfoId={viewingContactsClientId!}
-            onAddContact={addContact}
-            onUpdateContact={updateContact}
-            onDeleteContact={deleteContact}
-            contacts={contacts}
-          />
-        </DialogContent>
-      </Dialog>
     </>
   );
 };

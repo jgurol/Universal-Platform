@@ -7,134 +7,124 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ClientInfo } from "@/pages/Index";
+import { useForm } from "react-hook-form";
 import { supabase } from "@/integrations/supabase/client";
 
 interface EditClientInfoDialogProps {
-  clientInfo: ClientInfo;
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onUpdateClientInfo: (clientInfo: ClientInfo) => void;
+  clientInfo: ClientInfo | null;
 }
 
-interface Agent {
+interface User {
   id: string;
-  company_name: string;
-  first_name: string;
-  last_name: string;
+  full_name: string;
+  email: string;
 }
 
 export const EditClientInfoDialog = ({ 
-  clientInfo, 
   open, 
   onOpenChange, 
-  onUpdateClientInfo 
+  onUpdateClientInfo, 
+  clientInfo 
 }: EditClientInfoDialogProps) => {
-  const [companyName, setCompanyName] = useState(clientInfo.company_name);
-  const [contactName, setContactName] = useState(clientInfo.contact_name || "");
-  const [email, setEmail] = useState(clientInfo.email || "");
-  const [phone, setPhone] = useState(clientInfo.phone || "");
-  const [notes, setNotes] = useState(clientInfo.notes || "");
-  const [revioId, setRevioId] = useState(clientInfo.revio_id || "");
-  const [agentId, setAgentId] = useState<string | null>(clientInfo.agent_id || null);
-  const [commissionOverride, setCommissionOverride] = useState<string>(
-    clientInfo.commission_override?.toString() || ""
-  );
-  const [agents, setAgents] = useState<Agent[]>([]);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [users, setUsers] = useState<User[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-
-  // Fetch agents when dialog opens
-  useEffect(() => {
-    if (open) {
-      fetchAgents();
+  
+  const { register, handleSubmit, reset, setValue, watch, formState: { errors } } = useForm<ClientInfo>({
+    defaultValues: {
+      company_name: "",
+      contact_name: "",
+      email: "",
+      phone: "",
+      notes: "",
+      revio_id: "",
+      agent_id: null,
+      commission_override: null
     }
-  }, [open]);
+  });
 
-  // Update form when clientInfo changes
+  // Reset form when clientInfo changes
   useEffect(() => {
-    setCompanyName(clientInfo.company_name);
-    setContactName(clientInfo.contact_name || "");
-    setEmail(clientInfo.email || "");
-    setPhone(clientInfo.phone || "");
-    setNotes(clientInfo.notes || "");
-    setRevioId(clientInfo.revio_id || "");
-    setAgentId(clientInfo.agent_id || null);
-    setCommissionOverride(clientInfo.commission_override?.toString() || "");
-  }, [clientInfo]);
+    if (clientInfo && open) {
+      reset({
+        ...clientInfo,
+        agent_id: clientInfo.agent_id || null
+      });
+    }
+  }, [clientInfo, open, reset]);
 
-  const fetchAgents = async () => {
+  // Fetch users when dialog opens
+  const fetchUsers = async () => {
     setIsLoading(true);
     try {
       const { data, error } = await supabase
-        .from('agents')
-        .select('id, company_name, first_name, last_name')
-        .order('company_name', { ascending: true });
+        .from('profiles')
+        .select('id, full_name, email')
+        .order('full_name', { ascending: true });
       
       if (error) {
-        console.error('Error fetching agents:', error);
+        console.error('Error fetching users:', error);
       } else {
-        setAgents(data || []);
+        setUsers(data || []);
       }
     } catch (err) {
-      console.error('Error in agent fetch:', err);
+      console.error('Error in user fetch:', err);
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (companyName) {
-      setIsSubmitting(true);
-      try {
-        await onUpdateClientInfo({
-          ...clientInfo,
-          company_name: companyName,
-          contact_name: contactName || null,
-          email: email || null,
-          phone: phone || null,
-          address: clientInfo.address,
-          notes: notes || null,
-          revio_id: revioId || null,
-          agent_id: agentId === "none" ? null : agentId,
-          commission_override: commissionOverride ? parseFloat(commissionOverride) : null
-        });
-        onOpenChange(false);
-      } catch (err) {
-        console.error('Error updating client info:', err);
-      } finally {
-        setIsSubmitting(false);
-      }
+  const handleOpenChange = (newOpen: boolean) => {
+    if (newOpen) {
+      fetchUsers();
+    } else {
+      reset();
+    }
+    onOpenChange(newOpen);
+  };
+
+  const onSubmit = (data: ClientInfo) => {
+    if (clientInfo) {
+      onUpdateClientInfo({
+        ...clientInfo,
+        ...data,
+        agent_id: data.agent_id === "none" ? null : data.agent_id
+      });
+      onOpenChange(false);
     }
   };
 
+  if (!clientInfo) return null;
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
           <DialogTitle>Edit Client</DialogTitle>
           <DialogDescription>
-            Update the client's information.
+            Update the client details.
           </DialogDescription>
         </DialogHeader>
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="edit-companyName" className="required">Company Name</Label>
+            <Label htmlFor="edit-company_name" className="required">Company Name</Label>
             <Input
-              id="edit-companyName"
-              value={companyName}
-              onChange={(e) => setCompanyName(e.target.value)}
+              id="edit-company_name"
+              {...register("company_name", { required: "Company name is required" })}
               placeholder="Enter company name"
-              required
             />
+            {errors.company_name && (
+              <p className="text-sm text-red-500">{errors.company_name.message}</p>
+            )}
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="edit-contactName">Contact Name</Label>
+            <Label htmlFor="edit-contact_name">Contact Name</Label>
             <Input
-              id="edit-contactName"
-              value={contactName}
-              onChange={(e) => setContactName(e.target.value)}
+              id="edit-contact_name"
+              {...register("contact_name")}
               placeholder="Enter contact person's name"
             />
           </div>
@@ -144,60 +134,69 @@ export const EditClientInfoDialog = ({
             <Input
               id="edit-email"
               type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              {...register("email", {
+                pattern: {
+                  value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
+                  message: "Invalid email address"
+                }
+              })}
               placeholder="Enter email address"
             />
+            {errors.email && (
+              <p className="text-sm text-red-500">{errors.email.message}</p>
+            )}
           </div>
 
           <div className="space-y-2">
             <Label htmlFor="edit-phone">Phone</Label>
             <Input
               id="edit-phone"
-              value={phone}
-              onChange={(e) => setPhone(e.target.value)}
+              {...register("phone")}
               placeholder="Enter phone number"
             />
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="edit-revioId">Revio ID</Label>
+            <Label htmlFor="edit-revio_id">Revio ID</Label>
             <Input
-              id="edit-revioId"
-              value={revioId}
-              onChange={(e) => setRevioId(e.target.value)}
+              id="edit-revio_id"
+              {...register("revio_id")}
               placeholder="Enter Revio accounting system ID"
             />
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="edit-agent">Associated Agent</Label>
-            <Select value={agentId || undefined} onValueChange={setAgentId}>
-              <SelectTrigger id="edit-agent" className="w-full">
-                <SelectValue placeholder="Select agent" />
+            <Label htmlFor="edit-agent_id">Associated User</Label>
+            <Select 
+              value={watch("agent_id") || "none"}
+              onValueChange={(value) => setValue("agent_id", value === "none" ? null : value)}
+            >
+              <SelectTrigger id="edit-agent_id" className="w-full">
+                <SelectValue placeholder="Select user" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="none">None</SelectItem>
-                {agents.map((agent) => (
-                  <SelectItem key={agent.id} value={agent.id}>
-                    {agent.company_name || `${agent.first_name} ${agent.last_name}`}
+                {users.map((user) => (
+                  <SelectItem key={user.id} value={user.id}>
+                    {user.full_name || user.email}
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
-            {isLoading && <p className="text-sm text-muted-foreground">Loading agents...</p>}
+            {isLoading && <p className="text-sm text-muted-foreground">Loading users...</p>}
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="edit-commissionOverride">Commission Override (%)</Label>
+            <Label htmlFor="edit-commission_override">Commission Override (%)</Label>
             <Input
-              id="edit-commissionOverride"
+              id="edit-commission_override"
               type="number"
               step="0.01"
               min="0"
               max="100"
-              value={commissionOverride}
-              onChange={(e) => setCommissionOverride(e.target.value)}
+              {...register("commission_override", {
+                setValueAs: (value) => value === "" ? null : parseFloat(value)
+              })}
               placeholder="Enter commission rate override (optional)"
             />
             <p className="text-xs text-muted-foreground">
@@ -209,23 +208,21 @@ export const EditClientInfoDialog = ({
             <Label htmlFor="edit-notes">Notes</Label>
             <Textarea
               id="edit-notes"
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
+              {...register("notes")}
               placeholder="Enter any additional notes"
               rows={3}
             />
           </div>
 
           <div className="flex justify-end space-x-2">
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+            <Button type="button" variant="outline" onClick={() => handleOpenChange(false)}>
               Cancel
             </Button>
             <Button 
               type="submit" 
-              className="bg-green-600 hover:bg-green-700"
-              disabled={isSubmitting || !companyName}
+              className="bg-blue-600 hover:bg-blue-700"
             >
-              {isSubmitting ? 'Updating...' : 'Update Client'}
+              Update Client
             </Button>
           </div>
         </form>
