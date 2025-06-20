@@ -2,18 +2,17 @@
 import { supabase } from "@/integrations/supabase/client";
 import { QuoteItemData } from "@/types/quoteItems";
 
-export const updateQuoteItems = async (quoteId: string, items: QuoteItemData[]): Promise<void> => {
-  console.log('[updateQuoteItems] Starting update for quote:', quoteId, 'with items:', items.length);
+export const updateQuoteItems = async (quoteId: string, quoteItems: QuoteItemData[]) => {
+  console.log('[updateQuoteItems] Starting update for quote:', quoteId, 'with items:', quoteItems.length);
   
   try {
     // Get current user
     const { data: { user }, error: userError } = await supabase.auth.getUser();
     if (userError || !user) {
-      console.error('[updateQuoteItems] Error getting user:', userError);
       throw new Error('User not authenticated');
     }
 
-    // First, delete all existing quote items for this quote
+    // First, delete existing quote items for this quote
     const { error: deleteError } = await supabase
       .from('quote_items')
       .delete()
@@ -26,100 +25,78 @@ export const updateQuoteItems = async (quoteId: string, items: QuoteItemData[]):
 
     console.log('[updateQuoteItems] Deleted existing items, now inserting new ones');
 
-    // Insert all new quote items
-    for (const item of items) {
+    // Insert new quote items
+    for (const quoteItem of quoteItems) {
       console.log('[updateQuoteItems] Processing item:', {
-        name: item.name,
-        item_id: item.item_id,
-        address_id: item.address_id,
-        quantity: item.quantity,
-        unit_price: item.unit_price,
-        total_price: item.total_price,
-        description: item.description?.substring(0, 100) + '...', // Log first 100 chars
-        image_url: item.image_url,
-        image_name: item.image_name
+        name: quoteItem.name,
+        item_id: quoteItem.item?.id || 'carrier-' + quoteItem.id,
+        address_id: quoteItem.address_id,
+        quantity: quoteItem.quantity,
+        unit_price: quoteItem.unit_price,
+        total_price: quoteItem.total_price,
+        description: quoteItem.description?.substring(0, 50) + '...',
+        image_url: quoteItem.image_url,
+        image_name: quoteItem.image_name
       });
 
-      let itemId = item.item_id;
-      let itemName = item.name;
-      let itemDescription = item.description;
-      
-      // Handle carrier quote items - create temporary items if needed
-      if (item.item_id.startsWith('carrier-')) {
-        console.log('[updateQuoteItems] Creating temporary item for carrier quote item:', item.name);
+      let itemId = quoteItem.item?.id;
+
+      // Handle carrier quote items by creating temporary items
+      if (!itemId && quoteItem.name && quoteItem.name.includes(' - ')) {
+        console.log('[updateQuoteItems] Creating temporary item for carrier quote item:', quoteItem.name);
         
-        const { data: newItem, error: itemError } = await supabase
+        const tempItemData = {
+          user_id: user.id, // Add user_id here
+          name: quoteItem.name,
+          description: quoteItem.description || '',
+          price: quoteItem.unit_price || 0,
+          cost: 0,
+          charge_type: 'MRC',
+          is_active: true
+        };
+
+        const { data: tempItem, error: tempItemError } = await supabase
           .from('items')
-          .insert({
-            user_id: user.id,
-            name: item.name || 'Carrier Quote Item',
-            description: item.description || '',
-            price: item.unit_price,
-            cost: item.cost_override || 0,
-            charge_type: item.charge_type,
-            is_active: false // Set to false so it doesn't appear in the catalog
-          })
+          .insert(tempItemData)
           .select()
           .single();
 
-        if (itemError) {
-          console.error('[updateQuoteItems] Error creating temporary item:', itemError);
-          throw itemError;
+        if (tempItemError) {
+          console.error('[updateQuoteItems] Error creating temporary item:', tempItemError);
+          throw tempItemError;
         }
-        
-        itemId = newItem.id;
+
+        itemId = tempItem.id;
         console.log('[updateQuoteItems] Created temporary item with ID:', itemId);
-      } else {
-        // For regular items, we need to create a custom item record to store the custom name and description
-        // This ensures the customizations are preserved
-        const { data: customItem, error: customItemError } = await supabase
-          .from('items')
-          .insert({
-            user_id: user.id,
-            name: itemName || item.item?.name || 'Custom Item',
-            description: itemDescription || '',
-            price: item.unit_price,
-            cost: item.cost_override || item.item?.cost || 0,
-            charge_type: item.charge_type,
-            is_active: false // Set to false so it doesn't appear in the catalog
-          })
-          .select()
-          .single();
-
-        if (customItemError) {
-          console.error('[updateQuoteItems] Error creating custom item:', customItemError);
-          throw customItemError;
-        }
-        
-        itemId = customItem.id;
-        console.log('[updateQuoteItems] Created custom item with ID:', itemId, 'for preserving customizations');
       }
 
-      // Insert the quote item with image fields
-      const insertData = {
+      if (!itemId) {
+        console.error('[updateQuoteItems] No item ID found for quote item:', quoteItem);
+        continue;
+      }
+
+      const quoteItemData = {
         quote_id: quoteId,
         item_id: itemId,
-        quantity: item.quantity,
-        unit_price: item.unit_price,
-        total_price: item.total_price,
-        charge_type: item.charge_type,
-        address_id: item.address_id || null,
-        image_url: item.image_url || null,
-        image_name: item.image_name || null
+        quantity: quoteItem.quantity || 1,
+        unit_price: quoteItem.unit_price || 0,
+        total_price: quoteItem.total_price || 0,
+        charge_type: quoteItem.charge_type || 'MRC',
+        address_id: quoteItem.address_id || null,
+        image_url: quoteItem.image_url || null,
+        image_name: quoteItem.image_name || null
       };
 
-      console.log('[updateQuoteItems] Inserting quote item with data:', insertData);
+      console.log('[updateQuoteItems] Inserting quote item with data:', quoteItemData);
 
       const { error: insertError } = await supabase
         .from('quote_items')
-        .insert(insertData);
+        .insert(quoteItemData);
 
       if (insertError) {
         console.error('[updateQuoteItems] Error inserting quote item:', insertError);
         throw insertError;
       }
-
-      console.log('[updateQuoteItems] Successfully inserted quote item for:', item.name, 'with description length:', item.description?.length || 0);
     }
 
     console.log('[updateQuoteItems] Successfully updated all quote items');
