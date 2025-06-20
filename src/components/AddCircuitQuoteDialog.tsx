@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -9,6 +10,7 @@ import { AddressAutocomplete } from "@/components/AddressAutocomplete";
 import { useClients } from "@/hooks/useClients";
 import { useAuth } from "@/context/AuthContext";
 import { CircuitQuote } from "@/hooks/useCircuitQuotes";
+import { supabase } from "@/integrations/supabase/client";
 
 interface AddCircuitQuoteDialogProps {
   open: boolean;
@@ -26,7 +28,8 @@ interface AddressData {
 
 export const AddCircuitQuoteDialog = ({ open, onOpenChange, onAddQuote }: AddCircuitQuoteDialogProps) => {
   const { user, isAdmin } = useAuth();
-  const { clients, fetchClients } = useClients(user?.id);
+  const [associatedAgentId, setAssociatedAgentId] = useState<string | null>(null);
+  const { clients, fetchClients } = useClients(associatedAgentId);
   const [clientId, setClientId] = useState("");
   const [location, setLocation] = useState("");
   const [suite, setSuite] = useState("");
@@ -35,12 +38,41 @@ export const AddCircuitQuoteDialog = ({ open, onOpenChange, onAddQuote }: AddCir
   const [slash29, setSlash29] = useState(false);
   const [mikrotikRequired, setMikrotikRequired] = useState(false);
 
-  // Fetch clients when dialog opens
+  // Fetch the associated agent ID for the current user
   React.useEffect(() => {
-    if (open && clients.length === 0) {
+    const fetchAssociatedAgentId = async () => {
+      if (!user || isAdmin) {
+        setAssociatedAgentId(null);
+        return;
+      }
+      
+      try {
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('associated_agent_id')
+          .eq('id', user.id)
+          .single();
+        
+        if (error) {
+          console.error('Error fetching user profile:', error);
+          return;
+        }
+        
+        setAssociatedAgentId(data?.associated_agent_id || null);
+      } catch (err) {
+        console.error('Exception fetching associated agent:', err);
+      }
+    };
+
+    fetchAssociatedAgentId();
+  }, [user, isAdmin]);
+
+  // Fetch clients when dialog opens or when associatedAgentId changes
+  React.useEffect(() => {
+    if (open && (isAdmin || associatedAgentId !== null)) {
       fetchClients();
     }
-  }, [open, clients.length, fetchClients]);
+  }, [open, isAdmin, associatedAgentId, fetchClients]);
 
   const handleAddressSelect = (address: AddressData) => {
     const fullAddress = `${address.street_address}, ${address.city}, ${address.state} ${address.zip_code}`;
