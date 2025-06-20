@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -48,9 +47,10 @@ export const EditClientInfoDialog = ({
     }
   });
 
-  // Reset form when clientInfo changes
+  // Reset form when clientInfo changes or dialog opens
   useEffect(() => {
     if (clientInfo && open) {
+      console.log('[EditClient] Resetting form with clientInfo:', clientInfo);
       reset({
         ...clientInfo,
         agent_id: clientInfo.agent_id || null
@@ -60,13 +60,17 @@ export const EditClientInfoDialog = ({
   }, [clientInfo, open, reset]);
 
   // Fetch agents when dialog opens
+  useEffect(() => {
+    if (open) {
+      fetchAgents();
+    }
+  }, [open]);
+
   const fetchAgents = async () => {
-    if (isLoading) return;
-    
+    console.log('[EditClient] Starting agent fetch...');
     setIsLoading(true);
+    
     try {
-      console.log('[EditClient] Fetching agents...');
-      
       const { data, error } = await supabase
         .from('agents')
         .select('id, first_name, last_name, email, company_name')
@@ -89,7 +93,7 @@ export const EditClientInfoDialog = ({
               company_name: agent.company_name || ''
             }));
           
-          console.log('[EditClient] Processed agents:', processedAgents);
+          console.log('[EditClient] Setting agents:', processedAgents);
           setAgents(processedAgents);
         } else {
           setAgents([]);
@@ -104,9 +108,7 @@ export const EditClientInfoDialog = ({
   };
 
   const handleOpenChange = (newOpen: boolean) => {
-    if (newOpen) {
-      fetchAgents();
-    } else {
+    if (!newOpen) {
       reset();
       setSelectedAgentId("");
     }
@@ -216,6 +218,9 @@ export const EditClientInfoDialog = ({
                 ))}
               </SelectContent>
             </Select>
+            {agents.length === 0 && !isLoading && (
+              <p className="text-sm text-gray-500">No agents available</p>
+            )}
           </div>
 
           <div className="space-y-2">

@@ -1,5 +1,4 @@
-
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -48,14 +47,17 @@ export const AddClientInfoDialog = ({
   });
 
   // Fetch agents when dialog opens
+  useEffect(() => {
+    if (open) {
+      fetchAgents();
+    }
+  }, [open]);
+
   const fetchAgents = async () => {
-    if (isLoading) return;
-    
+    console.log('[AddClient] Starting agent fetch...');
     setIsLoading(true);
     
     try {
-      console.log('[AddClient] Fetching agents...');
-      
       const { data: agentData, error: agentError } = await supabase
         .from('agents')
         .select('id, first_name, last_name, email, company_name')
@@ -77,7 +79,7 @@ export const AddClientInfoDialog = ({
             company_name: agent.company_name || ''
           }));
           
-        console.log('[AddClient] Processed agents:', processedAgents);
+        console.log('[AddClient] Setting agents:', processedAgents);
         setAgents(processedAgents);
       } else {
         console.log('[AddClient] No agents found or agentData is not an array');
@@ -93,11 +95,8 @@ export const AddClientInfoDialog = ({
 
   const handleOpenChange = (newOpen: boolean) => {
     if (newOpen) {
-      fetchAgents();
       setSelectedAgentId("");
-    } else {
       reset();
-      setSelectedAgentId("");
     }
     onOpenChange(newOpen);
   };
@@ -210,6 +209,9 @@ export const AddClientInfoDialog = ({
                 ))}
               </SelectContent>
             </Select>
+            {agents.length === 0 && !isLoading && (
+              <p className="text-sm text-gray-500">No agents available</p>
+            )}
           </div>
 
           <div className="space-y-2">
