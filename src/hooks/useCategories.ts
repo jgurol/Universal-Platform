@@ -16,6 +16,7 @@ export const useCategories = () => {
     
     try {
       setIsLoading(true);
+      // Fetch all active categories - RLS policies will handle access control
       const { data, error } = await supabase
         .from('categories')
         .select('*')
