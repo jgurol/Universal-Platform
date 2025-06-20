@@ -63,30 +63,44 @@ export const EditClientInfoDialog = ({
     
     setIsLoading(true);
     try {
-      console.log('[EditClient] Fetching users from profiles table...');
+      console.log('[EditClient] Starting user fetch...');
+      console.log('[EditClient] Current user auth state:', await supabase.auth.getUser());
+      
       const { data, error } = await supabase
         .from('profiles')
         .select('id, full_name, email')
         .order('full_name', { ascending: true });
       
+      console.log('[EditClient] Raw supabase response:', { data, error });
+      
       if (error) {
         console.error('[EditClient] Error fetching users:', error);
+        console.error('[EditClient] Error details:', {
+          message: error.message,
+          details: error.details,
+          hint: error.hint,
+          code: error.code
+        });
         setUsers([]);
       } else {
-        console.log('[EditClient] Raw profiles data:', data);
-        console.log('[EditClient] Number of profiles fetched:', data?.length || 0);
+        console.log('[EditClient] Successful fetch - data:', data);
+        console.log('[EditClient] Data type:', typeof data);
+        console.log('[EditClient] Data length:', data?.length);
+        console.log('[EditClient] First item:', data?.[0]);
         
-        if (data && data.length > 0) {
-          const processedUsers = data.map(user => ({
-            id: user.id,
-            full_name: user.full_name || '',
-            email: user.email || ''
-          }));
+        if (data && Array.isArray(data)) {
+          const processedUsers = data
+            .filter(user => user && (user.full_name || user.email))
+            .map(user => ({
+              id: user.id,
+              full_name: user.full_name || '',
+              email: user.email || ''
+            }));
           
           console.log('[EditClient] Processed users:', processedUsers);
           setUsers(processedUsers);
         } else {
-          console.log('[EditClient] No users found in profiles table');
+          console.log('[EditClient] No valid data returned');
           setUsers([]);
         }
       }
@@ -130,7 +144,7 @@ export const EditClientInfoDialog = ({
 
   if (!clientInfo) return null;
 
-  console.log('[EditClient] Current state - Users:', users.length, 'Loading:', isLoading, 'Selected:', selectedUserId);
+  console.log('[EditClient] Render state - Users:', users.length, 'Loading:', isLoading, 'Selected:', selectedUserId);
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
@@ -202,24 +216,23 @@ export const EditClientInfoDialog = ({
           <div className="space-y-2">
             <Label htmlFor="edit-agent_id">Associated User</Label>
             <Select value={selectedUserId} onValueChange={handleUserSelect}>
-              <SelectTrigger className="w-full bg-white border-gray-300">
-                <SelectValue 
-                  placeholder={isLoading ? "Loading users..." : "Select a user or leave blank"} 
-                />
+              <SelectTrigger>
+                <SelectValue placeholder={isLoading ? "Loading users..." : "Select a user"} />
               </SelectTrigger>
-              <SelectContent className="bg-white border border-gray-200 shadow-lg z-50 max-h-60 overflow-y-auto">
+              <SelectContent>
                 <SelectItem value="none">None</SelectItem>
                 {users.map((user) => (
                   <SelectItem key={user.id} value={user.id}>
-                    {user.full_name || user.email || `User ${user.id}`}
+                    {user.full_name || user.email || `User ${user.id.slice(0, 8)}`}
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
             <div className="text-xs text-muted-foreground space-y-1">
-              <p>Users available: {users.length}</p>
-              {isLoading && <p>Loading users...</p>}
-              {!isLoading && users.length === 0 && <p>No users found in database</p>}
+              <p>Debug: Users available: {users.length}</p>
+              <p>Debug: Loading: {isLoading ? 'true' : 'false'}</p>
+              <p>Debug: Selected: {selectedUserId || 'none'}</p>
+              {!isLoading && users.length === 0 && <p className="text-red-500">No users found - check RLS policies</p>}
             </div>
           </div>
 
