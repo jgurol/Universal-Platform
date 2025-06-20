@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -48,18 +47,38 @@ export const AddClientInfoDialog = ({
   const fetchUsers = async () => {
     setIsLoading(true);
     try {
+      console.log('🔍 ADD CLIENT - Starting user fetch...');
+      
+      // Get current session info
+      const { data: session } = await supabase.auth.getSession();
+      console.log('📝 Current session user:', session?.session?.user?.email);
+      
+      // Try the profiles query
       const { data, error } = await supabase
         .from('profiles')
         .select('id, full_name, email')
         .order('full_name', { ascending: true });
       
+      console.log('📊 Profiles query result:', {
+        data,
+        error,
+        dataLength: data?.length || 0
+      });
+      
       if (error) {
-        console.error('Error fetching users:', error);
+        console.error('❌ Error fetching users:', error);
+        console.error('Error details:', {
+          message: error.message,
+          details: error.details,
+          hint: error.hint,
+          code: error.code
+        });
       } else {
+        console.log('✅ Successfully fetched users:', data);
         setUsers(data || []);
       }
     } catch (err) {
-      console.error('Error in user fetch:', err);
+      console.error('💥 Exception in user fetch:', err);
     } finally {
       setIsLoading(false);
     }
@@ -173,6 +192,14 @@ export const AddClientInfoDialog = ({
               </SelectContent>
             </Select>
             {isLoading && <p className="text-sm text-muted-foreground">Loading users...</p>}
+            <div className="text-xs text-gray-500">
+              Found {users.length} users
+              {users.length > 0 && (
+                <div className="mt-1">
+                  Users: {users.map(u => u.full_name || u.email).join(', ')}
+                </div>
+              )}
+            </div>
           </div>
 
           <div className="space-y-2">
