@@ -22,17 +22,6 @@ interface User {
   email: string;
 }
 
-interface DebugProfile {
-  id: string;
-  full_name: string | null;
-  email: string | null;
-  role: string | null;
-  is_associated: boolean | null;
-  associated_agent_id: string | null;
-  created_at: string | null;
-  updated_at: string | null;
-}
-
 export const AddClientInfoDialog = ({ 
   open, 
   onOpenChange, 
@@ -42,7 +31,6 @@ export const AddClientInfoDialog = ({
   const [isLoading, setIsLoading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [selectedUserId, setSelectedUserId] = useState<string>("");
-  const [debugProfiles, setDebugProfiles] = useState<DebugProfile[]>([]);
 
   const { register, handleSubmit, reset, setValue, formState: { errors } } = useForm<AddClientInfoData>({
     defaultValues: {
@@ -64,35 +52,19 @@ export const AddClientInfoDialog = ({
     setIsLoading(true);
     try {
       console.log('[AddClient] Starting to fetch profiles...');
-      console.log('[AddClient] Current user session:', await supabase.auth.getSession());
       
-      // Let's debug what's in the profiles table with detailed logging
       const { data: allProfiles, error: allError } = await supabase
         .from('profiles')
         .select('*');
       
-      console.log('[AddClient] All profiles query - Data:', allProfiles);
-      console.log('[AddClient] All profiles query - Error:', allError);
-      console.log('[AddClient] All profiles query - Data length:', allProfiles?.length);
+      console.log('[AddClient] Profiles query - Data:', allProfiles);
+      console.log('[AddClient] Profiles query - Error:', allError);
       
-      // Store debug profiles for display
-      if (allProfiles) {
-        setDebugProfiles(allProfiles as DebugProfile[]);
-      }
-      
-      if (allProfiles && allProfiles.length > 0) {
-        console.log('[AddClient] Sample profile structure:', allProfiles[0]);
-        
-        // Check if profiles have the expected fields
-        allProfiles.forEach((profile, index) => {
-          console.log(`[AddClient] Profile ${index}:`, {
-            id: profile.id,
-            full_name: profile.full_name,
-            email: profile.email,
-            hasName: !!profile.full_name,
-            hasEmail: !!profile.email
-          });
-        });
+      if (allError) {
+        console.error('[AddClient] Error fetching profiles:', allError);
+        setUsers([]);
+      } else if (allProfiles && allProfiles.length > 0) {
+        console.log('[AddClient] Processing profiles:', allProfiles.length);
         
         // Process the profiles into users format
         const processedUsers = allProfiles
@@ -106,7 +78,7 @@ export const AddClientInfoDialog = ({
         console.log('[AddClient] Processed users:', processedUsers);
         setUsers(processedUsers);
       } else {
-        console.log('[AddClient] No profiles found or empty result');
+        console.log('[AddClient] No profiles found');
         setUsers([]);
       }
     } catch (err) {
@@ -161,28 +133,6 @@ export const AddClientInfoDialog = ({
             Add a new client to your database.
           </DialogDescription>
         </DialogHeader>
-        
-        {/* Debug Section */}
-        <div className="bg-gray-50 p-3 rounded text-xs space-y-2">
-          <h4 className="font-semibold">Debug Info:</h4>
-          <p>Loading: {isLoading.toString()}</p>
-          <p>Users found: {users.length}</p>
-          <p>Raw profiles count: {debugProfiles.length}</p>
-          {debugProfiles.length > 0 && (
-            <div className="space-y-1">
-              <p className="font-medium">Raw Profiles Data:</p>
-              {debugProfiles.map((profile, idx) => (
-                <div key={idx} className="bg-white p-2 rounded text-xs">
-                  <p><strong>ID:</strong> {profile.id}</p>
-                  <p><strong>Name:</strong> {profile.full_name || 'null'}</p>
-                  <p><strong>Email:</strong> {profile.email || 'null'}</p>
-                  <p><strong>Role:</strong> {profile.role || 'null'}</p>
-                  <p><strong>Associated:</strong> {profile.is_associated?.toString() || 'null'}</p>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <div className="space-y-2">
