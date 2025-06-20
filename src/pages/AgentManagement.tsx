@@ -1,4 +1,6 @@
+
 import { useState, useEffect } from "react";
+import { NavigationBar } from "@/components/NavigationBar";
 import { Header } from "@/components/Header";
 import { ClientList } from "@/components/ClientList";
 import { AddClientDialog } from "@/components/AddClientDialog";
@@ -248,46 +250,49 @@ export default function AgentManagement() {
   };
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <Header />
-      
-      <Card className="bg-white shadow-lg border-0 mt-8">
-        <CardHeader>
-          <CardTitle className="text-2xl font-bold text-gray-900">Salesperson Management</CardTitle>
-          <CardDescription>Manage your commission salespersons and their rates</CardDescription>
-        </CardHeader>
-        <CardContent>
-          {isAdmin && (
-            <div className="flex justify-end mb-4">
-              <Button 
-                onClick={() => setIsAddClientOpen(true)}
-                className="bg-green-600 hover:bg-green-700 text-white"
-              >
-                <Plus className="w-4 h-4 mr-1" />
-                Add Salesperson
-              </Button>
-            </div>
-          )}
-          
-          <ClientList 
-            clients={clients} 
-            transactions={transactions}
-            onUpdateClient={updateClient}
-            onDeleteClient={deleteClient}
-            onUpdateTransactions={setTransactions}
+    <div>
+      <NavigationBar />
+      <div className="container mx-auto px-4 py-8">
+        <Header />
+        
+        <Card className="bg-white shadow-lg border-0 mt-8">
+          <CardHeader>
+            <CardTitle className="text-2xl font-bold text-gray-900">Salesperson Management</CardTitle>
+            <CardDescription>Manage your commission salespersons and their rates</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {isAdmin && (
+              <div className="flex justify-end mb-4">
+                <Button 
+                  onClick={() => setIsAddClientOpen(true)}
+                  className="bg-green-600 hover:bg-green-700 text-white"
+                >
+                  <Plus className="w-4 h-4 mr-1" />
+                  Add Salesperson
+                </Button>
+              </div>
+            )}
+            
+            <ClientList 
+              clients={clients} 
+              transactions={transactions}
+              onUpdateClient={updateClient}
+              onDeleteClient={deleteClient}
+              onUpdateTransactions={setTransactions}
+              onFetchClients={fetchClients}
+            />
+          </CardContent>
+        </Card>
+
+        {isAdmin && (
+          <AddClientDialog 
+            open={isAddClientOpen}
+            onOpenChange={setIsAddClientOpen}
+            onAddClient={addClient}
             onFetchClients={fetchClients}
           />
-        </CardContent>
-      </Card>
-
-      {isAdmin && (
-        <AddClientDialog 
-          open={isAddClientOpen}
-          onOpenChange={setIsAddClientOpen}
-          onAddClient={addClient}
-          onFetchClients={fetchClients}
-        />
-      )}
+        )}
+      </div>
     </div>
   );
 }
