@@ -19,6 +19,13 @@ interface ProgramsGridProps {
 
 const programs: Program[] = [
   {
+    id: "deal-registration",
+    title: "Deal Registration",
+    description: "Register and track your sales opportunities",
+    icon: Target,
+    color: "bg-green-500 hover:bg-green-600"
+  },
+  {
     id: "circuit-quotes",
     title: "Circuit Quotes",
     description: "Research and compare carrier pricing before quoting",
@@ -41,13 +48,6 @@ const programs: Program[] = [
     icon: Zap,
     route: "/circuit-tracking",
     color: "bg-orange-500 hover:bg-orange-600"
-  },
-  {
-    id: "deal-registration",
-    title: "Deal Registration",
-    description: "Register and track your sales opportunities",
-    icon: Target,
-    color: "bg-green-500 hover:bg-green-600"
   },
   {
     id: "commissions",
