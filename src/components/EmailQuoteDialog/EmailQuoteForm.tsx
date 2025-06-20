@@ -35,72 +35,59 @@ export const EmailQuoteForm = ({
   const [subject, setSubject] = useState(`Quote #${quote.quoteNumber || quote.id.slice(0, 8)} - ${quote.description || 'Service Agreement'}`);
   const [message, setMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [actualSalespersonName, setActualSalespersonName] = useState('');
-  const [salespersonLoaded, setSalespersonLoaded] = useState(false);
+  const [quoteOwnerName, setQuoteOwnerName] = useState('');
+  const [ownerNameLoaded, setOwnerNameLoaded] = useState(false);
   const { toast } = useToast();
 
   const { contacts, isLoading: contactsLoading } = useClientContacts(clientInfo?.id || null);
 
-  // Fetch the actual salesperson name if not provided
+  // Fetch the quote owner's name from the profiles table
   useEffect(() => {
-    const fetchSalespersonName = async () => {
-      console.log('EmailQuoteForm - Starting to fetch salesperson name');
-      console.log('EmailQuoteForm - Provided salespersonName:', salespersonName);
-      console.log('EmailQuoteForm - Quote user_id:', quote.user_id);
+    const fetchQuoteOwnerName = async () => {
+      console.log('EmailQuoteForm - Fetching quote owner name for user_id:', quote.user_id);
       
-      if (salespersonName && salespersonName.trim() !== '' && salespersonName !== 'Unknown Client') {
-        console.log('EmailQuoteForm - Using provided salesperson name:', salespersonName);
-        setActualSalespersonName(salespersonName);
-        setSalespersonLoaded(true);
+      if (!quote.user_id) {
+        console.log('EmailQuoteForm - No user_id found, using fallback');
+        setQuoteOwnerName('Sales Team');
+        setOwnerNameLoaded(true);
         return;
       }
 
-      if (quote.user_id) {
-        console.log('EmailQuoteForm - Fetching salesperson name for user_id:', quote.user_id);
-        try {
-          const { data: profile, error } = await supabase
-            .from('profiles')
-            .select('full_name')
-            .eq('id', quote.user_id)
-            .single();
-          
-          console.log('EmailQuoteForm - Profile query result:', { profile, error });
-          
-          if (!error && profile?.full_name && profile.full_name.trim() !== '') {
-            console.log('EmailQuoteForm - Found salesperson name:', profile.full_name);
-            setActualSalespersonName(profile.full_name);
-          } else {
-            console.log('EmailQuoteForm - Could not fetch salesperson name, using fallback');
-            setActualSalespersonName('Sales Team');
-          }
-        } catch (error) {
-          console.error('EmailQuoteForm - Error fetching salesperson name:', error);
-          setActualSalespersonName('Sales Team');
+      try {
+        const { data: profile, error } = await supabase
+          .from('profiles')
+          .select('full_name')
+          .eq('id', quote.user_id)
+          .single();
+        
+        console.log('EmailQuoteForm - Profile query result:', { profile, error });
+        
+        if (!error && profile?.full_name && profile.full_name.trim() !== '') {
+          console.log('EmailQuoteForm - Found quote owner name:', profile.full_name);
+          setQuoteOwnerName(profile.full_name);
+        } else {
+          console.log('EmailQuoteForm - Could not fetch quote owner name, using fallback');
+          setQuoteOwnerName('Sales Team');
         }
-      } else {
-        console.log('EmailQuoteForm - No user_id provided, using fallback');
-        setActualSalespersonName('Sales Team');
+      } catch (error) {
+        console.error('EmailQuoteForm - Error fetching quote owner name:', error);
+        setQuoteOwnerName('Sales Team');
       }
-      setSalespersonLoaded(true);
+      setOwnerNameLoaded(true);
     };
 
-    fetchSalespersonName();
-  }, [salespersonName, quote.user_id]);
+    fetchQuoteOwnerName();
+  }, [quote.user_id]);
 
-  // Set the message template with the actual salesperson name - only after name is loaded
+  // Set the message template with the quote owner's name - only after name is loaded
   useEffect(() => {
-    if (!salespersonLoaded) {
-      console.log('EmailQuoteForm - Salesperson not loaded yet, skipping message template update');
+    if (!ownerNameLoaded) {
+      console.log('EmailQuoteForm - Quote owner name not loaded yet, skipping message template update');
       return;
     }
 
-    console.log('EmailQuoteForm - Creating message template with salesperson:', actualSalespersonName);
+    console.log('EmailQuoteForm - Creating message template with quote owner:', quoteOwnerName);
     console.log('EmailQuoteForm - Client contact name:', clientInfo?.contact_name);
-
-    // Ensure we have a valid salesperson name
-    const finalSalespersonName = actualSalespersonName && actualSalespersonName.trim() !== '' && actualSalespersonName !== 'Unknown Client' 
-      ? actualSalespersonName 
-      : 'Sales Team';
 
     const messageTemplate = `Dear ${clientInfo?.contact_name || 'Valued Customer'},
 
@@ -109,11 +96,11 @@ Please find attached your quote for the requested services. If you have any ques
 Thank you for your business.
 
 Best regards,
-${finalSalespersonName}`;
+${quoteOwnerName}`;
 
-    console.log('EmailQuoteForm - Setting message template with final name:', finalSalespersonName);
+    console.log('EmailQuoteForm - Setting message template with owner name:', quoteOwnerName);
     setMessage(messageTemplate);
-  }, [clientInfo?.contact_name, actualSalespersonName, salespersonLoaded]);
+  }, [clientInfo?.contact_name, quoteOwnerName, ownerNameLoaded]);
 
   // Set primary contact as default recipient when component mounts
   useEffect(() => {
@@ -193,12 +180,7 @@ ${finalSalespersonName}`;
     onEmailStatusChange('idle');
     
     try {
-      // Use the final salesperson name, ensuring it's not "Unknown Client"
-      const finalSalespersonName = actualSalespersonName && actualSalespersonName.trim() !== '' && actualSalespersonName !== 'Unknown Client' 
-        ? actualSalespersonName 
-        : 'Sales Team';
-        
-      const pdf = await generateQuotePDF(quote, clientInfo, finalSalespersonName);
+      const pdf = await generateQuotePDF(quote, clientInfo, quoteOwnerName);
       const pdfBlob = pdf.output('blob');
       
       const reader = new FileReader();

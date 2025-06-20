@@ -28,11 +28,34 @@ export const generateQuotePDF = async (quote: Quote, clientInfo?: ClientInfo, sa
       }
     }
     
-    // Ensure we don't pass "Unknown Client" as salesperson name
+    // If no salesperson name provided, fetch the quote owner's name
     let finalSalespersonName = salespersonName;
-    if (!finalSalespersonName || finalSalespersonName.trim() === '' || finalSalespersonName === 'Unknown Client') {
-      console.log('PDF Generation - Invalid salesperson name, using fallback');
-      finalSalespersonName = 'Sales Team';
+    if (!finalSalespersonName || finalSalespersonName.trim() === '') {
+      console.log('PDF Generation - No salesperson name provided, fetching quote owner name');
+      
+      if (quoteWithUserId.user_id) {
+        try {
+          const { data: profile, error } = await supabase
+            .from('profiles')
+            .select('full_name')
+            .eq('id', quoteWithUserId.user_id)
+            .single();
+          
+          if (!error && profile?.full_name && profile.full_name.trim() !== '') {
+            finalSalespersonName = profile.full_name;
+            console.log('PDF Generation - Found quote owner name:', finalSalespersonName);
+          } else {
+            finalSalespersonName = 'Sales Team';
+            console.log('PDF Generation - Could not fetch quote owner name, using fallback');
+          }
+        } catch (error) {
+          console.error('PDF Generation - Error fetching quote owner name:', error);
+          finalSalespersonName = 'Sales Team';
+        }
+      } else {
+        finalSalespersonName = 'Sales Team';
+        console.log('PDF Generation - No user_id available, using fallback');
+      }
     }
     
     console.log('PDF Generation - Final salesperson name:', finalSalespersonName);

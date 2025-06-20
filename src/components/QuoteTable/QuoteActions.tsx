@@ -34,14 +34,10 @@ export const QuoteActions = ({
 
   const handlePreviewPDF = async () => {
     try {
-      // Ensure we don't pass "Unknown Client" as salesperson name
-      const finalSalespersonName = salespersonName && salespersonName.trim() !== '' && salespersonName !== 'Unknown Client' 
-        ? salespersonName 
-        : 'Sales Team';
-        
-      console.log('QuoteActions - Generating PDF with salesperson name:', finalSalespersonName);
+      console.log('QuoteActions - Generating PDF with salesperson name:', salespersonName);
       
-      const pdf = await generateQuotePDF(quote, clientInfo, finalSalespersonName);
+      // The generateQuotePDF function will now fetch the quote owner's name if not provided
+      const pdf = await generateQuotePDF(quote, clientInfo, salespersonName);
       const pdfBlob = pdf.output('blob');
       const pdfUrl = URL.createObjectURL(pdfBlob);
       window.open(pdfUrl, '_blank');
