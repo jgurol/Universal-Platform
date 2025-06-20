@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -51,16 +50,29 @@ export const AddClientInfoDialog = ({
     
     setIsLoading(true);
     try {
+      console.log('[AddClient] Starting to fetch profiles...');
+      
+      // Let's debug what's in the profiles table
+      const { data: allProfiles, error: allError } = await supabase
+        .from('profiles')
+        .select('*');
+      
+      console.log('[AddClient] All profiles in database:', allProfiles);
+      console.log('[AddClient] Any errors with all profiles?', allError);
+      
       const { data, error } = await supabase
         .from('profiles')
         .select('id, full_name, email')
         .order('full_name', { ascending: true });
       
+      console.log('[AddClient] Filtered profiles query result:', { data, error });
+      
       if (error) {
-        console.error('Error fetching users:', error);
+        console.error('[AddClient] Error fetching profiles:', error);
         setUsers([]);
       } else {
         if (data && Array.isArray(data)) {
+          console.log('[AddClient] Processing profiles data:', data);
           const processedUsers = data
             .filter(user => user && (user.full_name || user.email))
             .map(user => ({
@@ -69,13 +81,15 @@ export const AddClientInfoDialog = ({
               email: user.email || ''
             }));
           
+          console.log('[AddClient] Processed users:', processedUsers);
           setUsers(processedUsers);
         } else {
+          console.log('[AddClient] No data returned or data is not an array');
           setUsers([]);
         }
       }
     } catch (err) {
-      console.error('Exception in user fetch:', err);
+      console.error('[AddClient] Exception in user fetch:', err);
       setUsers([]);
     } finally {
       setIsLoading(false);
@@ -192,13 +206,24 @@ export const AddClientInfoDialog = ({
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="none">None</SelectItem>
-                {users.map((user) => (
-                  <SelectItem key={user.id} value={user.id}>
-                    {user.full_name || user.email || `User ${user.id.slice(0, 8)}`}
+                {users.length > 0 ? (
+                  users.map((user) => (
+                    <SelectItem key={user.id} value={user.id}>
+                      {user.full_name || user.email || `User ${user.id.slice(0, 8)}`}
+                    </SelectItem>
+                  ))
+                ) : (
+                  <SelectItem value="no-users" disabled>
+                    {isLoading ? 'Loading...' : 'No users found'}
                   </SelectItem>
-                ))}
+                )}
               </SelectContent>
             </Select>
+            {users.length === 0 && !isLoading && (
+              <p className="text-xs text-orange-600">
+                No users found in profiles table. You may need to create user profiles first.
+              </p>
+            )}
           </div>
 
           <div className="space-y-2">
