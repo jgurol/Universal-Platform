@@ -33,18 +33,53 @@ export const EmailQuoteForm = ({
   const [selectedCcContacts, setSelectedCcContacts] = useState<string[]>([]);
   const [customRecipientEmail, setCustomRecipientEmail] = useState("");
   const [subject, setSubject] = useState(`Quote #${quote.quoteNumber || quote.id.slice(0, 8)} - ${quote.description || 'Service Agreement'}`);
-  const [message, setMessage] = useState(`Dear ${clientInfo?.contact_name || 'Valued Customer'},
+  const [message, setMessage] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [actualSalespersonName, setActualSalespersonName] = useState(salespersonName || 'Sales Team');
+  const { toast } = useToast();
+
+  const { contacts, isLoading: contactsLoading } = useClientContacts(clientInfo?.id || null);
+
+  // Fetch the actual salesperson name if not provided
+  useEffect(() => {
+    const fetchSalespersonName = async () => {
+      if (!salespersonName && quote.user_id) {
+        console.log('EmailQuoteForm - Fetching salesperson name for user_id:', quote.user_id);
+        try {
+          const { data: profile, error } = await supabase
+            .from('profiles')
+            .select('full_name')
+            .eq('id', quote.user_id)
+            .single();
+          
+          if (!error && profile?.full_name) {
+            setActualSalespersonName(profile.full_name);
+            console.log('EmailQuoteForm - Found salesperson name:', profile.full_name);
+          } else {
+            console.log('EmailQuoteForm - Could not fetch salesperson name, using fallback');
+          }
+        } catch (error) {
+          console.error('EmailQuoteForm - Error fetching salesperson name:', error);
+        }
+      }
+    };
+
+    fetchSalespersonName();
+  }, [salespersonName, quote.user_id]);
+
+  // Set the message template with the actual salesperson name
+  useEffect(() => {
+    const messageTemplate = `Dear ${clientInfo?.contact_name || 'Valued Customer'},
 
 Please find attached your quote for the requested services. If you have any questions or would like to proceed with this proposal, please don't hesitate to contact us.
 
 Thank you for your business.
 
 Best regards,
-${salespersonName || 'Sales Team'}`);
-  const [isLoading, setIsLoading] = useState(false);
-  const { toast } = useToast();
+${actualSalespersonName}`;
 
-  const { contacts, isLoading: contactsLoading } = useClientContacts(clientInfo?.id || null);
+    setMessage(messageTemplate);
+  }, [clientInfo?.contact_name, actualSalespersonName]);
 
   // Set primary contact as default recipient when component mounts
   useEffect(() => {
@@ -124,7 +159,7 @@ ${salespersonName || 'Sales Team'}`);
     onEmailStatusChange('idle');
     
     try {
-      const pdf = await generateQuotePDF(quote, clientInfo, salespersonName);
+      const pdf = await generateQuotePDF(quote, clientInfo, actualSalespersonName);
       const pdfBlob = pdf.output('blob');
       
       const reader = new FileReader();
