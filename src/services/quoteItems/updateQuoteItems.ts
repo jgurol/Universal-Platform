@@ -39,11 +39,13 @@ export const updateQuoteItems = async (quoteId: string, quoteItems: QuoteItemDat
         image_name: quoteItem.image_name
       });
 
-      // Use the item_id from the item object, not from a separate field
       let itemId = quoteItem.item?.id;
 
-      // If we don't have an item ID, we need to create a temporary item
-      if (!itemId && quoteItem.name) {
+      // Check if this is a carrier item (item_id starts with "carrier-") or if we don't have a valid UUID
+      const isCarrierItem = quoteItem.item?.id?.startsWith('carrier-');
+      const isValidUUID = itemId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(itemId);
+
+      if (!isValidUUID || isCarrierItem) {
         console.log('[updateQuoteItems] Creating temporary item for quote item:', quoteItem.name);
         
         const tempItemData = {
@@ -51,7 +53,7 @@ export const updateQuoteItems = async (quoteId: string, quoteItems: QuoteItemDat
           name: quoteItem.name,
           description: quoteItem.description || '',
           price: quoteItem.unit_price || 0,
-          cost: 0,
+          cost: quoteItem.cost_override || 0,
           charge_type: quoteItem.charge_type || 'MRC',
           is_active: true
         };
