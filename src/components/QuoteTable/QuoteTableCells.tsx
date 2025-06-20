@@ -1,4 +1,3 @@
-
 import { Quote, ClientInfo } from "@/pages/Index";
 import { TableCell } from "@/components/ui/table";
 import { QuoteStatusBadge } from "./QuoteStatusBadge";
@@ -18,15 +17,31 @@ interface QuoteTableCellsProps {
 }
 
 const getInitials = (name: string): string => {
-  // If name is empty or just "Sales Team", show "ST"
-  if (!name || name.trim() === '' || name === 'Sales Team') {
+  // If name is empty, loading, or just "Sales Team", show "ST"
+  if (!name || name.trim() === '' || name === 'Sales Team' || name === 'Loading...') {
     return 'ST';
   }
   
-  return name
-    .split(' ')
-    .map(word => word.charAt(0).toUpperCase())
-    .join('');
+  // Handle email addresses by taking the part before @
+  if (name.includes('@')) {
+    const emailName = name.split('@')[0];
+    return emailName
+      .split(/[._-]/)
+      .map(part => part.charAt(0).toUpperCase())
+      .join('')
+      .slice(0, 2);
+  }
+  
+  // Handle full names
+  const nameParts = name.trim().split(/\s+/);
+  if (nameParts.length >= 2) {
+    return nameParts[0].charAt(0).toUpperCase() + nameParts[1].charAt(0).toUpperCase();
+  } else if (nameParts.length === 1) {
+    // Single name - take first two characters
+    return nameParts[0].slice(0, 2).toUpperCase();
+  }
+  
+  return 'ST';
 };
 
 const formatDate = (dateString?: string): string => {
@@ -62,6 +77,7 @@ export const QuoteTableCells = ({
   console.log('QuoteTableCells - Quote ID:', quote.id);
   console.log('QuoteTableCells - Quote user_id:', quote.user_id);
   console.log('QuoteTableCells - Salesperson name:', salespersonName);
+  console.log('QuoteTableCells - Generated initials:', getInitials(salespersonName));
 
   return (
     <>
