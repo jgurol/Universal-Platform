@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -58,22 +59,14 @@ export const EditClientInfoDialog = ({
   const fetchUsers = async () => {
     setIsLoading(true);
     try {
-      console.log('Fetching users from profiles table...');
-      console.log('Current user session:', await supabase.auth.getSession());
-      
       const { data, error } = await supabase
         .from('profiles')
         .select('id, full_name, email')
         .order('full_name', { ascending: true });
       
-      console.log('Supabase response - data:', data);
-      console.log('Supabase response - error:', error);
-      
       if (error) {
         console.error('Error fetching users:', error);
-        console.error('Error details:', error.details, error.hint, error.message);
       } else {
-        console.log('Fetched users:', data);
         setUsers(data || []);
       }
     } catch (err) {
@@ -191,8 +184,6 @@ export const EditClientInfoDialog = ({
               </SelectContent>
             </Select>
             {isLoading && <p className="text-sm text-muted-foreground">Loading users...</p>}
-            {!isLoading && users.length === 0 && <p className="text-sm text-muted-foreground">No users found. Check console for details.</p>}
-            <p className="text-xs text-muted-foreground">Debug: Found {users.length} users</p>
           </div>
 
           <div className="space-y-2">
