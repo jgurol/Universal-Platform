@@ -1,6 +1,5 @@
-
 import { useState, useEffect } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Edit, Trash2, Mail, Building, User } from "lucide-react";
@@ -94,10 +93,6 @@ export const ClientInfoList = ({
   return (
     <>
       <Card className="bg-white shadow-lg border-0">
-        <CardHeader>
-          <CardTitle className="text-xl font-semibold text-gray-900">Client Management</CardTitle>
-          <CardDescription>Manage your clients and their information</CardDescription>
-        </CardHeader>
         <CardContent>
           <div className="space-y-4">
             {clientInfos.length === 0 ? (
