@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Quote, ClientInfo } from "@/pages/Index";
@@ -98,7 +97,7 @@ export const EmailQuoteForm = ({
     fetchQuoteOwnerName();
   }, [quote.user_id, user]);
 
-  // Set the message template with the quote owner's name - only after name is loaded
+  // Set the message template with the quote owner's name and selected contact name
   useEffect(() => {
     if (!ownerNameLoaded) {
       console.log('EmailQuoteForm - Quote owner name not loaded yet, skipping message template update');
@@ -106,9 +105,21 @@ export const EmailQuoteForm = ({
     }
 
     console.log('EmailQuoteForm - Creating message template with quote owner:', quoteOwnerName);
-    console.log('EmailQuoteForm - Client contact name:', clientInfo?.contact_name);
+    console.log('EmailQuoteForm - Selected recipient contact:', selectedRecipientContact);
+    
+    // Get the contact name from the selected contact
+    let contactName = clientInfo?.contact_name;
+    
+    if (selectedRecipientContact !== "custom") {
+      const selectedContact = contacts.find(c => c.id === selectedRecipientContact);
+      if (selectedContact?.name) {
+        contactName = selectedContact.name;
+      }
+    }
+    
+    console.log('EmailQuoteForm - Using contact name:', contactName);
 
-    const greeting = clientInfo?.contact_name ? `Hi ${clientInfo.contact_name},` : 'Hi,';
+    const greeting = contactName ? `Hi ${contactName},` : 'Hi,';
 
     const messageTemplate = `${greeting}
 
@@ -119,9 +130,9 @@ Thank you for your business.
 Best regards,
 ${quoteOwnerName}`;
 
-    console.log('EmailQuoteForm - Setting message template with owner name:', quoteOwnerName);
+    console.log('EmailQuoteForm - Setting message template with contact name:', contactName, 'and owner name:', quoteOwnerName);
     setMessage(messageTemplate);
-  }, [clientInfo?.contact_name, quoteOwnerName, ownerNameLoaded]);
+  }, [clientInfo?.contact_name, quoteOwnerName, ownerNameLoaded, selectedRecipientContact, contacts]);
 
   // Set primary contact as default recipient when component mounts
   useEffect(() => {
