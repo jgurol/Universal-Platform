@@ -8,14 +8,17 @@ import { AddCategoryDialog } from "@/components/AddCategoryDialog";
 import { EditCategoryDialog } from "@/components/EditCategoryDialog";
 import { Badge } from "@/components/ui/badge";
 import { Category } from "@/types/categories";
+import { useAuth } from "@/context/AuthContext";
 
 export const CategoriesManagement = () => {
   const [isAddCategoryOpen, setIsAddCategoryOpen] = useState(false);
   const [isEditCategoryOpen, setIsEditCategoryOpen] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
   const { categories, isLoading, addCategory, updateCategory, deleteCategory } = useCategories();
+  const { isAdmin } = useAuth();
 
   const handleEditCategory = (category: Category) => {
+    if (!isAdmin) return;
     setSelectedCategory(category);
     setIsEditCategoryOpen(true);
   };
@@ -26,6 +29,7 @@ export const CategoriesManagement = () => {
   };
 
   const handleDeleteCategory = (categoryId: string) => {
+    if (!isAdmin) return;
     if (confirm("Are you sure you want to delete this category?")) {
       deleteCategory(categoryId);
     }
@@ -69,11 +73,18 @@ export const CategoriesManagement = () => {
               <Badge variant="outline" className="ml-2">
                 {categories.length} categories
               </Badge>
+              {!isAdmin && (
+                <Badge variant="secondary" className="ml-2 text-xs">
+                  View Only
+                </Badge>
+              )}
             </div>
-            <Button onClick={() => setIsAddCategoryOpen(true)} className="bg-blue-600 hover:bg-blue-700">
-              <Plus className="h-4 w-4 mr-2" />
-              Add Category
-            </Button>
+            {isAdmin && (
+              <Button onClick={() => setIsAddCategoryOpen(true)} className="bg-blue-600 hover:bg-blue-700">
+                <Plus className="h-4 w-4 mr-2" />
+                Add Category
+              </Button>
+            )}
           </div>
         </CardHeader>
         <CardContent>
@@ -81,11 +92,17 @@ export const CategoriesManagement = () => {
             <div className="text-center py-8 text-gray-500">
               <Tag className="h-12 w-12 mx-auto mb-4 text-gray-300" />
               <p className="text-lg font-medium mb-2">No categories yet</p>
-              <p className="text-sm mb-4">Add your first category to organize your items</p>
-              <Button onClick={() => setIsAddCategoryOpen(true)} variant="outline">
-                <Plus className="h-4 w-4 mr-2" />
-                Add Your First Category
-              </Button>
+              {isAdmin ? (
+                <>
+                  <p className="text-sm mb-4">Add your first category to organize your items</p>
+                  <Button onClick={() => setIsAddCategoryOpen(true)} variant="outline">
+                    <Plus className="h-4 w-4 mr-2" />
+                    Add Your First Category
+                  </Button>
+                </>
+              ) : (
+                <p className="text-sm">No categories have been created by administrators yet</p>
+              )}
             </div>
           ) : (
             <div className="space-y-3">
@@ -109,19 +126,21 @@ export const CategoriesManagement = () => {
                       <p className="text-sm text-gray-600">{category.description}</p>
                     )}
                   </div>
-                  <div className="flex items-center gap-2">
-                    <Button variant="ghost" size="sm" onClick={() => handleEditCategory(category)}>
-                      <Edit className="h-4 w-4" />
-                    </Button>
-                    <Button 
-                      variant="ghost" 
-                      size="sm" 
-                      className="text-red-600 hover:text-red-700"
-                      onClick={() => handleDeleteCategory(category.id)}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
+                  {isAdmin && (
+                    <div className="flex items-center gap-2">
+                      <Button variant="ghost" size="sm" onClick={() => handleEditCategory(category)}>
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        className="text-red-600 hover:text-red-700"
+                        onClick={() => handleDeleteCategory(category.id)}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
@@ -129,18 +148,22 @@ export const CategoriesManagement = () => {
         </CardContent>
       </Card>
 
-      <AddCategoryDialog
-        open={isAddCategoryOpen}
-        onOpenChange={setIsAddCategoryOpen}
-        onAddCategory={addCategory}
-      />
+      {isAdmin && (
+        <>
+          <AddCategoryDialog
+            open={isAddCategoryOpen}
+            onOpenChange={setIsAddCategoryOpen}
+            onAddCategory={addCategory}
+          />
 
-      <EditCategoryDialog
-        open={isEditCategoryOpen}
-        onOpenChange={setIsEditCategoryOpen}
-        onUpdateCategory={handleUpdateCategory}
-        category={selectedCategory}
-      />
+          <EditCategoryDialog
+            open={isEditCategoryOpen}
+            onOpenChange={setIsEditCategoryOpen}
+            onUpdateCategory={handleUpdateCategory}
+            category={selectedCategory}
+          />
+        </>
+      )}
     </>
   );
 };

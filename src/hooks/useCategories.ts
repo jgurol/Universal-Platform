@@ -8,7 +8,7 @@ import { Category } from "@/types/categories";
 export const useCategories = () => {
   const [categories, setCategories] = useState<Category[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const { user } = useAuth();
+  const { user, isAdmin } = useAuth();
   const { toast } = useToast();
 
   const fetchCategories = async () => {
@@ -40,7 +40,14 @@ export const useCategories = () => {
   };
 
   const addCategory = async (newCategory: Omit<Category, "id" | "user_id" | "created_at" | "updated_at">) => {
-    if (!user) return;
+    if (!user || !isAdmin) {
+      toast({
+        title: "Access Denied",
+        description: "Only administrators can add categories",
+        variant: "destructive"
+      });
+      return;
+    }
 
     try {
       const { data, error } = await supabase
@@ -77,14 +84,20 @@ export const useCategories = () => {
   };
 
   const updateCategory = async (categoryId: string, updates: Partial<Category>) => {
-    if (!user) return;
+    if (!user || !isAdmin) {
+      toast({
+        title: "Access Denied",
+        description: "Only administrators can edit categories",
+        variant: "destructive"
+      });
+      return;
+    }
 
     try {
       const { data, error } = await supabase
         .from('categories')
         .update(updates)
         .eq('id', categoryId)
-        .eq('user_id', user.id)
         .select('*')
         .single();
 
@@ -113,14 +126,20 @@ export const useCategories = () => {
   };
 
   const deleteCategory = async (categoryId: string) => {
-    if (!user) return;
+    if (!user || !isAdmin) {
+      toast({
+        title: "Access Denied",
+        description: "Only administrators can delete categories",
+        variant: "destructive"
+      });
+      return;
+    }
 
     try {
       const { error } = await supabase
         .from('categories')
         .update({ is_active: false })
-        .eq('id', categoryId)
-        .eq('user_id', user.id);
+        .eq('id', categoryId);
 
       if (error) {
         console.error('Error deleting category:', error);
