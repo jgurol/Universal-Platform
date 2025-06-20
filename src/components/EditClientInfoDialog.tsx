@@ -30,8 +30,9 @@ export const EditClientInfoDialog = ({
 }: EditClientInfoDialogProps) => {
   const [users, setUsers] = useState<User[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [selectedUserId, setSelectedUserId] = useState<string>("");
   
-  const { register, handleSubmit, reset, setValue, watch, formState: { errors } } = useForm<ClientInfo>({
+  const { register, handleSubmit, reset, setValue, formState: { errors } } = useForm<ClientInfo>({
     defaultValues: {
       company_name: "",
       contact_name: "",
@@ -52,14 +53,17 @@ export const EditClientInfoDialog = ({
         ...clientInfo,
         agent_id: clientInfo.agent_id || null
       });
+      setSelectedUserId(clientInfo.agent_id || "none");
     }
   }, [clientInfo, open, reset]);
 
   // Fetch users when dialog opens
   const fetchUsers = async () => {
+    if (isLoading) return;
+    
     setIsLoading(true);
     try {
-      console.log('[EditClient] Starting to fetch users...');
+      console.log('[EditClient] Fetching users from profiles table...');
       const { data, error } = await supabase
         .from('profiles')
         .select('id, full_name, email')
@@ -69,17 +73,22 @@ export const EditClientInfoDialog = ({
         console.error('[EditClient] Error fetching users:', error);
         setUsers([]);
       } else {
-        console.log('[EditClient] Raw data from Supabase:', data);
-        console.log('[EditClient] Number of users fetched:', data?.length || 0);
+        console.log('[EditClient] Raw profiles data:', data);
+        console.log('[EditClient] Number of profiles fetched:', data?.length || 0);
         
-        const validUsers = (data || []).filter(user => {
-          const isValid = user.id && (user.full_name || user.email);
-          console.log('[EditClient] User validation:', user, 'Valid:', isValid);
-          return isValid;
-        });
-        
-        console.log('[EditClient] Valid users after filtering:', validUsers);
-        setUsers(validUsers);
+        if (data && data.length > 0) {
+          const processedUsers = data.map(user => ({
+            id: user.id,
+            full_name: user.full_name || '',
+            email: user.email || ''
+          }));
+          
+          console.log('[EditClient] Processed users:', processedUsers);
+          setUsers(processedUsers);
+        } else {
+          console.log('[EditClient] No users found in profiles table');
+          setUsers([]);
+        }
       }
     } catch (err) {
       console.error('[EditClient] Exception in user fetch:', err);
@@ -94,8 +103,15 @@ export const EditClientInfoDialog = ({
       fetchUsers();
     } else {
       reset();
+      setSelectedUserId("");
     }
     onOpenChange(newOpen);
+  };
+
+  const handleUserSelect = (value: string) => {
+    console.log('[EditClient] User selected:', value);
+    setSelectedUserId(value);
+    setValue("agent_id", value === "none" ? null : value);
   };
 
   const onSubmit = (data: ClientInfo) => {
@@ -103,7 +119,7 @@ export const EditClientInfoDialog = ({
       const updatedData = {
         ...clientInfo,
         ...data,
-        agent_id: (!data.agent_id || data.agent_id === "none" || data.agent_id === "") ? null : data.agent_id
+        agent_id: selectedUserId === "none" || selectedUserId === "" ? null : selectedUserId
       };
       
       console.log('[EditClient] Submitting updated data:', updatedData);
@@ -114,10 +130,7 @@ export const EditClientInfoDialog = ({
 
   if (!clientInfo) return null;
 
-  const currentAgentId = watch("agent_id");
-  console.log('[EditClient] Current agent ID from form:', currentAgentId);
-  console.log('[EditClient] Users state:', users);
-  console.log('[EditClient] Is loading:', isLoading);
+  console.log('[EditClient] Current state - Users:', users.length, 'Loading:', isLoading, 'Selected:', selectedUserId);
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
@@ -188,37 +201,26 @@ export const EditClientInfoDialog = ({
 
           <div className="space-y-2">
             <Label htmlFor="edit-agent_id">Associated User</Label>
-            <Select 
-              value={currentAgentId || "none"}
-              onValueChange={(value) => {
-                console.log('[EditClient] Select value changed to:', value);
-                setValue("agent_id", value === "none" ? null : value);
-              }}
-            >
-              <SelectTrigger id="edit-agent_id" className="w-full bg-white border-gray-300">
-                <SelectValue placeholder={isLoading ? "Loading..." : "Select user"} />
+            <Select value={selectedUserId} onValueChange={handleUserSelect}>
+              <SelectTrigger className="w-full bg-white border-gray-300">
+                <SelectValue 
+                  placeholder={isLoading ? "Loading users..." : "Select a user or leave blank"} 
+                />
               </SelectTrigger>
               <SelectContent className="bg-white border border-gray-200 shadow-lg z-50 max-h-60 overflow-y-auto">
                 <SelectItem value="none">None</SelectItem>
-                {users.map((user) => {
-                  console.log('[EditClient] Rendering user option:', user);
-                  return (
-                    <SelectItem key={user.id} value={user.id}>
-                      {user.full_name || user.email || 'Unknown User'}
-                    </SelectItem>
-                  );
-                })}
-                {users.length === 0 && !isLoading && (
-                  <SelectItem value="no-users" disabled>
-                    No users found
+                {users.map((user) => (
+                  <SelectItem key={user.id} value={user.id}>
+                    {user.full_name || user.email || `User ${user.id}`}
                   </SelectItem>
-                )}
+                ))}
               </SelectContent>
             </Select>
-            {isLoading && <p className="text-sm text-muted-foreground">Loading users...</p>}
-            <p className="text-xs text-muted-foreground">
-              Users found: {users.length}
-            </p>
+            <div className="text-xs text-muted-foreground space-y-1">
+              <p>Users available: {users.length}</p>
+              {isLoading && <p>Loading users...</p>}
+              {!isLoading && users.length === 0 && <p>No users found in database</p>}
+            </div>
           </div>
 
           <div className="space-y-2">

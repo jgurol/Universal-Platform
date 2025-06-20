@@ -29,6 +29,7 @@ export const AddClientInfoDialog = ({
   const [users, setUsers] = useState<User[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [selectedUserId, setSelectedUserId] = useState<string>("");
 
   const { register, handleSubmit, reset, setValue, formState: { errors } } = useForm<AddClientInfoData>({
     defaultValues: {
@@ -45,9 +46,11 @@ export const AddClientInfoDialog = ({
 
   // Fetch users when dialog opens
   const fetchUsers = async () => {
+    if (isLoading) return;
+    
     setIsLoading(true);
     try {
-      console.log('[AddClient] Starting to fetch users...');
+      console.log('[AddClient] Fetching users from profiles table...');
       const { data, error } = await supabase
         .from('profiles')
         .select('id, full_name, email')
@@ -57,17 +60,22 @@ export const AddClientInfoDialog = ({
         console.error('[AddClient] Error fetching users:', error);
         setUsers([]);
       } else {
-        console.log('[AddClient] Raw data from Supabase:', data);
-        console.log('[AddClient] Number of users fetched:', data?.length || 0);
+        console.log('[AddClient] Raw profiles data:', data);
+        console.log('[AddClient] Number of profiles fetched:', data?.length || 0);
         
-        const validUsers = (data || []).filter(user => {
-          const isValid = user.id && (user.full_name || user.email);
-          console.log('[AddClient] User validation:', user, 'Valid:', isValid);
-          return isValid;
-        });
-        
-        console.log('[AddClient] Valid users after filtering:', validUsers);
-        setUsers(validUsers);
+        if (data && data.length > 0) {
+          const processedUsers = data.map(user => ({
+            id: user.id,
+            full_name: user.full_name || '',
+            email: user.email || ''
+          }));
+          
+          console.log('[AddClient] Processed users:', processedUsers);
+          setUsers(processedUsers);
+        } else {
+          console.log('[AddClient] No users found in profiles table');
+          setUsers([]);
+        }
       }
     } catch (err) {
       console.error('[AddClient] Exception in user fetch:', err);
@@ -80,10 +88,18 @@ export const AddClientInfoDialog = ({
   const handleOpenChange = (newOpen: boolean) => {
     if (newOpen) {
       fetchUsers();
+      setSelectedUserId("");
     } else {
       reset();
+      setSelectedUserId("");
     }
     onOpenChange(newOpen);
+  };
+
+  const handleUserSelect = (value: string) => {
+    console.log('[AddClient] User selected:', value);
+    setSelectedUserId(value);
+    setValue("agent_id", value === "none" ? null : value);
   };
 
   const onSubmit = async (data: AddClientInfoData) => {
@@ -91,12 +107,13 @@ export const AddClientInfoDialog = ({
     try {
       const cleanedData = {
         ...data,
-        agent_id: (!data.agent_id || data.agent_id === "none" || data.agent_id === "") ? null : data.agent_id
+        agent_id: selectedUserId === "none" || selectedUserId === "" ? null : selectedUserId
       };
       
       console.log('[AddClient] Submitting data:', cleanedData);
       await onAddClientInfo(cleanedData);
       reset();
+      setSelectedUserId("");
       onOpenChange(false);
     } catch (err) {
       console.error('Error adding client info:', err);
@@ -105,8 +122,7 @@ export const AddClientInfoDialog = ({
     }
   };
 
-  console.log('[AddClient] Users state:', users);
-  console.log('[AddClient] Is loading:', isLoading);
+  console.log('[AddClient] Current state - Users:', users.length, 'Loading:', isLoading, 'Selected:', selectedUserId);
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
@@ -177,37 +193,26 @@ export const AddClientInfoDialog = ({
 
           <div className="space-y-2">
             <Label htmlFor="agent_id">Associated User</Label>
-            <Select 
-              onValueChange={(value) => {
-                console.log('[AddClient] Select value changed to:', value);
-                setValue("agent_id", value === "none" ? null : value);
-              }}
-              defaultValue="none"
-            >
-              <SelectTrigger id="agent_id" className="w-full bg-white border-gray-300">
-                <SelectValue placeholder={isLoading ? "Loading..." : "Select user"} />
+            <Select value={selectedUserId} onValueChange={handleUserSelect}>
+              <SelectTrigger className="w-full bg-white border-gray-300">
+                <SelectValue 
+                  placeholder={isLoading ? "Loading users..." : "Select a user or leave blank"} 
+                />
               </SelectTrigger>
               <SelectContent className="bg-white border border-gray-200 shadow-lg z-50 max-h-60 overflow-y-auto">
                 <SelectItem value="none">None</SelectItem>
-                {users.map((user) => {
-                  console.log('[AddClient] Rendering user option:', user);
-                  return (
-                    <SelectItem key={user.id} value={user.id}>
-                      {user.full_name || user.email || 'Unknown User'}
-                    </SelectItem>
-                  );
-                })}
-                {users.length === 0 && !isLoading && (
-                  <SelectItem value="no-users" disabled>
-                    No users found
+                {users.map((user) => (
+                  <SelectItem key={user.id} value={user.id}>
+                    {user.full_name || user.email || `User ${user.id}`}
                   </SelectItem>
-                )}
+                ))}
               </SelectContent>
             </Select>
-            {isLoading && <p className="text-sm text-muted-foreground">Loading users...</p>}
-            <p className="text-xs text-muted-foreground">
-              Users found: {users.length}
-            </p>
+            <div className="text-xs text-muted-foreground space-y-1">
+              <p>Users available: {users.length}</p>
+              {isLoading && <p>Loading users...</p>}
+              {!isLoading && users.length === 0 && <p>No users found in database</p>}
+            </div>
           </div>
 
           <div className="space-y-2">
