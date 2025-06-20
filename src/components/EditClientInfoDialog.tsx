@@ -65,10 +65,14 @@ export const EditClientInfoDialog = ({
     
     setIsLoading(true);
     try {
+      console.log('[EditClient] Fetching agents...');
+      
       const { data, error } = await supabase
         .from('agents')
         .select('id, first_name, last_name, email, company_name')
         .order('last_name', { ascending: true });
+      
+      console.log('[EditClient] Agents query result - Data:', data, 'Error:', error);
       
       if (error) {
         console.error('Error fetching agents:', error);
@@ -85,6 +89,7 @@ export const EditClientInfoDialog = ({
               company_name: agent.company_name || ''
             }));
           
+          console.log('[EditClient] Processed agents:', processedAgents);
           setAgents(processedAgents);
         } else {
           setAgents([]);
@@ -109,6 +114,7 @@ export const EditClientInfoDialog = ({
   };
 
   const handleAgentSelect = (value: string) => {
+    console.log('[EditClient] Agent selected:', value);
     setSelectedAgentId(value);
     setValue("agent_id", value === "none" ? null : value);
   };
