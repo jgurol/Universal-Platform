@@ -51,42 +51,45 @@ export const AddClientInfoDialog = ({
     setIsLoading(true);
     try {
       console.log('[AddClient] Starting to fetch profiles...');
+      console.log('[AddClient] Current user session:', await supabase.auth.getSession());
       
-      // Let's debug what's in the profiles table
+      // Let's debug what's in the profiles table with detailed logging
       const { data: allProfiles, error: allError } = await supabase
         .from('profiles')
         .select('*');
       
-      console.log('[AddClient] All profiles in database:', allProfiles);
-      console.log('[AddClient] Any errors with all profiles?', allError);
+      console.log('[AddClient] All profiles query - Data:', allProfiles);
+      console.log('[AddClient] All profiles query - Error:', allError);
+      console.log('[AddClient] All profiles query - Data length:', allProfiles?.length);
       
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('id, full_name, email')
-        .order('full_name', { ascending: true });
-      
-      console.log('[AddClient] Filtered profiles query result:', { data, error });
-      
-      if (error) {
-        console.error('[AddClient] Error fetching profiles:', error);
-        setUsers([]);
-      } else {
-        if (data && Array.isArray(data)) {
-          console.log('[AddClient] Processing profiles data:', data);
-          const processedUsers = data
-            .filter(user => user && (user.full_name || user.email))
-            .map(user => ({
-              id: user.id,
-              full_name: user.full_name || '',
-              email: user.email || ''
-            }));
+      if (allProfiles && allProfiles.length > 0) {
+        console.log('[AddClient] Sample profile structure:', allProfiles[0]);
+        
+        // Check if profiles have the expected fields
+        allProfiles.forEach((profile, index) => {
+          console.log(`[AddClient] Profile ${index}:`, {
+            id: profile.id,
+            full_name: profile.full_name,
+            email: profile.email,
+            hasName: !!profile.full_name,
+            hasEmail: !!profile.email
+          });
+        });
+        
+        // Process the profiles into users format
+        const processedUsers = allProfiles
+          .filter(profile => profile && (profile.full_name || profile.email))
+          .map(profile => ({
+            id: profile.id,
+            full_name: profile.full_name || '',
+            email: profile.email || ''
+          }));
           
-          console.log('[AddClient] Processed users:', processedUsers);
-          setUsers(processedUsers);
-        } else {
-          console.log('[AddClient] No data returned or data is not an array');
-          setUsers([]);
-        }
+        console.log('[AddClient] Processed users:', processedUsers);
+        setUsers(processedUsers);
+      } else {
+        console.log('[AddClient] No profiles found or empty result');
+        setUsers([]);
       }
     } catch (err) {
       console.error('[AddClient] Exception in user fetch:', err);
@@ -221,9 +224,12 @@ export const AddClientInfoDialog = ({
             </Select>
             {users.length === 0 && !isLoading && (
               <p className="text-xs text-orange-600">
-                No users found in profiles table. You may need to create user profiles first.
+                Debug: Found {users.length} users. Check console for detailed logs.
               </p>
             )}
+            <p className="text-xs text-gray-500">
+              Debug: Loading={isLoading.toString()}, Users count={users.length}
+            </p>
           </div>
 
           <div className="space-y-2">
