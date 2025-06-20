@@ -82,16 +82,18 @@ export function NavigationBar() {
                       Manage your account preferences and personal information
                     </ListItem>
                     
-                    <ListItem href="/vendors" title="Vendor Management" Icon={Building}>
-                      Manage vendors and supplier information
+                    <ListItem href="/client-management" title="Client Management" Icon={Building}>
+                      Manage your clients' information and details
                     </ListItem>
                     
                     {isAdmin && (
+                      <ListItem href="/vendors" title="Vendor Management" Icon={Building}>
+                        Manage vendors and supplier information
+                      </ListItem>
+                    )}
+                    
+                    {isAdmin && (
                       <>
-                        <ListItem href="/client-management" title="Client Management" Icon={Building}>
-                          Manage your clients' information and details
-                        </ListItem>
-                        
                         <ListItem href="/agent-management" title="Agent Management" Icon={UserCog}>
                           Manage commission agents and their rates
                         </ListItem>
