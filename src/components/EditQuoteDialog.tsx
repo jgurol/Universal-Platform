@@ -15,6 +15,7 @@ import { EditQuoteHeader } from "@/components/EditQuote/EditQuoteHeader";
 import { EditQuoteAddressSection } from "@/components/EditQuote/EditQuoteAddressSection";
 import { EditQuoteTemplateSection } from "@/components/EditQuote/EditQuoteTemplateSection";
 import { EditQuoteFormFields } from "@/components/EditQuote/EditQuoteFormFields";
+import { useToast } from "@/hooks/use-toast";
 
 type QuoteTemplate = Database['public']['Tables']['quote_templates']['Row'];
 
@@ -35,6 +36,7 @@ export const EditQuoteDialog = ({
   clients, 
   clientInfos 
 }: EditQuoteDialogProps) => {
+  const { toast } = useToast();
   const {
     clientId,
     setClientId,
@@ -66,6 +68,7 @@ export const EditQuoteDialog = ({
 
   const [selectedTemplateId, setSelectedTemplateId] = useState<string>("none");
   const [templates, setTemplates] = useState<QuoteTemplate[]>([]);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const { user } = useAuth();
 
   // Helper function to find matching address ID from address string
@@ -179,90 +182,152 @@ export const EditQuoteDialog = ({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (isSubmitting) {
+      console.log('[EditQuoteDialog] Already submitting, ignoring duplicate submission');
+      return;
+    }
+
     console.log('[EditQuoteDialog] Form submitted - checking validation');
     console.log('[EditQuoteDialog] Form data:', {
       quote: !!quote,
-      clientId,
+      clientInfoId,
       date,
       quoteItemsLength: quoteItems.length,
-      clientInfoId,
       clientsLength: clients.length
     });
     
-    if (quote && date && quoteItems.length > 0) {
-      const selectedClient = clientId ? clients.find(client => client.id === clientId) : null;
-      const selectedClientInfo = clientInfoId && clientInfoId !== "none" ? clientInfos.find(info => info.id === clientInfoId) : null;
+    if (!quote) {
+      console.error('[EditQuoteDialog] No quote provided');
+      toast({
+        title: "Error",
+        description: "No quote provided for update",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!date) {
+      console.error('[EditQuoteDialog] No date provided');
+      toast({
+        title: "Error", 
+        description: "Quote date is required",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (quoteItems.length === 0) {
+      console.error('[EditQuoteDialog] No quote items provided');
+      toast({
+        title: "Error",
+        description: "At least one quote item is required",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!clientInfoId || clientInfoId === "none") {
+      console.error('[EditQuoteDialog] No client info selected');
+      toast({
+        title: "Error",
+        description: "Please select a client company",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const selectedClient = clientId ? clients.find(client => client.id === clientId) : null;
+    const selectedClientInfo = clientInfos.find(info => info.id === clientInfoId);
+    
+    if (!selectedClientInfo) {
+      console.error('[EditQuoteDialog] Selected client info not found');
+      toast({
+        title: "Error",
+        description: "Selected client company not found",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    try {
+      console.log('[EditQuoteDialog] Validation passed, updating quote');
+      const { totalAmount } = calculateTotalsByChargeType(quoteItems);
       
-      console.log('[EditQuoteDialog] Client lookup results:', {
-        clientId,
-        selectedClient: selectedClient ? { id: selectedClient.id, name: selectedClient.name } : null,
-        clientInfoId,
-        selectedClientInfo: selectedClientInfo ? { id: selectedClientInfo.id, company_name: selectedClientInfo.company_name } : null
+      console.log('[EditQuoteDialog] Saving quote items before updating quote:', quoteItems.map(item => ({
+        id: item.id,
+        name: item.name,
+        description: item.description,
+        address_id: item.address_id
+      })));
+      
+      // Update quote items in database with address information and custom descriptions
+      await updateQuoteItems(quote.id, quoteItems);
+
+      console.log('EditQuoteDialog - Updating quote with addresses:', { 
+        billing: billingAddress, 
+        service: serviceAddress 
       });
 
-      // We can proceed even without a selected client (salesperson), as long as we have client info
-      if (selectedClientInfo) {
-        console.log('[EditQuoteDialog] Validation passed, updating quote');
-        const { totalAmount } = calculateTotalsByChargeType(quoteItems);
-        
-        console.log('[EditQuoteDialog] Saving quote items before updating quote:', quoteItems.map(item => ({
-          id: item.id,
-          name: item.name,
-          description: item.description,
-          address_id: item.address_id
-        })));
-        
-        // Update quote items in database with address information and custom descriptions
-        await updateQuoteItems(quote.id, quoteItems);
+      const updatedQuote: Quote = {
+        ...quote,
+        clientId: clientId || "",
+        clientName: selectedClient?.name || "No Salesperson Assigned",
+        companyName: selectedClientInfo.company_name,
+        amount: totalAmount,
+        date,
+        description: description || "",
+        quoteNumber: quoteNumber || undefined,
+        status,
+        clientInfoId: clientInfoId !== "none" ? clientInfoId : undefined,
+        clientCompanyName: selectedClientInfo?.company_name,
+        commissionOverride: commissionOverride ? parseFloat(commissionOverride) : undefined,
+        expiresAt: expiresAt || undefined,
+        notes: notes || undefined,
+        billingAddress: billingAddress || undefined,
+        serviceAddress: serviceAddress || undefined,
+        templateId: selectedTemplateId !== "none" ? selectedTemplateId : undefined
+      };
 
-        console.log('EditQuoteDialog - Updating quote with addresses:', { 
-          billing: billingAddress, 
-          service: serviceAddress 
-        });
-
-        onUpdateQuote({
-          ...quote,
-          clientId: clientId || "",
-          clientName: selectedClient?.name || "No Salesperson Assigned",
-          companyName: selectedClientInfo.company_name,
-          amount: totalAmount,
-          date,
-          description: description || "",
-          quoteNumber: quoteNumber || undefined,
-          status,
-          clientInfoId: clientInfoId !== "none" ? clientInfoId : undefined,
-          clientCompanyName: selectedClientInfo?.company_name,
-          commissionOverride: commissionOverride ? parseFloat(commissionOverride) : undefined,
-          expiresAt: expiresAt || undefined,
-          notes: notes || undefined,
-          billingAddress: billingAddress || undefined,
-          serviceAddress: serviceAddress || undefined,
-          templateId: selectedTemplateId !== "none" ? selectedTemplateId : undefined
-        } as Quote);
-        
-        onOpenChange(false);
-      } else {
-        console.log('[EditQuoteDialog] No client info found - cannot update quote');
-      }
-    } else {
-      console.log('[EditQuoteDialog] Form validation failed:', {
-        hasQuote: !!quote,
-        hasDate: !!date,
-        hasQuoteItems: quoteItems.length > 0
+      onUpdateQuote(updatedQuote);
+      
+      toast({
+        title: "Success",
+        description: "Quote updated successfully",
       });
+      
+      onOpenChange(false);
+
+    } catch (error) {
+      console.error('[EditQuoteDialog] Error updating quote:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update quote. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
   const selectedSalesperson = clientId ? clients.find(c => c.id === clientId) : null;
 
-  // Check if form is valid for submission - removed clientId requirement since it's optional
-  const isFormValid = quote && date && quoteItems.length > 0;
+  // Updated form validation - must match submission requirements exactly
+  const isFormValid = !!(
+    quote && 
+    date && 
+    quoteItems.length > 0 && 
+    clientInfoId && 
+    clientInfoId !== "none"
+  );
   
   console.log('[EditQuoteDialog] Form validation status:', {
     hasQuote: !!quote,
-    hasClientId: !!clientId,
     hasDate: !!date,
     hasQuoteItems: quoteItems.length > 0,
+    hasClientInfo: !!(clientInfoId && clientInfoId !== "none"),
     isFormValid
   });
 
@@ -325,22 +390,27 @@ export const EditQuoteDialog = ({
           </p>
 
           <div className="flex justify-end space-x-2 mt-6">
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+            <Button 
+              type="button" 
+              variant="outline" 
+              onClick={() => onOpenChange(false)}
+              disabled={isSubmitting}
+            >
               Cancel
             </Button>
             <Button 
               type="submit" 
               className="bg-blue-600 hover:bg-blue-700"
-              disabled={!isFormValid}
+              disabled={!isFormValid || isSubmitting}
             >
-              Update Quote
+              {isSubmitting ? "Updating..." : "Update Quote"}
             </Button>
           </div>
           
           {/* Debug info */}
           <div className="text-xs text-muted-foreground">
             Debug: Form valid = {isFormValid ? 'true' : 'false'} 
-            (Quote: {!!quote ? 'yes' : 'no'}, Client: {!!clientId ? 'yes' : 'no'}, Date: {!!date ? 'yes' : 'no'}, Items: {quoteItems.length})
+            (Quote: {!!quote ? 'yes' : 'no'}, Date: {!!date ? 'yes' : 'no'}, Items: {quoteItems.length}, ClientInfo: {clientInfoId && clientInfoId !== "none" ? 'yes' : 'no'})
           </div>
         </form>
       </DialogContent>
