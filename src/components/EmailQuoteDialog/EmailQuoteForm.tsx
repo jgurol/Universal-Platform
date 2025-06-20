@@ -35,7 +35,8 @@ export const EmailQuoteForm = ({
   const [subject, setSubject] = useState(`Quote #${quote.quoteNumber || quote.id.slice(0, 8)} - ${quote.description || 'Service Agreement'}`);
   const [message, setMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [actualSalespersonName, setActualSalespersonName] = useState(salespersonName || 'Sales Team');
+  const [actualSalespersonName, setActualSalespersonName] = useState('');
+  const [salespersonLoaded, setSalespersonLoaded] = useState(false);
   const { toast } = useToast();
 
   const { contacts, isLoading: contactsLoading } = useClientContacts(clientInfo?.id || null);
@@ -43,7 +44,13 @@ export const EmailQuoteForm = ({
   // Fetch the actual salesperson name if not provided
   useEffect(() => {
     const fetchSalespersonName = async () => {
-      if (!salespersonName && quote.user_id) {
+      if (salespersonName) {
+        setActualSalespersonName(salespersonName);
+        setSalespersonLoaded(true);
+        return;
+      }
+
+      if (quote.user_id) {
         console.log('EmailQuoteForm - Fetching salesperson name for user_id:', quote.user_id);
         try {
           const { data: profile, error } = await supabase
@@ -57,18 +64,25 @@ export const EmailQuoteForm = ({
             console.log('EmailQuoteForm - Found salesperson name:', profile.full_name);
           } else {
             console.log('EmailQuoteForm - Could not fetch salesperson name, using fallback');
+            setActualSalespersonName('Sales Team');
           }
         } catch (error) {
           console.error('EmailQuoteForm - Error fetching salesperson name:', error);
+          setActualSalespersonName('Sales Team');
         }
+      } else {
+        setActualSalespersonName('Sales Team');
       }
+      setSalespersonLoaded(true);
     };
 
     fetchSalespersonName();
   }, [salespersonName, quote.user_id]);
 
-  // Set the message template with the actual salesperson name
+  // Set the message template with the actual salesperson name - only after name is loaded
   useEffect(() => {
+    if (!salespersonLoaded) return;
+
     const messageTemplate = `Dear ${clientInfo?.contact_name || 'Valued Customer'},
 
 Please find attached your quote for the requested services. If you have any questions or would like to proceed with this proposal, please don't hesitate to contact us.
@@ -79,7 +93,7 @@ Best regards,
 ${actualSalespersonName}`;
 
     setMessage(messageTemplate);
-  }, [clientInfo?.contact_name, actualSalespersonName]);
+  }, [clientInfo?.contact_name, actualSalespersonName, salespersonLoaded]);
 
   // Set primary contact as default recipient when component mounts
   useEffect(() => {
