@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -59,15 +58,21 @@ export const EditClientInfoDialog = ({
   const fetchUsers = async () => {
     setIsLoading(true);
     try {
+      console.log('Fetching users for edit dropdown...');
+      
       const { data, error } = await supabase
         .from('profiles')
         .select('id, full_name, email')
         .order('full_name', { ascending: true });
       
+      console.log('Fetched users for edit:', data);
+      console.log('Error if any:', error);
+      
       if (error) {
         console.error('Error fetching users:', error);
       } else {
         setUsers(data || []);
+        console.log('Set users state to:', data);
       }
     } catch (err) {
       console.error('Error in user fetch:', err);
@@ -171,10 +176,10 @@ export const EditClientInfoDialog = ({
               value={watch("agent_id") || "none"}
               onValueChange={(value) => setValue("agent_id", value === "none" ? null : value)}
             >
-              <SelectTrigger id="edit-agent_id" className="w-full">
+              <SelectTrigger id="edit-agent_id" className="w-full bg-white border-gray-300">
                 <SelectValue placeholder="Select user" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="bg-white border border-gray-200 shadow-lg z-50">
                 <SelectItem value="none">None</SelectItem>
                 {users.map((user) => (
                   <SelectItem key={user.id} value={user.id}>
@@ -184,6 +189,7 @@ export const EditClientInfoDialog = ({
               </SelectContent>
             </Select>
             {isLoading && <p className="text-sm text-muted-foreground">Loading users...</p>}
+            <p className="text-xs text-gray-500">Found {users.length} users</p>
           </div>
 
           <div className="space-y-2">
