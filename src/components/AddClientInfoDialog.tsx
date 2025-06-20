@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -15,10 +16,12 @@ interface AddClientInfoDialogProps {
   onAddClientInfo: (newClientInfo: AddClientInfoData) => Promise<void>;
 }
 
-interface User {
+interface Agent {
   id: string;
-  full_name: string;
+  first_name: string;
+  last_name: string;
   email: string;
+  company_name: string;
 }
 
 export const AddClientInfoDialog = ({ 
@@ -26,11 +29,10 @@ export const AddClientInfoDialog = ({
   onOpenChange, 
   onAddClientInfo 
 }: AddClientInfoDialogProps) => {
-  const [users, setUsers] = useState<User[]>([]);
+  const [agents, setAgents] = useState<Agent[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [selectedUserId, setSelectedUserId] = useState<string>("");
-  const [debugInfo, setDebugInfo] = useState<string>("");
+  const [selectedAgentId, setSelectedAgentId] = useState<string>("");
 
   const { register, handleSubmit, reset, setValue, formState: { errors } } = useForm<AddClientInfoData>({
     defaultValues: {
@@ -45,88 +47,86 @@ export const AddClientInfoDialog = ({
     }
   });
 
-  // Fetch users when dialog opens
-  const fetchUsers = async () => {
+  // Fetch agents when dialog opens
+  const fetchAgents = async () => {
     if (isLoading) return;
     
     setIsLoading(true);
-    let debugLog = "Starting fetchUsers...\n";
     
     try {
-      debugLog += "Checking authentication...\n";
+      console.log('[AddClient] Fetching agents...');
       
       // First check authentication status
       const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-      debugLog += `Session check - Session exists: ${!!session}, Error: ${sessionError}\n`;
+      console.log('[AddClient] Session check - Session exists:', !!session, 'Error:', sessionError);
       
       if (!session) {
-        debugLog += "No active session found\n";
-        setUsers([]);
-        setDebugInfo(debugLog);
+        console.log('[AddClient] No active session found');
+        setAgents([]);
         return;
       }
       
-      debugLog += "Fetching profiles...\n";
+      console.log('[AddClient] Fetching agents from agents table...');
       
-      // Fetch profiles with specific fields
-      const { data: profileData, error: profileError } = await supabase
-        .from('profiles')
-        .select('id, full_name, email')
-        .order('full_name', { ascending: true, nullsFirst: false });
+      // Fetch agents with specific fields
+      const { data: agentData, error: agentError } = await supabase
+        .from('agents')
+        .select('id, first_name, last_name, email, company_name')
+        .order('last_name', { ascending: true, nullsFirst: false });
       
-      debugLog += `Profiles query result - Data count: ${profileData?.length || 0}, Error: ${profileError}\n`;
-      debugLog += `Raw profile data: ${JSON.stringify(profileData, null, 2)}\n`;
+      console.log('[AddClient] Agents query result - Data count:', agentData?.length || 0, 'Error:', agentError);
+      console.log('[AddClient] Raw agent data:', agentData);
       
-      if (profileError) {
-        debugLog += `Profile error details: ${JSON.stringify(profileError, null, 2)}\n`;
-        setUsers([]);
-      } else if (profileData && Array.isArray(profileData)) {
-        debugLog += `Processing ${profileData.length} profiles...\n`;
+      if (agentError) {
+        console.error('[AddClient] Agent error details:', agentError);
+        setAgents([]);
+      } else if (agentData && Array.isArray(agentData)) {
+        console.log('[AddClient] Processing', agentData.length, 'agents...');
         
-        // Process the profiles into users format
-        const processedUsers = profileData.map((profile, index) => {
-          debugLog += `Profile ${index}: id=${profile.id}, full_name="${profile.full_name}", email="${profile.email}"\n`;
+        // Process the agents data
+        const processedAgents = agentData.map((agent, index) => {
+          console.log('[AddClient] Agent', index, ':', agent);
           return {
-            id: profile.id,
-            full_name: profile.full_name || '',
-            email: profile.email || ''
+            id: agent.id,
+            first_name: agent.first_name || '',
+            last_name: agent.last_name || '',
+            email: agent.email || '',
+            company_name: agent.company_name || ''
           };
         });
           
-        debugLog += `Processed users count: ${processedUsers.length}\n`;
-        debugLog += `Processed users: ${JSON.stringify(processedUsers, null, 2)}\n`;
+        console.log('[AddClient] Processed agents count:', processedAgents.length);
+        console.log('[AddClient] Processed agents:', processedAgents);
         
-        setUsers(processedUsers);
-        debugLog += "Users state updated successfully\n";
+        setAgents(processedAgents);
+        console.log('[AddClient] Agents state updated successfully');
       } else {
-        debugLog += "No profiles found or profileData is not an array\n";
-        setUsers([]);
+        console.log('[AddClient] No agents found or agentData is not an array');
+        setAgents([]);
       }
     } catch (err) {
-      debugLog += `Exception in fetchUsers: ${JSON.stringify(err, null, 2)}\n`;
-      setUsers([]);
+      console.error('[AddClient] Exception in fetchAgents:', err);
+      setAgents([]);
     } finally {
       setIsLoading(false);
-      setDebugInfo(debugLog);
-      debugLog += "fetchUsers completed\n";
-      console.log('[AddClient] Complete debug log:', debugLog);
+      console.log('[AddClient] fetchAgents completed');
     }
   };
 
   const handleOpenChange = (newOpen: boolean) => {
     if (newOpen) {
-      fetchUsers();
-      setSelectedUserId("");
+      fetchAgents();
+      setSelectedAgentId("");
     } else {
       reset();
-      setSelectedUserId("");
+      setSelectedAgentId("");
     }
     onOpenChange(newOpen);
   };
 
-  const handleUserSelect = (value: string) => {
-    console.log('[AddClient] User selected:', value);
-    setSelectedUserId(value);
+  const handleAgentSelect = (value: string) => {
+    console.log('[AddClient] Agent selected:', value);
+    setSelectedAgentId(value);
     setValue("agent_id", value === "none" ? null : value);
   };
 
@@ -135,12 +135,12 @@ export const AddClientInfoDialog = ({
     try {
       const cleanedData = {
         ...data,
-        agent_id: selectedUserId === "none" || selectedUserId === "" ? null : selectedUserId
+        agent_id: selectedAgentId === "none" || selectedAgentId === "" ? null : selectedAgentId
       };
       
       await onAddClientInfo(cleanedData);
       reset();
-      setSelectedUserId("");
+      setSelectedAgentId("");
       onOpenChange(false);
     } catch (err) {
       console.error('Error adding client info:', err);
@@ -149,8 +149,8 @@ export const AddClientInfoDialog = ({
     }
   };
 
-  console.log('[AddClient] Component render - users.length:', users.length, 'isLoading:', isLoading);
-  console.log('[AddClient] Current users state:', users);
+  console.log('[AddClient] Component render - agents.length:', agents.length, 'isLoading:', isLoading);
+  console.log('[AddClient] Current agents state:', agents);
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
@@ -163,21 +163,13 @@ export const AddClientInfoDialog = ({
         </DialogHeader>
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-          {/* Enhanced Debug section */}
+          {/* Debug section */}
           <div className="p-3 bg-blue-50 border border-blue-200 rounded text-sm">
             <strong>Debug Info:</strong><br/>
-            Users found: {users.length}<br/>
+            Agents found: {agents.length}<br/>
             Loading: {isLoading ? 'Yes' : 'No'}<br/>
-            Selected User ID: {selectedUserId || 'None'}<br/>
+            Selected Agent ID: {selectedAgentId || 'None'}<br/>
             Dialog Open: {open ? 'Yes' : 'No'}<br/>
-            <details className="mt-2">
-              <summary>Full Debug Log</summary>
-              <pre className="text-xs mt-1 whitespace-pre-wrap">{debugInfo}</pre>
-            </details>
-            <details className="mt-2">
-              <summary>Users Array</summary>
-              <pre className="text-xs mt-1">{JSON.stringify(users, null, 2)}</pre>
-            </details>
           </div>
 
           <div className="space-y-2">
@@ -238,29 +230,29 @@ export const AddClientInfoDialog = ({
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="agent_id">Associated User</Label>
+            <Label htmlFor="agent_id">Associated Agent</Label>
             <div className="space-y-2">
               <div className="text-xs text-gray-500">
-                Debug: {users.length} users available, loading: {isLoading ? 'true' : 'false'}
+                Debug: {agents.length} agents available, loading: {isLoading ? 'true' : 'false'}
               </div>
-              <Select value={selectedUserId} onValueChange={handleUserSelect}>
+              <Select value={selectedAgentId} onValueChange={handleAgentSelect}>
                 <SelectTrigger>
-                  <SelectValue placeholder={isLoading ? "Loading users..." : "Select a user"} />
+                  <SelectValue placeholder={isLoading ? "Loading agents..." : "Select an agent"} />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="none">None</SelectItem>
-                  {users.length > 0 ? (
-                    users.map((user) => {
-                      console.log('[AddClient] Rendering user option:', user);
+                  {agents.length > 0 ? (
+                    agents.map((agent) => {
+                      console.log('[AddClient] Rendering agent option:', agent);
                       return (
-                        <SelectItem key={user.id} value={user.id}>
-                          {user.full_name || user.email || `User ${user.id.slice(0, 8)}`}
+                        <SelectItem key={agent.id} value={agent.id}>
+                          {`${agent.first_name} ${agent.last_name} (${agent.company_name || 'No Company'})`}
                         </SelectItem>
                       );
                     })
                   ) : (
-                    <SelectItem value="no-users" disabled>
-                      {isLoading ? 'Loading...' : 'No users found'}
+                    <SelectItem value="no-agents" disabled>
+                      {isLoading ? 'Loading...' : 'No agents found'}
                     </SelectItem>
                   )}
                 </SelectContent>
