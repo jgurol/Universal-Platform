@@ -17,7 +17,7 @@ export const QuoteHeader = ({
   searchTerm = "",
   onSearchChange
 }: QuoteHeaderProps) => {
-  const { isAdmin } = useAuth();
+  const { user } = useAuth(); // Allow any logged-in user to add quotes
 
   return (
     <div className="flex justify-between items-center">
@@ -37,7 +37,7 @@ export const QuoteHeader = ({
           </div>
         )}
       </div>
-      {isAdmin && (
+      {user && (
         <Button 
           onClick={onAddQuote}
           className="bg-blue-600 hover:bg-blue-700 text-white"

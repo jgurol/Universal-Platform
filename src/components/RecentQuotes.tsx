@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -201,25 +202,25 @@ export const RecentQuotes = ({
         </CardContent>
       </Card>
 
-      {isAdmin && (
-        <>
-          <AddQuoteDialog
-            open={isAddQuoteOpen}
-            onOpenChange={setIsAddQuoteOpen}
-            onAddQuote={onAddQuote}
-            clients={clients}
-            clientInfos={clientInfos}
-          />
+      {/* Allow both admins and agents to add quotes */}
+      <AddQuoteDialog
+        open={isAddQuoteOpen}
+        onOpenChange={setIsAddQuoteOpen}
+        onAddQuote={onAddQuote}
+        clients={clients}
+        clientInfos={clientInfos}
+      />
 
-          <EditQuoteDialog
-            quote={currentQuote}
-            open={isEditQuoteOpen}
-            onOpenChange={setIsEditQuoteOpen}
-            onUpdateQuote={onUpdateQuote}
-            clients={clients}
-            clientInfos={clientInfos}
-          />
-        </>
+      {/* Only admins can edit quotes */}
+      {isAdmin && (
+        <EditQuoteDialog
+          quote={currentQuote}
+          open={isEditQuoteOpen}
+          onOpenChange={setIsEditQuoteOpen}
+          onUpdateQuote={onUpdateQuote}
+          clients={clients}
+          clientInfos={clientInfos}
+        />
       )}
     </>
   );
