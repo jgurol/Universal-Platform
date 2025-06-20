@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -50,31 +51,15 @@ export const AddClientInfoDialog = ({
     
     setIsLoading(true);
     try {
-      console.log('[AddClient] Starting user fetch...');
-      console.log('[AddClient] Current user auth state:', await supabase.auth.getUser());
-      
       const { data, error } = await supabase
         .from('profiles')
         .select('id, full_name, email')
         .order('full_name', { ascending: true });
       
-      console.log('[AddClient] Raw supabase response:', { data, error });
-      
       if (error) {
-        console.error('[AddClient] Error fetching users:', error);
-        console.error('[AddClient] Error details:', {
-          message: error.message,
-          details: error.details,
-          hint: error.hint,
-          code: error.code
-        });
+        console.error('Error fetching users:', error);
         setUsers([]);
       } else {
-        console.log('[AddClient] Successful fetch - data:', data);
-        console.log('[AddClient] Data type:', typeof data);
-        console.log('[AddClient] Data length:', data?.length);
-        console.log('[AddClient] First item:', data?.[0]);
-        
         if (data && Array.isArray(data)) {
           const processedUsers = data
             .filter(user => user && (user.full_name || user.email))
@@ -84,15 +69,13 @@ export const AddClientInfoDialog = ({
               email: user.email || ''
             }));
           
-          console.log('[AddClient] Processed users:', processedUsers);
           setUsers(processedUsers);
         } else {
-          console.log('[AddClient] No valid data returned');
           setUsers([]);
         }
       }
     } catch (err) {
-      console.error('[AddClient] Exception in user fetch:', err);
+      console.error('Exception in user fetch:', err);
       setUsers([]);
     } finally {
       setIsLoading(false);
@@ -111,7 +94,6 @@ export const AddClientInfoDialog = ({
   };
 
   const handleUserSelect = (value: string) => {
-    console.log('[AddClient] User selected:', value);
     setSelectedUserId(value);
     setValue("agent_id", value === "none" ? null : value);
   };
@@ -124,7 +106,6 @@ export const AddClientInfoDialog = ({
         agent_id: selectedUserId === "none" || selectedUserId === "" ? null : selectedUserId
       };
       
-      console.log('[AddClient] Submitting data:', cleanedData);
       await onAddClientInfo(cleanedData);
       reset();
       setSelectedUserId("");
@@ -135,8 +116,6 @@ export const AddClientInfoDialog = ({
       setIsSubmitting(false);
     }
   };
-
-  console.log('[AddClient] Render state - Users:', users.length, 'Loading:', isLoading, 'Selected:', selectedUserId);
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
@@ -220,12 +199,6 @@ export const AddClientInfoDialog = ({
                 ))}
               </SelectContent>
             </Select>
-            <div className="text-xs text-muted-foreground space-y-1">
-              <p>Debug: Users available: {users.length}</p>
-              <p>Debug: Loading: {isLoading ? 'true' : 'false'}</p>
-              <p>Debug: Selected: {selectedUserId || 'none'}</p>
-              {!isLoading && users.length === 0 && <p className="text-red-500">No users found - check RLS policies</p>}
-            </div>
           </div>
 
           <div className="space-y-2">

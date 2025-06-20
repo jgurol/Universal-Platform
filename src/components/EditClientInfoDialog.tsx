@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -48,7 +49,6 @@ export const EditClientInfoDialog = ({
   // Reset form when clientInfo changes
   useEffect(() => {
     if (clientInfo && open) {
-      console.log('[EditClient] Resetting form with clientInfo:', clientInfo);
       reset({
         ...clientInfo,
         agent_id: clientInfo.agent_id || null
@@ -63,31 +63,15 @@ export const EditClientInfoDialog = ({
     
     setIsLoading(true);
     try {
-      console.log('[EditClient] Starting user fetch...');
-      console.log('[EditClient] Current user auth state:', await supabase.auth.getUser());
-      
       const { data, error } = await supabase
         .from('profiles')
         .select('id, full_name, email')
         .order('full_name', { ascending: true });
       
-      console.log('[EditClient] Raw supabase response:', { data, error });
-      
       if (error) {
-        console.error('[EditClient] Error fetching users:', error);
-        console.error('[EditClient] Error details:', {
-          message: error.message,
-          details: error.details,
-          hint: error.hint,
-          code: error.code
-        });
+        console.error('Error fetching users:', error);
         setUsers([]);
       } else {
-        console.log('[EditClient] Successful fetch - data:', data);
-        console.log('[EditClient] Data type:', typeof data);
-        console.log('[EditClient] Data length:', data?.length);
-        console.log('[EditClient] First item:', data?.[0]);
-        
         if (data && Array.isArray(data)) {
           const processedUsers = data
             .filter(user => user && (user.full_name || user.email))
@@ -97,15 +81,13 @@ export const EditClientInfoDialog = ({
               email: user.email || ''
             }));
           
-          console.log('[EditClient] Processed users:', processedUsers);
           setUsers(processedUsers);
         } else {
-          console.log('[EditClient] No valid data returned');
           setUsers([]);
         }
       }
     } catch (err) {
-      console.error('[EditClient] Exception in user fetch:', err);
+      console.error('Exception in user fetch:', err);
       setUsers([]);
     } finally {
       setIsLoading(false);
@@ -123,7 +105,6 @@ export const EditClientInfoDialog = ({
   };
 
   const handleUserSelect = (value: string) => {
-    console.log('[EditClient] User selected:', value);
     setSelectedUserId(value);
     setValue("agent_id", value === "none" ? null : value);
   };
@@ -136,15 +117,12 @@ export const EditClientInfoDialog = ({
         agent_id: selectedUserId === "none" || selectedUserId === "" ? null : selectedUserId
       };
       
-      console.log('[EditClient] Submitting updated data:', updatedData);
       onUpdateClientInfo(updatedData);
       onOpenChange(false);
     }
   };
 
   if (!clientInfo) return null;
-
-  console.log('[EditClient] Render state - Users:', users.length, 'Loading:', isLoading, 'Selected:', selectedUserId);
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
@@ -228,12 +206,6 @@ export const EditClientInfoDialog = ({
                 ))}
               </SelectContent>
             </Select>
-            <div className="text-xs text-muted-foreground space-y-1">
-              <p>Debug: Users available: {users.length}</p>
-              <p>Debug: Loading: {isLoading ? 'true' : 'false'}</p>
-              <p>Debug: Selected: {selectedUserId || 'none'}</p>
-              {!isLoading && users.length === 0 && <p className="text-red-500">No users found - check RLS policies</p>}
-            </div>
           </div>
 
           <div className="space-y-2">
