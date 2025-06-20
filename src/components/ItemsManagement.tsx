@@ -10,6 +10,7 @@ import { AddItemDialog } from "@/components/AddItemDialog";
 import { EditItemDialog } from "@/components/EditItemDialog";
 import { Badge } from "@/components/ui/badge";
 import { Item } from "@/types/items";
+import { useAuth } from "@/context/AuthContext";
 
 export const ItemsManagement = () => {
   const [isAddItemOpen, setIsAddItemOpen] = useState(false);
@@ -18,6 +19,7 @@ export const ItemsManagement = () => {
   const { items, isLoading, addItem, updateItem, deleteItem } = useItems();
   const { categories } = useCategories();
   const { vendors } = useVendors();
+  const { isAdmin } = useAuth();
 
   const getCategoryName = (categoryId?: string) => {
     if (!categoryId) return null;
@@ -32,6 +34,7 @@ export const ItemsManagement = () => {
   };
 
   const handleEditItem = (item: Item) => {
+    if (!isAdmin) return;
     setSelectedItem(item);
     setIsEditItemOpen(true);
   };
@@ -42,6 +45,7 @@ export const ItemsManagement = () => {
   };
 
   const handleDeleteItem = (itemId: string) => {
+    if (!isAdmin) return;
     if (confirm('Are you sure you want to delete this item?')) {
       deleteItem(itemId);
     }
@@ -68,11 +72,18 @@ export const ItemsManagement = () => {
               <Badge variant="outline" className="ml-2">
                 {items.length} items
               </Badge>
+              {!isAdmin && (
+                <Badge variant="secondary" className="ml-2 text-xs">
+                  View Only
+                </Badge>
+              )}
             </div>
-            <Button onClick={() => setIsAddItemOpen(true)} className="bg-blue-600 hover:bg-blue-700">
-              <Plus className="h-4 w-4 mr-2" />
-              Add Item
-            </Button>
+            {isAdmin && (
+              <Button onClick={() => setIsAddItemOpen(true)} className="bg-blue-600 hover:bg-blue-700">
+                <Plus className="h-4 w-4 mr-2" />
+                Add Item
+              </Button>
+            )}
           </div>
         </CardHeader>
         <CardContent>
@@ -80,11 +91,17 @@ export const ItemsManagement = () => {
             <div className="text-center py-8 text-gray-500">
               <Package className="h-12 w-12 mx-auto mb-4 text-gray-300" />
               <p className="text-lg font-medium mb-2">No items yet</p>
-              <p className="text-sm mb-4">Add your first product or service item to get started</p>
-              <Button onClick={() => setIsAddItemOpen(true)} variant="outline">
-                <Plus className="h-4 w-4 mr-2" />
-                Add Your First Item
-              </Button>
+              {isAdmin ? (
+                <>
+                  <p className="text-sm mb-4">Add your first product or service item to get started</p>
+                  <Button onClick={() => setIsAddItemOpen(true)} variant="outline">
+                    <Plus className="h-4 w-4 mr-2" />
+                    Add Your First Item
+                  </Button>
+                </>
+              ) : (
+                <p className="text-sm">No items have been created by administrators yet</p>
+              )}
             </div>
           ) : (
             <div className="space-y-3">
@@ -129,19 +146,21 @@ export const ItemsManagement = () => {
                       )}
                     </div>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <Button variant="ghost" size="sm" onClick={() => handleEditItem(item)}>
-                      <Edit className="h-4 w-4" />
-                    </Button>
-                    <Button 
-                      variant="ghost" 
-                      size="sm" 
-                      className="text-red-600 hover:text-red-700"
-                      onClick={() => handleDeleteItem(item.id)}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
+                  {isAdmin && (
+                    <div className="flex items-center gap-2">
+                      <Button variant="ghost" size="sm" onClick={() => handleEditItem(item)}>
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        className="text-red-600 hover:text-red-700"
+                        onClick={() => handleDeleteItem(item.id)}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
@@ -149,18 +168,22 @@ export const ItemsManagement = () => {
         </CardContent>
       </Card>
 
-      <AddItemDialog
-        open={isAddItemOpen}
-        onOpenChange={setIsAddItemOpen}
-        onAddItem={addItem}
-      />
+      {isAdmin && (
+        <>
+          <AddItemDialog
+            open={isAddItemOpen}
+            onOpenChange={setIsAddItemOpen}
+            onAddItem={addItem}
+          />
 
-      <EditItemDialog
-        open={isEditItemOpen}
-        onOpenChange={setIsEditItemOpen}
-        onUpdateItem={handleUpdateItem}
-        item={selectedItem}
-      />
+          <EditItemDialog
+            open={isEditItemOpen}
+            onOpenChange={setIsEditItemOpen}
+            onUpdateItem={handleUpdateItem}
+            item={selectedItem}
+          />
+        </>
+      )}
     </>
   );
 };

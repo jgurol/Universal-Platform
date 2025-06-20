@@ -8,7 +8,7 @@ import { Item } from "@/types/items";
 export const useItems = () => {
   const [items, setItems] = useState<Item[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const { user } = useAuth();
+  const { user, isAdmin } = useAuth();
   const { toast } = useToast();
 
   const fetchItems = async () => {
@@ -40,7 +40,14 @@ export const useItems = () => {
   };
 
   const addItem = async (newItem: Omit<Item, "id" | "user_id" | "created_at" | "updated_at">) => {
-    if (!user) return;
+    if (!user || !isAdmin) {
+      toast({
+        title: "Access Denied",
+        description: "Only administrators can add items",
+        variant: "destructive"
+      });
+      return;
+    }
 
     try {
       const { data, error } = await supabase
@@ -77,14 +84,20 @@ export const useItems = () => {
   };
 
   const updateItem = async (itemId: string, updates: Partial<Item>) => {
-    if (!user) return;
+    if (!user || !isAdmin) {
+      toast({
+        title: "Access Denied",
+        description: "Only administrators can edit items",
+        variant: "destructive"
+      });
+      return;
+    }
 
     try {
       const { data, error } = await supabase
         .from('items')
         .update(updates)
         .eq('id', itemId)
-        .eq('user_id', user.id)
         .select('*')
         .single();
 
@@ -113,14 +126,20 @@ export const useItems = () => {
   };
 
   const deleteItem = async (itemId: string) => {
-    if (!user) return;
+    if (!user || !isAdmin) {
+      toast({
+        title: "Access Denied",
+        description: "Only administrators can delete items",
+        variant: "destructive"
+      });
+      return;
+    }
 
     try {
       const { error } = await supabase
         .from('items')
         .update({ is_active: false })
-        .eq('id', itemId)
-        .eq('user_id', user.id);
+        .eq('id', itemId);
 
       if (error) {
         console.error('Error deleting item:', error);
