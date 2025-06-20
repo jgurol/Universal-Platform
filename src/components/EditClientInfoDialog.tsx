@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -58,29 +59,15 @@ export const EditClientInfoDialog = ({
   const fetchUsers = async () => {
     setIsLoading(true);
     try {
-      console.log('=== FETCHING USERS DEBUG ===');
-      console.log('Current user session:', await supabase.auth.getSession());
-      
-      // First check if we can access the profiles table at all
-      const { data: testData, error: testError, count } = await supabase
-        .from('profiles')
-        .select('*', { count: 'exact' });
-      
-      console.log('Direct profiles query result:', { testData, testError, count });
-      
-      // Now try the specific query we need
       const { data, error } = await supabase
         .from('profiles')
         .select('id, full_name, email')
         .order('full_name', { ascending: true });
       
-      console.log('Specific query result:', { data, error });
-      
       if (error) {
         console.error('Error fetching users:', error);
       } else {
         setUsers(data || []);
-        console.log('Set users state to:', data);
       }
     } catch (err) {
       console.error('Error in user fetch:', err);
@@ -197,8 +184,6 @@ export const EditClientInfoDialog = ({
               </SelectContent>
             </Select>
             {isLoading && <p className="text-sm text-muted-foreground">Loading users...</p>}
-            <p className="text-xs text-gray-500">Found {users.length} users</p>
-            <p className="text-xs text-blue-500">Debug: Check console for detailed logs</p>
           </div>
 
           <div className="space-y-2">
