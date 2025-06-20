@@ -42,6 +42,7 @@ export interface Quote {
   emailOpened?: boolean;
   emailOpenedAt?: string;
   emailOpenCount?: number;
+  user_id?: string; // Add this property
 }
 
 export interface QuoteItem {
