@@ -48,18 +48,20 @@ export const AddClientInfoDialog = ({
   const fetchUsers = async () => {
     setIsLoading(true);
     try {
+      console.log('[AddClient] Starting to fetch users...');
       const { data, error } = await supabase
         .from('profiles')
         .select('id, full_name, email')
         .order('full_name', { ascending: true });
       
       if (error) {
-        console.error('Error fetching users:', error);
+        console.error('[AddClient] Error fetching users:', error);
       } else {
+        console.log('[AddClient] Successfully fetched users:', data);
         setUsers(data || []);
       }
     } catch (err) {
-      console.error('Error in user fetch:', err);
+      console.error('[AddClient] Exception in user fetch:', err);
     } finally {
       setIsLoading(false);
     }
@@ -77,7 +79,6 @@ export const AddClientInfoDialog = ({
   const onSubmit = async (data: AddClientInfoData) => {
     setIsSubmitting(true);
     try {
-      // Fix: Ensure agent_id is properly handled before sending to service
       const cleanedData = {
         ...data,
         agent_id: (!data.agent_id || data.agent_id === "none" || data.agent_id === "") ? null : data.agent_id
@@ -163,22 +164,39 @@ export const AddClientInfoDialog = ({
           <div className="space-y-2">
             <Label htmlFor="agent_id">Associated User</Label>
             <Select 
-              onValueChange={(value) => setValue("agent_id", value === "none" ? null : value)}
+              onValueChange={(value) => {
+                console.log('[AddClient] Select value changed to:', value);
+                setValue("agent_id", value === "none" ? null : value);
+              }}
               defaultValue="none"
             >
               <SelectTrigger id="agent_id" className="w-full bg-white border-gray-300">
-                <SelectValue placeholder="Select user" />
+                <SelectValue placeholder={isLoading ? "Loading..." : "Select user"} />
               </SelectTrigger>
-              <SelectContent className="bg-white border border-gray-200 shadow-lg z-50">
+              <SelectContent className="bg-white border border-gray-200 shadow-lg z-50 max-h-60 overflow-y-auto">
                 <SelectItem value="none">None</SelectItem>
-                {users.map((user) => (
-                  <SelectItem key={user.id} value={user.id}>
-                    {user.full_name || user.email}
-                  </SelectItem>
-                ))}
+                {users.length > 0 ? (
+                  users.map((user) => {
+                    console.log('[AddClient] Rendering user option:', user);
+                    return (
+                      <SelectItem key={user.id} value={user.id}>
+                        {user.full_name || user.email}
+                      </SelectItem>
+                    );
+                  })
+                ) : (
+                  !isLoading && (
+                    <SelectItem value="no-users" disabled>
+                      No users found
+                    </SelectItem>
+                  )
+                )}
               </SelectContent>
             </Select>
             {isLoading && <p className="text-sm text-muted-foreground">Loading users...</p>}
+            <p className="text-xs text-muted-foreground">
+              Users found: {users.length}
+            </p>
           </div>
 
           <div className="space-y-2">
