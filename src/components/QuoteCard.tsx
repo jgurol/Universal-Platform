@@ -4,7 +4,6 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Clock, Building, FileText, Users, Pencil, Trash2, Calendar, Copy, Mail } from "lucide-react";
 import { Quote, ClientInfo } from "@/pages/Index";
-import { useAuth } from "@/context/AuthContext";
 import { formatDateForDisplay } from "@/utils/dateUtils";
 import { EmailQuoteDialog } from "@/components/EmailQuoteDialog";
 import { supabase } from "@/integrations/supabase/client";
@@ -40,7 +39,6 @@ export const QuoteCard = ({
   onDeleteQuote,
   onCopyQuote
 }: QuoteCardProps) => {
-  const { isAdmin } = useAuth();
   const [isEmailDialogOpen, setIsEmailDialogOpen] = useState(false);
   const [quoteOwnerName, setQuoteOwnerName] = useState<string>('');
 
@@ -217,7 +215,7 @@ export const QuoteCard = ({
               >
                 <Mail className="w-3 h-3 mr-1 text-blue-600" /> Email
               </Button>
-              {isAdmin && onCopyQuote && (
+              {onCopyQuote && (
                 <Button 
                   size="sm" 
                   variant="outline" 
@@ -227,7 +225,7 @@ export const QuoteCard = ({
                   <Copy className="w-3 h-3 mr-1 text-green-600" /> Copy
                 </Button>
               )}
-              {isAdmin && onDeleteQuote && (
+              {onDeleteQuote && (
                 <Button 
                   size="sm" 
                   variant="outline" 
@@ -240,7 +238,7 @@ export const QuoteCard = ({
             </div>
           </div>
         </div>
-        {isAdmin && onEditClick && (
+        {onEditClick && (
           <Button 
             variant="ghost" 
             size="sm" 

@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -38,11 +37,10 @@ export const RecentQuotes = ({
   const [currentQuote, setCurrentQuote] = useState<Quote | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [showArchived, setShowArchived] = useState(false);
-  const { isAdmin, user } = useAuth();
+  const { user } = useAuth();
 
-  // Function to handle editing a quote - only for admins
+  // Function to handle editing a quote - now available to all authenticated users
   const handleEditClick = (quote: Quote) => {
-    if (!isAdmin) return;
     setCurrentQuote(quote);
     setIsEditQuoteOpen(true);
   };
@@ -80,10 +78,8 @@ export const RecentQuotes = ({
     }
   };
 
-  // Function to handle copying a quote - only for admins
+  // Function to handle copying a quote - now available to all authenticated users
   const handleCopyQuote = async (quote: Quote) => {
-    if (!isAdmin) return;
-    
     // Generate proper quote number
     const newQuoteNumber = await generateNextQuoteNumber();
     
@@ -192,10 +188,10 @@ export const RecentQuotes = ({
               quotes={filteredQuotes}
               clients={clients}
               clientInfos={clientInfos}
-              onEditQuote={isAdmin ? handleEditClick : undefined}
+              onEditQuote={handleEditClick}
               onDeleteQuote={onDeleteQuote}
               onUpdateQuote={onUpdateQuote}
-              onCopyQuote={isAdmin ? handleCopyQuote : undefined}
+              onCopyQuote={handleCopyQuote}
               onUnarchiveQuote={onUnarchiveQuote}
             />
           )}
@@ -212,16 +208,14 @@ export const RecentQuotes = ({
       />
 
       {/* Only admins can edit quotes */}
-      {isAdmin && (
-        <EditQuoteDialog
-          quote={currentQuote}
-          open={isEditQuoteOpen}
-          onOpenChange={setIsEditQuoteOpen}
-          onUpdateQuote={onUpdateQuote}
-          clients={clients}
-          clientInfos={clientInfos}
-        />
-      )}
+      <EditQuoteDialog
+        quote={currentQuote}
+        open={isEditQuoteOpen}
+        onOpenChange={setIsEditQuoteOpen}
+        onUpdateQuote={onUpdateQuote}
+        clients={clients}
+        clientInfos={clientInfos}
+      />
     </>
   );
 };

@@ -2,7 +2,6 @@
 import { Button } from "@/components/ui/button";
 import { Pencil, Trash2, FileText, Copy } from "lucide-react";
 import { ArchiveRestore } from "lucide-react";
-import { useAuth } from "@/context/AuthContext";
 import { Quote, ClientInfo } from "@/pages/Index";
 import { generateQuotePDF } from "@/utils/pdfUtils";
 import { useToast } from "@/hooks/use-toast";
@@ -29,7 +28,6 @@ export const QuoteActions = ({
   onEmailClick,
   onUnarchiveQuote
 }: QuoteActionsProps) => {
-  const { isAdmin } = useAuth();
   const { toast } = useToast();
 
   const handlePreviewPDF = async () => {
@@ -75,7 +73,7 @@ export const QuoteActions = ({
         onEmailClick={onEmailClick}
       />
       
-      {isAdmin && onCopyQuote && (
+      {onCopyQuote && (
         <Button 
           variant="ghost" 
           size="sm" 
@@ -87,7 +85,7 @@ export const QuoteActions = ({
         </Button>
       )}
       
-      {isAdmin && onEditClick && !isArchived && (
+      {onEditClick && !isArchived && (
         <Button 
           variant="ghost" 
           size="sm" 
@@ -99,7 +97,7 @@ export const QuoteActions = ({
         </Button>
       )}
       
-      {isAdmin && isArchived && onUnarchiveQuote && (
+      {isArchived && onUnarchiveQuote && (
         <Button 
           variant="ghost" 
           size="sm" 
@@ -111,7 +109,7 @@ export const QuoteActions = ({
         </Button>
       )}
       
-      {isAdmin && onDeleteQuote && !isArchived && (
+      {onDeleteQuote && !isArchived && (
         <Button 
           variant="ghost" 
           size="sm" 
