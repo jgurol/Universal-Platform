@@ -30,6 +30,9 @@ export const EditClientInfoDialog = ({
   onUpdateClientInfo 
 }: EditClientInfoDialogProps) => {
   const [companyName, setCompanyName] = useState(clientInfo.company_name);
+  const [contactName, setContactName] = useState(clientInfo.contact_name || "");
+  const [email, setEmail] = useState(clientInfo.email || "");
+  const [phone, setPhone] = useState(clientInfo.phone || "");
   const [notes, setNotes] = useState(clientInfo.notes || "");
   const [revioId, setRevioId] = useState(clientInfo.revio_id || "");
   const [agentId, setAgentId] = useState<string | null>(clientInfo.agent_id || null);
@@ -50,6 +53,9 @@ export const EditClientInfoDialog = ({
   // Update form when clientInfo changes
   useEffect(() => {
     setCompanyName(clientInfo.company_name);
+    setContactName(clientInfo.contact_name || "");
+    setEmail(clientInfo.email || "");
+    setPhone(clientInfo.phone || "");
     setNotes(clientInfo.notes || "");
     setRevioId(clientInfo.revio_id || "");
     setAgentId(clientInfo.agent_id || null);
@@ -84,9 +90,9 @@ export const EditClientInfoDialog = ({
         await onUpdateClientInfo({
           ...clientInfo,
           company_name: companyName,
-          contact_name: clientInfo.contact_name,
-          email: clientInfo.email,
-          phone: clientInfo.phone,
+          contact_name: contactName || null,
+          email: email || null,
+          phone: phone || null,
           address: clientInfo.address,
           notes: notes || null,
           revio_id: revioId || null,
@@ -122,6 +128,38 @@ export const EditClientInfoDialog = ({
               required
             />
           </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="edit-contactName">Contact Name</Label>
+            <Input
+              id="edit-contactName"
+              value={contactName}
+              onChange={(e) => setContactName(e.target.value)}
+              placeholder="Enter contact person's name"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="edit-email">Email</Label>
+            <Input
+              id="edit-email"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="Enter email address"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="edit-phone">Phone</Label>
+            <Input
+              id="edit-phone"
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+              placeholder="Enter phone number"
+            />
+          </div>
+
           <div className="space-y-2">
             <Label htmlFor="edit-revioId">Revio ID</Label>
             <Input
@@ -131,6 +169,7 @@ export const EditClientInfoDialog = ({
               placeholder="Enter Revio accounting system ID"
             />
           </div>
+
           <div className="space-y-2">
             <Label htmlFor="edit-agent">Associated Agent</Label>
             <Select value={agentId || undefined} onValueChange={setAgentId}>
@@ -148,6 +187,7 @@ export const EditClientInfoDialog = ({
             </Select>
             {isLoading && <p className="text-sm text-muted-foreground">Loading agents...</p>}
           </div>
+
           <div className="space-y-2">
             <Label htmlFor="edit-commissionOverride">Commission Override (%)</Label>
             <Input
@@ -164,6 +204,7 @@ export const EditClientInfoDialog = ({
               Optional. This will override the agent's commission rate for this client's transactions.
             </p>
           </div>
+
           <div className="space-y-2">
             <Label htmlFor="edit-notes">Notes</Label>
             <Textarea
@@ -174,6 +215,7 @@ export const EditClientInfoDialog = ({
               rows={3}
             />
           </div>
+
           <div className="flex justify-end space-x-2">
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               Cancel

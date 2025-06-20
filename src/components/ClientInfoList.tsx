@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { 
   Table, 
@@ -10,7 +11,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Edit, MapPin, Trash2, Users } from "lucide-react";
+import { Edit, MapPin, Trash2, Users, Mail, User } from "lucide-react";
 import { ClientInfo } from "@/pages/Index";
 import { EditClientInfoDialog } from "@/components/EditClientInfoDialog";
 import { ClientAddressList } from "@/components/ClientAddressList";
@@ -114,6 +115,9 @@ export const ClientInfoList = ({ clientInfos, onUpdateClientInfo, agentMapping =
             <TableHeader>
               <TableRow>
                 <TableHead>Company Name</TableHead>
+                <TableHead>Contact Name</TableHead>
+                <TableHead>Email</TableHead>
+                <TableHead>Phone</TableHead>
                 <TableHead>Revio ID</TableHead>
                 <TableHead>Associated Salesperson</TableHead>
                 <TableHead>Last Updated</TableHead>
@@ -124,6 +128,33 @@ export const ClientInfoList = ({ clientInfos, onUpdateClientInfo, agentMapping =
               {clientInfos.map((clientInfo) => (
                 <TableRow key={clientInfo.id}>
                   <TableCell className="font-medium">{clientInfo.company_name}</TableCell>
+                  <TableCell>
+                    <div className="flex items-center gap-2">
+                      {clientInfo.contact_name ? (
+                        <>
+                          <User className="w-4 h-4 text-gray-400" />
+                          {clientInfo.contact_name}
+                        </>
+                      ) : (
+                        <span className="text-gray-400">-</span>
+                      )}
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex items-center gap-2">
+                      {clientInfo.email ? (
+                        <>
+                          <Mail className="w-4 h-4 text-gray-400" />
+                          <a href={`mailto:${clientInfo.email}`} className="text-blue-600 hover:underline">
+                            {clientInfo.email}
+                          </a>
+                        </>
+                      ) : (
+                        <span className="text-gray-400">-</span>
+                      )}
+                    </div>
+                  </TableCell>
+                  <TableCell>{clientInfo.phone || "-"}</TableCell>
                   <TableCell className="font-mono text-sm">{clientInfo.revio_id || "-"}</TableCell>
                   <TableCell>{getSalespersonName(clientInfo.agent_id)}</TableCell>
                   <TableCell>{new Date(clientInfo.updated_at).toLocaleDateString()}</TableCell>
