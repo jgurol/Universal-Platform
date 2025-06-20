@@ -1,5 +1,6 @@
 
 import { ClientInfoList } from "@/components/ClientInfoList";
+import { DealRegistrationCard } from "@/components/DealRegistrationCard";
 import { ClientInfo } from "@/pages/Index";
 
 interface ClientManagementContentProps {
@@ -9,25 +10,35 @@ interface ClientManagementContentProps {
   onUpdateClientInfo: (clientInfo: ClientInfo) => void;
 }
 
-export const ClientManagementContent = ({ 
-  clientInfos, 
-  isLoading, 
-  agentMapping, 
-  onUpdateClientInfo 
+export const ClientManagementContent = ({
+  clientInfos,
+  isLoading,
+  agentMapping,
+  onUpdateClientInfo
 }: ClientManagementContentProps) => {
   if (isLoading) {
     return (
-      <div className="flex justify-center py-8">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-700"></div>
+      <div className="text-center py-8">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+        <p className="mt-2 text-gray-600">Loading...</p>
       </div>
     );
   }
 
   return (
-    <ClientInfoList 
-      clientInfos={clientInfos}
-      onUpdateClientInfo={onUpdateClientInfo}
-      agentMapping={agentMapping}
-    />
+    <div className="space-y-8">
+      {/* Deal Registration Card */}
+      <DealRegistrationCard 
+        clientInfos={clientInfos}
+        agentMapping={agentMapping}
+      />
+      
+      {/* Client Info List */}
+      <ClientInfoList 
+        clientInfos={clientInfos}
+        onUpdateClientInfo={onUpdateClientInfo}
+        agentMapping={agentMapping}
+      />
+    </div>
   );
 };
