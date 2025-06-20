@@ -1,4 +1,5 @@
-import { useState } from "react";
+
+import { useState, useEffect } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Clock, Building, FileText, Users, Pencil, Trash2, Calendar, Copy, Mail } from "lucide-react";
@@ -6,6 +7,7 @@ import { Quote, ClientInfo } from "@/pages/Index";
 import { useAuth } from "@/context/AuthContext";
 import { formatDateForDisplay } from "@/utils/dateUtils";
 import { EmailQuoteDialog } from "@/components/EmailQuoteDialog";
+import { supabase } from "@/integrations/supabase/client";
 
 interface QuoteCardProps {
   quote: Quote;
@@ -40,6 +42,39 @@ export const QuoteCard = ({
 }: QuoteCardProps) => {
   const { isAdmin } = useAuth();
   const [isEmailDialogOpen, setIsEmailDialogOpen] = useState(false);
+  const [quoteOwnerName, setQuoteOwnerName] = useState<string>('');
+
+  // Fetch the quote owner's name from the profiles table
+  useEffect(() => {
+    const fetchQuoteOwnerName = async () => {
+      if (!quote.user_id) {
+        console.log('QuoteCard - No user_id found, using fallback');
+        setQuoteOwnerName('Sales Team');
+        return;
+      }
+
+      try {
+        const { data: profile, error } = await supabase
+          .from('profiles')
+          .select('full_name')
+          .eq('id', quote.user_id)
+          .single();
+        
+        if (!error && profile?.full_name && profile.full_name.trim() !== '') {
+          console.log('QuoteCard - Found quote owner name:', profile.full_name);
+          setQuoteOwnerName(profile.full_name);
+        } else {
+          console.log('QuoteCard - Could not fetch quote owner name, using fallback');
+          setQuoteOwnerName('Sales Team');
+        }
+      } catch (error) {
+        console.error('QuoteCard - Error fetching quote owner name:', error);
+        setQuoteOwnerName('Sales Team');
+      }
+    };
+
+    fetchQuoteOwnerName();
+  }, [quote.user_id]);
 
   const handleDeleteQuote = () => {
     if (onDeleteQuote) {
@@ -94,7 +129,7 @@ export const QuoteCard = ({
       <div className="flex items-center justify-between p-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors duration-200">
         <div className="flex-1">
           <div className="flex items-center gap-2 mb-1">
-            <h4 className="font-medium text-gray-900">{quote.clientName}</h4>
+            <h4 className="font-medium text-gray-900">{quoteOwnerName || 'Sales Team'}</h4>
             <Badge variant="outline" className="text-xs">
               ${totalAmount.toLocaleString()}
             </Badge>
@@ -222,7 +257,7 @@ export const QuoteCard = ({
         onOpenChange={setIsEmailDialogOpen}
         quote={quote}
         clientInfo={clientInfo}
-        salespersonName={quote.clientName}
+        salespersonName={quoteOwnerName || 'Sales Team'}
       />
     </>
   );

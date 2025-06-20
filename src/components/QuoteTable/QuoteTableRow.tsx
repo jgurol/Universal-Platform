@@ -1,9 +1,10 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Quote, ClientInfo } from "@/pages/Index";
 import { TableRow } from "@/components/ui/table";
 import { EmailQuoteDialog } from "@/components/EmailQuoteDialog";
 import { QuoteTableCells } from "./QuoteTableCells";
+import { supabase } from "@/integrations/supabase/client";
 
 interface QuoteTableRowProps {
   quote: Quote;
@@ -27,9 +28,43 @@ export const QuoteTableRow = ({
   onUnarchiveQuote
 }: QuoteTableRowProps) => {
   const [isEmailDialogOpen, setIsEmailDialogOpen] = useState(false);
+  const [quoteOwnerName, setQuoteOwnerName] = useState<string>('');
+
+  // Fetch the quote owner's name from the profiles table
+  useEffect(() => {
+    const fetchQuoteOwnerName = async () => {
+      if (!quote.user_id) {
+        console.log('QuoteTableRow - No user_id found, using fallback');
+        setQuoteOwnerName('Sales Team');
+        return;
+      }
+
+      try {
+        const { data: profile, error } = await supabase
+          .from('profiles')
+          .select('full_name')
+          .eq('id', quote.user_id)
+          .single();
+        
+        if (!error && profile?.full_name && profile.full_name.trim() !== '') {
+          console.log('QuoteTableRow - Found quote owner name:', profile.full_name);
+          setQuoteOwnerName(profile.full_name);
+        } else {
+          console.log('QuoteTableRow - Could not fetch quote owner name, using fallback');
+          setQuoteOwnerName('Sales Team');
+        }
+      } catch (error) {
+        console.error('QuoteTableRow - Error fetching quote owner name:', error);
+        setQuoteOwnerName('Sales Team');
+      }
+    };
+
+    fetchQuoteOwnerName();
+  }, [quote.user_id]);
 
   const clientInfo = clientInfos.find(ci => ci.id === quote.clientInfoId);
-  const salespersonName = agentMapping[quote.clientId] || quote.clientName;
+  // Use the fetched quote owner name instead of agent mapping
+  const salespersonName = quoteOwnerName || 'Sales Team';
 
   const handleStatusUpdate = (newStatus: string) => {
     if (onUpdateQuote) {
