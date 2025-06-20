@@ -48,6 +48,7 @@ export const AddClientInfoDialog = ({
   const fetchUsers = async () => {
     setIsLoading(true);
     try {
+      console.log('Fetching users from profiles table...');
       const { data, error } = await supabase
         .from('profiles')
         .select('id, full_name, email')
@@ -56,6 +57,7 @@ export const AddClientInfoDialog = ({
       if (error) {
         console.error('Error fetching users:', error);
       } else {
+        console.log('Fetched users:', data);
         setUsers(data || []);
       }
     } catch (err) {
@@ -173,6 +175,7 @@ export const AddClientInfoDialog = ({
               </SelectContent>
             </Select>
             {isLoading && <p className="text-sm text-muted-foreground">Loading users...</p>}
+            {!isLoading && users.length === 0 && <p className="text-sm text-muted-foreground">No users found</p>}
           </div>
 
           <div className="space-y-2">
