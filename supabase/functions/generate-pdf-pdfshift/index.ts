@@ -1,3 +1,4 @@
+
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.50.0';
 
@@ -610,7 +611,6 @@ const generateHTML = (quote: any, clientInfo?: any, salespersonName?: string, lo
             max-width: 80px;
             max-height: 80px;
             object-fit: contain;
-            border: 1px solid #ddd;
             border-radius: 4px;
             background: white;
         }
