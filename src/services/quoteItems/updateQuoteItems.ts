@@ -9,20 +9,37 @@ export const updateQuoteItems = async (quoteId: string, quoteItems: QuoteItemDat
     // Get current user
     const { data: { user }, error: userError } = await supabase.auth.getUser();
     if (userError || !user) {
+      console.error('[updateQuoteItems] User not authenticated:', userError);
       throw new Error('User not authenticated');
     }
 
-    // Verify quote ownership before proceeding
-    const { data: quote, error: quoteError } = await supabase
+    console.log('[updateQuoteItems] Current user ID:', user.id);
+
+    // First, let's check if the quote exists at all (without RLS filtering)
+    const { data: quoteCheck, error: quoteCheckError } = await supabase
       .from('quotes')
       .select('id, user_id')
-      .eq('id', quoteId)
-      .eq('user_id', user.id)
-      .single();
+      .eq('id', quoteId);
 
-    if (quoteError || !quote) {
-      console.error('[updateQuoteItems] Quote not found or access denied:', quoteError);
-      throw new Error('Quote not found or access denied');
+    console.log('[updateQuoteItems] Quote check result:', { quoteCheck, quoteCheckError });
+
+    if (quoteCheckError) {
+      console.error('[updateQuoteItems] Error checking quote existence:', quoteCheckError);
+      throw new Error('Error checking quote existence');
+    }
+
+    if (!quoteCheck || quoteCheck.length === 0) {
+      console.error('[updateQuoteItems] Quote not found:', quoteId);
+      throw new Error('Quote not found');
+    }
+
+    const quote = quoteCheck[0];
+    console.log('[updateQuoteItems] Found quote:', { id: quote.id, user_id: quote.user_id, current_user: user.id });
+
+    // Check if user owns the quote
+    if (quote.user_id !== user.id) {
+      console.error('[updateQuoteItems] Access denied - user does not own quote');
+      throw new Error('Access denied - you do not own this quote');
     }
 
     console.log('[updateQuoteItems] Quote ownership verified for user:', user.id);
