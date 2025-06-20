@@ -81,27 +81,41 @@ const handler = async (req: Request): Promise<Response> => {
     console.log('PDFShift Function - Logo URL configured:', !!logoUrl);
     console.log('PDFShift Function - Company name:', companyName);
     
-    // Determine the account manager name - prioritize salespersonName parameter, fallback to quote creator info
-    let accountManagerName = salespersonName || 'N/A';
+    // Fetch the quote creator's name from profiles table
+    let accountManagerName = 'N/A';
     
-    // If no salespersonName provided, try to use quote user info or client agent info
-    if (!salespersonName || salespersonName === 'Unknown' || salespersonName === 'N/A') {
-      // Try to get name from clientInfo if it has agent information
-      if (clientInfo?.agent_name) {
-        accountManagerName = clientInfo.agent_name;
-      } else if (quote?.user_name) {
-        accountManagerName = quote.user_name;
-      } else if (quote?.created_by_name) {
-        accountManagerName = quote.created_by_name;
-      } else {
-        accountManagerName = 'N/A';
+    if (quote?.user_id) {
+      console.log('PDFShift Function - Fetching user profile for user_id:', quote.user_id);
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('full_name')
+        .eq('id', quote.user_id)
+        .single();
+      
+      if (profileError) {
+        console.error('PDFShift Function - Error fetching user profile:', profileError);
+      } else if (profile?.full_name) {
+        accountManagerName = profile.full_name;
+        console.log('PDFShift Function - Found user profile name:', accountManagerName);
       }
     }
     
-    console.log('PDFShift Function - Account manager name:', accountManagerName);
+    // Fallback to salespersonName parameter if provided and no profile name found
+    if (accountManagerName === 'N/A' && salespersonName && salespersonName !== 'Unknown' && salespersonName !== 'N/A') {
+      accountManagerName = salespersonName;
+      console.log('PDFShift Function - Using salespersonName fallback:', accountManagerName);
+    }
+    
+    // Try clientInfo agent_name as another fallback
+    if (accountManagerName === 'N/A' && clientInfo?.agent_name) {
+      accountManagerName = clientInfo.agent_name;
+      console.log('PDFShift Function - Using clientInfo.agent_name fallback:', accountManagerName);
+    }
+    
+    console.log('PDFShift Function - Final account manager name:', accountManagerName);
     
     // Create HTML template with logo, settings, and template content
-    const html = generateHTML(quote, clientInfo, salespersonName, logoUrl, companyName, templateContent);
+    const html = generateHTML(quote, clientInfo, accountManagerName, logoUrl, companyName, templateContent);
     console.log('PDFShift Function - HTML generated, length:', html.length);
     
     // Call PDFShift API
@@ -283,7 +297,7 @@ const processTemplateContent = (content: string): string => {
 };
 
 // Enhanced HTML generation function with template content support
-const generateHTML = (quote: any, clientInfo?: any, salespersonName?: string, logoUrl?: string, companyName?: string, templateContent?: string): string => {
+const generateHTML = (quote: any, clientInfo?: any, accountManagerName?: string, logoUrl?: string, companyName?: string, templateContent?: string): string => {
   // Extract data safely
   const quoteId = quote?.id || '';
   const quoteNumber = quote?.quoteNumber || quoteId.slice(0, 4);
@@ -301,24 +315,10 @@ const generateHTML = (quote: any, clientInfo?: any, salespersonName?: string, lo
   
   const isApproved = status === 'approved' || status === 'accepted';
   
-  // Determine the account manager name - prioritize salespersonName parameter, fallback to quote creator info
-  let accountManagerName = salespersonName || 'N/A';
+  // Use the account manager name passed from the main function
+  const finalAccountManagerName = accountManagerName || 'N/A';
   
-  // If no salespersonName provided, try to use quote user info or client agent info
-  if (!salespersonName || salespersonName === 'Unknown' || salespersonName === 'N/A') {
-    // Try to get name from clientInfo if it has agent information
-    if (clientInfo?.agent_name) {
-      accountManagerName = clientInfo.agent_name;
-    } else if (quote?.user_name) {
-      accountManagerName = quote.user_name;
-    } else if (quote?.created_by_name) {
-      accountManagerName = quote.created_by_name;
-    } else {
-      accountManagerName = 'N/A';
-    }
-  }
-  
-  console.log('PDFShift Function - Account manager name:', accountManagerName);
+  console.log('PDFShift Function - Final account manager name in HTML generation:', finalAccountManagerName);
   
   // Process quote items with enhanced description and image handling
   let mrcItems = [];
@@ -833,7 +833,7 @@ const generateHTML = (quote: any, clientInfo?: any, salespersonName?: string, lo
             </tr>
             <tr>
                 <td>Account Manager</td>
-                <td>${accountManagerName}</td>
+                <td>${finalAccountManagerName}</td>
             </tr>
         </table>
         
