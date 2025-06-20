@@ -15,7 +15,22 @@ export const updateQuoteItems = async (quoteId: string, quoteItems: QuoteItemDat
 
     console.log('[updateQuoteItems] Current user ID:', user.id);
 
-    // First, let's check if the quote exists at all (without RLS filtering)
+    // Get user's profile to check if they're an admin
+    const { data: profile, error: profileError } = await supabase
+      .from('profiles')
+      .select('role')
+      .eq('id', user.id)
+      .single();
+
+    if (profileError) {
+      console.error('[updateQuoteItems] Error fetching user profile:', profileError);
+      throw new Error('Error checking user permissions');
+    }
+
+    const isAdmin = profile?.role === 'admin';
+    console.log('[updateQuoteItems] User is admin:', isAdmin);
+
+    // Check if the quote exists and get ownership info
     const { data: quoteCheck, error: quoteCheckError } = await supabase
       .from('quotes')
       .select('id, user_id')
@@ -36,13 +51,15 @@ export const updateQuoteItems = async (quoteId: string, quoteItems: QuoteItemDat
     const quote = quoteCheck[0];
     console.log('[updateQuoteItems] Found quote:', { id: quote.id, user_id: quote.user_id, current_user: user.id });
 
-    // Check if user owns the quote
-    if (quote.user_id !== user.id) {
-      console.error('[updateQuoteItems] Access denied - user does not own quote');
+    // Check if user owns the quote OR is an admin
+    const hasAccess = quote.user_id === user.id || isAdmin;
+    
+    if (!hasAccess) {
+      console.error('[updateQuoteItems] Access denied - user does not own quote and is not admin');
       throw new Error('Access denied - you do not own this quote');
     }
 
-    console.log('[updateQuoteItems] Quote ownership verified for user:', user.id);
+    console.log('[updateQuoteItems] Access granted for user:', user.id, 'Admin:', isAdmin);
 
     // First, delete existing quote items for this quote
     const { error: deleteError } = await supabase
