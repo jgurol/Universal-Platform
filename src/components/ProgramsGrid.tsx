@@ -1,6 +1,6 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { FileText, Zap, Search, DollarSign } from "lucide-react";
+import { FileText, Zap, Search, DollarSign, Target } from "lucide-react";
 import { Link } from "react-router-dom";
 
 interface Program {
@@ -10,6 +10,11 @@ interface Program {
   icon: React.ComponentType<{ className?: string }>;
   route?: string; // Make route optional
   color: string;
+  onClick?: () => void; // Add onClick handler
+}
+
+interface ProgramsGridProps {
+  onDealRegistrationClick?: () => void;
 }
 
 const programs: Program[] = [
@@ -38,16 +43,28 @@ const programs: Program[] = [
     color: "bg-orange-500 hover:bg-orange-600"
   },
   {
+    id: "deal-registration",
+    title: "Deal Registration",
+    description: "Register and track your sales opportunities",
+    icon: Target,
+    color: "bg-green-500 hover:bg-green-600"
+  },
+  {
     id: "commissions",
     title: "Track Commissions",
     description: "Track your client payments & commissions",
     icon: DollarSign,
-    // No route - placeholder card
-    color: "bg-green-500 hover:bg-green-600"
+    color: "bg-emerald-500 hover:bg-emerald-600"
   }
 ];
 
-export const ProgramsGrid = () => {
+export const ProgramsGrid = ({ onDealRegistrationClick }: ProgramsGridProps) => {
+  const handleProgramClick = (program: Program) => {
+    if (program.id === "deal-registration" && onDealRegistrationClick) {
+      onDealRegistrationClick();
+    }
+  };
+
   return (
     <div className="mb-8">
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6">
@@ -72,16 +89,20 @@ export const ProgramsGrid = () => {
             </Card>
           );
 
-          // If the program has a route, wrap it in a Link, otherwise return the card directly
-          return program.route ? (
-            <Link key={program.id} to={program.route} className="group">
-              {cardContent}
-            </Link>
-          ) : (
-            <div key={program.id} className="group">
-              {cardContent}
-            </div>
-          );
+          // If the program has a route, wrap it in a Link, otherwise return the card with onClick
+          if (program.route) {
+            return (
+              <Link key={program.id} to={program.route} className="group">
+                {cardContent}
+              </Link>
+            );
+          } else {
+            return (
+              <div key={program.id} className="group" onClick={() => handleProgramClick(program)}>
+                {cardContent}
+              </div>
+            );
+          }
         })}
       </div>
     </div>
