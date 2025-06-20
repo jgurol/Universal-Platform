@@ -90,11 +90,12 @@ export const updateQuoteItems = async (quoteId: string, quoteItems: QuoteItemDat
 
       let itemId = quoteItem.item?.id;
 
-      // Check if this is a carrier item (item_id starts with "carrier-") or if we don't have a valid UUID
+      // Check if this is a carrier item (item_id starts with "carrier-") 
       const isCarrierItem = quoteItem.item?.id?.startsWith('carrier-');
       const isValidUUID = itemId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(itemId);
 
-      if (!isValidUUID || isCarrierItem) {
+      // Only create temporary items for non-carrier items that don't have valid UUIDs
+      if (!isValidUUID && !isCarrierItem) {
         console.log('[updateQuoteItems] Creating temporary item for quote item:', quoteItem.name);
         
         const tempItemData = {
@@ -120,6 +121,19 @@ export const updateQuoteItems = async (quoteId: string, quoteItems: QuoteItemDat
 
         itemId = tempItem.id;
         console.log('[updateQuoteItems] Created temporary item with ID:', itemId);
+      } else if (isCarrierItem) {
+        // For carrier items, we'll use a special handling approach
+        // We don't create items in the catalog, but we still need a reference
+        console.log('[updateQuoteItems] Handling carrier item without creating catalog entry:', quoteItem.name);
+        
+        // Create a placeholder item ID that we can reference but won't create in items table
+        // We'll use the original carrier ID but ensure it's a valid UUID format for the quote_items table
+        const carrierQuoteId = quoteItem.item?.id?.replace('carrier-', '');
+        
+        // Generate a deterministic UUID based on the carrier quote ID and quote ID
+        // This ensures we have a consistent reference without creating catalog items
+        const deterministicId = await generateDeterministicUUID(carrierQuoteId + quoteId);
+        itemId = deterministicId;
       }
 
       if (!itemId) {
@@ -156,4 +170,24 @@ export const updateQuoteItems = async (quoteId: string, quoteItems: QuoteItemDat
     console.error('[updateQuoteItems] Error updating quote items:', error);
     throw error;
   }
+};
+
+// Helper function to generate deterministic UUID for carrier items
+const generateDeterministicUUID = async (input: string): Promise<string> => {
+  // Create a simple hash-based UUID for carrier items
+  // This ensures we have consistent IDs without creating catalog entries
+  const encoder = new TextEncoder();
+  const data = encoder.encode(input);
+  const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+  
+  // Format as UUID
+  return [
+    hashHex.slice(0, 8),
+    hashHex.slice(8, 12),
+    hashHex.slice(12, 16),
+    hashHex.slice(16, 20),
+    hashHex.slice(20, 32)
+  ].join('-');
 };
