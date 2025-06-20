@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -21,6 +22,17 @@ interface User {
   email: string;
 }
 
+interface DebugProfile {
+  id: string;
+  full_name: string | null;
+  email: string | null;
+  role: string | null;
+  is_associated: boolean | null;
+  associated_agent_id: string | null;
+  created_at: string | null;
+  updated_at: string | null;
+}
+
 export const AddClientInfoDialog = ({ 
   open, 
   onOpenChange, 
@@ -30,6 +42,7 @@ export const AddClientInfoDialog = ({
   const [isLoading, setIsLoading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [selectedUserId, setSelectedUserId] = useState<string>("");
+  const [debugProfiles, setDebugProfiles] = useState<DebugProfile[]>([]);
 
   const { register, handleSubmit, reset, setValue, formState: { errors } } = useForm<AddClientInfoData>({
     defaultValues: {
@@ -61,6 +74,11 @@ export const AddClientInfoDialog = ({
       console.log('[AddClient] All profiles query - Data:', allProfiles);
       console.log('[AddClient] All profiles query - Error:', allError);
       console.log('[AddClient] All profiles query - Data length:', allProfiles?.length);
+      
+      // Store debug profiles for display
+      if (allProfiles) {
+        setDebugProfiles(allProfiles as DebugProfile[]);
+      }
       
       if (allProfiles && allProfiles.length > 0) {
         console.log('[AddClient] Sample profile structure:', allProfiles[0]);
@@ -136,13 +154,36 @@ export const AddClientInfoDialog = ({
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="sm:max-w-[500px]">
+      <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Add New Client</DialogTitle>
           <DialogDescription>
             Add a new client to your database.
           </DialogDescription>
         </DialogHeader>
+        
+        {/* Debug Section */}
+        <div className="bg-gray-50 p-3 rounded text-xs space-y-2">
+          <h4 className="font-semibold">Debug Info:</h4>
+          <p>Loading: {isLoading.toString()}</p>
+          <p>Users found: {users.length}</p>
+          <p>Raw profiles count: {debugProfiles.length}</p>
+          {debugProfiles.length > 0 && (
+            <div className="space-y-1">
+              <p className="font-medium">Raw Profiles Data:</p>
+              {debugProfiles.map((profile, idx) => (
+                <div key={idx} className="bg-white p-2 rounded text-xs">
+                  <p><strong>ID:</strong> {profile.id}</p>
+                  <p><strong>Name:</strong> {profile.full_name || 'null'}</p>
+                  <p><strong>Email:</strong> {profile.email || 'null'}</p>
+                  <p><strong>Role:</strong> {profile.role || 'null'}</p>
+                  <p><strong>Associated:</strong> {profile.is_associated?.toString() || 'null'}</p>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="company_name" className="required">Company Name</Label>
@@ -222,14 +263,6 @@ export const AddClientInfoDialog = ({
                 )}
               </SelectContent>
             </Select>
-            {users.length === 0 && !isLoading && (
-              <p className="text-xs text-orange-600">
-                Debug: Found {users.length} users. Check console for detailed logs.
-              </p>
-            )}
-            <p className="text-xs text-gray-500">
-              Debug: Loading={isLoading.toString()}, Users count={users.length}
-            </p>
           </div>
 
           <div className="space-y-2">
