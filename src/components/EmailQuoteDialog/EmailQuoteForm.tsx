@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Quote, ClientInfo } from "@/pages/Index";
@@ -44,7 +45,12 @@ export const EmailQuoteForm = ({
   // Fetch the actual salesperson name if not provided
   useEffect(() => {
     const fetchSalespersonName = async () => {
+      console.log('EmailQuoteForm - Starting to fetch salesperson name');
+      console.log('EmailQuoteForm - Provided salespersonName:', salespersonName);
+      console.log('EmailQuoteForm - Quote user_id:', quote.user_id);
+      
       if (salespersonName) {
+        console.log('EmailQuoteForm - Using provided salesperson name:', salespersonName);
         setActualSalespersonName(salespersonName);
         setSalespersonLoaded(true);
         return;
@@ -59,9 +65,11 @@ export const EmailQuoteForm = ({
             .eq('id', quote.user_id)
             .single();
           
+          console.log('EmailQuoteForm - Profile query result:', { profile, error });
+          
           if (!error && profile?.full_name) {
-            setActualSalespersonName(profile.full_name);
             console.log('EmailQuoteForm - Found salesperson name:', profile.full_name);
+            setActualSalespersonName(profile.full_name);
           } else {
             console.log('EmailQuoteForm - Could not fetch salesperson name, using fallback');
             setActualSalespersonName('Sales Team');
@@ -71,6 +79,7 @@ export const EmailQuoteForm = ({
           setActualSalespersonName('Sales Team');
         }
       } else {
+        console.log('EmailQuoteForm - No user_id provided, using fallback');
         setActualSalespersonName('Sales Team');
       }
       setSalespersonLoaded(true);
@@ -81,7 +90,13 @@ export const EmailQuoteForm = ({
 
   // Set the message template with the actual salesperson name - only after name is loaded
   useEffect(() => {
-    if (!salespersonLoaded) return;
+    if (!salespersonLoaded) {
+      console.log('EmailQuoteForm - Salesperson not loaded yet, skipping message template update');
+      return;
+    }
+
+    console.log('EmailQuoteForm - Creating message template with salesperson:', actualSalespersonName);
+    console.log('EmailQuoteForm - Client contact name:', clientInfo?.contact_name);
 
     const messageTemplate = `Dear ${clientInfo?.contact_name || 'Valued Customer'},
 
@@ -92,6 +107,7 @@ Thank you for your business.
 Best regards,
 ${actualSalespersonName}`;
 
+    console.log('EmailQuoteForm - Setting message template:', messageTemplate);
     setMessage(messageTemplate);
   }, [clientInfo?.contact_name, actualSalespersonName, salespersonLoaded]);
 
