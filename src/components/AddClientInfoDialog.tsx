@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -31,7 +30,7 @@ export const AddClientInfoDialog = ({
   const [isLoading, setIsLoading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const { register, handleSubmit, reset, setValue, watch, formState: { errors } } = useForm<AddClientInfoData>({
+  const { register, handleSubmit, reset, setValue, formState: { errors } } = useForm<AddClientInfoData>({
     defaultValues: {
       company_name: "",
       contact_name: "",
@@ -56,12 +55,23 @@ export const AddClientInfoDialog = ({
       
       if (error) {
         console.error('[AddClient] Error fetching users:', error);
+        setUsers([]);
       } else {
-        console.log('[AddClient] Successfully fetched users:', data);
-        setUsers(data || []);
+        console.log('[AddClient] Raw data from Supabase:', data);
+        console.log('[AddClient] Number of users fetched:', data?.length || 0);
+        
+        const validUsers = (data || []).filter(user => {
+          const isValid = user.id && (user.full_name || user.email);
+          console.log('[AddClient] User validation:', user, 'Valid:', isValid);
+          return isValid;
+        });
+        
+        console.log('[AddClient] Valid users after filtering:', validUsers);
+        setUsers(validUsers);
       }
     } catch (err) {
       console.error('[AddClient] Exception in user fetch:', err);
+      setUsers([]);
     } finally {
       setIsLoading(false);
     }
@@ -84,6 +94,7 @@ export const AddClientInfoDialog = ({
         agent_id: (!data.agent_id || data.agent_id === "none" || data.agent_id === "") ? null : data.agent_id
       };
       
+      console.log('[AddClient] Submitting data:', cleanedData);
       await onAddClientInfo(cleanedData);
       reset();
       onOpenChange(false);
@@ -93,6 +104,9 @@ export const AddClientInfoDialog = ({
       setIsSubmitting(false);
     }
   };
+
+  console.log('[AddClient] Users state:', users);
+  console.log('[AddClient] Is loading:', isLoading);
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
@@ -175,21 +189,18 @@ export const AddClientInfoDialog = ({
               </SelectTrigger>
               <SelectContent className="bg-white border border-gray-200 shadow-lg z-50 max-h-60 overflow-y-auto">
                 <SelectItem value="none">None</SelectItem>
-                {users.length > 0 ? (
-                  users.map((user) => {
-                    console.log('[AddClient] Rendering user option:', user);
-                    return (
-                      <SelectItem key={user.id} value={user.id}>
-                        {user.full_name || user.email}
-                      </SelectItem>
-                    );
-                  })
-                ) : (
-                  !isLoading && (
-                    <SelectItem value="no-users" disabled>
-                      No users found
+                {users.map((user) => {
+                  console.log('[AddClient] Rendering user option:', user);
+                  return (
+                    <SelectItem key={user.id} value={user.id}>
+                      {user.full_name || user.email || 'Unknown User'}
                     </SelectItem>
-                  )
+                  );
+                })}
+                {users.length === 0 && !isLoading && (
+                  <SelectItem value="no-users" disabled>
+                    No users found
+                  </SelectItem>
                 )}
               </SelectContent>
             </Select>

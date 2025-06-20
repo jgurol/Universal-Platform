@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -48,6 +47,7 @@ export const EditClientInfoDialog = ({
   // Reset form when clientInfo changes
   useEffect(() => {
     if (clientInfo && open) {
+      console.log('[EditClient] Resetting form with clientInfo:', clientInfo);
       reset({
         ...clientInfo,
         agent_id: clientInfo.agent_id || null
@@ -67,12 +67,23 @@ export const EditClientInfoDialog = ({
       
       if (error) {
         console.error('[EditClient] Error fetching users:', error);
+        setUsers([]);
       } else {
-        console.log('[EditClient] Successfully fetched users:', data);
-        setUsers(data || []);
+        console.log('[EditClient] Raw data from Supabase:', data);
+        console.log('[EditClient] Number of users fetched:', data?.length || 0);
+        
+        const validUsers = (data || []).filter(user => {
+          const isValid = user.id && (user.full_name || user.email);
+          console.log('[EditClient] User validation:', user, 'Valid:', isValid);
+          return isValid;
+        });
+        
+        console.log('[EditClient] Valid users after filtering:', validUsers);
+        setUsers(validUsers);
       }
     } catch (err) {
       console.error('[EditClient] Exception in user fetch:', err);
+      setUsers([]);
     } finally {
       setIsLoading(false);
     }
@@ -95,6 +106,7 @@ export const EditClientInfoDialog = ({
         agent_id: (!data.agent_id || data.agent_id === "none" || data.agent_id === "") ? null : data.agent_id
       };
       
+      console.log('[EditClient] Submitting updated data:', updatedData);
       onUpdateClientInfo(updatedData);
       onOpenChange(false);
     }
@@ -103,6 +115,9 @@ export const EditClientInfoDialog = ({
   if (!clientInfo) return null;
 
   const currentAgentId = watch("agent_id");
+  console.log('[EditClient] Current agent ID from form:', currentAgentId);
+  console.log('[EditClient] Users state:', users);
+  console.log('[EditClient] Is loading:', isLoading);
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
@@ -185,21 +200,18 @@ export const EditClientInfoDialog = ({
               </SelectTrigger>
               <SelectContent className="bg-white border border-gray-200 shadow-lg z-50 max-h-60 overflow-y-auto">
                 <SelectItem value="none">None</SelectItem>
-                {users.length > 0 ? (
-                  users.map((user) => {
-                    console.log('[EditClient] Rendering user option:', user);
-                    return (
-                      <SelectItem key={user.id} value={user.id}>
-                        {user.full_name || user.email}
-                      </SelectItem>
-                    );
-                  })
-                ) : (
-                  !isLoading && (
-                    <SelectItem value="no-users" disabled>
-                      No users found
+                {users.map((user) => {
+                  console.log('[EditClient] Rendering user option:', user);
+                  return (
+                    <SelectItem key={user.id} value={user.id}>
+                      {user.full_name || user.email || 'Unknown User'}
                     </SelectItem>
-                  )
+                  );
+                })}
+                {users.length === 0 && !isLoading && (
+                  <SelectItem value="no-users" disabled>
+                    No users found
+                  </SelectItem>
                 )}
               </SelectContent>
             </Select>
