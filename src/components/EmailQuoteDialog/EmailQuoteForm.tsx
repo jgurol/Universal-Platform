@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Quote, ClientInfo } from "@/pages/Index";
@@ -107,7 +108,9 @@ export const EmailQuoteForm = ({
     console.log('EmailQuoteForm - Creating message template with quote owner:', quoteOwnerName);
     console.log('EmailQuoteForm - Client contact name:', clientInfo?.contact_name);
 
-    const messageTemplate = `Dear ${clientInfo?.contact_name || 'Valued Customer'},
+    const greeting = clientInfo?.contact_name ? `Hi ${clientInfo.contact_name},` : 'Hi,';
+
+    const messageTemplate = `${greeting}
 
 Please find attached your quote for the requested services. If you have any questions or would like to proceed with this proposal, please don't hesitate to contact us.
 
