@@ -332,6 +332,17 @@ ${quoteOwnerName}`;
     }
   };
 
+  // Get current contact name for the template editor
+  const getCurrentContactName = () => {
+    if (selectedRecipientContact === "client-info") {
+      return clientInfo?.contact_name || '';
+    } else if (selectedRecipientContact !== "custom") {
+      const selectedContact = contacts.find(c => c.id === selectedRecipientContact);
+      return selectedContact?.name || '';
+    }
+    return clientInfo?.contact_name || '';
+  };
+
   return (
     <div className="space-y-4">
       <EmailContactSelector
@@ -360,6 +371,8 @@ ${quoteOwnerName}`;
         onMessageChange={setMessage}
         quoteNumber={quote.quoteNumber}
         quoteId={quote.id}
+        contactName={getCurrentContactName()}
+        quoteOwnerName={quoteOwnerName}
       />
 
       <div className="flex justify-end space-x-2 mt-6">

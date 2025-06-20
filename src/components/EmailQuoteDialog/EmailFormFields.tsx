@@ -2,6 +2,7 @@
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { EmailTemplateEditor } from "./EmailTemplateEditor";
 
 interface EmailFormFieldsProps {
   subject: string;
@@ -10,6 +11,8 @@ interface EmailFormFieldsProps {
   onMessageChange: (value: string) => void;
   quoteNumber?: string;
   quoteId: string;
+  contactName?: string;
+  quoteOwnerName: string;
 }
 
 export const EmailFormFields = ({
@@ -18,7 +21,9 @@ export const EmailFormFields = ({
   message,
   onMessageChange,
   quoteNumber,
-  quoteId
+  quoteId,
+  contactName,
+  quoteOwnerName
 }: EmailFormFieldsProps) => {
   return (
     <>
@@ -33,7 +38,15 @@ export const EmailFormFields = ({
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="message">Message</Label>
+        <div className="flex items-center justify-between">
+          <Label htmlFor="message">Message</Label>
+          <EmailTemplateEditor
+            currentTemplate={message}
+            onTemplateChange={onMessageChange}
+            contactName={contactName}
+            quoteOwnerName={quoteOwnerName}
+          />
+        </div>
         <Textarea
           id="message"
           value={message}
