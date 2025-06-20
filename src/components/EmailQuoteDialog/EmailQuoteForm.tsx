@@ -107,17 +107,22 @@ export const EmailQuoteForm = ({
     console.log('EmailQuoteForm - Creating message template with quote owner:', quoteOwnerName);
     console.log('EmailQuoteForm - Selected recipient contact:', selectedRecipientContact);
     
-    // Get the contact name from the selected contact
-    let contactName = clientInfo?.contact_name;
+    // Get the contact name from the selected contact or fallback to client info
+    let contactName = '';
     
     if (selectedRecipientContact !== "custom") {
       const selectedContact = contacts.find(c => c.id === selectedRecipientContact);
       if (selectedContact?.name) {
         contactName = selectedContact.name;
       }
+    } else {
+      // If using custom email, try to get name from client info
+      if (clientInfo?.contact_name) {
+        contactName = clientInfo.contact_name;
+      }
     }
     
-    console.log('EmailQuoteForm - Using contact name:', contactName);
+    console.log('EmailQuoteForm - Using contact name for greeting:', contactName);
 
     const greeting = contactName ? `Hi ${contactName},` : 'Hi,';
 
@@ -130,7 +135,7 @@ Thank you for your business.
 Best regards,
 ${quoteOwnerName}`;
 
-    console.log('EmailQuoteForm - Setting message template with contact name:', contactName, 'and owner name:', quoteOwnerName);
+    console.log('EmailQuoteForm - Setting message template with greeting:', greeting);
     setMessage(messageTemplate);
   }, [clientInfo?.contact_name, quoteOwnerName, ownerNameLoaded, selectedRecipientContact, contacts]);
 
