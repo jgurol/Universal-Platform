@@ -3,20 +3,17 @@ import { useState, useEffect } from "react";
 import { NavigationBar } from "@/components/NavigationBar";
 import { Header } from "@/components/Header";
 import { ProgramsGrid } from "@/components/ProgramsGrid";
-import { DealRegistrationCard } from "@/components/DealRegistrationCard";
 import { AddClientDialog } from "@/components/AddClientDialog";
 import { useClientManagement } from "@/hooks/useClientManagement";
-import { Client, Quote, ClientInfo } from "@/types/index";
+import { Client, ClientInfo } from "@/types/index";
 import { useAuth } from "@/context/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { User, Building, ArrowLeft } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { User, Building } from "lucide-react";
 
 export const IndexPageLayout = () => {
   const [isAddClientOpen, setIsAddClientOpen] = useState(false);
-  const [showDealRegistration, setShowDealRegistration] = useState(false);
   const [associatedAgentId, setAssociatedAgentId] = useState<string | null>(null);
   const [associatedAgentInfo, setAssociatedAgentInfo] = useState<{
     name: string;
@@ -24,7 +21,6 @@ export const IndexPageLayout = () => {
     email: string;
   } | null>(null);
   const { isAdmin, user } = useAuth();
-  const { clientInfos, isLoading, agentMapping, updateClientInfo } = useClientManagement();
 
   // Fetch the associated agent ID for the current user
   useEffect(() => {
@@ -94,14 +90,6 @@ export const IndexPageLayout = () => {
     console.log('Fetch clients');
   };
 
-  const handleDealRegistrationClick = () => {
-    setShowDealRegistration(true);
-  };
-
-  const handleBackToPrograms = () => {
-    setShowDealRegistration(false);
-  };
-
   return (
     <>
       <NavigationBar />
@@ -145,29 +133,8 @@ export const IndexPageLayout = () => {
             </Card>
           )}
 
-          {/* Conditional Content */}
-          {showDealRegistration ? (
-            <div className="space-y-6">
-              <div className="flex items-center gap-4">
-                <Button 
-                  variant="outline" 
-                  onClick={handleBackToPrograms}
-                  className="flex items-center gap-2"
-                >
-                  <ArrowLeft className="w-4 h-4" />
-                  Back to Programs
-                </Button>
-                <h2 className="text-2xl font-bold text-gray-900">Deal Registration</h2>
-              </div>
-              
-              <DealRegistrationCard 
-                clientInfos={clientInfos}
-                agentMapping={agentMapping}
-              />
-            </div>
-          ) : (
-            <ProgramsGrid onDealRegistrationClick={handleDealRegistrationClick} />
-          )}
+          {/* Programs Grid */}
+          <ProgramsGrid />
         </div>
 
         {/* Add Client Dialog */}

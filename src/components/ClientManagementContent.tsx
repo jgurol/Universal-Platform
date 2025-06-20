@@ -1,6 +1,5 @@
 
 import { ClientInfoList } from "@/components/ClientInfoList";
-import { DealRegistrationCard } from "@/components/DealRegistrationCard";
 import { ClientInfo } from "@/pages/Index";
 
 interface ClientManagementContentProps {
@@ -27,12 +26,6 @@ export const ClientManagementContent = ({
 
   return (
     <div className="space-y-8">
-      {/* Deal Registration Card */}
-      <DealRegistrationCard 
-        clientInfos={clientInfos}
-        agentMapping={agentMapping}
-      />
-      
       {/* Client Info List */}
       <ClientInfoList 
         clientInfos={clientInfos}

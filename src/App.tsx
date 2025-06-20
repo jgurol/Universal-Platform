@@ -12,6 +12,7 @@ import Admin from "./pages/Admin";
 import QuotingSystem from "./pages/QuotingSystem";
 import AgentManagement from "./pages/AgentManagement";
 import ClientManagement from "./pages/ClientManagement";
+import DealRegistration from "./pages/DealRegistration";
 import SystemSettings from "./pages/SystemSettings";
 import ProfileSettings from "./pages/ProfileSettings";
 import Billing from "./pages/Billing";
@@ -57,6 +58,11 @@ const App = () => (
             <Route path="/client-management" element={
               <ProtectedRoute>
                 <ClientManagement />
+              </ProtectedRoute>
+            } />
+            <Route path="/deal-registration" element={
+              <ProtectedRoute>
+                <DealRegistration />
               </ProtectedRoute>
             } />
             <Route path="/system-settings" element={
