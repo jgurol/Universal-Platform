@@ -28,11 +28,13 @@ export const QuoteTableRow = ({
   onUnarchiveQuote
 }: QuoteTableRowProps) => {
   const [isEmailDialogOpen, setIsEmailDialogOpen] = useState(false);
-  const [quoteOwnerName, setQuoteOwnerName] = useState<string>('');
+  const [quoteOwnerName, setQuoteOwnerName] = useState<string>('Loading...');
 
   // Fetch the quote owner's name from the profiles table
   useEffect(() => {
     const fetchQuoteOwnerName = async () => {
+      console.log('QuoteTableRow - Fetching quote owner for user_id:', quote.user_id);
+      
       if (!quote.user_id) {
         console.log('QuoteTableRow - No user_id found, using fallback');
         setQuoteOwnerName('Sales Team');
@@ -42,16 +44,23 @@ export const QuoteTableRow = ({
       try {
         const { data: profile, error } = await supabase
           .from('profiles')
-          .select('full_name')
+          .select('full_name, email')
           .eq('id', quote.user_id)
           .single();
+        
+        console.log('QuoteTableRow - Profile query result:', { profile, error });
         
         if (!error && profile?.full_name && profile.full_name.trim() !== '') {
           console.log('QuoteTableRow - Found quote owner name:', profile.full_name);
           setQuoteOwnerName(profile.full_name);
         } else {
-          console.log('QuoteTableRow - Could not fetch quote owner name, using fallback');
-          setQuoteOwnerName('Sales Team');
+          console.log('QuoteTableRow - Could not fetch quote owner name, trying email:', profile?.email);
+          // If no full_name, try to use email or fallback
+          if (profile?.email) {
+            setQuoteOwnerName(profile.email);
+          } else {
+            setQuoteOwnerName('Sales Team');
+          }
         }
       } catch (error) {
         console.error('QuoteTableRow - Error fetching quote owner name:', error);
@@ -63,8 +72,6 @@ export const QuoteTableRow = ({
   }, [quote.user_id]);
 
   const clientInfo = clientInfos.find(ci => ci.id === quote.clientInfoId);
-  // Use the fetched quote owner name instead of agent mapping
-  const salespersonName = quoteOwnerName || 'Sales Team';
 
   const handleStatusUpdate = (newStatus: string) => {
     if (onUpdateQuote) {
@@ -81,7 +88,7 @@ export const QuoteTableRow = ({
         <QuoteTableCells
           quote={quote}
           clientInfo={clientInfo}
-          salespersonName={salespersonName}
+          salespersonName={quoteOwnerName}
           onEditClick={onEditClick}
           onDeleteQuote={onDeleteQuote}
           onCopyQuote={onCopyQuote}
@@ -96,7 +103,7 @@ export const QuoteTableRow = ({
         onOpenChange={setIsEmailDialogOpen}
         quote={quote}
         clientInfo={clientInfo}
-        salespersonName={salespersonName}
+        salespersonName={quoteOwnerName}
       />
     </>
   );

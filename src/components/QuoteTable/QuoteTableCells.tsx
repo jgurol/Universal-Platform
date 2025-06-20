@@ -18,6 +18,11 @@ interface QuoteTableCellsProps {
 }
 
 const getInitials = (name: string): string => {
+  // If name is empty or just "Sales Team", show "ST"
+  if (!name || name.trim() === '' || name === 'Sales Team') {
+    return 'ST';
+  }
+  
   return name
     .split(' ')
     .map(word => word.charAt(0).toUpperCase())
@@ -52,6 +57,11 @@ export const QuoteTableCells = ({
   const mrcTotal = getMRCTotal(quote);
   const nrcTotal = getNRCTotal(quote);
   const approvedDate = formatDate(quote.acceptedAt);
+
+  // Debug logging to see what we're getting
+  console.log('QuoteTableCells - Quote ID:', quote.id);
+  console.log('QuoteTableCells - Quote user_id:', quote.user_id);
+  console.log('QuoteTableCells - Salesperson name:', salespersonName);
 
   return (
     <>
