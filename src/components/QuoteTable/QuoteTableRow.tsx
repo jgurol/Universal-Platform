@@ -33,7 +33,8 @@ export const QuoteTableRow = ({
   // Fetch the quote owner's name from the profiles table
   useEffect(() => {
     const fetchQuoteOwnerName = async () => {
-      console.log('QuoteTableRow - Fetching quote owner for user_id:', quote.user_id);
+      console.log('QuoteTableRow - Starting fetch for quote ID:', quote.id);
+      console.log('QuoteTableRow - Quote user_id:', quote.user_id);
       
       if (!quote.user_id) {
         console.log('QuoteTableRow - No user_id found, using fallback');
@@ -42,6 +43,8 @@ export const QuoteTableRow = ({
       }
 
       try {
+        console.log('QuoteTableRow - Querying profiles table for user_id:', quote.user_id);
+        
         const { data: profile, error } = await supabase
           .from('profiles')
           .select('full_name, email')
@@ -49,16 +52,21 @@ export const QuoteTableRow = ({
           .single();
         
         console.log('QuoteTableRow - Profile query result:', { profile, error });
+        console.log('QuoteTableRow - Profile data:', profile);
+        console.log('QuoteTableRow - Profile full_name:', profile?.full_name);
+        console.log('QuoteTableRow - Profile email:', profile?.email);
         
         if (!error && profile?.full_name && profile.full_name.trim() !== '') {
-          console.log('QuoteTableRow - Found quote owner name:', profile.full_name);
+          console.log('QuoteTableRow - Setting quote owner name to full_name:', profile.full_name);
           setQuoteOwnerName(profile.full_name);
         } else {
-          console.log('QuoteTableRow - Could not fetch quote owner name, trying email:', profile?.email);
+          console.log('QuoteTableRow - No full_name found, trying email fallback');
           // If no full_name, try to use email or fallback
           if (profile?.email) {
+            console.log('QuoteTableRow - Setting quote owner name to email:', profile.email);
             setQuoteOwnerName(profile.email);
           } else {
+            console.log('QuoteTableRow - No email either, using Sales Team fallback');
             setQuoteOwnerName('Sales Team');
           }
         }
@@ -81,6 +89,8 @@ export const QuoteTableRow = ({
       });
     }
   };
+
+  console.log('QuoteTableRow - Final render with quoteOwnerName:', quoteOwnerName);
 
   return (
     <>
