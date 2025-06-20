@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.50.0';
 
@@ -81,6 +80,25 @@ const handler = async (req: Request): Promise<Response> => {
     
     console.log('PDFShift Function - Logo URL configured:', !!logoUrl);
     console.log('PDFShift Function - Company name:', companyName);
+    
+    // Determine the account manager name - prioritize salespersonName parameter, fallback to quote creator info
+    let accountManagerName = salespersonName || 'N/A';
+    
+    // If no salespersonName provided, try to use quote user info or client agent info
+    if (!salespersonName || salespersonName === 'Unknown' || salespersonName === 'N/A') {
+      // Try to get name from clientInfo if it has agent information
+      if (clientInfo?.agent_name) {
+        accountManagerName = clientInfo.agent_name;
+      } else if (quote?.user_name) {
+        accountManagerName = quote.user_name;
+      } else if (quote?.created_by_name) {
+        accountManagerName = quote.created_by_name;
+      } else {
+        accountManagerName = 'N/A';
+      }
+    }
+    
+    console.log('PDFShift Function - Account manager name:', accountManagerName);
     
     // Create HTML template with logo, settings, and template content
     const html = generateHTML(quote, clientInfo, salespersonName, logoUrl, companyName, templateContent);
@@ -282,6 +300,25 @@ const generateHTML = (quote: any, clientInfo?: any, salespersonName?: string, lo
   const contactPhone = clientInfo?.phone || '';
   
   const isApproved = status === 'approved' || status === 'accepted';
+  
+  // Determine the account manager name - prioritize salespersonName parameter, fallback to quote creator info
+  let accountManagerName = salespersonName || 'N/A';
+  
+  // If no salespersonName provided, try to use quote user info or client agent info
+  if (!salespersonName || salespersonName === 'Unknown' || salespersonName === 'N/A') {
+    // Try to get name from clientInfo if it has agent information
+    if (clientInfo?.agent_name) {
+      accountManagerName = clientInfo.agent_name;
+    } else if (quote?.user_name) {
+      accountManagerName = quote.user_name;
+    } else if (quote?.created_by_name) {
+      accountManagerName = quote.created_by_name;
+    } else {
+      accountManagerName = 'N/A';
+    }
+  }
+  
+  console.log('PDFShift Function - Account manager name:', accountManagerName);
   
   // Process quote items with enhanced description and image handling
   let mrcItems = [];
@@ -796,7 +833,7 @@ const generateHTML = (quote: any, clientInfo?: any, salespersonName?: string, lo
             </tr>
             <tr>
                 <td>Account Manager</td>
-                <td>${salespersonName || 'N/A'}</td>
+                <td>${accountManagerName}</td>
             </tr>
         </table>
         
