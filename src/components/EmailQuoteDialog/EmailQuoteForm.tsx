@@ -107,19 +107,22 @@ export const EmailQuoteForm = ({
     console.log('EmailQuoteForm - Creating message template with quote owner:', quoteOwnerName);
     console.log('EmailQuoteForm - Selected recipient contact:', selectedRecipientContact);
     
-    // Get the contact name from the selected contact or fallback to client info
+    // Get the contact name - prioritize selected contact, then client contact_name
     let contactName = '';
     
-    if (selectedRecipientContact !== "custom") {
+    if (selectedRecipientContact === "client-info") {
+      // Use client info contact name
+      contactName = clientInfo?.contact_name || '';
+    } else if (selectedRecipientContact !== "custom") {
       const selectedContact = contacts.find(c => c.id === selectedRecipientContact);
       if (selectedContact?.name) {
         contactName = selectedContact.name;
       }
-    } else {
-      // If using custom email, try to get name from client info
-      if (clientInfo?.contact_name) {
-        contactName = clientInfo.contact_name;
-      }
+    }
+    
+    // If no contact name from selected contact, try client info contact_name as fallback
+    if (!contactName && clientInfo?.contact_name) {
+      contactName = clientInfo.contact_name;
     }
     
     console.log('EmailQuoteForm - Using contact name for greeting:', contactName);
@@ -141,7 +144,12 @@ ${quoteOwnerName}`;
 
   // Set primary contact as default recipient when component mounts
   useEffect(() => {
-    if (contacts.length > 0) {
+    // First, check if we have client info with contact name and email - prioritize this
+    if (clientInfo?.contact_name && clientInfo?.email) {
+      console.log('EmailQuoteForm - Using client info as primary contact:', clientInfo);
+      setSelectedRecipientContact("client-info");
+      setRecipientEmail(clientInfo.email);
+    } else if (contacts.length > 0) {
       console.log('EmailQuoteForm - Setting up recipient from contacts:', contacts);
       const primaryContact = contacts.find(contact => contact.is_primary);
       if (primaryContact?.email) {
@@ -172,13 +180,15 @@ ${quoteOwnerName}`;
   useEffect(() => {
     if (selectedRecipientContact === "custom") {
       setRecipientEmail(customRecipientEmail);
+    } else if (selectedRecipientContact === "client-info") {
+      setRecipientEmail(clientInfo?.email || '');
     } else {
       const selectedContact = contacts.find(c => c.id === selectedRecipientContact);
       if (selectedContact?.email) {
         setRecipientEmail(selectedContact.email);
       }
     }
-  }, [selectedRecipientContact, customRecipientEmail, contacts]);
+  }, [selectedRecipientContact, customRecipientEmail, contacts, clientInfo]);
 
   // Update CC emails when CC contact selection changes
   useEffect(() => {
@@ -331,6 +341,7 @@ ${quoteOwnerName}`;
         onRecipientContactChange={setSelectedRecipientContact}
         customRecipientEmail={customRecipientEmail}
         onCustomRecipientEmailChange={setCustomRecipientEmail}
+        clientInfo={clientInfo}
       />
 
       <CCContactSelector
