@@ -5,6 +5,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useClientContacts } from "@/hooks/useClientContacts";
 import { generateQuotePDF } from "@/utils/pdfUtils";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/context/AuthContext";
 import { Mail } from "lucide-react";
 import { EmailContactSelector } from "./EmailContactSelector";
 import { CCContactSelector } from "./CCContactSelector";
@@ -38,6 +39,7 @@ export const EmailQuoteForm = ({
   const [quoteOwnerName, setQuoteOwnerName] = useState('');
   const [ownerNameLoaded, setOwnerNameLoaded] = useState(false);
   const { toast } = useToast();
+  const { user } = useAuth();
 
   const { contacts, isLoading: contactsLoading } = useClientContacts(clientInfo?.id || null);
 
@@ -46,8 +48,11 @@ export const EmailQuoteForm = ({
     const fetchQuoteOwnerName = async () => {
       console.log('EmailQuoteForm - Fetching quote owner name for user_id:', quote.user_id);
       
-      if (!quote.user_id) {
-        console.log('EmailQuoteForm - No user_id found, using fallback');
+      // If quote doesn't have user_id, use current user as fallback
+      const ownerUserId = quote.user_id || user?.id;
+      
+      if (!ownerUserId) {
+        console.log('EmailQuoteForm - No user_id found and no current user, using fallback');
         setQuoteOwnerName('Sales Team');
         setOwnerNameLoaded(true);
         return;
@@ -56,8 +61,8 @@ export const EmailQuoteForm = ({
       try {
         const { data: profile, error } = await supabase
           .from('profiles')
-          .select('full_name')
-          .eq('id', quote.user_id)
+          .select('full_name, email')
+          .eq('id', ownerUserId)
           .single();
         
         console.log('EmailQuoteForm - Profile query result:', { profile, error });
@@ -65,19 +70,32 @@ export const EmailQuoteForm = ({
         if (!error && profile?.full_name && profile.full_name.trim() !== '') {
           console.log('EmailQuoteForm - Found quote owner name:', profile.full_name);
           setQuoteOwnerName(profile.full_name);
+        } else if (!error && profile?.email) {
+          console.log('EmailQuoteForm - Using email as fallback name:', profile.email);
+          setQuoteOwnerName(profile.email.split('@')[0]); // Use part before @ as name
         } else {
-          console.log('EmailQuoteForm - Could not fetch quote owner name, using fallback');
-          setQuoteOwnerName('Sales Team');
+          console.log('EmailQuoteForm - Could not fetch quote owner name, using current user fallback');
+          // If we can't get the quote owner, use current user info
+          if (user?.email) {
+            setQuoteOwnerName(user.email.split('@')[0]);
+          } else {
+            setQuoteOwnerName('Sales Team');
+          }
         }
       } catch (error) {
         console.error('EmailQuoteForm - Error fetching quote owner name:', error);
-        setQuoteOwnerName('Sales Team');
+        // Use current user as fallback
+        if (user?.email) {
+          setQuoteOwnerName(user.email.split('@')[0]);
+        } else {
+          setQuoteOwnerName('Sales Team');
+        }
       }
       setOwnerNameLoaded(true);
     };
 
     fetchQuoteOwnerName();
-  }, [quote.user_id]);
+  }, [quote.user_id, user]);
 
   // Set the message template with the quote owner's name - only after name is loaded
   useEffect(() => {
