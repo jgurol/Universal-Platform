@@ -12,9 +12,18 @@ export const useQuoteActions = (
   const { toast } = useToast();
 
   const addQuote = async (newQuote: Omit<Quote, "id">) => {
-    if (!user) return;
+    if (!user) {
+      console.error('[addQuote] No user found, cannot create quote');
+      toast({
+        title: "Error",
+        description: "You must be logged in to create a quote.",
+        variant: "destructive",
+      });
+      return;
+    }
     
     try {
+      console.log('[addQuote] Creating quote with user:', user.id);
       console.log('[addQuote] Creating quote with data:', {
         ...newQuote,
         quoteItemsCount: newQuote.quoteItems?.length || 0
@@ -39,9 +48,18 @@ export const useQuoteActions = (
   };
 
   const updateQuote = async (updatedQuote: Quote) => {
-    if (!user) return;
+    if (!user) {
+      console.error('[updateQuote] No user found, cannot update quote');
+      toast({
+        title: "Error",
+        description: "You must be logged in to update a quote.",
+        variant: "destructive",
+      });
+      return;
+    }
     
     try {
+      console.log('[updateQuote] Updating quote with user:', user.id);
       console.log('[updateQuote] Updating quote with data:', updatedQuote);
       await updateQuoteInDatabase(updatedQuote);
       
@@ -62,10 +80,13 @@ export const useQuoteActions = (
   };
 
   const deleteQuote = async (quoteId: string) => {
-    if (!user) return;
+    if (!user) {
+      console.error('[deleteQuote] No user found, cannot delete quote');
+      return;
+    }
     
     try {
-      console.log('[deleteQuote] Deleting quote:', quoteId);
+      console.log('[deleteQuote] Deleting quote:', quoteId, 'by user:', user.id);
       await deleteQuoteFromDatabase(quoteId);
       
       fetchQuotes();
@@ -84,10 +105,13 @@ export const useQuoteActions = (
   };
 
   const unarchiveQuote = async (quoteId: string) => {
-    if (!user) return;
+    if (!user) {
+      console.error('[unarchiveQuote] No user found, cannot unarchive quote');
+      return;
+    }
     
     try {
-      console.log('[unarchiveQuote] Unarchiving quote:', quoteId);
+      console.log('[unarchiveQuote] Unarchiving quote:', quoteId, 'by user:', user.id);
       await unarchiveQuoteFromDatabase(quoteId);
       
       fetchQuotes();

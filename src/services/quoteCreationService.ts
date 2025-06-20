@@ -8,6 +8,7 @@ export const createQuoteInDatabase = async (
   quote: Omit<Quote, "id">,
   userId: string
 ): Promise<string> => {
+  console.log('[createQuoteInDatabase] Creating quote with user_id:', userId);
   console.log('[createQuoteInDatabase] Creating quote with addresses:', {
     billingAddress: quote.billingAddress,
     serviceAddress: quote.serviceAddress,
@@ -15,11 +16,16 @@ export const createQuoteInDatabase = async (
     quoteItems: quote.quoteItems?.length || 0
   });
 
+  // Ensure we have a valid userId
+  if (!userId) {
+    throw new Error('User ID is required to create a quote');
+  }
+
   // Create the quote first
   const { data: quoteData, error: quoteError } = await supabase
     .from('quotes')
     .insert({
-      user_id: userId,
+      user_id: userId, // Make sure this is explicitly set
       client_id: quote.clientId || null,
       client_info_id: quote.clientInfoId || null,
       amount: quote.amount,
@@ -45,7 +51,7 @@ export const createQuoteInDatabase = async (
     throw quoteError;
   }
 
-  console.log('[createQuoteInDatabase] Quote created successfully with ID:', quoteData.id);
+  console.log('[createQuoteInDatabase] Quote created successfully with ID:', quoteData.id, 'and user_id:', quoteData.user_id);
 
   // Save quote items if they exist using the updateQuoteItems function
   if (quote.quoteItems && quote.quoteItems.length > 0) {
@@ -62,6 +68,7 @@ export const createQuoteInDatabase = async (
 
   console.log('[createQuoteInDatabase] Quote creation completed successfully with addresses:', {
     id: quoteData.id,
+    user_id: quoteData.user_id,
     billingAddress: quote.billingAddress,
     serviceAddress: quote.serviceAddress
   });
