@@ -29,10 +29,7 @@ const circuitCategoryOptions = [
   "4G/5G",
   "broadband",
   "dedicated fiber", 
-  "fixed wireless",
-  "hosted PBX (UCaaS)",
-  "managed firewall",
-  "SDWAN"
+  "fixed wireless"
 ];
 
 export const AddCircuitQuoteDialog = ({ open, onOpenChange, onAddQuote }: AddCircuitQuoteDialogProps) => {
