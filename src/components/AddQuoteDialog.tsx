@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -47,7 +46,44 @@ export const AddQuoteDialog = ({ open, onOpenChange, onAddQuote, clients, client
   const [selectedTemplateId, setSelectedTemplateId] = useState<string>("");
   const [templates, setTemplates] = useState<QuoteTemplate[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [currentUserName, setCurrentUserName] = useState<string>("");
   const { user } = useAuth();
+  
+  // Fetch current user's name from profile
+  useEffect(() => {
+    const fetchCurrentUserName = async () => {
+      if (!user) return;
+      
+      try {
+        const { data: profile, error } = await supabase
+          .from('profiles')
+          .select('full_name, email')
+          .eq('id', user.id)
+          .maybeSingle();
+        
+        if (error) {
+          console.error('Error fetching user profile:', error);
+          setCurrentUserName(user.email?.split('@')[0] || 'Current User');
+          return;
+        }
+        
+        if (profile?.full_name && profile.full_name.trim() !== '') {
+          setCurrentUserName(profile.full_name);
+        } else if (profile?.email) {
+          setCurrentUserName(profile.email);
+        } else if (user.email) {
+          setCurrentUserName(user.email.split('@')[0]);
+        } else {
+          setCurrentUserName('Current User');
+        }
+      } catch (error) {
+        console.error('Error fetching current user name:', error);
+        setCurrentUserName(user.email?.split('@')[0] || 'Current User');
+      }
+    };
+
+    fetchCurrentUserName();
+  }, [user]);
   
   // Function to reset all form fields
   const resetForm = () => {
@@ -299,8 +335,8 @@ export const AddQuoteDialog = ({ open, onOpenChange, onAddQuote, clients, client
       }
 
       const quoteData = {
-        clientId: clientId || "", // Allow empty clientId if no salesperson is associated
-        clientName: selectedClient?.name || "No Salesperson Assigned",
+        clientId: clientId || "",
+        clientName: selectedClient?.name || currentUserName,
         companyName: selectedClientInfo.company_name,
         amount: totalAmount,
         date,
@@ -429,7 +465,7 @@ export const AddQuoteDialog = ({ open, onOpenChange, onAddQuote, clients, client
                 <div className="space-y-2">
                   <Label className="text-sm">Associated Salesperson</Label>
                   <div className="border rounded-md px-3 py-2 bg-muted text-muted-foreground text-sm">
-                    No Salesperson Assigned
+                    {currentUserName || 'Loading...'}
                   </div>
                 </div>
               )}
