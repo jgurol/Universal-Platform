@@ -19,14 +19,14 @@ export const EditCategoryDialog = ({ open, onOpenChange, onUpdateCategory, categ
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [type, setType] = useState<'Circuit' | 'Network' | 'Managed Services' | 'AI' | 'VOIP'>('Network');
-  const [minimumMarkup, setMinimumMarkup] = useState<number>(0);
+  const [standardMarkup, setStandardMarkup] = useState<number>(0);
 
   useEffect(() => {
     if (category) {
       setName(category.name);
       setDescription(category.description || "");
       setType(category.type || 'Network');
-      setMinimumMarkup(category.minimum_markup || 0);
+      setStandardMarkup(category.standard_markup || 0);
     }
   }, [category]);
 
@@ -37,7 +37,7 @@ export const EditCategoryDialog = ({ open, onOpenChange, onUpdateCategory, categ
         name: name.trim(),
         description: description.trim() || undefined,
         type,
-        minimum_markup: minimumMarkup,
+        standard_markup: standardMarkup,
       });
       
       onOpenChange(false);
@@ -82,19 +82,16 @@ export const EditCategoryDialog = ({ open, onOpenChange, onUpdateCategory, categ
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="edit-minimum-markup">Minimum Markup (%)</Label>
+            <Label htmlFor="edit-standard-markup">Standard Markup (%)</Label>
             <Input
-              id="edit-minimum-markup"
+              id="edit-standard-markup"
               type="number"
               step="0.01"
               min="0"
-              value={minimumMarkup}
-              onChange={(e) => setMinimumMarkup(parseFloat(e.target.value) || 0)}
-              placeholder="Enter minimum markup percentage"
+              value={standardMarkup}
+              onChange={(e) => setStandardMarkup(parseFloat(e.target.value) || 0)}
+              placeholder="Enter markup percentage"
             />
-            <p className="text-xs text-gray-500">
-              This is the minimum allowed markup - can be overridden per quote item
-            </p>
           </div>
 
           <div className="space-y-2">

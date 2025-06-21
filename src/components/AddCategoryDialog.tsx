@@ -18,7 +18,7 @@ export const AddCategoryDialog = ({ open, onOpenChange, onAddCategory }: AddCate
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [type, setType] = useState<'Circuit' | 'Network' | 'Managed Services' | 'AI' | 'VOIP'>('Network');
-  const [minimumMarkup, setMinimumMarkup] = useState<number>(0);
+  const [standardMarkup, setStandardMarkup] = useState<number>(0);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -27,7 +27,7 @@ export const AddCategoryDialog = ({ open, onOpenChange, onAddCategory }: AddCate
         name: name.trim(),
         description: description.trim() || undefined,
         type,
-        minimum_markup: minimumMarkup,
+        standard_markup: standardMarkup,
         is_active: true
       });
       
@@ -35,7 +35,7 @@ export const AddCategoryDialog = ({ open, onOpenChange, onAddCategory }: AddCate
       setName("");
       setDescription("");
       setType('Network');
-      setMinimumMarkup(0);
+      setStandardMarkup(0);
       onOpenChange(false);
     }
   };
@@ -78,19 +78,16 @@ export const AddCategoryDialog = ({ open, onOpenChange, onAddCategory }: AddCate
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="minimum-markup">Minimum Markup (%)</Label>
+            <Label htmlFor="standard-markup">Standard Markup (%)</Label>
             <Input
-              id="minimum-markup"
+              id="standard-markup"
               type="number"
               step="0.01"
               min="0"
-              value={minimumMarkup}
-              onChange={(e) => setMinimumMarkup(parseFloat(e.target.value) || 0)}
-              placeholder="Enter minimum markup percentage"
+              value={standardMarkup}
+              onChange={(e) => setStandardMarkup(parseFloat(e.target.value) || 0)}
+              placeholder="Enter markup percentage"
             />
-            <p className="text-xs text-gray-500">
-              This is the minimum allowed markup - can be overridden per quote item
-            </p>
           </div>
 
           <div className="space-y-2">
