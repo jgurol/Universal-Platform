@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -30,13 +29,13 @@ export const QuoteItemRow = ({ quoteItem, addresses, onUpdateItem, onRemoveItem 
   
   const { categories } = useCategories();
   const { user } = useAuth();
-  const { clients } = useClients();
+  const { clients } = useClients(null); // Pass null as associatedAgentId parameter
 
   // Find the category for this item
   const itemCategory = categories.find(cat => cat.id === quoteItem.item?.category_id);
   
   // Get agent commission rate from clients data
-  const currentAgent = clients.find(client => client.userId === user?.id);
+  const currentAgent = clients.find(client => client.id === user?.id);
   const agentCommissionRate = currentAgent?.commissionRate || 15;
 
   // Calculate markup and commission based on current values
