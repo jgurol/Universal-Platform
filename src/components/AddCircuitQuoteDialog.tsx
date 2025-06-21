@@ -26,6 +26,16 @@ interface AddressData {
   country: string;
 }
 
+const circuitCategoryOptions = [
+  "broadband",
+  "dedicated fiber", 
+  "fixed wireless",
+  "4G/5G",
+  "ethernet",
+  "mpls",
+  "sd-wan"
+];
+
 export const AddCircuitQuoteDialog = ({ open, onOpenChange, onAddQuote }: AddCircuitQuoteDialogProps) => {
   const { user, isAdmin } = useAuth();
   const [associatedAgentId, setAssociatedAgentId] = useState<string | null>(null);
@@ -37,6 +47,7 @@ export const AddCircuitQuoteDialog = ({ open, onOpenChange, onAddQuote }: AddCir
   const [staticIp, setStaticIp] = useState(false);
   const [slash29, setSlash29] = useState(false);
   const [mikrotikRequired, setMikrotikRequired] = useState(false);
+  const [circuitCategories, setCircuitCategories] = useState<string[]>(["broadband"]);
 
   // Fetch the associated agent ID for the current user
   React.useEffect(() => {
@@ -79,6 +90,19 @@ export const AddCircuitQuoteDialog = ({ open, onOpenChange, onAddQuote }: AddCir
     setLocation(fullAddress);
   };
 
+  const handleCircuitCategoryChange = (category: string, checked: boolean) => {
+    if (category === "broadband") {
+      // Broadband cannot be unchecked
+      return;
+    }
+    
+    if (checked) {
+      setCircuitCategories(prev => [...prev, category]);
+    } else {
+      setCircuitCategories(prev => prev.filter(cat => cat !== category));
+    }
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -108,6 +132,7 @@ export const AddCircuitQuoteDialog = ({ open, onOpenChange, onAddQuote }: AddCir
     setStaticIp(false);
     setSlash29(false);
     setMikrotikRequired(false);
+    setCircuitCategories(["broadband"]);
     onOpenChange(false);
   };
 
@@ -169,6 +194,32 @@ export const AddCircuitQuoteDialog = ({ open, onOpenChange, onAddQuote }: AddCir
                 <SelectItem value="sent_to_customer">Sent to Customer</SelectItem>
               </SelectContent>
             </Select>
+          </div>
+
+          <div className="space-y-4">
+            <Label>Circuit Categories</Label>
+            <div className="grid grid-cols-2 gap-3 max-h-40 overflow-y-auto border rounded-md p-3">
+              {circuitCategoryOptions.map((category) => (
+                <div key={category} className="flex items-center space-x-2">
+                  <Checkbox
+                    id={`category-${category}`}
+                    checked={circuitCategories.includes(category)}
+                    onCheckedChange={(checked) => handleCircuitCategoryChange(category, checked as boolean)}
+                    disabled={category === "broadband"}
+                  />
+                  <Label 
+                    htmlFor={`category-${category}`} 
+                    className={`text-sm font-normal capitalize ${category === "broadband" ? "text-gray-500" : ""}`}
+                  >
+                    {category}
+                    {category === "broadband" && " (always included)"}
+                  </Label>
+                </div>
+              ))}
+            </div>
+            <p className="text-xs text-gray-500">
+              Selected: {circuitCategories.join(", ")}
+            </p>
           </div>
 
           <div className="space-y-4">
