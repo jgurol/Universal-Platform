@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -44,13 +45,23 @@ export const AddCircuitQuoteDialog = ({ open, onOpenChange, onAddQuote }: AddCir
     .filter(category => category.type === 'Circuit')
     .map(category => category.name);
 
-  // Ensure broadband is always included if it exists in the database
+  // Set default categories when dialog opens and categories are available
   React.useEffect(() => {
-    const broadbandExists = circuitCategoryOptions.some(cat => cat.toLowerCase() === 'broadband');
-    if (broadbandExists && !circuitCategories.includes('broadband')) {
-      setCircuitCategories(prev => [...prev.filter(cat => cat !== 'broadband'), 'broadband']);
+    if (open && circuitCategoryOptions.length > 0) {
+      const defaultCategories = ['business fiber', 'coax broadband'];
+      const availableDefaults = defaultCategories.filter(cat => 
+        circuitCategoryOptions.some(option => option.toLowerCase() === cat.toLowerCase())
+      );
+      
+      if (availableDefaults.length > 0) {
+        // Find the actual category names from the options (case-sensitive)
+        const actualCategoryNames = availableDefaults.map(defaultCat =>
+          circuitCategoryOptions.find(option => option.toLowerCase() === defaultCat.toLowerCase()) || defaultCat
+        );
+        setCircuitCategories(actualCategoryNames);
+      }
     }
-  }, [circuitCategoryOptions]);
+  }, [open, circuitCategoryOptions]);
 
   // Fetch the associated agent ID for the current user
   React.useEffect(() => {
