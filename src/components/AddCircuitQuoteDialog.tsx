@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -12,6 +11,7 @@ import { useAuth } from "@/context/AuthContext";
 import { useCategories } from "@/hooks/useCategories";
 import { CircuitQuote } from "@/hooks/useCircuitQuotes";
 import { supabase } from "@/integrations/supabase/client";
+import { DealRegistration } from "@/services/dealRegistrationService";
 
 interface AddCircuitQuoteDialogProps {
   open: boolean;
@@ -33,6 +33,7 @@ export const AddCircuitQuoteDialog = ({ open, onOpenChange, onAddQuote }: AddCir
   const { clients, fetchClients } = useClients(associatedAgentId);
   const { categories } = useCategories();
   const [clientId, setClientId] = useState("");
+  const [clientInfoId, setClientInfoId] = useState("");
   const [location, setLocation] = useState("");
   const [suite, setSuite] = useState("");
   const [staticIp, setStaticIp] = useState(false);
@@ -40,6 +41,8 @@ export const AddCircuitQuoteDialog = ({ open, onOpenChange, onAddQuote }: AddCir
   const [dhcp, setDhcp] = useState(false);
   const [mikrotikRequired, setMikrotikRequired] = useState(true);
   const [circuitCategories, setCircuitCategories] = useState<string[]>([]);
+  const [associatedDeals, setAssociatedDeals] = useState<DealRegistration[]>([]);
+  const [selectedDealIds, setSelectedDealIds] = useState<string[]>([]);
 
   // Get circuit categories from the categories table where type is "Circuit"
   const circuitCategoryOptions = categories
@@ -95,6 +98,38 @@ export const AddCircuitQuoteDialog = ({ open, onOpenChange, onAddQuote }: AddCir
     }
   }, [open, isAdmin, associatedAgentId, fetchClients]);
 
+  // Fetch deals associated with the selected client
+  React.useEffect(() => {
+    const fetchAssociatedDeals = async () => {
+      if (!clientInfoId || clientInfoId === "none") {
+        setAssociatedDeals([]);
+        setSelectedDealIds([]);
+        return;
+      }
+
+      try {
+        const { data: deals, error } = await supabase
+          .from('deal_registrations')
+          .select('*')
+          .eq('client_info_id', clientInfoId)
+          .eq('status', 'active')
+          .order('created_at', { ascending: false });
+
+        if (error) {
+          console.error('Error fetching associated deals:', error);
+          setAssociatedDeals([]);
+        } else {
+          setAssociatedDeals(deals || []);
+        }
+      } catch (error) {
+        console.error('Error fetching associated deals:', error);
+        setAssociatedDeals([]);
+      }
+    };
+
+    fetchAssociatedDeals();
+  }, [clientInfoId]);
+
   const handleAddressSelect = (address: AddressData) => {
     const fullAddress = `${address.street_address}, ${address.city}, ${address.state} ${address.zip_code}`;
     setLocation(fullAddress);
@@ -106,6 +141,14 @@ export const AddCircuitQuoteDialog = ({ open, onOpenChange, onAddQuote }: AddCir
     } else {
       setCircuitCategories(prev => prev.filter(cat => cat !== category));
     }
+  };
+
+  const handleDealSelection = (dealId: string) => {
+    setSelectedDealIds(prev => 
+      prev.includes(dealId) 
+        ? prev.filter(id => id !== dealId)
+        : [...prev, dealId]
+    );
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -120,7 +163,7 @@ export const AddCircuitQuoteDialog = ({ open, onOpenChange, onAddQuote }: AddCir
     
     onAddQuote({
       client_name: clientName,
-      client_info_id: null,
+      client_info_id: clientInfoId || null,
       location,
       suite,
       status: 'new_pricing',
@@ -132,6 +175,7 @@ export const AddCircuitQuoteDialog = ({ open, onOpenChange, onAddQuote }: AddCir
     
     // Reset form
     setClientId("");
+    setClientInfoId("");
     setLocation("");
     setSuite("");
     setStaticIp(false);
@@ -139,6 +183,8 @@ export const AddCircuitQuoteDialog = ({ open, onOpenChange, onAddQuote }: AddCir
     setDhcp(false);
     setMikrotikRequired(true);
     setCircuitCategories([]);
+    setAssociatedDeals([]);
+    setSelectedDealIds([]);
     onOpenChange(false);
   };
 
@@ -168,6 +214,56 @@ export const AddCircuitQuoteDialog = ({ open, onOpenChange, onAddQuote }: AddCir
               </SelectContent>
             </Select>
           </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="clientInfo">Client Company</Label>
+            <Select value={clientInfoId} onValueChange={setClientInfoId}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select a client company (optional)" />
+              </SelectTrigger>
+              <SelectContent className="bg-white">
+                <SelectItem value="none">No specific company</SelectItem>
+                {/* We need to fetch client_info records here - for now keeping it simple */}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Associated Deals Section */}
+          {associatedDeals.length > 0 && (
+            <div className="space-y-2">
+              <Label className="text-sm font-medium">Associated Deals (Optional)</Label>
+              <div className="border rounded-md p-3 bg-gray-50 max-h-32 overflow-y-auto">
+                <p className="text-xs text-gray-600 mb-2">
+                  Select deals to associate with this circuit quote:
+                </p>
+                <div className="space-y-2">
+                  {associatedDeals.map((deal) => (
+                    <div key={deal.id} className="flex items-center space-x-2">
+                      <Checkbox
+                        id={`deal-${deal.id}`}
+                        checked={selectedDealIds.includes(deal.id)}
+                        onCheckedChange={() => handleDealSelection(deal.id)}
+                      />
+                      <label
+                        htmlFor={`deal-${deal.id}`}
+                        className="text-sm cursor-pointer flex-1"
+                      >
+                        <span className="font-medium">{deal.deal_name}</span>
+                        <span className="text-gray-500 ml-2">
+                          (${deal.deal_value.toLocaleString()} - {deal.stage})
+                        </span>
+                      </label>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              {selectedDealIds.length > 0 && (
+                <p className="text-xs text-green-600">
+                  {selectedDealIds.length} deal{selectedDealIds.length > 1 ? 's' : ''} selected
+                </p>
+              )}
+            </div>
+          )}
 
           <AddressAutocomplete
             label="Location (Required)"
