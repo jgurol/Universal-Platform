@@ -1,4 +1,5 @@
 
+
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -113,6 +114,9 @@ export const CircuitQuoteCardHeader = ({
     }
   };
 
+  // Show delete button for admins or if the quote is in "new_pricing" status
+  const canDelete = isAdmin || quote.status === 'new_pricing';
+
   return (
     <>
       <div className="flex items-center justify-between">
@@ -197,29 +201,29 @@ export const CircuitQuoteCardHeader = ({
             </Badge>
           )}
           
-          {/* Action buttons - only visible to admins */}
+          {/* Action buttons - Edit for admins, Delete conditionally */}
           {isAdmin && (
-            <>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={handleEditQuote}
-                className="h-8 w-8 p-0"
-                title="Edit Quote"
-              >
-                <Edit className="h-4 w-4" />
-              </Button>
-              
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={onDeleteQuote}
-                className="h-8 w-8 p-0 text-red-600 hover:text-red-700"
-                title="Delete Quote"
-              >
-                <Trash2 className="h-4 w-4" />
-              </Button>
-            </>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleEditQuote}
+              className="h-8 w-8 p-0"
+              title="Edit Quote"
+            >
+              <Edit className="h-4 w-4" />
+            </Button>
+          )}
+          
+          {canDelete && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={onDeleteQuote}
+              className="h-8 w-8 p-0 text-red-600 hover:text-red-700"
+              title="Delete Quote"
+            >
+              <Trash2 className="h-4 w-4" />
+            </Button>
           )}
         </div>
       </div>
@@ -235,3 +239,4 @@ export const CircuitQuoteCardHeader = ({
     </>
   );
 };
+
