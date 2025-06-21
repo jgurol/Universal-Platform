@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -218,7 +217,7 @@ export const AddCircuitQuoteDialog = ({ open, onOpenChange, onAddQuote }: AddCir
                   onCheckedChange={(checked) => setStaticIp(checked as boolean)}
                 />
                 <Label htmlFor="static-ip" className="text-sm font-normal">
-                  /30 IP Required
+                  /30 Static IP
                 </Label>
               </div>
               
@@ -229,7 +228,7 @@ export const AddCircuitQuoteDialog = ({ open, onOpenChange, onAddQuote }: AddCir
                   onCheckedChange={(checked) => setSlash29(checked as boolean)}
                 />
                 <Label htmlFor="slash-29" className="text-sm font-normal">
-                  /29 IP Required
+                  /29 Static IP
                 </Label>
               </div>
 
