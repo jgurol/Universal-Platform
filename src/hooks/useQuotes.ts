@@ -59,25 +59,6 @@ export const useQuotes = (
       } else {
         console.info('[fetchQuotes] Admin user - no filtering applied');
       }
-
-      // Add specific logging for quotes starting with "3582"
-      const { data: matchingQuotes } = await supabase
-        .from('quotes')
-        .select('*')
-        .like('quote_number', '3582%');
-      
-      if (matchingQuotes && matchingQuotes.length > 0) {
-        console.info('[fetchQuotes] Found quotes starting with "3582":', matchingQuotes.map(q => ({
-          id: q.id,
-          quote_number: q.quote_number,
-          user_id: q.user_id,
-          client_info_id: q.client_info_id,
-          status: q.status,
-          archived: q.archived
-        })));
-      } else {
-        console.info('[fetchQuotes] No quotes found starting with "3582"');
-      }
       
       const { data: quotesData, error } = await query;
       
