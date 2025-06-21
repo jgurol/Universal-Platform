@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -160,9 +161,10 @@ export const AddCircuitQuoteDialog = ({ open, onOpenChange, onAddQuote }: AddCir
       return;
     }
     
+    // Always use the client's ID as client_info_id, regardless of deal selection
     onAddQuote({
       client_name: clientName,
-      client_info_id: selectedDealId === "no-deal" ? selectedClient?.id || null : selectedDealId,
+      client_info_id: selectedClient?.id || null,
       location,
       suite,
       status: 'new_pricing',
