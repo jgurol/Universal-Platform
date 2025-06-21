@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -139,8 +138,8 @@ export const QuoteItemRow = ({ quoteItem, addresses, onUpdateItem, onRemoveItem 
     }
     
     if (newSellPrice >= basePriceWithMinimumMarkup) {
-      // If sell price is at or above the minimum markup price, lock commission at agent's max rate
-      setCommissionRate(agentCommissionRate);
+      // If sell price is at or above the minimum markup price, cap commission at agent's max rate
+      setCommissionRate(Math.min(agentCommissionRate, agentCommissionRate));
     } else {
       // If sell price is below minimum markup price, calculate reduced commission
       const discountPercentage = basePriceWithMinimumMarkup > 0 ? 
@@ -304,7 +303,6 @@ export const QuoteItemRow = ({ quoteItem, addresses, onUpdateItem, onRemoveItem 
             <Input
               type="number"
               step="0.01"
-              min={calculateMinimumSellPrice()}
               value={quoteItem.unit_price}
               onChange={(e) => {
                 const value = parseFloat(e.target.value) || 0;
