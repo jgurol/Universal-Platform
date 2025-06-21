@@ -577,7 +577,7 @@ export const AddQuoteDialog = ({ open, onOpenChange, onAddQuote, clients, client
                 ) : (
                   templates.map((template) => (
                     <SelectItem key={template.id} value={template.id}>
-                      {template.name} {template.is_default && "(Default)"}
+                      {template.name}{template.is_default && " (Default)"}
                     </SelectItem>
                   ))
                 )}
