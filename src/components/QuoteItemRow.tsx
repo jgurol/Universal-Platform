@@ -27,7 +27,7 @@ export const QuoteItemRow = ({ quoteItem, addresses, onUpdateItem, onRemoveItem 
   const [tempDescription, setTempDescription] = useState(quoteItem.description || quoteItem.item?.description || '');
   
   const { categories } = useCategories();
-  const { user } = useAuth();
+  const { user, isAdmin } = useAuth();
   const { clients } = useClients(null);
 
   // Get agent commission rate from clients data
@@ -57,16 +57,16 @@ export const QuoteItemRow = ({ quoteItem, addresses, onUpdateItem, onRemoveItem 
     agentCommissionRate
   );
 
-  // Calculate profit margin percentage
+  // Calculate profit margin percentage (only show to admin)
   const calculateProfitMargin = (): string => {
-    if (cost === 0) return '0%';
+    if (!isAdmin || cost === 0) return '0%';
     
     const margin = ((sellPrice - cost) / cost) * 100;
     return `${margin >= 0 ? '+' : ''}${margin.toFixed(1)}%`;
   };
 
   const getProfitMarginColor = (): string => {
-    if (cost === 0) return 'text-gray-500';
+    if (!isAdmin || cost === 0) return 'text-gray-500';
     
     const margin = ((sellPrice - cost) / cost) * 100;
     
@@ -85,7 +85,7 @@ export const QuoteItemRow = ({ quoteItem, addresses, onUpdateItem, onRemoveItem 
 
     setCommissionRate(newCommissionRate);
 
-    // Calculate the percentage reduction in commission
+    // Calculate the commission reduction
     const commissionReduction = agentCommissionRate - newCommissionRate;
     const commissionReductionPercentage = commissionReduction / 100; // Convert to decimal
 
@@ -157,8 +157,8 @@ export const QuoteItemRow = ({ quoteItem, addresses, onUpdateItem, onRemoveItem 
         <GripVertical className="w-4 h-4 text-gray-400 cursor-grab active:cursor-grabbing" />
       </div>
 
-      {/* Main Content Grid */}
-      <div className="grid grid-cols-7 gap-2 items-start flex-1">
+      {/* Main Content Grid - Adjust columns based on admin status */}
+      <div className={`grid ${isAdmin ? 'grid-cols-7' : 'grid-cols-6'} gap-2 items-start flex-1`}>
         {/* Item & Location Column */}
         <div className="col-span-2 space-y-2">
           <Input
@@ -245,7 +245,7 @@ export const QuoteItemRow = ({ quoteItem, addresses, onUpdateItem, onRemoveItem 
           />
         </div>
 
-        {/* Sell Price / Cost with Profit Margin */}
+        {/* Sell Price / Cost with Profit Margin - Cost only visible to admin */}
         <div className="space-y-1">
           <div className="flex items-center gap-1">
             <span className="text-xs text-gray-500">Sell:</span>
@@ -259,23 +259,27 @@ export const QuoteItemRow = ({ quoteItem, addresses, onUpdateItem, onRemoveItem 
               placeholder="$"
             />
           </div>
-          <div className="flex items-center gap-1">
-            <span className="text-xs text-gray-500">Cost:</span>
-            <Input
-              type="number"
-              step="0.01"
-              min="0"
-              value={quoteItem.cost_override || 0}
-              onChange={(e) => onUpdateItem(quoteItem.id, 'cost_override', parseFloat(e.target.value) || 0)}
-              className="text-xs h-8"
-              placeholder="$"
-            />
-          </div>
-          <div className="flex items-center justify-center">
-            <span className={`text-xs font-medium ${getProfitMarginColor()}`}>
-              {calculateProfitMargin()}
-            </span>
-          </div>
+          {isAdmin && (
+            <>
+              <div className="flex items-center gap-1">
+                <span className="text-xs text-gray-500">Cost:</span>
+                <Input
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  value={quoteItem.cost_override || 0}
+                  onChange={(e) => onUpdateItem(quoteItem.id, 'cost_override', parseFloat(e.target.value) || 0)}
+                  className="text-xs h-8"
+                  placeholder="$"
+                />
+              </div>
+              <div className="flex items-center justify-center">
+                <span className={`text-xs font-medium ${getProfitMarginColor()}`}>
+                  {calculateProfitMargin()}
+                </span>
+              </div>
+            </>
+          )}
         </div>
 
         {/* Commission & Markup Control - Always Show */}
@@ -307,8 +311,8 @@ export const QuoteItemRow = ({ quoteItem, addresses, onUpdateItem, onRemoveItem 
             </div>
           )}
           
-          {/* Show markup info only if category has minimum markup */}
-          {itemCategory?.minimum_markup && (
+          {/* Show markup info only if category has minimum markup and user is admin */}
+          {isAdmin && itemCategory?.minimum_markup && (
             <>
               <div className="text-xs text-gray-500 mb-1">
                 Effective Min Markup: {getEffectiveMinimumMarkup().toFixed(1)}%
