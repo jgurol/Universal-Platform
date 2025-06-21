@@ -34,7 +34,6 @@ export const AddCircuitQuoteDialog = ({ open, onOpenChange, onAddQuote }: AddCir
   const [clientId, setClientId] = useState("");
   const [location, setLocation] = useState("");
   const [suite, setSuite] = useState("");
-  const [status, setStatus] = useState<'new_pricing' | 'researching' | 'completed' | 'sent_to_customer'>('new_pricing');
   const [staticIp, setStaticIp] = useState(false);
   const [slash29, setSlash29] = useState(false);
   const [mikrotikRequired, setMikrotikRequired] = useState(false);
@@ -117,7 +116,7 @@ export const AddCircuitQuoteDialog = ({ open, onOpenChange, onAddQuote }: AddCir
       client_info_id: null,
       location,
       suite,
-      status,
+      status: 'new_pricing', // Always set to new_pricing
       static_ip: staticIp,
       slash_29: slash29,
       mikrotik_required: mikrotikRequired
@@ -127,7 +126,6 @@ export const AddCircuitQuoteDialog = ({ open, onOpenChange, onAddQuote }: AddCir
     setClientId("");
     setLocation("");
     setSuite("");
-    setStatus('new_pricing');
     setStaticIp(false);
     setSlash29(false);
     setMikrotikRequired(false);
@@ -178,21 +176,6 @@ export const AddCircuitQuoteDialog = ({ open, onOpenChange, onAddQuote }: AddCir
               onChange={(e) => setSuite(e.target.value)}
               placeholder="Suite number (optional)"
             />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="status">Status</Label>
-            <Select value={status} onValueChange={(value) => setStatus(value as 'new_pricing' | 'researching' | 'completed' | 'sent_to_customer')}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select status" />
-              </SelectTrigger>
-              <SelectContent className="bg-white">
-                <SelectItem value="new_pricing">New Pricing</SelectItem>
-                <SelectItem value="researching">Researching</SelectItem>
-                <SelectItem value="completed">Completed</SelectItem>
-                <SelectItem value="sent_to_customer">Sent to Customer</SelectItem>
-              </SelectContent>
-            </Select>
           </div>
 
           <div className="space-y-4">
