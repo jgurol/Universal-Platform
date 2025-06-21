@@ -53,6 +53,7 @@ export const fetchCircuitQuotes = async (userId: string | undefined, isAdmin: bo
     static_ip: quote.static_ip || false,
     slash_29: quote.slash_29 || false,
     mikrotik_required: quote.mikrotik_required || false,
+    user_id: quote.user_id, // Include user_id for creator identification
     carriers: (quote.carrier_quotes || []).map((carrier: any) => ({
       id: carrier.id,
       circuit_quote_id: carrier.circuit_quote_id,

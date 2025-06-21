@@ -6,11 +6,12 @@ export interface CircuitQuote {
   location: string;
   suite: string;
   created_at: string;
-  carriers: CarrierQuote[];
   status: 'new_pricing' | 'researching' | 'completed' | 'sent_to_customer';
   static_ip: boolean;
   slash_29: boolean;
   mikrotik_required: boolean;
+  user_id?: string; // Add user_id to identify creator
+  carriers: CarrierQuote[];
 }
 
 export interface CarrierQuote {

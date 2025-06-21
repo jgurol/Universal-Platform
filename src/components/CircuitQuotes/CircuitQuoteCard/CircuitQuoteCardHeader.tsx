@@ -1,11 +1,12 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ChevronDown, ChevronRight, Edit, Trash2 } from "lucide-react";
 import { CircuitQuoteStatusSelect } from "@/components/CircuitQuoteStatusSelect";
 import { EditCircuitQuoteDialog } from "@/components/EditCircuitQuoteDialog";
 import { useAuth } from "@/context/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
 import type { CircuitQuote } from "@/hooks/useCircuitQuotes";
 
 interface CircuitQuoteCardHeaderProps {
@@ -29,7 +30,48 @@ export const CircuitQuoteCardHeader = ({
   onUpdateQuote
 }: CircuitQuoteCardHeaderProps) => {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
-  const { isAdmin } = useAuth();
+  const [creatorName, setCreatorName] = useState<string>('Loading...');
+  const { isAdmin, user } = useAuth();
+
+  // Fetch the creator's name from the profiles table
+  useEffect(() => {
+    const fetchCreatorName = async () => {
+      // For circuit quotes, we need to get the user_id from the quote
+      const userId = (quote as any).user_id || user?.id;
+      
+      if (!userId) {
+        setCreatorName('Unknown User');
+        return;
+      }
+
+      try {
+        const { data: profile, error } = await supabase
+          .from('profiles')
+          .select('full_name, email')
+          .eq('id', userId)
+          .maybeSingle();
+        
+        if (error) {
+          console.error('Error fetching creator profile:', error);
+          setCreatorName('Unknown User');
+          return;
+        }
+        
+        if (profile?.full_name && profile.full_name.trim() !== '') {
+          setCreatorName(profile.full_name);
+        } else if (profile?.email) {
+          setCreatorName(profile.email);
+        } else {
+          setCreatorName('Unknown User');
+        }
+      } catch (error) {
+        console.error('Error fetching creator name:', error);
+        setCreatorName('Unknown User');
+      }
+    };
+
+    fetchCreatorName();
+  }, [quote, user]);
 
   const handleEditQuote = () => {
     setIsEditDialogOpen(true);
@@ -91,7 +133,7 @@ export const CircuitQuoteCardHeader = ({
               {quote.suite && ` - Suite ${quote.suite}`}
             </p>
             <p className="text-xs text-gray-500">
-              Created: {quote.created_at}
+              Created: {quote.created_at} • Created by: {creatorName}
             </p>
           </div>
         </div>
