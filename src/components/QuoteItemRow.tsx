@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -90,9 +89,14 @@ export const QuoteItemRow = ({ quoteItem, addresses, onUpdateItem, onRemoveItem 
     const commissionReduction = agentCommissionRate - newCommissionRate;
     const commissionReductionPercentage = commissionReduction / 100; // Convert to decimal
 
-    // Reduce the sell price by the same percentage
-    const currentSellPrice = quoteItem.unit_price || 0;
-    const newSellPrice = currentSellPrice * (1 - commissionReductionPercentage);
+    // Calculate the base price with minimum markup (if category has one)
+    let basePriceWithMinimumMarkup = cost;
+    if (itemCategory?.minimum_markup && cost > 0) {
+      basePriceWithMinimumMarkup = cost * (1 + itemCategory.minimum_markup / 100);
+    }
+
+    // Apply the commission reduction percentage as a discount from the minimum markup price
+    const newSellPrice = basePriceWithMinimumMarkup * (1 - commissionReductionPercentage);
     
     // Update the sell price
     onUpdateItem(quoteItem.id, 'unit_price', Math.round(newSellPrice * 100) / 100);
