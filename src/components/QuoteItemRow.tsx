@@ -8,6 +8,8 @@ import { Trash2, MapPin, FileText, GripVertical } from "lucide-react";
 import { QuoteItemData } from "@/types/quoteItems";
 import { ClientAddress } from "@/types/clientAddress";
 import { AdvancedTiptapEditor } from "@/components/AdvancedTiptapEditor";
+import { SecureHtmlDisplay } from "@/components/SecureHtmlDisplay";
+import { secureTextSchema } from "@/utils/securityUtils";
 
 interface QuoteItemRowProps {
   quoteItem: QuoteItemData;
@@ -60,6 +62,14 @@ export const QuoteItemRow = ({ quoteItem, addresses, onUpdateItem, onRemoveItem 
   };
 
   const handleDescriptionSave = () => {
+    // Validate content security before saving
+    try {
+      secureTextSchema.parse(tempDescription);
+    } catch (error) {
+      console.error('Description contains potentially unsafe content');
+      return;
+    }
+    
     console.log('[QuoteItemRow] Saving description:', tempDescription);
     onUpdateItem(quoteItem.id, 'description', tempDescription);
     setIsDescriptionOpen(false);
@@ -113,17 +123,12 @@ export const QuoteItemRow = ({ quoteItem, addresses, onUpdateItem, onRemoveItem 
             className="text-sm font-medium h-8"
           />
           <div className="space-y-1">
-            {/* Rich text description display */}
+            {/* Secure rich text description display */}
             {currentDescription && (
-              <div 
+              <SecureHtmlDisplay 
+                content={currentDescription}
                 className="text-xs text-gray-700 p-2 bg-white border rounded prose prose-xs max-w-none"
-                dangerouslySetInnerHTML={{ __html: currentDescription }}
-                style={{ 
-                  maxHeight: '100px', 
-                  overflowY: 'auto',
-                  fontSize: '11px',
-                  lineHeight: '1.3'
-                }}
+                maxLength={200}
               />
             )}
             <Dialog open={isDescriptionOpen} onOpenChange={handleDialogOpenChange}>

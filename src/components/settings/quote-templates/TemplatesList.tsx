@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,6 +9,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useSystemSettings } from "@/context/SystemSettingsContext";
 import { useAuth } from "@/context/AuthContext";
 import type { Database } from "@/integrations/supabase/types";
+import { secureTextSchema } from "@/utils/securityUtils";
 
 type QuoteTemplate = Database['public']['Tables']['quote_templates']['Row'];
 
@@ -19,6 +21,19 @@ export const TemplatesList: React.FC = () => {
 
   const handleUpdateTemplate = async () => {
     if (!editingTemplate) return;
+
+    // Validate content security
+    try {
+      secureTextSchema.parse(editingTemplate.content);
+      secureTextSchema.parse(editingTemplate.name);
+    } catch (error) {
+      toast({
+        title: "Invalid content",
+        description: "Template contains potentially unsafe content",
+        variant: "destructive",
+      });
+      return;
+    }
 
     setLoading(true);
     try {

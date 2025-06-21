@@ -1,32 +1,34 @@
 
 import { z } from 'zod';
+import { secureTextSchema, secureEmailSchema } from './securityUtils';
 
-// Email validation schema
-export const emailSchema = z.string()
-  .email('Invalid email format')
-  .max(254, 'Email too long')
-  .refine(
-    (email) => {
-      // Prevent email header injection
-      const dangerousChars = /[\r\n\0%]/;
-      return !dangerousChars.test(email);
-    },
-    'Invalid email format'
-  );
+// Enhanced email validation schema
+export const emailSchema = secureEmailSchema;
 
-// Password validation schema
+// Enhanced password validation schema
 export const passwordSchema = z.string()
-  .min(6, 'Password must be at least 6 characters')
+  .min(8, 'Password must be at least 8 characters')
   .max(128, 'Password too long')
   .refine(
     (password) => {
-      // Basic security check - no null bytes or control characters
+      // Must contain at least one uppercase, lowercase, number, and special character
+      const hasUpper = /[A-Z]/.test(password);
+      const hasLower = /[a-z]/.test(password);
+      const hasNumber = /\d/.test(password);
+      const hasSpecial = /[!@#$%^&*(),.?":{}|<>]/.test(password);
+      return hasUpper && hasLower && hasNumber && hasSpecial;
+    },
+    'Password must contain uppercase, lowercase, number, and special character'
+  )
+  .refine(
+    (password) => {
+      // No null bytes or control characters
       return !/[\0-\x1f\x7f]/.test(password);
     },
     'Password contains invalid characters'
   );
 
-// Name validation schema
+// Enhanced name validation schema
 export const nameSchema = z.string()
   .min(1, 'Name is required')
   .max(100, 'Name too long')
@@ -36,21 +38,20 @@ export const nameSchema = z.string()
       return /^[a-zA-Z\s\-'\.]+$/.test(name.trim());
     },
     'Name contains invalid characters'
-  );
-
-// Text content validation (for notes, descriptions, etc.)
-export const textContentSchema = z.string()
-  .max(5000, 'Text too long')
+  )
   .refine(
-    (text) => {
-      // Remove or escape potential XSS attempts
-      const dangerousPatterns = /<script|javascript:|data:|vbscript:/i;
-      return !dangerousPatterns.test(text);
+    (name) => {
+      // Prevent XSS attempts in names
+      const xssPatterns = [/<script/i, /javascript:/i, /on\w+=/i];
+      return !xssPatterns.some(pattern => pattern.test(name));
     },
-    'Content contains potentially dangerous elements'
+    'Name contains potentially dangerous content'
   );
 
-// User creation validation schema
+// Use secure text content validation
+export const textContentSchema = secureTextSchema;
+
+// Enhanced user creation validation schema
 export const createUserSchema = z.object({
   email: emailSchema,
   full_name: nameSchema,
@@ -59,17 +60,36 @@ export const createUserSchema = z.object({
   send_welcome_email: z.boolean()
 });
 
-// Sanitize HTML content
+// Quote validation schemas
+export const quoteDescriptionSchema = secureTextSchema.max(2000, 'Description too long');
+export const quoteNotesSchema = secureTextSchema.max(1000, 'Notes too long');
+
+// Sanitize HTML content (now using DOMPurify)
 export const sanitizeHtml = (content: string): string => {
-  return content
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#x27;')
-    .replace(/\//g, '&#x2F;');
+  // This now delegates to the more secure implementation
+  return require('./securityUtils').sanitizeHtml(content);
 };
 
 // Validate and sanitize user input
 export const validateAndSanitizeInput = <T>(schema: z.ZodSchema<T>, data: unknown): T => {
   return schema.parse(data);
+};
+
+// Additional validation for quote items
+export const validateQuoteItemName = (name: string): boolean => {
+  try {
+    nameSchema.parse(name);
+    return true;
+  } catch {
+    return false;
+  }
+};
+
+export const validateQuoteItemDescription = (description: string): boolean => {
+  try {
+    secureTextSchema.parse(description);
+    return true;
+  } catch {
+    return false;
+  }
 };

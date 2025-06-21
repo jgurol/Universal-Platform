@@ -9,16 +9,37 @@ const corsHeaders = {
   'X-Content-Type-Options': 'nosniff',
   'X-Frame-Options': 'DENY',
   'X-XSS-Protection': '1; mode=block',
+  'Strict-Transport-Security': 'max-age=31536000; includeSubDomains',
 };
 
 interface PasswordResetRequest {
   email: string;
 }
 
-// Email validation
+// Rate limiting map (in production, use Redis or similar)
+const rateLimitMap = new Map<string, { count: number; resetTime: number }>();
+
+const checkRateLimit = (ip: string, maxAttempts: number = 3, windowMs: number = 300000): boolean => {
+  const now = Date.now();
+  const record = rateLimitMap.get(ip);
+  
+  if (!record || now > record.resetTime) {
+    rateLimitMap.set(ip, { count: 1, resetTime: now + windowMs });
+    return true;
+  }
+  
+  if (record.count >= maxAttempts) {
+    return false;
+  }
+  
+  record.count++;
+  return true;
+};
+
+// Enhanced email validation
 const validateEmail = (email: string): boolean => {
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  const dangerousChars = /[\r\n\0%]/;
+  const dangerousChars = /[\r\n\0%<>]/;
   return emailRegex.test(email) && !dangerousChars.test(email) && email.length <= 254;
 };
 
@@ -42,7 +63,6 @@ const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
 const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 const resend = new Resend(Deno.env.get('RESEND_API_KEY'));
 
-// Create admin client with service role key
 const supabase = createClient(supabaseUrl, supabaseServiceKey, {
   auth: {
     autoRefreshToken: false,
@@ -56,9 +76,25 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
+    // Rate limiting by IP
+    const clientIP = req.headers.get('CF-Connecting-IP') || 
+                    req.headers.get('X-Forwarded-For') || 
+                    'unknown';
+    
+    if (!checkRateLimit(clientIP)) {
+      console.warn(`Rate limit exceeded for IP: ${clientIP}`);
+      return new Response(JSON.stringify({ 
+        success: false, 
+        error: "Too many requests. Please try again later." 
+      }), {
+        status: 429,
+        headers: { 'Content-Type': 'application/json', ...corsHeaders },
+      });
+    }
+
     // Parse and validate request body
     const body = await req.text();
-    if (body.length > 1000) { // Prevent DoS via large payloads
+    if (body.length > 1000) {
       return new Response(JSON.stringify({ 
         success: false, 
         error: "Request payload too large" 
@@ -73,7 +109,7 @@ const handler = async (req: Request): Promise<Response> => {
     // Validate email
     if (!validateEmail(email)) {
       return new Response(JSON.stringify({ 
-        success: true, // Don't reveal if email exists
+        success: true, 
         message: "If an account with that email exists, a password reset link has been sent." 
       }), {
         status: 200,
@@ -183,7 +219,6 @@ const handler = async (req: Request): Promise<Response> => {
 
   } catch (error: any) {
     console.error("Exception in send-password-reset:", error);
-    console.error("Error stack:", error.stack);
     return new Response(JSON.stringify({ 
       success: false, 
       error: "An unexpected error occurred"
