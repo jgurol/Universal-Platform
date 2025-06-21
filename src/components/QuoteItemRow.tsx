@@ -70,26 +70,37 @@ export const QuoteItemRow = ({ quoteItem, addresses, onUpdateItem, onRemoveItem 
 
   // Handle commission rate change and update sell price accordingly
   const handleCommissionRateChange = (newCommissionRate: number) => {
-    if (!itemCategory?.minimum_markup) {
-      setCommissionRate(newCommissionRate);
+    // Don't allow commission to go below 0 or above agent's max rate
+    if (newCommissionRate < 0 || newCommissionRate > agentCommissionRate) {
       return;
     }
 
-    const minMarkup = itemCategory.minimum_markup;
-    const maxCommissionReduction = Math.min(minMarkup, agentCommissionRate);
-    const commissionReduction = agentCommissionRate - newCommissionRate;
-    
-    // Don't allow commission to go below 0 or reduce more than allowed
-    if (newCommissionRate < 0 || commissionReduction > maxCommissionReduction) {
-      return;
-    }
-
-    // Calculate new markup based on commission reduction
-    const newMarkup = Math.max(0, minMarkup - commissionReduction);
-    const newSellPrice = cost * (1 + newMarkup / 100);
-    
     setCommissionRate(newCommissionRate);
-    onUpdateItem(quoteItem.id, 'unit_price', Math.round(newSellPrice * 100) / 100);
+
+    // If there's a minimum markup category, adjust the markup based on commission reduction
+    if (itemCategory?.minimum_markup) {
+      const originalMinimumMarkup = itemCategory.minimum_markup;
+      const commissionReduction = agentCommissionRate - newCommissionRate;
+      
+      // Reduce the minimum markup by the same amount as the commission reduction
+      const adjustedMinimumMarkup = Math.max(0, originalMinimumMarkup - commissionReduction);
+      
+      // Calculate new sell price based on adjusted minimum markup
+      const newSellPrice = cost * (1 + adjustedMinimumMarkup / 100);
+      
+      // Update the sell price
+      onUpdateItem(quoteItem.id, 'unit_price', Math.round(newSellPrice * 100) / 100);
+    }
+  };
+
+  // Calculate the effective minimum markup after commission reduction
+  const getEffectiveMinimumMarkup = (): number => {
+    if (!itemCategory?.minimum_markup) return 0;
+    
+    const originalMinimumMarkup = itemCategory.minimum_markup;
+    const commissionReduction = agentCommissionRate - commissionRate;
+    
+    return Math.max(0, originalMinimumMarkup - commissionReduction);
   };
 
   // Update tempDescription when dialog opens or quoteItem changes
@@ -284,7 +295,7 @@ export const QuoteItemRow = ({ quoteItem, addresses, onUpdateItem, onRemoveItem 
           {itemCategory?.minimum_markup && (
             <>
               <div className="text-xs text-gray-500 mb-1">
-                Min Markup: {itemCategory.minimum_markup}%
+                Effective Min Markup: {getEffectiveMinimumMarkup().toFixed(1)}%
               </div>
               <div className="text-xs text-orange-600 mb-1">
                 Current: {markupCalculation.currentMarkup.toFixed(1)}%
@@ -292,9 +303,9 @@ export const QuoteItemRow = ({ quoteItem, addresses, onUpdateItem, onRemoveItem 
               <div className="text-xs text-blue-600">
                 Final: {markupCalculation.finalCommissionRate.toFixed(1)}%
               </div>
-              {markupCalculation.commissionReduction > 0 && (
+              {agentCommissionRate - commissionRate > 0 && (
                 <div className="text-xs text-red-600">
-                  -{markupCalculation.commissionReduction.toFixed(1)}% comm
+                  -{(agentCommissionRate - commissionRate).toFixed(1)}% comm reduction
                 </div>
               )}
               {!markupCalculation.isValid && (
