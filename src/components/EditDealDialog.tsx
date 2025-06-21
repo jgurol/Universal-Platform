@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -259,21 +258,21 @@ export const EditDealDialog = ({
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="description">Description</Label>
+            <Label htmlFor="description">Description of customer intention</Label>
             <Textarea
               id="description"
               {...register("description")}
-              placeholder="Enter deal description"
+              placeholder="Enter description of customer intention"
               rows={3}
             />
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="notes">Notes</Label>
+            <Label htmlFor="notes">Agent notes for California Telecom</Label>
             <Textarea
               id="notes"
               {...register("notes")}
-              placeholder="Enter any additional notes"
+              placeholder="Enter agent notes for California Telecom"
               rows={3}
             />
           </div>
