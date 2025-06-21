@@ -1,5 +1,4 @@
-
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -26,18 +25,25 @@ interface QuoteItemRowProps {
 export const QuoteItemRow = ({ quoteItem, addresses, onUpdateItem, onRemoveItem }: QuoteItemRowProps) => {
   const [isDescriptionOpen, setIsDescriptionOpen] = useState(false);
   const [tempDescription, setTempDescription] = useState(quoteItem.description || quoteItem.item?.description || '');
-  const [commissionRate, setCommissionRate] = useState<number>(15); // Default 15%, should come from agent settings
   
   const { categories } = useCategories();
   const { user } = useAuth();
-  const { clients } = useClients(null); // Pass null as associatedAgentId parameter
+  const { clients } = useClients(null);
 
-  // Find the category for this item
-  const itemCategory = categories.find(cat => cat.id === quoteItem.item?.category_id);
-  
   // Get agent commission rate from clients data
   const currentAgent = clients.find(client => client.id === user?.id);
   const agentCommissionRate = currentAgent?.commissionRate || 15;
+  
+  // Initialize commission rate with agent's rate
+  const [commissionRate, setCommissionRate] = useState<number>(agentCommissionRate);
+
+  // Update commission rate when agent rate changes
+  useEffect(() => {
+    setCommissionRate(agentCommissionRate);
+  }, [agentCommissionRate]);
+
+  // Find the category for this item
+  const itemCategory = categories.find(cat => cat.id === quoteItem.item?.category_id);
 
   // Calculate markup and commission based on current values
   const cost = quoteItem.cost_override || quoteItem.item?.cost || 0;
