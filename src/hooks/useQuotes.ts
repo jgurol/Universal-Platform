@@ -18,6 +18,7 @@ export const useQuotes = (
     
     try {
       console.info('[fetchQuotes] Starting quote fetch - isAdmin:', isAdmin, 'associatedAgentId:', associatedAgentId);
+      console.info('[fetchQuotes] Current user ID:', user.id);
       
       let query = supabase
         .from('quotes')
@@ -39,8 +40,11 @@ export const useQuotes = (
           .select('id')
           .eq('agent_id', associatedAgentId);
         
+        console.info('[fetchQuotes] Client info IDs for agent:', clientInfoIds);
+        
         if (clientInfoIds && clientInfoIds.length > 0) {
           const clientIds = clientInfoIds.map(ci => ci.id);
+          console.info('[fetchQuotes] Filtering quotes by client_info_ids:', clientIds);
           query = query.in('client_info_id', clientIds);
         } else {
           // If no client_info records for this agent, return empty
@@ -48,8 +52,32 @@ export const useQuotes = (
           setQuotes([]);
           return;
         }
+      } else if (!isAdmin) {
+        // If user is not admin but has no associated agent, show only their own quotes
+        console.info('[fetchQuotes] Non-admin user with no agent - filtering by user_id:', user.id);
+        query = query.eq('user_id', user.id);
       } else {
         console.info('[fetchQuotes] Admin user - no filtering applied');
+      }
+
+      // Add specific logging for quote 3582.2
+      const { data: specificQuote } = await supabase
+        .from('quotes')
+        .select('*')
+        .eq('quote_number', '3582.2')
+        .maybeSingle();
+      
+      if (specificQuote) {
+        console.info('[fetchQuotes] Found quote 3582.2:', {
+          id: specificQuote.id,
+          quote_number: specificQuote.quote_number,
+          user_id: specificQuote.user_id,
+          client_info_id: specificQuote.client_info_id,
+          status: specificQuote.status,
+          archived: specificQuote.archived
+        });
+      } else {
+        console.info('[fetchQuotes] Quote 3582.2 not found in database');
       }
       
       const { data: quotesData, error } = await query;
@@ -60,16 +88,18 @@ export const useQuotes = (
       }
 
       console.info('[fetchQuotes] Raw quotesData from database:', quotesData);
+      console.info('[fetchQuotes] Quote numbers in result:', quotesData?.map(q => q.quote_number));
       
       if (quotesData) {
         const mappedQuotes = quotesData.map(quote => {
           const mapped = mapQuoteData(quote, clients, clientInfos);
-          console.log(`[fetchQuotes] Mapped quote ${quote.id} - Status: "${mapped.status}", Description: "${mapped.description}"`);
+          console.log(`[fetchQuotes] Mapped quote ${quote.id} - Number: "${quote.quote_number}", Status: "${mapped.status}", Description: "${mapped.description}"`);
           return mapped;
         });
         
         setQuotes(mappedQuotes);
         console.info('[fetchQuotes] Final mapped quotes count:', mappedQuotes.length);
+        console.info('[fetchQuotes] Final quote numbers:', mappedQuotes.map(q => q.quoteNumber));
       }
     } catch (err) {
       console.error('Error in fetchQuotes:', err);
