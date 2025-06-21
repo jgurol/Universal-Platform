@@ -16,17 +16,12 @@ export const useVendors = () => {
     
     try {
       setIsLoading(true);
-      let query = supabase
+      // Remove user filtering - all users can now view all vendors
+      const { data, error } = await supabase
         .from('vendors')
         .select('*')
-        .eq('is_active', true);
-
-      // Only filter by user_id if not admin
-      if (!isAdmin) {
-        query = query.eq('user_id', user.id);
-      }
-
-      const { data, error } = await query.order('name');
+        .eq('is_active', true)
+        .order('name');
 
       if (error) {
         console.error('Error fetching vendors:', error);
@@ -126,7 +121,7 @@ export const useVendors = () => {
 
   useEffect(() => {
     fetchVendors();
-  }, [user, isAdmin]);
+  }, [user]);
 
   return {
     vendors,
