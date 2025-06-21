@@ -1,6 +1,9 @@
 
 import { Button } from "@/components/ui/button";
 import { Edit, Trash2, Copy } from "lucide-react";
+import { useAuth } from "@/context/AuthContext";
+import { useCategories } from "@/hooks/useCategories";
+import { useClients } from "@/hooks/useClients";
 import type { CarrierQuote } from "@/hooks/useCircuitQuotes";
 
 interface CarrierCardProps {
@@ -11,8 +14,43 @@ interface CarrierCardProps {
 }
 
 export const CarrierCard = ({ carrier, onEdit, onDelete, onCopy }: CarrierCardProps) => {
+  const { isAdmin, user } = useAuth();
+  const { categories } = useCategories();
+  const { clients } = useClients(null);
+  
   const isPending = !carrier.price || carrier.price === 0;
   const isNoService = carrier.no_service;
+  
+  // Calculate markup price for agents
+  const getDisplayPrice = () => {
+    if (isAdmin || isPending || isNoService) {
+      return carrier.price;
+    }
+
+    // Find matching category for the carrier type
+    const matchingCategory = categories.find(cat => 
+      cat.type?.toLowerCase() === carrier.type.toLowerCase() ||
+      cat.name.toLowerCase().includes(carrier.type.toLowerCase())
+    );
+
+    // Get agent commission rate
+    const currentAgent = clients.find(client => client.id === user?.id);
+    const agentCommissionRate = currentAgent?.commissionRate || 15;
+
+    if (matchingCategory && matchingCategory.minimum_markup && matchingCategory.minimum_markup > 0) {
+      // Calculate effective minimum markup after commission reduction
+      const originalMinimumMarkup = matchingCategory.minimum_markup;
+      const effectiveMinimumMarkup = Math.max(0, originalMinimumMarkup);
+      
+      // Apply the markup: sell price = cost * (1 + markup/100)
+      const markup = effectiveMinimumMarkup / 100;
+      return Math.round(carrier.price * (1 + markup) * 100) / 100;
+    }
+
+    return carrier.price;
+  };
+
+  const displayPrice = getDisplayPrice();
   
   const getTickedCheckboxes = () => {
     const ticked = [];
@@ -66,7 +104,7 @@ export const CarrierCard = ({ carrier, onEdit, onDelete, onCopy }: CarrierCardPr
         <div>
           <div className={`font-semibold text-lg ${isNoService ? 'text-red-600' : ''}`}>
             {isNoService ? 'No Service' : (
-              carrier.price > 0 ? `$${carrier.price}` : (
+              displayPrice > 0 ? `$${displayPrice}` : (
                 <span className="text-orange-600 text-sm">Pending</span>
               )
             )}
@@ -102,7 +140,7 @@ export const CarrierCard = ({ carrier, onEdit, onDelete, onCopy }: CarrierCardPr
         </div>
         
         <div className="flex items-center gap-2">
-          {onCopy && (
+          {isAdmin && onCopy && (
             <Button
               variant="ghost"
               size="sm"
@@ -113,7 +151,7 @@ export const CarrierCard = ({ carrier, onEdit, onDelete, onCopy }: CarrierCardPr
               <Copy className="h-4 w-4" />
             </Button>
           )}
-          {onEdit && (
+          {isAdmin && onEdit && (
             <Button
               variant="ghost"
               size="sm"
@@ -123,7 +161,7 @@ export const CarrierCard = ({ carrier, onEdit, onDelete, onCopy }: CarrierCardPr
               <Edit className="h-4 w-4" />
             </Button>
           )}
-          {onDelete && (
+          {isAdmin && onDelete && (
             <Button
               variant="ghost"
               size="sm"
