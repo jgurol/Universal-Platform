@@ -90,6 +90,13 @@ export const ProgramsGrid = () => {
                 }`}>
                   {program.title}
                 </CardTitle>
+                {isDisabled && (
+                  <div className="mt-2">
+                    <span className="text-xs bg-gray-200 text-gray-600 px-2 py-1 rounded-full">
+                      Coming Soon
+                    </span>
+                  </div>
+                )}
               </CardHeader>
               <CardContent className="pt-0">
                 <CardDescription className={`text-center text-sm ${
