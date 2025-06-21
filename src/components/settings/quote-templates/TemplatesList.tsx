@@ -9,7 +9,6 @@ import { useToast } from "@/hooks/use-toast";
 import { useSystemSettings } from "@/context/SystemSettingsContext";
 import { useAuth } from "@/context/AuthContext";
 import type { Database } from "@/integrations/supabase/types";
-import { secureTextSchema } from "@/utils/securityUtils";
 
 type QuoteTemplate = Database['public']['Tables']['quote_templates']['Row'];
 
@@ -19,17 +18,52 @@ export const TemplatesList: React.FC = () => {
   const { templates, loading, setLoading, fetchTemplates } = useSystemSettings();
   const [editingTemplate, setEditingTemplate] = useState<QuoteTemplate | null>(null);
 
+  // Basic validation for template content - less restrictive than secureTextSchema
+  const validateTemplateContent = (content: string, name: string): { isValid: boolean; error?: string } => {
+    if (!content || content.trim().length === 0) {
+      return { isValid: false, error: "Template content cannot be empty" };
+    }
+    
+    if (!name || name.trim().length === 0) {
+      return { isValid: false, error: "Template name cannot be empty" };
+    }
+    
+    if (content.length > 50000) {
+      return { isValid: false, error: "Template content is too long (max 50,000 characters)" };
+    }
+    
+    if (name.length > 200) {
+      return { isValid: false, error: "Template name is too long (max 200 characters)" };
+    }
+    
+    // Only check for obvious script tags and dangerous patterns
+    const dangerousPatterns = [
+      /<script[\s\S]*?>[\s\S]*?<\/script>/gi,
+      /javascript:/gi,
+      /data:text\/html/gi,
+      /vbscript:/gi
+    ];
+    
+    const hasDangerousContent = dangerousPatterns.some(pattern => 
+      pattern.test(content) || pattern.test(name)
+    );
+    
+    if (hasDangerousContent) {
+      return { isValid: false, error: "Content contains potentially dangerous script elements" };
+    }
+    
+    return { isValid: true };
+  };
+
   const handleUpdateTemplate = async () => {
     if (!editingTemplate) return;
 
-    // Validate content security
-    try {
-      secureTextSchema.parse(editingTemplate.content);
-      secureTextSchema.parse(editingTemplate.name);
-    } catch (error) {
+    // Validate content with less restrictive validation
+    const validation = validateTemplateContent(editingTemplate.content, editingTemplate.name);
+    if (!validation.isValid) {
       toast({
         title: "Invalid content",
-        description: "Template contains potentially unsafe content",
+        description: validation.error,
         variant: "destructive",
       });
       return;
@@ -40,8 +74,8 @@ export const TemplatesList: React.FC = () => {
       const { error } = await supabase
         .from('quote_templates')
         .update({
-          name: editingTemplate.name,
-          content: editingTemplate.content,
+          name: editingTemplate.name.trim(),
+          content: editingTemplate.content.trim(),
           updated_at: new Date().toISOString()
         })
         .eq('id', editingTemplate.id);

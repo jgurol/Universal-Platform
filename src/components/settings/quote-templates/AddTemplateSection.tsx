@@ -16,11 +16,49 @@ export const AddTemplateSection: React.FC = () => {
   const { loading, setLoading, fetchTemplates } = useSystemSettings();
   const [newTemplate, setNewTemplate] = useState({ name: "", content: "" });
 
+  // Basic validation for template content - less restrictive
+  const validateTemplateContent = (content: string, name: string): { isValid: boolean; error?: string } => {
+    if (!content || content.trim().length === 0) {
+      return { isValid: false, error: "Please provide content for the template" };
+    }
+    
+    if (!name || name.trim().length === 0) {
+      return { isValid: false, error: "Please provide a name for the template" };
+    }
+    
+    if (content.length > 50000) {
+      return { isValid: false, error: "Template content is too long (max 50,000 characters)" };
+    }
+    
+    if (name.length > 200) {
+      return { isValid: false, error: "Template name is too long (max 200 characters)" };
+    }
+    
+    // Only check for obvious script tags and dangerous patterns
+    const dangerousPatterns = [
+      /<script[\s\S]*?>[\s\S]*?<\/script>/gi,
+      /javascript:/gi,
+      /data:text\/html/gi,
+      /vbscript:/gi
+    ];
+    
+    const hasDangerousContent = dangerousPatterns.some(pattern => 
+      pattern.test(content) || pattern.test(name)
+    );
+    
+    if (hasDangerousContent) {
+      return { isValid: false, error: "Content contains potentially dangerous script elements" };
+    }
+    
+    return { isValid: true };
+  };
+
   const handleAddTemplate = async () => {
-    if (!newTemplate.name.trim() || !newTemplate.content.trim()) {
+    const validation = validateTemplateContent(newTemplate.content, newTemplate.name);
+    if (!validation.isValid) {
       toast({
         title: "Validation error",
-        description: "Please provide both name and content for the template",
+        description: validation.error,
         variant: "destructive",
       });
       return;
