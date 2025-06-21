@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -13,6 +12,7 @@ import { useCategories } from "@/hooks/useCategories";
 import { CircuitQuote } from "@/hooks/useCircuitQuotes";
 import { supabase } from "@/integrations/supabase/client";
 import { DealRegistration } from "@/services/dealRegistrationService";
+import { Info } from "lucide-react";
 
 interface AddCircuitQuoteDialogProps {
   open: boolean;
@@ -27,6 +27,79 @@ interface AddressData {
   zip_code: string;
   country: string;
 }
+
+// Deal Details Dialog Component
+const DealDetailsDialog = ({ open, onOpenChange, deal }: { 
+  open: boolean; 
+  onOpenChange: (open: boolean) => void; 
+  deal: DealRegistration | null; 
+}) => {
+  if (!deal) return null;
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-[500px]">
+        <DialogHeader>
+          <DialogTitle>Deal Details</DialogTitle>
+          <DialogDescription>
+            Information about the selected deal registration
+          </DialogDescription>
+        </DialogHeader>
+        
+        <div className="space-y-4">
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label className="text-sm font-medium text-gray-500">Deal Name</Label>
+              <p className="text-sm font-medium">{deal.deal_name}</p>
+            </div>
+            <div>
+              <Label className="text-sm font-medium text-gray-500">Deal Value</Label>
+              <p className="text-sm font-medium">${deal.deal_value.toLocaleString()}</p>
+            </div>
+          </div>
+          
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label className="text-sm font-medium text-gray-500">Stage</Label>
+              <p className="text-sm capitalize">{deal.stage.replace('-', ' ')}</p>
+            </div>
+            <div>
+              <Label className="text-sm font-medium text-gray-500">Probability</Label>
+              <p className="text-sm">{deal.probability}%</p>
+            </div>
+          </div>
+          
+          {deal.expected_close_date && (
+            <div>
+              <Label className="text-sm font-medium text-gray-500">Expected Close Date</Label>
+              <p className="text-sm">{new Date(deal.expected_close_date).toLocaleDateString()}</p>
+            </div>
+          )}
+          
+          {deal.description && (
+            <div>
+              <Label className="text-sm font-medium text-gray-500">Description</Label>
+              <p className="text-sm">{deal.description}</p>
+            </div>
+          )}
+          
+          {deal.notes && (
+            <div>
+              <Label className="text-sm font-medium text-gray-500">Notes</Label>
+              <p className="text-sm">{deal.notes}</p>
+            </div>
+          )}
+        </div>
+        
+        <div className="flex justify-end">
+          <Button variant="outline" onClick={() => onOpenChange(false)}>
+            Close
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+};
 
 export const AddCircuitQuoteDialog = ({ open, onOpenChange, onAddQuote }: AddCircuitQuoteDialogProps) => {
   const { user, isAdmin } = useAuth();
@@ -43,6 +116,7 @@ export const AddCircuitQuoteDialog = ({ open, onOpenChange, onAddQuote }: AddCir
   const [mikrotikRequired, setMikrotikRequired] = useState(true);
   const [circuitCategories, setCircuitCategories] = useState<string[]>([]);
   const [associatedDeals, setAssociatedDeals] = useState<DealRegistration[]>([]);
+  const [isDealDetailsOpen, setIsDealDetailsOpen] = useState(false);
 
   // Get circuit categories from the categories table where type is "Circuit"
   const circuitCategoryOptions = categories
@@ -138,6 +212,9 @@ export const AddCircuitQuoteDialog = ({ open, onOpenChange, onAddQuote }: AddCir
     fetchAssociatedDeals();
   }, [clientId, clients]);
 
+  // Get the selected deal for showing details
+  const selectedDeal = associatedDeals.find(deal => deal.id === selectedDealId) || null;
+
   const handleAddressSelect = (address: AddressData) => {
     const fullAddress = `${address.street_address}, ${address.city}, ${address.state} ${address.zip_code}`;
     setLocation(fullAddress);
@@ -189,159 +266,181 @@ export const AddCircuitQuoteDialog = ({ open, onOpenChange, onAddQuote }: AddCir
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[500px]">
-        <DialogHeader>
-          <DialogTitle>Create Circuit Quote</DialogTitle>
-          <DialogDescription>
-            Create a new circuit quote to research carrier pricing and options.
-          </DialogDescription>
-        </DialogHeader>
-        
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="client">Client (Required)</Label>
-            <Select value={clientId} onValueChange={setClientId}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select a client" />
-              </SelectTrigger>
-              <SelectContent className="bg-white">
-                {clients.map((client) => (
-                  <SelectItem key={client.id} value={client.id}>
-                    {client.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+    <>
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle>Create Circuit Quote</DialogTitle>
+            <DialogDescription>
+              Create a new circuit quote to research carrier pricing and options.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="client">Client (Required)</Label>
+              <Select value={clientId} onValueChange={setClientId}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select a client" />
+                </SelectTrigger>
+                <SelectContent className="bg-white">
+                  {clients.map((client) => (
+                    <SelectItem key={client.id} value={client.id}>
+                      {client.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="dealRegistration">Deal Registration (Optional)</Label>
-            <Select value={selectedDealId} onValueChange={setSelectedDealId}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select a deal registration (optional)" />
-              </SelectTrigger>
-              <SelectContent className="bg-white">
-                <SelectItem value="no-deal">No specific deal</SelectItem>
-                {associatedDeals.map((deal) => (
-                  <SelectItem key={deal.id} value={deal.id}>
-                    <div className="flex flex-col">
-                      <span className="font-medium">{deal.deal_name}</span>
-                      <span className="text-sm text-gray-500">
-                        ${deal.deal_value.toLocaleString()} - {deal.stage}
-                      </span>
-                    </div>
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          <AddressAutocomplete
-            label="Location (Required)"
-            placeholder="Start typing an address..."
-            onAddressSelect={handleAddressSelect}
-            initialValue={location}
-            required
-          />
-
-          <div className="space-y-2">
-            <Label htmlFor="suite">Suite</Label>
-            <Input
-              id="suite"
-              value={suite}
-              onChange={(e) => setSuite(e.target.value)}
-              placeholder="Suite number (optional)"
-            />
-          </div>
-
-          <div className="space-y-4">
-            <Label>Circuit Categories</Label>
-            <div className="grid grid-cols-2 gap-3 max-h-40 overflow-y-auto border rounded-md p-3">
-              {circuitCategoryOptions.map((category) => (
-                <div key={category} className="flex items-center space-x-2">
-                  <Checkbox
-                    id={`category-${category}`}
-                    checked={circuitCategories.includes(category)}
-                    onCheckedChange={(checked) => handleCircuitCategoryChange(category, checked as boolean)}
-                  />
-                  <Label 
-                    htmlFor={`category-${category}`} 
-                    className="text-sm font-normal capitalize"
+            <div className="space-y-2">
+              <Label htmlFor="dealRegistration">Deal Registration (Optional)</Label>
+              <div className="flex gap-2">
+                <Select value={selectedDealId} onValueChange={setSelectedDealId}>
+                  <SelectTrigger className="flex-1">
+                    <SelectValue placeholder="Select a deal registration (optional)" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-white">
+                    <SelectItem value="no-deal">No specific deal</SelectItem>
+                    {associatedDeals.map((deal) => (
+                      <SelectItem key={deal.id} value={deal.id}>
+                        <div className="flex flex-col">
+                          <span className="font-medium">{deal.deal_name}</span>
+                          <span className="text-sm text-gray-500">
+                            ${deal.deal_value.toLocaleString()} - {deal.stage}
+                          </span>
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                
+                {selectedDealId && selectedDealId !== "no-deal" && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="icon"
+                    onClick={() => setIsDealDetailsOpen(true)}
+                    title="View deal details"
                   >
-                    {category}
+                    <Info className="h-4 w-4" />
+                  </Button>
+                )}
+              </div>
+            </div>
+
+            <AddressAutocomplete
+              label="Location (Required)"
+              placeholder="Start typing an address..."
+              onAddressSelect={handleAddressSelect}
+              initialValue={location}
+              required
+            />
+
+            <div className="space-y-2">
+              <Label htmlFor="suite">Suite</Label>
+              <Input
+                id="suite"
+                value={suite}
+                onChange={(e) => setSuite(e.target.value)}
+                placeholder="Suite number (optional)"
+              />
+            </div>
+
+            <div className="space-y-4">
+              <Label>Circuit Categories</Label>
+              <div className="grid grid-cols-2 gap-3 max-h-40 overflow-y-auto border rounded-md p-3">
+                {circuitCategoryOptions.map((category) => (
+                  <div key={category} className="flex items-center space-x-2">
+                    <Checkbox
+                      id={`category-${category}`}
+                      checked={circuitCategories.includes(category)}
+                      onCheckedChange={(checked) => handleCircuitCategoryChange(category, checked as boolean)}
+                    />
+                    <Label 
+                      htmlFor={`category-${category}`} 
+                      className="text-sm font-normal capitalize"
+                    >
+                      {category}
+                    </Label>
+                  </div>
+                ))}
+              </div>
+              <p className="text-xs text-gray-500">
+                Selected: {circuitCategories.join(", ")}
+              </p>
+            </div>
+
+            <div className="space-y-4">
+              <Label>Quote Requirements</Label>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="static-ip"
+                    checked={staticIp}
+                    onCheckedChange={(checked) => setStaticIp(checked as boolean)}
+                  />
+                  <Label htmlFor="static-ip" className="text-sm font-normal">
+                    /30 Static IP
                   </Label>
                 </div>
-              ))}
-            </div>
-            <p className="text-xs text-gray-500">
-              Selected: {circuitCategories.join(", ")}
-            </p>
-          </div>
+                
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="slash-29"
+                    checked={slash29}
+                    onCheckedChange={(checked) => setSlash29(checked as boolean)}
+                  />
+                  <Label htmlFor="slash-29" className="text-sm font-normal">
+                    /29 Static IP
+                  </Label>
+                </div>
 
-          <div className="space-y-4">
-            <Label>Quote Requirements</Label>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="flex items-center space-x-2">
-                <Checkbox
-                  id="static-ip"
-                  checked={staticIp}
-                  onCheckedChange={(checked) => setStaticIp(checked as boolean)}
-                />
-                <Label htmlFor="static-ip" className="text-sm font-normal">
-                  /30 Static IP
-                </Label>
-              </div>
-              
-              <div className="flex items-center space-x-2">
-                <Checkbox
-                  id="slash-29"
-                  checked={slash29}
-                  onCheckedChange={(checked) => setSlash29(checked as boolean)}
-                />
-                <Label htmlFor="slash-29" className="text-sm font-normal">
-                  /29 Static IP
-                </Label>
-              </div>
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="dhcp"
+                    checked={dhcp}
+                    onCheckedChange={(checked) => setDhcp(checked as boolean)}
+                  />
+                  <Label htmlFor="dhcp" className="text-sm font-normal">
+                    DHCP (No Static IP)
+                  </Label>
+                </div>
 
-              <div className="flex items-center space-x-2">
-                <Checkbox
-                  id="dhcp"
-                  checked={dhcp}
-                  onCheckedChange={(checked) => setDhcp(checked as boolean)}
-                />
-                <Label htmlFor="dhcp" className="text-sm font-normal">
-                  DHCP (No Static IP)
-                </Label>
-              </div>
-
-              <div className="flex items-center space-x-2">
-                <Checkbox
-                  id="mikrotik-required"
-                  checked={mikrotikRequired}
-                  onCheckedChange={(checked) => setMikrotikRequired(checked as boolean)}
-                />
-                <Label htmlFor="mikrotik-required" className="text-sm font-normal">
-                  Router Required (Mikrotik)
-                </Label>
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="mikrotik-required"
+                    checked={mikrotikRequired}
+                    onCheckedChange={(checked) => setMikrotikRequired(checked as boolean)}
+                  />
+                  <Label htmlFor="mikrotik-required" className="text-sm font-normal">
+                    Router Required (Mikrotik)
+                  </Label>
+                </div>
               </div>
             </div>
-          </div>
-          
-          <div className="flex justify-end space-x-2 mt-6">
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-              Cancel
-            </Button>
-            <Button 
-              type="submit" 
-              className="bg-purple-600 hover:bg-purple-700"
-              disabled={!clientId || !location}
-            >
-              Create Quote
-            </Button>
-          </div>
-        </form>
-      </DialogContent>
-    </Dialog>
+            
+            <div className="flex justify-end space-x-2 mt-6">
+              <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+                Cancel
+              </Button>
+              <Button 
+                type="submit" 
+                className="bg-purple-600 hover:bg-purple-700"
+                disabled={!clientId || !location}
+              >
+                Create Quote
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      <DealDetailsDialog
+        open={isDealDetailsOpen}
+        onOpenChange={setIsDealDetailsOpen}
+        deal={selectedDeal}
+      />
+    </>
   );
 };
