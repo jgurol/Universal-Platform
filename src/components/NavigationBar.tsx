@@ -78,10 +78,6 @@ export function NavigationBar() {
                 <NavigationMenuTrigger>System Settings</NavigationMenuTrigger>
                 <NavigationMenuContent>
                   <ul className="grid w-[300px] gap-3 p-4">
-                    <ListItem href="/settings/profile" title="Profile Settings" Icon={Settings}>
-                      Manage your account preferences and personal information
-                    </ListItem>
-                    
                     {isAdmin && (
                       <ListItem href="/vendors" title="Vendor Management" Icon={Building}>
                         Manage vendors and supplier information
