@@ -101,7 +101,7 @@ export const AddQuoteDialog = ({ open, onOpenChange, onAddQuote, clients, client
     setSelectedBillingAddressId(null);
     setServiceAddress("");
     setSelectedServiceAddressId(null);
-    setSelectedTemplateId("");
+    setSelectedTemplateId(""); // Reset template selection
     setIsSubmitting(false);
     
     // Reset dates
@@ -197,7 +197,14 @@ export const AddQuoteDialog = ({ open, onOpenChange, onAddQuote, clients, client
           
           if (error) {
             console.error('[AddQuoteDialog] Error fetching templates:', error);
-            throw error;
+            setTemplates([]);
+            setSelectedTemplateId("");
+            toast({
+              title: "Warning",
+              description: "Could not load quote templates. You may need to create one first.",
+              variant: "destructive",
+            });
+            return;
           }
           
           setTemplates(data || []);
@@ -211,9 +218,14 @@ export const AddQuoteDialog = ({ open, onOpenChange, onAddQuote, clients, client
           } else if (data && data.length > 0) {
             console.log('[AddQuoteDialog] No default template found, selecting first template:', data[0].name);
             setSelectedTemplateId(data[0].id);
+          } else {
+            console.log('[AddQuoteDialog] No templates available');
+            setSelectedTemplateId("");
           }
         } catch (error) {
           console.error('[AddQuoteDialog] Error loading templates:', error);
+          setTemplates([]);
+          setSelectedTemplateId("");
           toast({
             title: "Warning",
             description: "Could not load quote templates. You may need to create one first.",
@@ -559,7 +571,13 @@ export const AddQuoteDialog = ({ open, onOpenChange, onAddQuote, clients, client
             <Label htmlFor="templateId">Quote Template *</Label>
             <Select value={selectedTemplateId} onValueChange={setSelectedTemplateId} required>
               <SelectTrigger>
-                <SelectValue placeholder={templates.length === 0 ? "No templates available" : "Template will be auto-selected"} />
+                <SelectValue placeholder={
+                  templates.length === 0 
+                    ? "No templates available" 
+                    : selectedTemplateId 
+                      ? templates.find(t => t.id === selectedTemplateId)?.name || "Select template"
+                      : "Select template"
+                } />
               </SelectTrigger>
               <SelectContent>
                 {templates.length === 0 ? (
@@ -578,6 +596,12 @@ export const AddQuoteDialog = ({ open, onOpenChange, onAddQuote, clients, client
             {templates.length === 0 && (
               <p className="text-sm text-red-500">
                 No templates available. Create templates in System Settings → Quote Templates.
+              </p>
+            )}
+            {selectedTemplateId && templates.length > 0 && (
+              <p className="text-sm text-green-600">
+                Selected: {templates.find(t => t.id === selectedTemplateId)?.name}
+                {templates.find(t => t.id === selectedTemplateId)?.is_default && " (Default)"}
               </p>
             )}
           </div>
