@@ -18,7 +18,7 @@ export const AddCategoryDialog = ({ open, onOpenChange, onAddCategory }: AddCate
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [type, setType] = useState<'Circuit' | 'Network' | 'Managed Services' | 'AI' | 'VOIP'>('Network');
-  const [standardMarkup, setStandardMarkup] = useState<number>(0);
+  const [minimumMarkup, setMinimumMarkup] = useState<number>(0);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -27,7 +27,7 @@ export const AddCategoryDialog = ({ open, onOpenChange, onAddCategory }: AddCate
         name: name.trim(),
         description: description.trim() || undefined,
         type,
-        standard_markup: standardMarkup,
+        minimum_markup: minimumMarkup,
         is_active: true
       });
       
@@ -35,7 +35,7 @@ export const AddCategoryDialog = ({ open, onOpenChange, onAddCategory }: AddCate
       setName("");
       setDescription("");
       setType('Network');
-      setStandardMarkup(0);
+      setMinimumMarkup(0);
       onOpenChange(false);
     }
   };
@@ -78,16 +78,19 @@ export const AddCategoryDialog = ({ open, onOpenChange, onAddCategory }: AddCate
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="standard-markup">Standard Markup (%)</Label>
+            <Label htmlFor="minimum-markup">Minimum Markup (%)</Label>
             <Input
-              id="standard-markup"
+              id="minimum-markup"
               type="number"
               step="0.01"
               min="0"
-              value={standardMarkup}
-              onChange={(e) => setStandardMarkup(parseFloat(e.target.value) || 0)}
-              placeholder="Enter markup percentage"
+              value={minimumMarkup}
+              onChange={(e) => setMinimumMarkup(parseFloat(e.target.value) || 0)}
+              placeholder="Enter minimum markup percentage"
             />
+            <p className="text-xs text-gray-500">
+              Agents can reduce markup below this but it will reduce their commission proportionally
+            </p>
           </div>
 
           <div className="space-y-2">
