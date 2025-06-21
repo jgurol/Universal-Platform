@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -64,6 +63,11 @@ export const QuoteItemRow = ({ quoteItem, addresses, onUpdateItem, onRemoveItem,
     itemCategory,
     agentCommissionRate
   );
+
+  // Calculate the commission amount for this line item
+  const calculateCommissionAmount = (): number => {
+    return (quoteItem.total_price * commissionRate) / 100;
+  };
 
   // Calculate what the minimum sell price would be for 0% commission
   const calculateMinimumSellPrice = (): number => {
@@ -405,9 +409,6 @@ export const QuoteItemRow = ({ quoteItem, addresses, onUpdateItem, onRemoveItem,
                 placeholder="Comm %"
               />
             </div>
-            <div className="text-xs text-blue-600">
-              Rate: {commissionRate.toFixed(1)}%
-            </div>
             
             {/* Show commission reduction info */}
             {agentCommissionRate - commissionRate > 0 && (
@@ -437,20 +438,25 @@ export const QuoteItemRow = ({ quoteItem, addresses, onUpdateItem, onRemoveItem,
             )}
           </div>
 
-          {/* Total */}
-          <div className="flex items-center justify-between">
-            <div className="text-sm font-medium">
-              ${quoteItem.total_price.toFixed(2)}
+          {/* Total & Commission */}
+          <div className="space-y-1">
+            <div className="flex items-center justify-between">
+              <div className="text-sm font-medium">
+                ${quoteItem.total_price.toFixed(2)}
+              </div>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={() => onRemoveItem(quoteItem.id)}
+                className="h-6 w-6 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
+              >
+                <Trash2 className="w-3 h-3" />
+              </Button>
             </div>
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              onClick={() => onRemoveItem(quoteItem.id)}
-              className="h-6 w-6 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
-            >
-              <Trash2 className="w-3 h-3" />
-            </Button>
+            <div className="text-xs text-gray-600">
+              Commission: ${calculateCommissionAmount().toFixed(2)}
+            </div>
           </div>
 
           {/* Type Column */}
