@@ -47,23 +47,25 @@ export const AddQuoteDialog = ({ open, onOpenChange, onAddQuote, clients, client
   const [templates, setTemplates] = useState<QuoteTemplate[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [currentUserName, setCurrentUserName] = useState<string>("");
+  const [isAdmin, setIsAdmin] = useState<boolean>(false);
   const { user } = useAuth();
   
-  // Fetch current user's name from profile
+  // Fetch current user's name and admin status from profile
   useEffect(() => {
-    const fetchCurrentUserName = async () => {
+    const fetchCurrentUserData = async () => {
       if (!user) return;
       
       try {
         const { data: profile, error } = await supabase
           .from('profiles')
-          .select('full_name, email')
+          .select('full_name, email, is_admin')
           .eq('id', user.id)
           .maybeSingle();
         
         if (error) {
           console.error('Error fetching user profile:', error);
           setCurrentUserName(user.email?.split('@')[0] || 'Current User');
+          setIsAdmin(false);
           return;
         }
         
@@ -76,13 +78,16 @@ export const AddQuoteDialog = ({ open, onOpenChange, onAddQuote, clients, client
         } else {
           setCurrentUserName('Current User');
         }
+        
+        setIsAdmin(profile?.is_admin || false);
       } catch (error) {
-        console.error('Error fetching current user name:', error);
+        console.error('Error fetching current user data:', error);
         setCurrentUserName(user.email?.split('@')[0] || 'Current User');
+        setIsAdmin(false);
       }
     };
 
-    fetchCurrentUserName();
+    fetchCurrentUserData();
   }, [user]);
   
   // Function to reset all form fields
@@ -522,21 +527,6 @@ export const AddQuoteDialog = ({ open, onOpenChange, onAddQuote, clients, client
             </Select>
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="term">Term</Label>
-            <Select value={term} onValueChange={setTerm}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select term" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="Month to Month">Month to Month</SelectItem>
-                <SelectItem value="12 Months">12 Months</SelectItem>
-                <SelectItem value="24 Months">24 Months</SelectItem>
-                <SelectItem value="36 Months">36 Months</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
           <AddressSelector
             clientInfoId={clientInfoId !== "none" ? clientInfoId : null}
             selectedAddressId={selectedBillingAddressId || undefined}
@@ -607,18 +597,36 @@ export const AddQuoteDialog = ({ open, onOpenChange, onAddQuote, clients, client
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="commissionOverride">Commission Override (%)</Label>
-            <Input
-              id="commissionOverride"
-              type="number"
-              step="0.01"
-              min="0"
-              max="100"
-              value={commissionOverride}
-              onChange={(e) => setCommissionOverride(e.target.value)}
-              placeholder="Optional commission override"
-            />
+            <Label htmlFor="term">Initial Term</Label>
+            <Select value={term} onValueChange={setTerm}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select initial term" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="Month to Month">Month to Month</SelectItem>
+                <SelectItem value="12 Months">12 Months</SelectItem>
+                <SelectItem value="24 Months">24 Months</SelectItem>
+                <SelectItem value="36 Months">36 Months</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
+
+          {/* Commission Override - Only show for admins */}
+          {isAdmin && (
+            <div className="space-y-2">
+              <Label htmlFor="commissionOverride">Commission Override (%)</Label>
+              <Input
+                id="commissionOverride"
+                type="number"
+                step="0.01"
+                min="0"
+                max="100"
+                value={commissionOverride}
+                onChange={(e) => setCommissionOverride(e.target.value)}
+                placeholder="Optional commission override"
+              />
+            </div>
+          )}
 
           <div className="space-y-2">
             <Label htmlFor="notes">Notes</Label>
