@@ -60,9 +60,48 @@ export const createUserSchema = z.object({
   send_welcome_email: z.boolean()
 });
 
-// Quote validation schemas
-export const quoteDescriptionSchema = secureTextSchema.max(2000, 'Description too long');
-export const quoteNotesSchema = secureTextSchema.max(1000, 'Notes too long');
+// Quote validation schemas - fix the order by applying max before refine
+export const quoteDescriptionSchema = z.string()
+  .max(2000, 'Description too long')
+  .refine(
+    (text) => {
+      // Check for common XSS patterns
+      const xssPatterns = [
+        /<script[\s\S]*?>[\s\S]*?<\/script>/gi,
+        /javascript:/gi,
+        /data:text\/html/gi,
+        /vbscript:/gi,
+        /onload\s*=/gi,
+        /onerror\s*=/gi,
+        /onclick\s*=/gi,
+        /onmouseover\s*=/gi
+      ];
+      
+      return !xssPatterns.some(pattern => pattern.test(text));
+    },
+    'Content contains potentially dangerous elements'
+  );
+
+export const quoteNotesSchema = z.string()
+  .max(1000, 'Notes too long')
+  .refine(
+    (text) => {
+      // Check for common XSS patterns
+      const xssPatterns = [
+        /<script[\s\S]*?>[\s\S]*?<\/script>/gi,
+        /javascript:/gi,
+        /data:text\/html/gi,
+        /vbscript:/gi,
+        /onload\s*=/gi,
+        /onerror\s*=/gi,
+        /onclick\s*=/gi,
+        /onmouseover\s*=/gi
+      ];
+      
+      return !xssPatterns.some(pattern => pattern.test(text));
+    },
+    'Content contains potentially dangerous elements'
+  );
 
 // Sanitize HTML content (now using DOMPurify)
 export const sanitizeHtml = (content: string): string => {
@@ -87,7 +126,7 @@ export const validateQuoteItemName = (name: string): boolean => {
 
 export const validateQuoteItemDescription = (description: string): boolean => {
   try {
-    secureTextSchema.parse(description);
+    quoteDescriptionSchema.parse(description);
     return true;
   } catch {
     return false;
