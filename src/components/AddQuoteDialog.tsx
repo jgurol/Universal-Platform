@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -41,7 +42,7 @@ export const AddQuoteDialog = ({ open, onOpenChange, onAddQuote, clients, client
   const [selectedBillingAddressId, setSelectedBillingAddressId] = useState<string | null>(null);
   const [serviceAddress, setServiceAddress] = useState<string>("");
   const [selectedServiceAddressId, setSelectedServiceAddressId] = useState<string | null>(null);
-  const [selectedTemplateId, setSelectedTemplateId] = useState<string>("none");
+  const [selectedTemplateId, setSelectedTemplateId] = useState<string>("");
   const [templates, setTemplates] = useState<QuoteTemplate[]>([]);
   const { user } = useAuth();
   
@@ -61,7 +62,7 @@ export const AddQuoteDialog = ({ open, onOpenChange, onAddQuote, clients, client
     setSelectedBillingAddressId(null);
     setServiceAddress("");
     setSelectedServiceAddressId(null);
-    setSelectedTemplateId("none");
+    setSelectedTemplateId("");
     
     // Reset dates
     const todayDate = getTodayInTimezone();
@@ -141,7 +142,7 @@ export const AddQuoteDialog = ({ open, onOpenChange, onAddQuote, clients, client
     generateNextQuoteNumber();
   }, [open, user]);
   
-  // Load templates when dialog opens
+  // Load templates when dialog opens and auto-select default
   useEffect(() => {
     const fetchTemplates = async () => {
       if (open && user) {
@@ -162,11 +163,14 @@ export const AddQuoteDialog = ({ open, onOpenChange, onAddQuote, clients, client
           setTemplates(data || []);
           console.log('[AddQuoteDialog] Templates set:', data?.length || 0, 'templates');
           
-          // Auto-select default template if available
+          // Auto-select default template if available, otherwise select first template
           const defaultTemplate = data?.find(t => t.is_default);
           if (defaultTemplate) {
             console.log('[AddQuoteDialog] Auto-selecting default template:', defaultTemplate.name);
             setSelectedTemplateId(defaultTemplate.id);
+          } else if (data && data.length > 0) {
+            console.log('[AddQuoteDialog] No default template found, selecting first template:', data[0].name);
+            setSelectedTemplateId(data[0].id);
           }
         } catch (error) {
           console.error('[AddQuoteDialog] Error loading templates:', error);
@@ -218,8 +222,8 @@ export const AddQuoteDialog = ({ open, onOpenChange, onAddQuote, clients, client
     
     const totalAmount = calculateTotalAmount();
     
-    // Check for clientInfoId instead of clientId, since clientId can be empty if no salesperson is associated
-    if (clientInfoId && clientInfoId !== "none" && date) {
+    // Check for clientInfoId, template selection, and other required fields
+    if (clientInfoId && clientInfoId !== "none" && date && selectedTemplateId) {
       const selectedClient = clientId ? clients.find(client => client.id === clientId) : null;
       const selectedClientInfo = clientInfos.find(info => info.id === clientInfoId);
       
@@ -244,7 +248,7 @@ export const AddQuoteDialog = ({ open, onOpenChange, onAddQuote, clients, client
           quoteItems: quoteItems,
           billingAddress: billingAddress || undefined,
           serviceAddress: serviceAddress || undefined,
-          templateId: selectedTemplateId !== "none" ? selectedTemplateId : undefined
+          templateId: selectedTemplateId
         };
         
         console.log('[AddQuoteDialog] Calling onAddQuote with data:', quoteData);
@@ -260,8 +264,8 @@ export const AddQuoteDialog = ({ open, onOpenChange, onAddQuote, clients, client
   const selectedSalesperson = clientId ? clients.find(c => c.id === clientId) : null;
   const selectedClientInfo = clientInfoId && clientInfoId !== "none" ? clientInfos.find(info => info.id === clientInfoId) : null;
 
-  // Check if form is valid for submission
-  const isFormValid = clientInfoId && clientInfoId !== "none" && quoteItems.length > 0;
+  // Check if form is valid for submission - now includes template requirement
+  const isFormValid = clientInfoId && clientInfoId !== "none" && quoteItems.length > 0 && selectedTemplateId;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -407,13 +411,12 @@ export const AddQuoteDialog = ({ open, onOpenChange, onAddQuote, clients, client
           />
 
           <div className="space-y-2">
-            <Label htmlFor="templateId">Quote Template (Optional)</Label>
-            <Select value={selectedTemplateId} onValueChange={setSelectedTemplateId}>
+            <Label htmlFor="templateId">Quote Template (Required)</Label>
+            <Select value={selectedTemplateId} onValueChange={setSelectedTemplateId} required>
               <SelectTrigger>
-                <SelectValue placeholder="Select a template to include" />
+                <SelectValue placeholder="Template will be auto-selected" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="none">No template</SelectItem>
                 {templates.map((template) => (
                   <SelectItem key={template.id} value={template.id}>
                     {template.name} {template.is_default && "(Default)"}
@@ -422,13 +425,10 @@ export const AddQuoteDialog = ({ open, onOpenChange, onAddQuote, clients, client
               </SelectContent>
             </Select>
             {templates.length === 0 && (
-              <p className="text-sm text-gray-500">
+              <p className="text-sm text-red-500">
                 No templates available. Create templates in System Settings → Quote Templates.
               </p>
             )}
-            <p className="text-sm text-muted-foreground">
-              Debug: Found {templates.length} templates
-            </p>
           </div>
 
           <div className="space-y-2">

@@ -1,4 +1,3 @@
-
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Quote, Client, ClientInfo } from "@/pages/Index";
@@ -66,7 +65,7 @@ export const EditQuoteDialog = ({
   const [selectedServiceAddressId, setSelectedServiceAddressId] = useState<string | null>(null);
   const [serviceAddress, setServiceAddress] = useState<string>("");
 
-  const [selectedTemplateId, setSelectedTemplateId] = useState<string>("none");
+  const [selectedTemplateId, setSelectedTemplateId] = useState<string>("");
   const [templates, setTemplates] = useState<QuoteTemplate[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { user } = useAuth();
@@ -132,7 +131,7 @@ export const EditQuoteDialog = ({
     }
   }, [quote, open, addresses]);
 
-  // Load templates when dialog opens
+  // Load templates when dialog opens and auto-select default if none selected
   useEffect(() => {
     const fetchTemplates = async () => {
       if (open && user) {
@@ -161,12 +160,25 @@ export const EditQuoteDialog = ({
     fetchTemplates();
   }, [open, user]);
 
-  // Initialize template selection from quote
+  // Initialize template selection from quote or auto-select default
   useEffect(() => {
-    if (quote && open) {
-      setSelectedTemplateId((quote as any).templateId || "none");
+    if (quote && open && templates.length > 0) {
+      const existingTemplateId = (quote as any).templateId;
+      if (existingTemplateId) {
+        setSelectedTemplateId(existingTemplateId);
+      } else {
+        // Auto-select default template if no template is currently selected
+        const defaultTemplate = templates.find(t => t.is_default);
+        if (defaultTemplate) {
+          console.log('[EditQuoteDialog] Auto-selecting default template:', defaultTemplate.name);
+          setSelectedTemplateId(defaultTemplate.id);
+        } else if (templates.length > 0) {
+          console.log('[EditQuoteDialog] No default template found, selecting first template:', templates[0].name);
+          setSelectedTemplateId(templates[0].id);
+        }
+      }
     }
-  }, [quote, open]);
+  }, [quote, open, templates]);
 
   const handleBillingAddressChange = (addressId: string | null, customAddr?: string) => {
     console.log('EditQuoteDialog - Billing address changed:', { addressId, customAddr });
@@ -194,7 +206,8 @@ export const EditQuoteDialog = ({
       clientInfoId,
       date,
       quoteItemsLength: quoteItems.length,
-      clientsLength: clients.length
+      clientsLength: clients.length,
+      selectedTemplateId
     });
     
     if (!quote) {
@@ -232,6 +245,16 @@ export const EditQuoteDialog = ({
       toast({
         title: "Error",
         description: "Please select a client company",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!selectedTemplateId) {
+      console.error('[EditQuoteDialog] No template selected');
+      toast({
+        title: "Error",
+        description: "Please select a quote template",
         variant: "destructive",
       });
       return;
@@ -288,7 +311,7 @@ export const EditQuoteDialog = ({
         notes: notes || undefined,
         billingAddress: billingAddress || undefined,
         serviceAddress: serviceAddress || undefined,
-        templateId: selectedTemplateId !== "none" ? selectedTemplateId : undefined
+        templateId: selectedTemplateId
       };
 
       onUpdateQuote(updatedQuote);
@@ -314,13 +337,14 @@ export const EditQuoteDialog = ({
 
   const selectedSalesperson = clientId ? clients.find(c => c.id === clientId) : null;
 
-  // Updated form validation - must match submission requirements exactly
+  // Updated form validation - must include template selection
   const isFormValid = !!(
     quote && 
     date && 
     quoteItems.length > 0 && 
     clientInfoId && 
-    clientInfoId !== "none"
+    clientInfoId !== "none" &&
+    selectedTemplateId
   );
   
   console.log('[EditQuoteDialog] Form validation status:', {
@@ -328,6 +352,7 @@ export const EditQuoteDialog = ({
     hasDate: !!date,
     hasQuoteItems: quoteItems.length > 0,
     hasClientInfo: !!(clientInfoId && clientInfoId !== "none"),
+    hasTemplate: !!selectedTemplateId,
     isFormValid
   });
 
@@ -381,7 +406,7 @@ export const EditQuoteDialog = ({
             templates={templates}
           />
           {templates.length === 0 && (
-            <p className="text-sm text-gray-500">
+            <p className="text-sm text-red-500">
               No templates available. Create templates in System Settings → Quote Templates.
             </p>
           )}
@@ -410,7 +435,7 @@ export const EditQuoteDialog = ({
           {/* Debug info */}
           <div className="text-xs text-muted-foreground">
             Debug: Form valid = {isFormValid ? 'true' : 'false'} 
-            (Quote: {!!quote ? 'yes' : 'no'}, Date: {!!date ? 'yes' : 'no'}, Items: {quoteItems.length}, ClientInfo: {clientInfoId && clientInfoId !== "none" ? 'yes' : 'no'})
+            (Quote: {!!quote ? 'yes' : 'no'}, Date: {!!date ? 'yes' : 'no'}, Items: {quoteItems.length}, ClientInfo: {clientInfoId && clientInfoId !== "none" ? 'yes' : 'no'}, Template: {!!selectedTemplateId ? 'yes' : 'no'})
           </div>
         </form>
       </DialogContent>

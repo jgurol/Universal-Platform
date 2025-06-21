@@ -18,13 +18,12 @@ export const EditQuoteTemplateSection = ({
 }: EditQuoteTemplateSectionProps) => {
   return (
     <div className="space-y-2">
-      <Label htmlFor="templateId">Quote Template (Optional)</Label>
-      <Select value={selectedTemplateId} onValueChange={onTemplateChange}>
+      <Label htmlFor="templateId">Quote Template (Required)</Label>
+      <Select value={selectedTemplateId} onValueChange={onTemplateChange} required>
         <SelectTrigger>
-          <SelectValue placeholder="Select a template to include" />
+          <SelectValue placeholder="Template will be auto-selected" />
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value="none">No template</SelectItem>
           {templates.map((template) => (
             <SelectItem key={template.id} value={template.id}>
               {template.name} {template.is_default && "(Default)"}
@@ -33,8 +32,8 @@ export const EditQuoteTemplateSection = ({
         </SelectContent>
       </Select>
       {templates.length === 0 && (
-        <p className="text-sm text-gray-500">
-          No templates available. Create templates in System Settings.
+        <p className="text-sm text-red-500">
+          No templates available. Create templates in System Settings → Quote Templates.
         </p>
       )}
     </div>
