@@ -8,6 +8,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { AddressAutocomplete } from "@/components/AddressAutocomplete";
 import { useClients } from "@/hooks/useClients";
 import { useAuth } from "@/context/AuthContext";
+import { useCategories } from "@/hooks/useCategories";
 import { CircuitQuote } from "@/hooks/useCircuitQuotes";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -25,17 +26,11 @@ interface AddressData {
   country: string;
 }
 
-const circuitCategoryOptions = [
-  "4G/5G",
-  "broadband",
-  "dedicated fiber", 
-  "fixed wireless"
-];
-
 export const AddCircuitQuoteDialog = ({ open, onOpenChange, onAddQuote }: AddCircuitQuoteDialogProps) => {
   const { user, isAdmin } = useAuth();
   const [associatedAgentId, setAssociatedAgentId] = useState<string | null>(null);
   const { clients, fetchClients } = useClients(associatedAgentId);
+  const { categories } = useCategories();
   const [clientId, setClientId] = useState("");
   const [location, setLocation] = useState("");
   const [suite, setSuite] = useState("");
@@ -44,6 +39,19 @@ export const AddCircuitQuoteDialog = ({ open, onOpenChange, onAddQuote }: AddCir
   const [slash29, setSlash29] = useState(false);
   const [mikrotikRequired, setMikrotikRequired] = useState(false);
   const [circuitCategories, setCircuitCategories] = useState<string[]>(["broadband"]);
+
+  // Get circuit categories from the categories table where type is "Circuit"
+  const circuitCategoryOptions = categories
+    .filter(category => category.type === 'Circuit')
+    .map(category => category.name);
+
+  // Ensure broadband is always included if it exists in the database
+  React.useEffect(() => {
+    const broadbandExists = circuitCategoryOptions.some(cat => cat.toLowerCase() === 'broadband');
+    if (broadbandExists && !circuitCategories.includes('broadband')) {
+      setCircuitCategories(prev => [...prev.filter(cat => cat !== 'broadband'), 'broadband']);
+    }
+  }, [circuitCategoryOptions]);
 
   // Fetch the associated agent ID for the current user
   React.useEffect(() => {
@@ -87,7 +95,7 @@ export const AddCircuitQuoteDialog = ({ open, onOpenChange, onAddQuote }: AddCir
   };
 
   const handleCircuitCategoryChange = (category: string, checked: boolean) => {
-    if (category === "broadband") {
+    if (category.toLowerCase() === "broadband") {
       // Broadband cannot be unchecked
       return;
     }
@@ -201,14 +209,14 @@ export const AddCircuitQuoteDialog = ({ open, onOpenChange, onAddQuote }: AddCir
                     id={`category-${category}`}
                     checked={circuitCategories.includes(category)}
                     onCheckedChange={(checked) => handleCircuitCategoryChange(category, checked as boolean)}
-                    disabled={category === "broadband"}
+                    disabled={category.toLowerCase() === "broadband"}
                   />
                   <Label 
                     htmlFor={`category-${category}`} 
-                    className={`text-sm font-normal capitalize ${category === "broadband" ? "text-gray-500" : ""}`}
+                    className={`text-sm font-normal capitalize ${category.toLowerCase() === "broadband" ? "text-gray-500" : ""}`}
                   >
                     {category}
-                    {category === "broadband" && " (always included)"}
+                    {category.toLowerCase() === "broadband" && " (always included)"}
                   </Label>
                 </div>
               ))}
