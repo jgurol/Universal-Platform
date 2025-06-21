@@ -2,17 +2,19 @@
 import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Edit, Trash2, FileText } from "lucide-react";
+import { Edit, Trash2, FileText, Copy } from "lucide-react";
 import { RichTextEditor } from "@/components/RichTextEditor";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useSystemSettings } from "@/context/SystemSettingsContext";
+import { useAuth } from "@/context/AuthContext";
 import type { Database } from "@/integrations/supabase/types";
 
 type QuoteTemplate = Database['public']['Tables']['quote_templates']['Row'];
 
 export const TemplatesList: React.FC = () => {
   const { toast } = useToast();
+  const { user } = useAuth();
   const { templates, loading, setLoading, fetchTemplates } = useSystemSettings();
   const [editingTemplate, setEditingTemplate] = useState<QuoteTemplate | null>(null);
 
@@ -41,6 +43,38 @@ export const TemplatesList: React.FC = () => {
     } catch (error: any) {
       toast({
         title: "Error updating template",
+        description: error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCopyTemplate = async (template: QuoteTemplate) => {
+    if (!user) return;
+
+    setLoading(true);
+    try {
+      const { error } = await supabase
+        .from('quote_templates')
+        .insert({
+          name: `${template.name} (Copy)`,
+          content: template.content,
+          user_id: user.id,
+          is_default: false
+        });
+
+      if (error) throw error;
+
+      fetchTemplates();
+      toast({
+        title: "Template copied",
+        description: "Quote template has been copied successfully",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Error copying template",
         description: error.message,
         variant: "destructive",
       });
@@ -161,6 +195,15 @@ export const TemplatesList: React.FC = () => {
                           Set as Default
                         </Button>
                       )}
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleCopyTemplate(template)}
+                        disabled={loading}
+                        title="Copy template"
+                      >
+                        <Copy className="h-4 w-4" />
+                      </Button>
                       <Button
                         variant="outline"
                         size="sm"
