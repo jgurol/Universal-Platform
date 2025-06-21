@@ -1,15 +1,20 @@
+
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Trash2, MapPin, FileText, GripVertical } from "lucide-react";
+import { Trash2, MapPin, FileText, GripVertical, Percent } from "lucide-react";
 import { QuoteItemData } from "@/types/quoteItems";
 import { ClientAddress } from "@/types/clientAddress";
 import { AdvancedTiptapEditor } from "@/components/AdvancedTiptapEditor";
 import { SecureHtmlDisplay } from "@/components/SecureHtmlDisplay";
 import { secureTextSchema } from "@/utils/securityUtils";
+import { useCategories } from "@/hooks/useCategories";
+import { calculateMarkupAndCommission } from "@/services/markupCommissionService";
+import { useAuth } from "@/context/AuthContext";
+import { useClients } from "@/hooks/useClients";
 
 interface QuoteItemRowProps {
   quoteItem: QuoteItemData;
@@ -21,12 +26,32 @@ interface QuoteItemRowProps {
 export const QuoteItemRow = ({ quoteItem, addresses, onUpdateItem, onRemoveItem }: QuoteItemRowProps) => {
   const [isDescriptionOpen, setIsDescriptionOpen] = useState(false);
   const [tempDescription, setTempDescription] = useState(quoteItem.description || quoteItem.item?.description || '');
+  const [commissionRate, setCommissionRate] = useState<number>(15); // Default 15%, should come from agent settings
+  
+  const { categories } = useCategories();
+  const { user } = useAuth();
+  const { clients } = useClients();
+
+  // Find the category for this item
+  const itemCategory = categories.find(cat => cat.id === quoteItem.item?.category_id);
+  
+  // Get agent commission rate from clients data
+  const currentAgent = clients.find(client => client.userId === user?.id);
+  const agentCommissionRate = currentAgent?.commissionRate || 15;
+
+  // Calculate markup and commission based on current values
+  const cost = quoteItem.cost_override || quoteItem.item?.cost || 0;
+  const sellPrice = quoteItem.unit_price || 0;
+  
+  const markupCalculation = calculateMarkupAndCommission(
+    cost,
+    sellPrice,
+    commissionRate,
+    itemCategory
+  );
 
   // Calculate profit margin percentage
   const calculateProfitMargin = (): string => {
-    const sellPrice = quoteItem.unit_price || 0;
-    const cost = quoteItem.cost_override || quoteItem.item?.cost || 0;
-    
     if (cost === 0) return '0%';
     
     const margin = ((sellPrice - cost) / cost) * 100;
@@ -34,9 +59,6 @@ export const QuoteItemRow = ({ quoteItem, addresses, onUpdateItem, onRemoveItem 
   };
 
   const getProfitMarginColor = (): string => {
-    const sellPrice = quoteItem.unit_price || 0;
-    const cost = quoteItem.cost_override || quoteItem.item?.cost || 0;
-    
     if (cost === 0) return 'text-gray-500';
     
     const margin = ((sellPrice - cost) / cost) * 100;
@@ -47,10 +69,33 @@ export const QuoteItemRow = ({ quoteItem, addresses, onUpdateItem, onRemoveItem 
     return 'text-red-600';
   };
 
+  // Handle commission rate change and update sell price accordingly
+  const handleCommissionRateChange = (newCommissionRate: number) => {
+    if (!itemCategory?.minimum_markup) {
+      setCommissionRate(newCommissionRate);
+      return;
+    }
+
+    const minMarkup = itemCategory.minimum_markup;
+    const maxCommissionReduction = Math.min(minMarkup, agentCommissionRate);
+    const commissionReduction = agentCommissionRate - newCommissionRate;
+    
+    // Don't allow commission to go below 0 or reduce more than allowed
+    if (newCommissionRate < 0 || commissionReduction > maxCommissionReduction) {
+      return;
+    }
+
+    // Calculate new markup based on commission reduction
+    const newMarkup = Math.max(0, minMarkup - commissionReduction);
+    const newSellPrice = cost * (1 + newMarkup / 100);
+    
+    setCommissionRate(newCommissionRate);
+    onUpdateItem(quoteItem.id, 'unit_price', Math.round(newSellPrice * 100) / 100);
+  };
+
   // Update tempDescription when dialog opens or quoteItem changes
   const handleDialogOpenChange = (open: boolean) => {
     if (open) {
-      // Reset temp description to current value when opening
       setTempDescription(quoteItem.description || quoteItem.item?.description || '');
     }
     setIsDescriptionOpen(open);
@@ -62,7 +107,6 @@ export const QuoteItemRow = ({ quoteItem, addresses, onUpdateItem, onRemoveItem 
   };
 
   const handleDescriptionSave = () => {
-    // Validate content security before saving
     try {
       secureTextSchema.parse(tempDescription);
     } catch (error) {
@@ -85,24 +129,6 @@ export const QuoteItemRow = ({ quoteItem, addresses, onUpdateItem, onRemoveItem 
     onUpdateItem(quoteItem.id, 'address_id', addressId);
   };
 
-  console.log(`[QuoteItemRow] Rendering item ${quoteItem.id} with description:`, { 
-    description: quoteItem.description?.substring(0, 100)
-  });
-
-  // Function to strip HTML and get plain text preview for button
-  const getDescriptionPreview = (description: string): string => {
-    if (!description) return '';
-    
-    // Remove HTML tags and format for preview
-    const plainText = description
-      .replace(/<[^>]*>/g, '') // Remove HTML tags
-      .replace(/&nbsp;/g, ' ') // Replace non-breaking spaces
-      .replace(/\s+/g, ' ') // Replace multiple spaces with single space
-      .trim();
-    
-    return plainText.length > 30 ? `${plainText.substring(0, 30)}...` : plainText;
-  };
-
   const currentDescription = quoteItem.description || quoteItem.item?.description || '';
 
   return (
@@ -113,7 +139,7 @@ export const QuoteItemRow = ({ quoteItem, addresses, onUpdateItem, onRemoveItem 
       </div>
 
       {/* Main Content Grid */}
-      <div className="grid grid-cols-6 gap-2 items-start flex-1">
+      <div className="grid grid-cols-7 gap-2 items-start flex-1">
         {/* Item & Location Column */}
         <div className="col-span-2 space-y-2">
           <Input
@@ -123,7 +149,6 @@ export const QuoteItemRow = ({ quoteItem, addresses, onUpdateItem, onRemoveItem 
             className="text-sm font-medium h-8"
           />
           <div className="space-y-1">
-            {/* Secure rich text description display */}
             {currentDescription && (
               <SecureHtmlDisplay 
                 content={currentDescription}
@@ -139,10 +164,7 @@ export const QuoteItemRow = ({ quoteItem, addresses, onUpdateItem, onRemoveItem 
                   className="w-full h-8 justify-start text-xs text-gray-600"
                 >
                   <FileText className="w-3 h-3 mr-1" />
-                  {currentDescription ? 
-                    'Edit description' : 
-                    'Add description'
-                  }
+                  {currentDescription ? 'Edit description' : 'Add description'}
                 </Button>
               </DialogTrigger>
               <DialogContent className="sm:max-w-[800px]">
@@ -235,6 +257,46 @@ export const QuoteItemRow = ({ quoteItem, addresses, onUpdateItem, onRemoveItem 
               {calculateProfitMargin()}
             </span>
           </div>
+        </div>
+
+        {/* Commission & Markup Control */}
+        <div className="space-y-1">
+          {itemCategory?.minimum_markup && (
+            <>
+              <div className="text-xs text-gray-500 mb-1">
+                Min Markup: {itemCategory.minimum_markup}%
+              </div>
+              <div className="text-xs text-orange-600 mb-1">
+                Current: {markupCalculation.currentMarkup.toFixed(1)}%
+              </div>
+              <div className="flex items-center gap-1">
+                <Percent className="w-3 h-3 text-blue-600" />
+                <Input
+                  type="number"
+                  step="0.1"
+                  min="0"
+                  max={agentCommissionRate}
+                  value={commissionRate}
+                  onChange={(e) => handleCommissionRateChange(parseFloat(e.target.value) || 0)}
+                  className="text-xs h-8"
+                  placeholder="Comm %"
+                />
+              </div>
+              <div className="text-xs text-blue-600">
+                Final: {markupCalculation.finalCommissionRate.toFixed(1)}%
+              </div>
+              {markupCalculation.commissionReduction > 0 && (
+                <div className="text-xs text-red-600">
+                  -{markupCalculation.commissionReduction.toFixed(1)}% comm
+                </div>
+              )}
+              {!markupCalculation.isValid && (
+                <div className="text-xs text-red-600">
+                  {markupCalculation.errorMessage}
+                </div>
+              )}
+            </>
+          )}
         </div>
 
         {/* Total */}

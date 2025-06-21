@@ -30,10 +30,11 @@ export const QuoteItemsList = ({
       <Label>Quote Items</Label>
       
       {/* Column Headers */}
-      <div className="grid grid-cols-6 gap-2 items-center p-2 border-b bg-gray-100 rounded-t-lg font-medium text-sm">
+      <div className="grid grid-cols-7 gap-2 items-center p-2 border-b bg-gray-100 rounded-t-lg font-medium text-sm">
         <div className="col-span-2">Item & Location</div>
         <div>Qty</div>
         <div>Sell / Cost</div>
+        <div>Commission</div>
         <div>Total</div>
         <div>Type</div>
       </div>
