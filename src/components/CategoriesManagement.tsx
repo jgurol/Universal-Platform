@@ -116,9 +116,9 @@ export const CategoriesManagement = () => {
                           {category.type}
                         </Badge>
                       )}
-                      {category.standard_markup !== undefined && category.standard_markup > 0 && (
-                        <Badge variant="outline" className="text-xs bg-green-50 text-green-700">
-                          {category.standard_markup}% markup
+                      {category.minimum_markup !== undefined && category.minimum_markup > 0 && (
+                        <Badge variant="outline" className="text-xs bg-orange-50 text-orange-700">
+                          {category.minimum_markup}% min markup
                         </Badge>
                       )}
                     </div>
