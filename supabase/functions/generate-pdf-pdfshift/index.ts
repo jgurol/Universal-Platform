@@ -1,3 +1,4 @@
+
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.50.0';
 
@@ -298,6 +299,8 @@ const generateHTML = (quote: any, clientInfo?: any, accountManagerName?: string,
   const expiresAt = quote?.expiresAt || '';
   const billingAddress = quote?.billingAddress || '';
   const serviceAddress = quote?.serviceAddress || billingAddress || '';
+  // Extract the initial term from the quote
+  const initialTerm = quote?.term || '36 Months';
   
   const clientCompanyName = clientInfo?.company_name || 'Company Name';
   const contactName = clientInfo?.contact_name || 'Contact Name';
@@ -707,8 +710,27 @@ const generateHTML = (quote: any, clientInfo?: any, accountManagerName?: string,
             margin: 4px 0;
         }
         
+        .initial-term-section {
+            margin: 30px 0 20px 0;
+            padding: 12px;
+            border: 1px solid #ddd;
+            background: #f8f9fa;
+        }
+        
+        .initial-term-title {
+            font-weight: bold;
+            margin-bottom: 6px;
+            font-size: 11px;
+            color: #333;
+        }
+        
+        .initial-term-value {
+            font-size: 11px;
+            color: #555;
+        }
+        
         .template-content {
-            margin: 30px 0;
+            margin: 20px 0;
             padding: 15px;
             border: 1px solid #ddd;
             background: #f9f9f9;
@@ -864,6 +886,11 @@ const generateHTML = (quote: any, clientInfo?: any, accountManagerName?: string,
     
     ${generateItemsHTML(nrcItems, 'One-Time Fees')}
     ${nrcItems.length > 0 ? `<div class="total-amount">Total One-Time: $${nrcTotal.toFixed(2)} USD</div>` : ''}
+    
+    <div class="initial-term-section">
+        <div class="initial-term-title">Initial Term</div>
+        <div class="initial-term-value">${initialTerm}</div>
+    </div>
     
     ${processedTemplateContent ? `
     <div class="template-content">
