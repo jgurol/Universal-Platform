@@ -322,13 +322,14 @@ export const CircuitQuoteCardHeader = ({
           {/* Deal Details Button - Show if there's an associated deal */}
           {associatedDeal && (
             <Button
-              variant="ghost"
+              variant="outline"
               size="sm"
               onClick={() => setIsDealDetailsOpen(true)}
-              className="h-8 w-8 p-0"
+              className="h-10 px-3 bg-green-50 border-green-200 hover:bg-green-100 text-green-700 font-medium"
               title="View Deal Details"
             >
-              <FileText className="h-4 w-4" />
+              <FileText className="h-5 w-5 mr-2" />
+              Deal
             </Button>
           )}
           
