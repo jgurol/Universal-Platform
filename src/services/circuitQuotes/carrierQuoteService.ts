@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import type { CarrierQuote } from "@/hooks/useCircuitQuotes/types";
@@ -35,6 +34,20 @@ export const useCarrierQuoteService = () => {
           variant: "destructive"
         });
         return null;
+      }
+
+      // Automatically update circuit quote status from 'new_pricing' to 'researching' when first carrier is added
+      const { data: circuitQuote } = await supabase
+        .from('circuit_quotes')
+        .select('status')
+        .eq('id', circuitQuoteId)
+        .single();
+
+      if (circuitQuote?.status === 'new_pricing') {
+        await supabase
+          .from('circuit_quotes')
+          .update({ status: 'researching', updated_at: new Date().toISOString() })
+          .eq('id', circuitQuoteId);
       }
 
       toast({
