@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { QuoteItemData } from "@/types/quoteItems";
 import { useItems } from "@/hooks/useItems";
@@ -50,21 +51,43 @@ export const useQuoteItemActions = (clientInfoId?: string) => {
         return;
       }
 
+      console.log('[addCarrierItem] Processing carrier item:', {
+        id: carrierItem.id,
+        location: carrierItem.location,
+        carrier: carrierItem.carrier,
+        type: carrierItem.type,
+        speed: carrierItem.speed,
+        price: carrierItem.price
+      });
+
       let matchingAddress = null;
       
       // Only try to create/find address if location is provided and meaningful
       if (carrierItem.location && carrierItem.location.trim() && carrierItem.location.toLowerCase() !== 'n/a') {
+        console.log('[addCarrierItem] Looking for address match for location:', carrierItem.location);
+        
         // Look for an existing address that matches the carrier quote location first
         matchingAddress = addresses.find(addr => {
           const addressString = `${addr.street_address}${addr.street_address_2 ? `, ${addr.street_address_2}` : ''}, ${addr.city}, ${addr.state} ${addr.zip_code}`;
-          return addressString.toLowerCase().includes(carrierItem.location.toLowerCase()) ||
+          const locationMatch = addressString.toLowerCase().includes(carrierItem.location.toLowerCase()) ||
                  carrierItem.location.toLowerCase().includes(addressString.toLowerCase());
+          
+          console.log('[addCarrierItem] Comparing addresses:', {
+            existing: addressString,
+            carrier: carrierItem.location,
+            match: locationMatch
+          });
+          
+          return locationMatch;
         });
 
-        // If no exact match found, try to create a new address
+        // If no exact match found, try to create a new address from the location
         if (!matchingAddress) {
+          console.log('[addCarrierItem] No existing address match, attempting to parse location');
+          
           try {
             const parsedAddress = parseLocationToAddress(carrierItem.location);
+            console.log('[addCarrierItem] Parsed address:', parsedAddress);
             
             // Only create address if we have meaningful parsed data
             if (parsedAddress.city && parsedAddress.state) {
@@ -79,18 +102,27 @@ export const useQuoteItemActions = (clientInfoId?: string) => {
                 is_primary: false
               };
 
+              console.log('[addCarrierItem] Creating new address:', newAddressData);
               matchingAddress = await addAddress(newAddressData);
+              console.log('[addCarrierItem] Created address:', matchingAddress);
+            } else {
+              console.log('[addCarrierItem] Insufficient parsed address data, skipping address creation');
             }
           } catch (error) {
             console.error('Error creating address for carrier location:', error);
             // Don't throw - continue without address
           }
+        } else {
+          console.log('[addCarrierItem] Found existing matching address:', matchingAddress);
         }
+      } else {
+        console.log('[addCarrierItem] No meaningful location provided, skipping address lookup');
       }
 
       // If still no address, use the primary address or first available
-      if (!matchingAddress) {
-        matchingAddress = addresses.find(addr => addr.is_primary) || addresses[0] || null;
+      if (!matchingAddress && addresses.length > 0) {
+        matchingAddress = addresses.find(addr => addr.is_primary) || addresses[0];
+        console.log('[addCarrierItem] Using fallback address:', matchingAddress);
       }
 
       // Calculate sell price using category minimum markup
@@ -107,12 +139,12 @@ export const useQuoteItemActions = (clientInfoId?: string) => {
         charge_type: 'MRC',
         address_id: matchingAddress?.id,
         name: `${carrierItem.carrier} - ${carrierItem.type} - ${carrierItem.speed}`,
-        description: '',
+        description: carrierItem.location || '',
         item: {
           id: `carrier-${carrierItem.id}`,
           user_id: '',
           name: `${carrierItem.carrier} - ${carrierItem.type} - ${carrierItem.speed}`,
-          description: '',
+          description: carrierItem.location || '',
           price: sellPrice,
           cost: carrierItem.price,
           charge_type: 'MRC',
@@ -122,6 +154,14 @@ export const useQuoteItemActions = (clientInfoId?: string) => {
         },
         address: matchingAddress
       };
+
+      console.log('[addCarrierItem] Created quote item:', {
+        id: quoteItem.id,
+        name: quoteItem.name,
+        description: quoteItem.description,
+        address_id: quoteItem.address_id,
+        address: quoteItem.address ? `${quoteItem.address.city}, ${quoteItem.address.state}` : 'none'
+      });
 
       // Add to items list
       const newItems = [...items, quoteItem];

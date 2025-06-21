@@ -23,13 +23,22 @@ export const useQuoteActions = (
     }
     
     try {
-      console.log('[addQuote] Creating quote with user:', user.id);
+      console.log('[addQuote] Creating quote with user:', {
+        id: user.id,
+        email: user.email
+      });
       console.log('[addQuote] Creating quote with data:', {
         ...newQuote,
         quoteItemsCount: newQuote.quoteItems?.length || 0
       });
       
-      await addQuoteToDatabase(newQuote, user.id);
+      // Explicitly pass user.id to ensure it's not undefined
+      const userId = user.id;
+      if (!userId) {
+        throw new Error('User ID is undefined');
+      }
+      
+      await addQuoteToDatabase(newQuote, userId);
       
       fetchQuotes();
       const client = clients.find(c => c.id === newQuote.clientId);
@@ -41,7 +50,7 @@ export const useQuoteActions = (
       console.error('[addQuote] Error creating quote:', error);
       toast({
         title: "Error",
-        description: "Failed to create quote. Please try again.",
+        description: error instanceof Error ? error.message : "Failed to create quote. Please try again.",
         variant: "destructive",
       });
     }
