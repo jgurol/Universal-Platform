@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -410,8 +411,8 @@ export const QuoteItemRow = ({ quoteItem, addresses, onUpdateItem, onRemoveItem,
               />
             </div>
             
-            {/* Show commission reduction info */}
-            {agentCommissionRate - commissionRate > 0 && (
+            {/* Show commission reduction info for agents only if there's a reduction */}
+            {!isAdmin && agentCommissionRate - commissionRate > 0 && (
               <div className="text-xs text-red-600">
                 -{(agentCommissionRate - commissionRate).toFixed(1)}% price reduction
               </div>
