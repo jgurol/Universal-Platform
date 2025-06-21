@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -215,11 +216,15 @@ export const AddCircuitQuoteDialog = ({ open, onOpenChange, onAddQuote }: AddCir
   // Get the selected deal for showing details
   const selectedDeal = associatedDeals.find(deal => deal.id === selectedDealId) || null;
 
+  // Check if a valid deal is selected (not empty and not "no-deal")
+  const isDealSelected = selectedDealId && selectedDealId !== "" && selectedDealId !== "no-deal";
+
   // Debug logging for deal button visibility
   console.log('Deal button debug:', {
     selectedDealId,
-    isDealSelected: selectedDealId && selectedDealId !== "no-deal",
-    selectedDeal: selectedDeal ? selectedDeal.deal_name : null
+    isDealSelected,
+    selectedDeal: selectedDeal ? selectedDeal.deal_name : null,
+    associatedDealsCount: associatedDeals.length
   });
 
   const handleAddressSelect = (address: AddressData) => {
@@ -322,7 +327,7 @@ export const AddCircuitQuoteDialog = ({ open, onOpenChange, onAddQuote }: AddCir
                   </SelectContent>
                 </Select>
                 
-                {selectedDealId && selectedDealId !== "no-deal" && selectedDeal && (
+                {isDealSelected && selectedDeal && (
                   <Button
                     type="button"
                     variant="outline"
