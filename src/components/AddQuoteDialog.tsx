@@ -158,8 +158,7 @@ export const AddQuoteDialog = ({ open, onOpenChange, onAddQuote, clients, client
             .from('quotes')
             .select('quote_number')
             .eq('user_id', user.id)
-            .not('quote_number', 'is', null)
-            .order('created_at', { ascending: false });
+            .not('quote_number', 'is', null);
 
           if (error) {
             console.error('Error fetching quote numbers:', error);
@@ -177,7 +176,8 @@ export const AddQuoteDialog = ({ open, onOpenChange, onAddQuote, clients, client
               .filter(num => !isNaN(num));
             
             if (numericQuoteNumbers.length > 0) {
-              nextNumber = Math.max(...numericQuoteNumbers, 3499) + 1; // Ensure we never go below 3500
+              const highestNumber = Math.max(...numericQuoteNumbers);
+              nextNumber = Math.max(highestNumber + 1, 3500); // Ensure we never go below 3500
             }
           }
           
@@ -191,7 +191,7 @@ export const AddQuoteDialog = ({ open, onOpenChange, onAddQuote, clients, client
 
     generateNextQuoteNumber();
   }, [open, user]);
-  
+
   // Load templates when dialog opens and auto-select default
   useEffect(() => {
     const fetchTemplates = async () => {
