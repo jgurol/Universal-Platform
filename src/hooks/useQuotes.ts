@@ -32,8 +32,22 @@ export const useQuotes = (
       
       // Apply filtering based on user role
       if (!isAdmin && associatedAgentId) {
-        console.info('[fetchQuotes] Non-admin user - filtering by agent:', associatedAgentId);
-        query = query.eq('client_id', associatedAgentId);
+        console.info('[fetchQuotes] Non-admin user - filtering by agent through client_info:', associatedAgentId);
+        // Filter quotes where the client_info is assigned to this agent
+        const { data: clientInfoIds } = await supabase
+          .from('client_info')
+          .select('id')
+          .eq('agent_id', associatedAgentId);
+        
+        if (clientInfoIds && clientInfoIds.length > 0) {
+          const clientIds = clientInfoIds.map(ci => ci.id);
+          query = query.in('client_info_id', clientIds);
+        } else {
+          // If no client_info records for this agent, return empty
+          console.info('[fetchQuotes] No client_info records found for agent, returning empty');
+          setQuotes([]);
+          return;
+        }
       } else {
         console.info('[fetchQuotes] Admin user - no filtering applied');
       }
