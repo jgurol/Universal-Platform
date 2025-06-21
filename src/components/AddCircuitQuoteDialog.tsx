@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -36,7 +37,8 @@ export const AddCircuitQuoteDialog = ({ open, onOpenChange, onAddQuote }: AddCir
   const [suite, setSuite] = useState("");
   const [staticIp, setStaticIp] = useState(false);
   const [slash29, setSlash29] = useState(false);
-  const [mikrotikRequired, setMikrotikRequired] = useState(true); // Changed to default true
+  const [dhcp, setDhcp] = useState(false);
+  const [mikrotikRequired, setMikrotikRequired] = useState(true);
   const [circuitCategories, setCircuitCategories] = useState<string[]>([]);
 
   // Get circuit categories from the categories table where type is "Circuit"
@@ -121,7 +123,7 @@ export const AddCircuitQuoteDialog = ({ open, onOpenChange, onAddQuote }: AddCir
       client_info_id: null,
       location,
       suite,
-      status: 'new_pricing', // Always set to new_pricing
+      status: 'new_pricing',
       static_ip: staticIp,
       slash_29: slash29,
       mikrotik_required: mikrotikRequired
@@ -133,7 +135,8 @@ export const AddCircuitQuoteDialog = ({ open, onOpenChange, onAddQuote }: AddCir
     setSuite("");
     setStaticIp(false);
     setSlash29(false);
-    setMikrotikRequired(true); // Reset to default true
+    setDhcp(false);
+    setMikrotikRequired(true);
     setCircuitCategories([]);
     onOpenChange(false);
   };
@@ -232,7 +235,18 @@ export const AddCircuitQuoteDialog = ({ open, onOpenChange, onAddQuote }: AddCir
                 </Label>
               </div>
 
-              <div className="flex items-center space-x-2 col-span-2">
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="dhcp"
+                  checked={dhcp}
+                  onCheckedChange={(checked) => setDhcp(checked as boolean)}
+                />
+                <Label htmlFor="dhcp" className="text-sm font-normal">
+                  DHCP (No Static IP)
+                </Label>
+              </div>
+
+              <div className="flex items-center space-x-2">
                 <Checkbox
                   id="mikrotik-required"
                   checked={mikrotikRequired}

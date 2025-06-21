@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -21,6 +22,7 @@ export const EditCircuitQuoteDialog = ({ open, onOpenChange, quote, onUpdateQuot
   const [status, setStatus] = useState("");
   const [staticIp, setStaticIp] = useState(false);
   const [slash29, setSlash29] = useState(false);
+  const [dhcp, setDhcp] = useState(false);
   const [mikrotikRequired, setMikrotikRequired] = useState(false);
 
   useEffect(() => {
@@ -31,6 +33,7 @@ export const EditCircuitQuoteDialog = ({ open, onOpenChange, quote, onUpdateQuot
       setStatus(quote.status);
       setStaticIp(quote.static_ip || false);
       setSlash29(quote.slash_29 || false);
+      setDhcp(false); // Initialize DHCP as false since it's not stored in the quote yet
       setMikrotikRequired(quote.mikrotik_required || false);
     }
   }, [quote]);
@@ -132,14 +135,25 @@ export const EditCircuitQuoteDialog = ({ open, onOpenChange, quote, onUpdateQuot
                 </Label>
               </div>
 
-              <div className="flex items-center space-x-2 col-span-2">
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="dhcp"
+                  checked={dhcp}
+                  onCheckedChange={(checked) => setDhcp(checked as boolean)}
+                />
+                <Label htmlFor="dhcp" className="text-sm font-normal">
+                  DHCP (No Static IP)
+                </Label>
+              </div>
+
+              <div className="flex items-center space-x-2">
                 <Checkbox
                   id="mikrotik-required"
                   checked={mikrotikRequired}
                   onCheckedChange={(checked) => setMikrotikRequired(checked as boolean)}
                 />
                 <Label htmlFor="mikrotik-required" className="text-sm font-normal">
-                  Mikrotik Required
+                  Router Required (Mikrotik)
                 </Label>
               </div>
             </div>
