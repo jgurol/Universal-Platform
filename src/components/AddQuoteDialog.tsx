@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -5,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Quote, Client, ClientInfo } from "@/pages/Index";
 import { getTodayInTimezone } from "@/utils/dateUtils";
 import { supabase } from "@/integrations/supabase/client";
@@ -13,6 +15,7 @@ import { QuoteItemsManager } from "@/components/QuoteItemsManager";
 import { QuoteItemData } from "@/types/quoteItems";
 import { AddressSelector } from "@/components/AddressSelector";
 import { useToast } from "@/hooks/use-toast";
+import { DealRegistration } from "@/services/dealRegistrationService";
 import type { Database } from "@/integrations/supabase/types";
 
 type QuoteTemplate = Database['public']['Tables']['quote_templates']['Row'];
@@ -48,6 +51,8 @@ export const AddQuoteDialog = ({ open, onOpenChange, onAddQuote, clients, client
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [currentUserName, setCurrentUserName] = useState<string>("");
   const [isAdmin, setIsAdmin] = useState<boolean>(false);
+  const [associatedDeals, setAssociatedDeals] = useState<DealRegistration[]>([]);
+  const [selectedDealIds, setSelectedDealIds] = useState<string[]>([]);
   const { user } = useAuth();
   
   // Fetch current user's name and admin status from profile
@@ -89,6 +94,38 @@ export const AddQuoteDialog = ({ open, onOpenChange, onAddQuote, clients, client
 
     fetchCurrentUserData();
   }, [user]);
+
+  // Fetch deals associated with the selected client
+  useEffect(() => {
+    const fetchAssociatedDeals = async () => {
+      if (!clientInfoId || clientInfoId === "none") {
+        setAssociatedDeals([]);
+        setSelectedDealIds([]);
+        return;
+      }
+
+      try {
+        const { data: deals, error } = await supabase
+          .from('deal_registrations')
+          .select('*')
+          .eq('client_info_id', clientInfoId)
+          .eq('status', 'active')
+          .order('created_at', { ascending: false });
+
+        if (error) {
+          console.error('Error fetching associated deals:', error);
+          setAssociatedDeals([]);
+        } else {
+          setAssociatedDeals(deals || []);
+        }
+      } catch (error) {
+        console.error('Error fetching associated deals:', error);
+        setAssociatedDeals([]);
+      }
+    };
+
+    fetchAssociatedDeals();
+  }, [clientInfoId]);
   
   // Function to reset all form fields
   const resetForm = () => {
@@ -106,7 +143,9 @@ export const AddQuoteDialog = ({ open, onOpenChange, onAddQuote, clients, client
     setSelectedBillingAddressId(null);
     setServiceAddress("");
     setSelectedServiceAddressId(null);
-    setSelectedTemplateId(""); // Reset template selection
+    setSelectedTemplateId("");
+    setAssociatedDeals([]);
+    setSelectedDealIds([]);
     setIsSubmitting(false);
     
     // Reset dates
@@ -273,6 +312,14 @@ export const AddQuoteDialog = ({ open, onOpenChange, onAddQuote, clients, client
     console.log('AddQuoteDialog - Service address changed:', { addressId, customAddr });
     setSelectedServiceAddressId(addressId);
     setServiceAddress(customAddr || "");
+  };
+
+  const handleDealSelection = (dealId: string) => {
+    setSelectedDealIds(prev => 
+      prev.includes(dealId) 
+        ? prev.filter(id => id !== dealId)
+        : [...prev, dealId]
+    );
   };
 
   const calculateTotalAmount = () => {
@@ -531,6 +578,43 @@ export const AddQuoteDialog = ({ open, onOpenChange, onAddQuote, clients, client
               </SelectContent>
             </Select>
           </div>
+
+          {/* Associated Deals Section */}
+          {associatedDeals.length > 0 && (
+            <div className="space-y-2">
+              <Label className="text-sm font-medium">Associated Deals (Optional)</Label>
+              <div className="border rounded-md p-3 bg-gray-50 max-h-32 overflow-y-auto">
+                <p className="text-xs text-gray-600 mb-2">
+                  Select deals to associate with this quote:
+                </p>
+                <div className="space-y-2">
+                  {associatedDeals.map((deal) => (
+                    <div key={deal.id} className="flex items-center space-x-2">
+                      <Checkbox
+                        id={`deal-${deal.id}`}
+                        checked={selectedDealIds.includes(deal.id)}
+                        onCheckedChange={() => handleDealSelection(deal.id)}
+                      />
+                      <label
+                        html For={`deal-${deal.id}`}
+                        className="text-sm cursor-pointer flex-1"
+                      >
+                        <span className="font-medium">{deal.deal_name}</span>
+                        <span className="text-gray-500 ml-2">
+                          (${deal.deal_value.toLocaleString()} - {deal.stage})
+                        </span>
+                      </label>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              {selectedDealIds.length > 0 && (
+                <p className="text-xs text-green-600">
+                  {selectedDealIds.length} deal{selectedDealIds.length > 1 ? 's' : ''} selected
+                </p>
+              )}
+            </div>
+          )}
 
           <AddressSelector
             clientInfoId={clientInfoId !== "none" ? clientInfoId : null}
