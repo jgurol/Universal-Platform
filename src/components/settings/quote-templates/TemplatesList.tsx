@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -177,7 +176,7 @@ export const TemplatesList: React.FC = () => {
                 </div>
               ) : (
                 <div>
-                  <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center justify-between">
                     <h4 className="font-medium flex items-center gap-2">
                       {template.name}
                       {template.is_default && (
@@ -220,9 +219,6 @@ export const TemplatesList: React.FC = () => {
                         <Trash2 className="h-4 w-4" />
                       </Button>
                     </div>
-                  </div>
-                  <div className="text-sm text-gray-600 bg-gray-50 p-3 rounded">
-                    <div dangerouslySetInnerHTML={{ __html: template.content }} />
                   </div>
                 </div>
               )}
