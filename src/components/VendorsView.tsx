@@ -3,9 +3,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Building2, Mail, Phone, User } from "lucide-react";
 import { useVendors } from "@/hooks/useVendors";
+import { useAuth } from "@/context/AuthContext";
 
 export const VendorsView = () => {
   const { vendors, isLoading } = useVendors();
+  const { isAdmin } = useAuth();
 
   const getSalesModelBadgeColor = (salesModel?: string) => {
     switch (salesModel) {
@@ -60,18 +62,18 @@ export const VendorsView = () => {
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-1">
                       <h4 className="font-medium text-gray-900">{vendor.name}</h4>
-                      {vendor.dba && (
+                      {isAdmin && vendor.dba && (
                         <Badge variant="outline" className="text-xs bg-yellow-50 text-yellow-700 border-yellow-200">
                           DBA: {vendor.dba}
                         </Badge>
                       )}
-                      {vendor.rep_name && (
+                      {isAdmin && vendor.rep_name && (
                         <Badge variant="outline" className="text-xs">
                           <User className="w-3 h-3 mr-1" />
                           {vendor.rep_name}
                         </Badge>
                       )}
-                      {vendor.sales_model && (
+                      {isAdmin && vendor.sales_model && (
                         <Badge variant="outline" className={`text-xs ${getSalesModelBadgeColor(vendor.sales_model)}`}>
                           {vendor.sales_model.charAt(0).toUpperCase() + vendor.sales_model.slice(1)}
                         </Badge>
@@ -80,20 +82,22 @@ export const VendorsView = () => {
                     {vendor.description && (
                       <p className="text-sm text-gray-600 mb-2">{vendor.description}</p>
                     )}
-                    <div className="flex items-center gap-4 text-xs text-gray-500">
-                      {vendor.email && (
-                        <div className="flex items-center gap-1">
-                          <Mail className="h-3 w-3" />
-                          {vendor.email}
-                        </div>
-                      )}
-                      {vendor.phone && (
-                        <div className="flex items-center gap-1">
-                          <Phone className="h-3 w-3" />
-                          {vendor.phone}
-                        </div>
-                      )}
-                    </div>
+                    {isAdmin && (
+                      <div className="flex items-center gap-4 text-xs text-gray-500">
+                        {vendor.email && (
+                          <div className="flex items-center gap-1">
+                            <Mail className="h-3 w-3" />
+                            {vendor.email}
+                          </div>
+                        )}
+                        {vendor.phone && (
+                          <div className="flex items-center gap-1">
+                            <Phone className="h-3 w-3" />
+                            {vendor.phone}
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
