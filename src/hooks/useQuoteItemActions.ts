@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { QuoteItemData } from "@/types/quoteItems";
 import { useItems } from "@/hooks/useItems";
@@ -26,9 +25,9 @@ export const useQuoteItemActions = (clientInfoId?: string) => {
       cat.name.toLowerCase().includes(categoryType.toLowerCase())
     );
 
-    if (matchingCategory && matchingCategory.minimum_markup && matchingCategory.minimum_markup > 0) {
+    if (matchingCategory && matchingCategory.standard_markup && matchingCategory.standard_markup > 0) {
       // Apply the markup: sell price = cost * (1 + markup/100)
-      const markup = matchingCategory.minimum_markup / 100;
+      const markup = matchingCategory.standard_markup / 100;
       return Math.round(cost * (1 + markup) * 100) / 100; // Round to 2 decimal places
     }
 
