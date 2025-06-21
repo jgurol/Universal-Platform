@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -153,7 +154,7 @@ export const CircuitQuoteCardHeader = ({
         
         <div className="flex items-center gap-3">
           {/* Quote Requirements Badges */}
-          {(quote.static_ip || quote.slash_29 || quote.mikrotik_required) && (
+          {(quote.static_ip || quote.slash_29 || quote.dhcp || quote.mikrotik_required) && (
             <div className="flex items-center gap-2">
               <span className="text-sm font-medium text-gray-700">Requirement:</span>
               <div className="flex flex-wrap gap-1">
@@ -165,6 +166,11 @@ export const CircuitQuoteCardHeader = ({
                 {quote.slash_29 && (
                   <Badge variant="secondary" className="text-xs bg-blue-100 text-blue-800">
                     /29 IP
+                  </Badge>
+                )}
+                {quote.dhcp && (
+                  <Badge variant="secondary" className="text-xs bg-green-100 text-green-800">
+                    DHCP
                   </Badge>
                 )}
                 {quote.mikrotik_required && (
