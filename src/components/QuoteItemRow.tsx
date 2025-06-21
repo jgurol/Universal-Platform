@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -57,6 +58,18 @@ export const QuoteItemRow = ({ quoteItem, addresses, onUpdateItem, onRemoveItem 
     agentCommissionRate
   );
 
+  // Calculate what the minimum sell price would be for 0% commission
+  const calculateMinimumSellPrice = (): number => {
+    let minimumSellPrice = cost;
+    if (itemCategory?.minimum_markup && cost > 0) {
+      minimumSellPrice = cost * (1 + itemCategory.minimum_markup / 100);
+    }
+    
+    // Apply the maximum possible commission reduction (agent's full commission rate)
+    const maxCommissionReductionPercentage = agentCommissionRate / 100;
+    return minimumSellPrice * (1 - maxCommissionReductionPercentage);
+  };
+
   // Calculate profit margin percentage (only show to admin)
   const calculateProfitMargin = (): string => {
     if (!isAdmin || cost === 0) return '0%';
@@ -107,19 +120,13 @@ export const QuoteItemRow = ({ quoteItem, addresses, onUpdateItem, onRemoveItem 
 
   // Handle sell price changes - ensure commission doesn't go negative and caps at agent max
   const handleSellPriceChange = (newSellPrice: number) => {
-    // Calculate what the minimum sell price would be for 0% commission
-    let minimumSellPrice = cost;
-    if (itemCategory?.minimum_markup && cost > 0) {
-      minimumSellPrice = cost * (1 + itemCategory.minimum_markup / 100);
-    }
+    const minimumSellPrice = calculateMinimumSellPrice();
     
-    // Apply the maximum possible commission reduction (agent's full commission rate)
-    const maxCommissionReductionPercentage = agentCommissionRate / 100;
-    minimumSellPrice = minimumSellPrice * (1 - maxCommissionReductionPercentage);
-    
-    // Don't allow sell price to go below the minimum that would result in 0% commission
+    // If the entered price is below minimum, reset to minimum
     if (newSellPrice < minimumSellPrice) {
-      return; // Don't update if it would result in negative commission
+      onUpdateItem(quoteItem.id, 'unit_price', Math.round(minimumSellPrice * 100) / 100);
+      setCommissionRate(0); // At minimum price, commission is 0%
+      return;
     }
     
     // Update the sell price
@@ -297,9 +304,19 @@ export const QuoteItemRow = ({ quoteItem, addresses, onUpdateItem, onRemoveItem 
             <Input
               type="number"
               step="0.01"
-              min="0"
+              min={calculateMinimumSellPrice()}
               value={quoteItem.unit_price}
-              onChange={(e) => handleSellPriceChange(parseFloat(e.target.value) || 0)}
+              onChange={(e) => {
+                const value = parseFloat(e.target.value) || 0;
+                handleSellPriceChange(value);
+              }}
+              onBlur={(e) => {
+                const value = parseFloat(e.target.value) || 0;
+                const minPrice = calculateMinimumSellPrice();
+                if (value < minPrice) {
+                  handleSellPriceChange(minPrice);
+                }
+              }}
               className="text-xs h-8"
               placeholder="$"
             />
