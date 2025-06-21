@@ -47,6 +47,7 @@ export const QuoteItemsList = ({
                         addresses={addresses}
                         onUpdateItem={onUpdateItem}
                         onRemoveItem={onRemoveItem}
+                        showHeaders={index === 0}
                       />
                     </div>
                   )}
