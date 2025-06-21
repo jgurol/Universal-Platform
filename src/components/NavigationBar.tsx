@@ -74,34 +74,30 @@ export function NavigationBar() {
                 </Link>
               </NavigationMenuItem>
 
-              <NavigationMenuItem>
-                <NavigationMenuTrigger>System Settings</NavigationMenuTrigger>
-                <NavigationMenuContent>
-                  <ul className="grid w-[300px] gap-3 p-4">
-                    {isAdmin && (
+              {isAdmin && (
+                <NavigationMenuItem>
+                  <NavigationMenuTrigger>System Settings</NavigationMenuTrigger>
+                  <NavigationMenuContent>
+                    <ul className="grid w-[300px] gap-3 p-4">
                       <ListItem href="/vendors" title="Vendor Management" Icon={Building}>
                         Manage vendors and supplier information
                       </ListItem>
-                    )}
-                    
-                    {isAdmin && (
-                      <>
-                        <ListItem href="/agent-management" title="Agent Management" Icon={UserCog}>
-                          Manage commission agents and their rates
-                        </ListItem>
-                        
-                        <ListItem href="/admin" title="User Management" Icon={Users}>
-                          Manage users, set permissions, and control access
-                        </ListItem>
-                        
-                        <ListItem href="/system-settings" title="System Configuration" Icon={Settings}>
-                          Configure global system settings and defaults
-                        </ListItem>
-                      </>
-                    )}
-                  </ul>
-                </NavigationMenuContent>
-              </NavigationMenuItem>
+                      
+                      <ListItem href="/agent-management" title="Agent Management" Icon={UserCog}>
+                        Manage commission agents and their rates
+                      </ListItem>
+                      
+                      <ListItem href="/admin" title="User Management" Icon={Users}>
+                        Manage users, set permissions, and control access
+                      </ListItem>
+                      
+                      <ListItem href="/system-settings" title="System Configuration" Icon={Settings}>
+                        Configure global system settings and defaults
+                      </ListItem>
+                    </ul>
+                  </NavigationMenuContent>
+                </NavigationMenuItem>
+              )}
             </NavigationMenuList>
           </NavigationMenu>
 
