@@ -25,6 +25,7 @@ interface QuoteItemRowProps {
 export const QuoteItemRow = ({ quoteItem, addresses, onUpdateItem, onRemoveItem }: QuoteItemRowProps) => {
   const [isDescriptionOpen, setIsDescriptionOpen] = useState(false);
   const [tempDescription, setTempDescription] = useState(quoteItem.description || quoteItem.item?.description || '');
+  const [tempSellPrice, setTempSellPrice] = useState<string>(quoteItem.unit_price.toString());
   
   const { categories } = useCategories();
   const { user, isAdmin } = useAuth();
@@ -41,6 +42,11 @@ export const QuoteItemRow = ({ quoteItem, addresses, onUpdateItem, onRemoveItem 
   useEffect(() => {
     setCommissionRate(agentCommissionRate);
   }, [agentCommissionRate]);
+
+  // Update temp sell price when quote item changes
+  useEffect(() => {
+    setTempSellPrice(quoteItem.unit_price.toString());
+  }, [quoteItem.unit_price]);
 
   // Find the category for this item
   const itemCategory = categories.find(cat => cat.id === quoteItem.item?.category_id);
@@ -88,36 +94,7 @@ export const QuoteItemRow = ({ quoteItem, addresses, onUpdateItem, onRemoveItem 
     return 'text-red-600';
   };
 
-  // Handle commission rate change and update sell price accordingly
-  const handleCommissionRateChange = (newCommissionRate: number) => {
-    // Don't allow commission to go below 0 or above agent's max rate
-    const clampedCommissionRate = Math.max(0, Math.min(newCommissionRate, agentCommissionRate));
-    
-    if (clampedCommissionRate !== newCommissionRate) {
-      // If the user tried to go outside bounds, just return without changes
-      return;
-    }
-
-    setCommissionRate(clampedCommissionRate);
-
-    // Calculate the commission reduction from the agent's maximum rate
-    const commissionReduction = agentCommissionRate - clampedCommissionRate;
-    const commissionReductionPercentage = commissionReduction / 100; // Convert to decimal
-
-    // Calculate the base price with minimum markup (if category has one)
-    let basePriceWithMinimumMarkup = cost;
-    if (itemCategory?.minimum_markup && cost > 0) {
-      basePriceWithMinimumMarkup = cost * (1 + itemCategory.minimum_markup / 100);
-    }
-
-    // Apply the commission reduction percentage as a discount from the minimum markup price
-    const newSellPrice = basePriceWithMinimumMarkup * (1 - commissionReductionPercentage);
-    
-    // Update the sell price
-    onUpdateItem(quoteItem.id, 'unit_price', Math.round(newSellPrice * 100) / 100);
-  };
-
-  // Handle sell price changes - ensure commission doesn't go negative and caps at agent max
+  // Handle sell price changes - allow temporary empty values
   const handleSellPriceChange = (newSellPrice: number) => {
     const minimumSellPrice = calculateMinimumSellPrice();
     
@@ -151,6 +128,65 @@ export const QuoteItemRow = ({ quoteItem, addresses, onUpdateItem, onRemoveItem 
       
       setCommissionRate(newCommissionRate);
     }
+  };
+
+  // Handle input change - allow empty values temporarily
+  const handleSellPriceInputChange = (value: string) => {
+    setTempSellPrice(value);
+    
+    // Only update if value is not empty
+    if (value && !isNaN(parseFloat(value))) {
+      const numericValue = parseFloat(value);
+      handleSellPriceChange(numericValue);
+    }
+  };
+
+  // Handle blur - validate and reset if needed
+  const handleSellPriceBlur = () => {
+    const numericValue = parseFloat(tempSellPrice);
+    const minimumSellPrice = calculateMinimumSellPrice();
+    
+    // If empty or invalid, reset to current value
+    if (!tempSellPrice || isNaN(numericValue)) {
+      setTempSellPrice(quoteItem.unit_price.toString());
+      return;
+    }
+    
+    // If below minimum, reset to minimum
+    if (numericValue < minimumSellPrice) {
+      const roundedMin = Math.round(minimumSellPrice * 100) / 100;
+      setTempSellPrice(roundedMin.toString());
+      handleSellPriceChange(roundedMin);
+    }
+  };
+
+  // Handle commission rate change and update sell price accordingly
+  const handleCommissionRateChange = (newCommissionRate: number) => {
+    // Don't allow commission to go below 0 or above agent's max rate
+    const clampedCommissionRate = Math.max(0, Math.min(newCommissionRate, agentCommissionRate));
+    
+    if (clampedCommissionRate !== newCommissionRate) {
+      // If the user tried to go outside bounds, just return without changes
+      return;
+    }
+
+    setCommissionRate(clampedCommissionRate);
+
+    // Calculate the commission reduction from the agent's maximum rate
+    const commissionReduction = agentCommissionRate - clampedCommissionRate;
+    const commissionReductionPercentage = commissionReduction / 100; // Convert to decimal
+
+    // Calculate the base price with minimum markup (if category has one)
+    let basePriceWithMinimumMarkup = cost;
+    if (itemCategory?.minimum_markup && cost > 0) {
+      basePriceWithMinimumMarkup = cost * (1 + itemCategory.minimum_markup / 100);
+    }
+
+    // Apply the commission reduction percentage as a discount from the minimum markup price
+    const newSellPrice = basePriceWithMinimumMarkup * (1 - commissionReductionPercentage);
+    
+    // Update the sell price
+    onUpdateItem(quoteItem.id, 'unit_price', Math.round(newSellPrice * 100) / 100);
   };
 
   // Calculate the effective minimum markup after commission reduction
@@ -303,18 +339,9 @@ export const QuoteItemRow = ({ quoteItem, addresses, onUpdateItem, onRemoveItem 
             <Input
               type="number"
               step="0.01"
-              value={quoteItem.unit_price}
-              onChange={(e) => {
-                const value = parseFloat(e.target.value) || 0;
-                handleSellPriceChange(value);
-              }}
-              onBlur={(e) => {
-                const value = parseFloat(e.target.value) || 0;
-                const minPrice = calculateMinimumSellPrice();
-                if (value < minPrice) {
-                  handleSellPriceChange(minPrice);
-                }
-              }}
+              value={tempSellPrice}
+              onChange={(e) => handleSellPriceInputChange(e.target.value)}
+              onBlur={handleSellPriceBlur}
               className="text-xs h-8"
               placeholder="$"
             />
