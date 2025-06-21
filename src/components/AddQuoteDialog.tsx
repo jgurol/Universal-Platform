@@ -13,6 +13,7 @@ import { useAuth } from "@/context/AuthContext";
 import { QuoteItemsManager } from "@/components/QuoteItemsManager";
 import { QuoteItemData } from "@/types/quoteItems";
 import { AddressSelector } from "@/components/AddressSelector";
+import { useToast } from "@/hooks/use-toast";
 import type { Database } from "@/integrations/supabase/types";
 
 type QuoteTemplate = Database['public']['Tables']['quote_templates']['Row'];
@@ -26,6 +27,7 @@ interface AddQuoteDialogProps {
 }
 
 export const AddQuoteDialog = ({ open, onOpenChange, onAddQuote, clients, clientInfos }: AddQuoteDialogProps) => {
+  const { toast } = useToast();
   const [clientId, setClientId] = useState("");
   const [clientInfoId, setClientInfoId] = useState("");
   const [date, setDate] = useState("");
@@ -44,6 +46,7 @@ export const AddQuoteDialog = ({ open, onOpenChange, onAddQuote, clients, client
   const [selectedServiceAddressId, setSelectedServiceAddressId] = useState<string | null>(null);
   const [selectedTemplateId, setSelectedTemplateId] = useState<string>("");
   const [templates, setTemplates] = useState<QuoteTemplate[]>([]);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const { user } = useAuth();
   
   // Function to reset all form fields
@@ -63,6 +66,7 @@ export const AddQuoteDialog = ({ open, onOpenChange, onAddQuote, clients, client
     setServiceAddress("");
     setSelectedServiceAddressId(null);
     setSelectedTemplateId("");
+    setIsSubmitting(false);
     
     // Reset dates
     const todayDate = getTodayInTimezone();
@@ -174,12 +178,17 @@ export const AddQuoteDialog = ({ open, onOpenChange, onAddQuote, clients, client
           }
         } catch (error) {
           console.error('[AddQuoteDialog] Error loading templates:', error);
+          toast({
+            title: "Warning",
+            description: "Could not load quote templates. You may need to create one first.",
+            variant: "destructive",
+          });
         }
       }
     };
 
     fetchTemplates();
-  }, [open, user]);
+  }, [open, user, toast]);
 
   // Handle client selection - auto-select salesperson based on client's agent_id
   useEffect(() => {
@@ -212,60 +221,152 @@ export const AddQuoteDialog = ({ open, onOpenChange, onAddQuote, clients, client
     return quoteItems.reduce((total, item) => total + item.total_price, 0);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    console.log('[AddQuoteDialog] Form submitted with addresses:', { 
-      billing: billingAddress, 
-      service: serviceAddress 
+    if (isSubmitting) {
+      console.log('[AddQuoteDialog] Already submitting, ignoring duplicate submission');
+      return;
+    }
+
+    console.log('[AddQuoteDialog] Form submitted - checking validation');
+    console.log('[AddQuoteDialog] Form data:', {
+      clientInfoId,
+      date,
+      quoteItemsLength: quoteItems.length,
+      templatesLength: templates.length,
+      selectedTemplateId,
+      user: !!user
     });
     
-    const totalAmount = calculateTotalAmount();
-    
-    // Check for clientInfoId, template selection, and other required fields
-    if (clientInfoId && clientInfoId !== "none" && date && selectedTemplateId) {
+    // Enhanced validation with specific error messages
+    if (!user) {
+      toast({
+        title: "Authentication Error",
+        description: "You must be logged in to create a quote.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!clientInfoId || clientInfoId === "none") {
+      toast({
+        title: "Client Required",
+        description: "Please select a client company before creating the quote.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!date) {
+      toast({
+        title: "Date Required",
+        description: "Please select a quote date.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (quoteItems.length === 0) {
+      toast({
+        title: "Items Required",
+        description: "Please add at least one item to the quote before saving.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!selectedTemplateId) {
+      toast({
+        title: "Template Required",
+        description: templates.length === 0 
+          ? "No quote templates found. Please create a template in System Settings first."
+          : "Please select a quote template.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    try {
+      const totalAmount = calculateTotalAmount();
       const selectedClient = clientId ? clients.find(client => client.id === clientId) : null;
       const selectedClientInfo = clientInfos.find(info => info.id === clientInfoId);
       
-      if (selectedClientInfo) {
-        const quoteData = {
-          clientId: clientId || "", // Allow empty clientId if no salesperson is associated
-          clientName: selectedClient?.name || "No Salesperson Assigned",
-          companyName: selectedClientInfo.company_name,
-          amount: totalAmount,
-          date,
-          description: description,
-          quoteNumber: quoteNumber || undefined,
-          quoteMonth: quoteMonth || undefined,
-          quoteYear: quoteYear || undefined,
-          term: term,
-          status: "pending", // Always set to pending instead of using state
-          clientInfoId: clientInfoId,
-          clientCompanyName: selectedClientInfo.company_name,
-          commissionOverride: commissionOverride ? parseFloat(commissionOverride) : undefined,
-          expiresAt: expiresAt || undefined,
-          notes: notes || undefined,
-          quoteItems: quoteItems,
-          billingAddress: billingAddress || undefined,
-          serviceAddress: serviceAddress || undefined,
-          templateId: selectedTemplateId
-        };
-        
-        console.log('[AddQuoteDialog] Calling onAddQuote with data:', quoteData);
-        onAddQuote(quoteData);
-        
-        // Reset form after successful submission
-        resetForm();
-        onOpenChange(false);
+      if (!selectedClientInfo) {
+        throw new Error("Selected client company not found");
       }
+
+      const quoteData = {
+        clientId: clientId || "", // Allow empty clientId if no salesperson is associated
+        clientName: selectedClient?.name || "No Salesperson Assigned",
+        companyName: selectedClientInfo.company_name,
+        amount: totalAmount,
+        date,
+        description: description || `Quote for ${selectedClientInfo.company_name}`,
+        quoteNumber: quoteNumber || undefined,
+        quoteMonth: quoteMonth || undefined,
+        quoteYear: quoteYear || undefined,
+        term: term,
+        status: "pending" as const,
+        clientInfoId: clientInfoId,
+        clientCompanyName: selectedClientInfo.company_name,
+        commissionOverride: commissionOverride ? parseFloat(commissionOverride) : undefined,
+        expiresAt: expiresAt || undefined,
+        notes: notes || undefined,
+        quoteItems: quoteItems,
+        billingAddress: billingAddress || undefined,
+        serviceAddress: serviceAddress || undefined,
+        templateId: selectedTemplateId
+      };
+      
+      console.log('[AddQuoteDialog] Calling onAddQuote with data:', quoteData);
+      await onAddQuote(quoteData);
+      
+      toast({
+        title: "Success",
+        description: "Quote created successfully!",
+      });
+      
+      // Reset form after successful submission
+      resetForm();
+      onOpenChange(false);
+    } catch (error) {
+      console.error('[AddQuoteDialog] Error creating quote:', error);
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to create quote. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
   const selectedSalesperson = clientId ? clients.find(c => c.id === clientId) : null;
   const selectedClientInfo = clientInfoId && clientInfoId !== "none" ? clientInfos.find(info => info.id === clientInfoId) : null;
 
-  // Check if form is valid for submission - now includes template requirement
-  const isFormValid = clientInfoId && clientInfoId !== "none" && quoteItems.length > 0 && selectedTemplateId;
+  // Check if form is valid for submission
+  const isFormValid = !!(
+    user &&
+    clientInfoId && 
+    clientInfoId !== "none" && 
+    date &&
+    quoteItems.length > 0 && 
+    selectedTemplateId &&
+    !isSubmitting
+  );
+
+  console.log('[AddQuoteDialog] Form validation status:', {
+    hasUser: !!user,
+    hasClientInfo: !!(clientInfoId && clientInfoId !== "none"),
+    hasDate: !!date,
+    hasQuoteItems: quoteItems.length > 0,
+    hasTemplate: !!selectedTemplateId,
+    isSubmitting,
+    isFormValid
+  });
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -294,7 +395,7 @@ export const AddQuoteDialog = ({ open, onOpenChange, onAddQuote, clients, client
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="date" className="text-sm">Quote Date</Label>
+                <Label htmlFor="date" className="text-sm">Quote Date *</Label>
                 <Input
                   id="date"
                   type="date"
@@ -337,7 +438,7 @@ export const AddQuoteDialog = ({ open, onOpenChange, onAddQuote, clients, client
         </DialogHeader>
         
         <form onSubmit={handleSubmit} className="space-y-4">
-          {/* Quote Name - Moved to top */}
+          {/* Quote Name */}
           <div className="space-y-2">
             <Label htmlFor="description">Quote Name</Label>
             <Input
@@ -347,12 +448,12 @@ export const AddQuoteDialog = ({ open, onOpenChange, onAddQuote, clients, client
                 console.log('[AddQuoteDialog] Description changed to:', e.target.value);
                 setDescription(e.target.value);
               }}
-              placeholder="Enter quote name"
+              placeholder="Enter quote name (optional - will auto-generate if empty)"
             />
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="clientInfo">Client Company (Required)</Label>
+            <Label htmlFor="clientInfo">Client Company *</Label>
             <Select value={clientInfoId} onValueChange={setClientInfoId} required>
               <SelectTrigger>
                 <SelectValue placeholder="Select a client company" />
@@ -404,24 +505,38 @@ export const AddQuoteDialog = ({ open, onOpenChange, onAddQuote, clients, client
             autoSelectPrimary={false}
           />
 
-          <QuoteItemsManager 
-            items={quoteItems}
-            onItemsChange={setQuoteItems}
-            clientInfoId={clientInfoId !== "none" ? clientInfoId : undefined}
-          />
+          <div className="space-y-2">
+            <Label className="text-sm font-medium">Quote Items *</Label>
+            <QuoteItemsManager 
+              items={quoteItems}
+              onItemsChange={setQuoteItems}
+              clientInfoId={clientInfoId !== "none" ? clientInfoId : undefined}
+            />
+            {quoteItems.length === 0 && (
+              <p className="text-sm text-muted-foreground">
+                Add at least one item to create the quote
+              </p>
+            )}
+          </div>
 
           <div className="space-y-2">
-            <Label htmlFor="templateId">Quote Template (Required)</Label>
+            <Label htmlFor="templateId">Quote Template *</Label>
             <Select value={selectedTemplateId} onValueChange={setSelectedTemplateId} required>
               <SelectTrigger>
-                <SelectValue placeholder="Template will be auto-selected" />
+                <SelectValue placeholder={templates.length === 0 ? "No templates available" : "Template will be auto-selected"} />
               </SelectTrigger>
               <SelectContent>
-                {templates.map((template) => (
-                  <SelectItem key={template.id} value={template.id}>
-                    {template.name} {template.is_default && "(Default)"}
+                {templates.length === 0 ? (
+                  <SelectItem value="no-templates" disabled>
+                    No templates available - Create one in System Settings
                   </SelectItem>
-                ))}
+                ) : (
+                  templates.map((template) => (
+                    <SelectItem key={template.id} value={template.id}>
+                      {template.name} {template.is_default && "(Default)"}
+                    </SelectItem>
+                  ))
+                )}
               </SelectContent>
             </Select>
             {templates.length === 0 && (
@@ -457,7 +572,12 @@ export const AddQuoteDialog = ({ open, onOpenChange, onAddQuote, clients, client
           </div>
           
           <div className="flex justify-end space-x-2 mt-6">
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+            <Button 
+              type="button" 
+              variant="outline" 
+              onClick={() => onOpenChange(false)}
+              disabled={isSubmitting}
+            >
               Cancel
             </Button>
             <Button 
@@ -465,9 +585,18 @@ export const AddQuoteDialog = ({ open, onOpenChange, onAddQuote, clients, client
               className="bg-blue-600 hover:bg-blue-700"
               disabled={!isFormValid}
             >
-              Add Quote
+              {isSubmitting ? "Creating Quote..." : "Add Quote"}
             </Button>
           </div>
+          
+          {/* Debug info - only show in development */}
+          {process.env.NODE_ENV === 'development' && (
+            <div className="text-xs text-muted-foreground border-t pt-2">
+              Debug: Form valid = {isFormValid ? 'true' : 'false'} 
+              (User: {!!user ? 'yes' : 'no'}, ClientInfo: {clientInfoId && clientInfoId !== "none" ? 'yes' : 'no'}, 
+              Date: {!!date ? 'yes' : 'no'}, Items: {quoteItems.length}, Template: {!!selectedTemplateId ? 'yes' : 'no'})
+            </div>
+          )}
         </form>
       </DialogContent>
     </Dialog>
