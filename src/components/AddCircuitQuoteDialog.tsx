@@ -38,7 +38,7 @@ export const AddCircuitQuoteDialog = ({ open, onOpenChange, onAddQuote }: AddCir
   const [staticIp, setStaticIp] = useState(false);
   const [slash29, setSlash29] = useState(false);
   const [mikrotikRequired, setMikrotikRequired] = useState(false);
-  const [circuitCategories, setCircuitCategories] = useState<string[]>(["broadband"]);
+  const [circuitCategories, setCircuitCategories] = useState<string[]>([]);
 
   // Get circuit categories from the categories table where type is "Circuit"
   const circuitCategoryOptions = categories
@@ -95,11 +95,6 @@ export const AddCircuitQuoteDialog = ({ open, onOpenChange, onAddQuote }: AddCir
   };
 
   const handleCircuitCategoryChange = (category: string, checked: boolean) => {
-    if (category.toLowerCase() === "broadband") {
-      // Broadband cannot be unchecked
-      return;
-    }
-    
     if (checked) {
       setCircuitCategories(prev => [...prev, category]);
     } else {
@@ -136,7 +131,7 @@ export const AddCircuitQuoteDialog = ({ open, onOpenChange, onAddQuote }: AddCir
     setStaticIp(false);
     setSlash29(false);
     setMikrotikRequired(false);
-    setCircuitCategories(["broadband"]);
+    setCircuitCategories([]);
     onOpenChange(false);
   };
 
@@ -209,14 +204,12 @@ export const AddCircuitQuoteDialog = ({ open, onOpenChange, onAddQuote }: AddCir
                     id={`category-${category}`}
                     checked={circuitCategories.includes(category)}
                     onCheckedChange={(checked) => handleCircuitCategoryChange(category, checked as boolean)}
-                    disabled={category.toLowerCase() === "broadband"}
                   />
                   <Label 
                     htmlFor={`category-${category}`} 
-                    className={`text-sm font-normal capitalize ${category.toLowerCase() === "broadband" ? "text-gray-500" : ""}`}
+                    className="text-sm font-normal capitalize"
                   >
                     {category}
-                    {category.toLowerCase() === "broadband" && " (always included)"}
                   </Label>
                 </div>
               ))}
