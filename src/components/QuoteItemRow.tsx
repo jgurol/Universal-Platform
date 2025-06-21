@@ -258,8 +258,29 @@ export const QuoteItemRow = ({ quoteItem, addresses, onUpdateItem, onRemoveItem 
           </div>
         </div>
 
-        {/* Commission & Markup Control */}
+        {/* Commission & Markup Control - Always Show */}
         <div className="space-y-1">
+          <div className="text-xs text-gray-500 mb-1">
+            Commission Rate:
+          </div>
+          <div className="flex items-center gap-1">
+            <Percent className="w-3 h-3 text-blue-600" />
+            <Input
+              type="number"
+              step="0.1"
+              min="0"
+              max={agentCommissionRate}
+              value={commissionRate}
+              onChange={(e) => handleCommissionRateChange(parseFloat(e.target.value) || 0)}
+              className="text-xs h-8"
+              placeholder="Comm %"
+            />
+          </div>
+          <div className="text-xs text-blue-600">
+            Rate: {commissionRate.toFixed(1)}%
+          </div>
+          
+          {/* Show markup info only if category has minimum markup */}
           {itemCategory?.minimum_markup && (
             <>
               <div className="text-xs text-gray-500 mb-1">
@@ -267,19 +288,6 @@ export const QuoteItemRow = ({ quoteItem, addresses, onUpdateItem, onRemoveItem 
               </div>
               <div className="text-xs text-orange-600 mb-1">
                 Current: {markupCalculation.currentMarkup.toFixed(1)}%
-              </div>
-              <div className="flex items-center gap-1">
-                <Percent className="w-3 h-3 text-blue-600" />
-                <Input
-                  type="number"
-                  step="0.1"
-                  min="0"
-                  max={agentCommissionRate}
-                  value={commissionRate}
-                  onChange={(e) => handleCommissionRateChange(parseFloat(e.target.value) || 0)}
-                  className="text-xs h-8"
-                  placeholder="Comm %"
-                />
               </div>
               <div className="text-xs text-blue-600">
                 Final: {markupCalculation.finalCommissionRate.toFixed(1)}%
