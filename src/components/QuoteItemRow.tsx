@@ -46,7 +46,8 @@ export const QuoteItemRow = ({ quoteItem, addresses, onUpdateItem, onRemoveItem 
     cost,
     sellPrice,
     commissionRate,
-    itemCategory
+    itemCategory,
+    agentCommissionRate
   );
 
   // Calculate profit margin percentage

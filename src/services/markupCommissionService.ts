@@ -14,37 +14,42 @@ export interface MarkupCommissionCalculation {
 export const calculateMarkupAndCommission = (
   cost: number,
   sellPrice: number,
-  agentCommissionRate: number,
-  category?: Category
+  currentCommissionRate: number,
+  category?: Category,
+  agentCommissionRate: number = 15
 ): MarkupCommissionCalculation => {
-  const minimumMarkup = category?.minimum_markup || 0;
+  // Calculate the effective minimum markup after commission reduction
+  const originalMinimumMarkup = category?.minimum_markup || 0;
+  const commissionReduction = agentCommissionRate - currentCommissionRate;
+  const effectiveMinimumMarkup = Math.max(0, originalMinimumMarkup - commissionReduction);
+  
   const currentMarkup = cost > 0 ? ((sellPrice - cost) / cost) * 100 : 0;
   
   // Calculate how much the agent can reduce the markup (limited by their commission rate)
-  const maxMarkupReduction = Math.min(minimumMarkup, agentCommissionRate);
+  const maxMarkupReduction = Math.min(effectiveMinimumMarkup, agentCommissionRate);
   
-  // Calculate commission reduction based on markup reduction below minimum
-  const markupReduction = Math.max(0, minimumMarkup - currentMarkup);
-  const commissionReduction = Math.min(markupReduction, agentCommissionRate);
+  // Calculate commission reduction based on markup reduction below effective minimum
+  const markupReduction = Math.max(0, effectiveMinimumMarkup - currentMarkup);
+  const additionalCommissionReduction = Math.min(markupReduction, currentCommissionRate);
   
-  // Final commission rate after reduction
-  const finalCommissionRate = Math.max(0, agentCommissionRate - commissionReduction);
+  // Final commission rate after all reductions
+  const finalCommissionRate = Math.max(0, currentCommissionRate - additionalCommissionReduction);
   
   // Validate if the current markup is acceptable
-  const isValid = currentMarkup >= 0 && commissionReduction <= agentCommissionRate;
+  const isValid = currentMarkup >= 0 && (commissionReduction + additionalCommissionReduction) <= agentCommissionRate;
   
   let errorMessage: string | undefined;
   if (currentMarkup < 0) {
     errorMessage = "Sell price cannot be below cost";
-  } else if (commissionReduction > agentCommissionRate) {
-    errorMessage = `Reducing markup below ${minimumMarkup}% would require more commission reduction than available (${agentCommissionRate}%)`;
+  } else if ((commissionReduction + additionalCommissionReduction) > agentCommissionRate) {
+    errorMessage = `Reducing markup below ${effectiveMinimumMarkup}% would require more commission reduction than available (${agentCommissionRate}%)`;
   }
 
   return {
-    minimumMarkup,
+    minimumMarkup: effectiveMinimumMarkup,
     currentMarkup,
     maxMarkupReduction,
-    commissionReduction,
+    commissionReduction: commissionReduction + additionalCommissionReduction,
     finalCommissionRate,
     isValid,
     errorMessage
@@ -54,10 +59,11 @@ export const calculateMarkupAndCommission = (
 export const getMarkupValidationMessage = (
   cost: number,
   sellPrice: number,
-  agentCommissionRate: number,
-  category?: Category
+  currentCommissionRate: number,
+  category?: Category,
+  agentCommissionRate: number = 15
 ): string | null => {
-  const calculation = calculateMarkupAndCommission(cost, sellPrice, agentCommissionRate, category);
+  const calculation = calculateMarkupAndCommission(cost, sellPrice, currentCommissionRate, category, agentCommissionRate);
   
   if (!calculation.isValid) {
     return calculation.errorMessage || "Invalid markup configuration";
