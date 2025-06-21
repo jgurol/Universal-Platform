@@ -33,7 +33,7 @@ export const EditCircuitQuoteDialog = ({ open, onOpenChange, quote, onUpdateQuot
       setStatus(quote.status);
       setStaticIp(quote.static_ip || false);
       setSlash29(quote.slash_29 || false);
-      setDhcp(false); // Initialize DHCP as false since it's not stored in the quote yet
+      setDhcp(quote.dhcp || false);
       setMikrotikRequired(quote.mikrotik_required || false);
     }
   }, [quote]);
@@ -49,6 +49,7 @@ export const EditCircuitQuoteDialog = ({ open, onOpenChange, quote, onUpdateQuot
       status: status as 'new_pricing' | 'researching' | 'completed' | 'sent_to_customer',
       static_ip: staticIp,
       slash_29: slash29,
+      dhcp: dhcp,
       mikrotik_required: mikrotikRequired
     });
     

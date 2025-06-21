@@ -53,6 +53,7 @@ export const fetchCircuitQuotes = async (userId: string | undefined, isAdmin: bo
     status: quote.status as 'new_pricing' | 'researching' | 'completed' | 'sent_to_customer',
     static_ip: quote.static_ip || false,
     slash_29: quote.slash_29 || false,
+    dhcp: quote.dhcp || false,
     mikrotik_required: quote.mikrotik_required || false,
     user_id: quote.user_id, // Include user_id for creator identification
     categories: (quote.circuit_quote_categories || []).map((cat: any) => cat.category_name),

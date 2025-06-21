@@ -126,6 +126,7 @@ export const AddCircuitQuoteDialog = ({ open, onOpenChange, onAddQuote }: AddCir
       status: 'new_pricing',
       static_ip: staticIp,
       slash_29: slash29,
+      dhcp: dhcp,
       mikrotik_required: mikrotikRequired
     }, circuitCategories);
     

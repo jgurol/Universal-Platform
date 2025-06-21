@@ -9,6 +9,7 @@ export interface CircuitQuote {
   status: 'new_pricing' | 'researching' | 'completed' | 'sent_to_customer';
   static_ip: boolean;
   slash_29: boolean;
+  dhcp: boolean;
   mikrotik_required: boolean;
   user_id?: string; // Add user_id to identify creator
   categories: string[]; // Add categories to display selected circuit categories

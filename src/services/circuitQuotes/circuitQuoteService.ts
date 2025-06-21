@@ -20,6 +20,7 @@ export const useCircuitQuoteService = () => {
           status: newQuote.status,
           static_ip: newQuote.static_ip,
           slash_29: newQuote.slash_29,
+          dhcp: newQuote.dhcp,
           mikrotik_required: newQuote.mikrotik_required
         })
         .select()
@@ -69,6 +70,7 @@ export const useCircuitQuoteService = () => {
           status: updatedQuote.status,
           static_ip: updatedQuote.static_ip,
           slash_29: updatedQuote.slash_29,
+          dhcp: updatedQuote.dhcp,
           mikrotik_required: updatedQuote.mikrotik_required,
           updated_at: new Date().toISOString()
         })

@@ -336,6 +336,7 @@ export type Database = {
           client_info_id: string | null
           client_name: string
           created_at: string
+          dhcp: boolean | null
           id: string
           location: string
           mikrotik_required: boolean | null
@@ -350,6 +351,7 @@ export type Database = {
           client_info_id?: string | null
           client_name: string
           created_at?: string
+          dhcp?: boolean | null
           id?: string
           location: string
           mikrotik_required?: boolean | null
@@ -364,6 +366,7 @@ export type Database = {
           client_info_id?: string | null
           client_name?: string
           created_at?: string
+          dhcp?: boolean | null
           id?: string
           location?: string
           mikrotik_required?: boolean | null
