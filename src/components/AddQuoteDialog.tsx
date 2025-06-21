@@ -149,15 +149,15 @@ export const AddQuoteDialog = ({ open, onOpenChange, onAddQuote, clients, client
     }
   }, [open]);
 
-  // Generate next quote number when dialog opens - find highest number and increment by 1
+  // Generate next quote number when dialog opens - find highest number across ALL users and increment by 1
   useEffect(() => {
     const generateNextQuoteNumber = async () => {
       if (open && user) {
         try {
+          // Remove user_id filter to check ALL quotes in the system
           const { data, error } = await supabase
             .from('quotes')
             .select('quote_number')
-            .eq('user_id', user.id)
             .not('quote_number', 'is', null);
 
           if (error) {
