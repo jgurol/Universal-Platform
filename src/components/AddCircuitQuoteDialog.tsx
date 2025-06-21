@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -27,13 +26,13 @@ interface AddressData {
 }
 
 const circuitCategoryOptions = [
+  "4G/5G",
   "broadband",
   "dedicated fiber", 
   "fixed wireless",
-  "4G/5G",
-  "ethernet",
-  "mpls",
-  "sd-wan"
+  "hosted PBX (UCaaS)",
+  "managed firewall",
+  "SDWAN"
 ];
 
 export const AddCircuitQuoteDialog = ({ open, onOpenChange, onAddQuote }: AddCircuitQuoteDialogProps) => {
