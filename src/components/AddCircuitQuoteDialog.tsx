@@ -215,6 +215,13 @@ export const AddCircuitQuoteDialog = ({ open, onOpenChange, onAddQuote }: AddCir
   // Get the selected deal for showing details
   const selectedDeal = associatedDeals.find(deal => deal.id === selectedDealId) || null;
 
+  // Debug logging for deal button visibility
+  console.log('Deal button debug:', {
+    selectedDealId,
+    isDealSelected: selectedDealId && selectedDealId !== "no-deal",
+    selectedDeal: selectedDeal ? selectedDeal.deal_name : null
+  });
+
   const handleAddressSelect = (address: AddressData) => {
     const fullAddress = `${address.street_address}, ${address.city}, ${address.state} ${address.zip_code}`;
     setLocation(fullAddress);
@@ -315,13 +322,17 @@ export const AddCircuitQuoteDialog = ({ open, onOpenChange, onAddQuote }: AddCir
                   </SelectContent>
                 </Select>
                 
-                {selectedDealId && selectedDealId !== "no-deal" && (
+                {selectedDealId && selectedDealId !== "no-deal" && selectedDeal && (
                   <Button
                     type="button"
                     variant="outline"
                     size="icon"
-                    onClick={() => setIsDealDetailsOpen(true)}
+                    onClick={() => {
+                      console.log('Opening deal details for:', selectedDeal.deal_name);
+                      setIsDealDetailsOpen(true);
+                    }}
                     title="View deal details"
+                    className="shrink-0"
                   >
                     <Info className="h-4 w-4" />
                   </Button>
