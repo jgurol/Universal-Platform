@@ -10,7 +10,8 @@ export const fetchCircuitQuotes = async (userId: string | undefined, isAdmin: bo
     .from('circuit_quotes')
     .select(`
       *,
-      carrier_quotes (*)
+      carrier_quotes (*),
+      circuit_quote_categories (category_name)
     `)
     .order('created_at', { ascending: false });
 
@@ -54,6 +55,7 @@ export const fetchCircuitQuotes = async (userId: string | undefined, isAdmin: bo
     slash_29: quote.slash_29 || false,
     mikrotik_required: quote.mikrotik_required || false,
     user_id: quote.user_id, // Include user_id for creator identification
+    categories: (quote.circuit_quote_categories || []).map((cat: any) => cat.category_name),
     carriers: (quote.carrier_quotes || []).map((carrier: any) => ({
       id: carrier.id,
       circuit_quote_id: carrier.circuit_quote_id,

@@ -299,6 +299,35 @@ export type Database = {
           },
         ]
       }
+      circuit_quote_categories: {
+        Row: {
+          category_name: string
+          circuit_quote_id: string
+          created_at: string
+          id: string
+        }
+        Insert: {
+          category_name: string
+          circuit_quote_id: string
+          created_at?: string
+          id?: string
+        }
+        Update: {
+          category_name?: string
+          circuit_quote_id?: string
+          created_at?: string
+          id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "circuit_quote_categories_circuit_quote_id_fkey"
+            columns: ["circuit_quote_id"]
+            isOneToOne: false
+            referencedRelation: "circuit_quotes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       circuit_quotes: {
         Row: {
           client_info_id: string | null

@@ -11,6 +11,7 @@ export interface CircuitQuote {
   slash_29: boolean;
   mikrotik_required: boolean;
   user_id?: string; // Add user_id to identify creator
+  categories: string[]; // Add categories to display selected circuit categories
   carriers: CarrierQuote[];
 }
 

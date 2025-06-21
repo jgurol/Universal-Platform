@@ -32,10 +32,10 @@ export const useCircuitQuotes = () => {
     }
   }, [user?.id, isAdmin, toast]);
 
-  const addQuote = async (newQuote: Omit<CircuitQuote, "id" | "created_at" | "carriers">) => {
+  const addQuote = async (newQuote: Omit<CircuitQuote, "id" | "created_at" | "carriers" | "categories">, categories: string[] = []) => {
     if (!user?.id) return;
     
-    const result = await circuitQuoteService.addQuote(newQuote, user.id);
+    const result = await circuitQuoteService.addQuote(newQuote, user.id, categories);
     if (result) {
       await fetchQuotes();
     }

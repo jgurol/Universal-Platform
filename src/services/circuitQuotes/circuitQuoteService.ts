@@ -1,28 +1,20 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { saveCircuitQuoteCategories } from "./circuitQuoteCategoriesService";
 import type { CircuitQuote } from "@/hooks/useCircuitQuotes/types";
 
 export const useCircuitQuoteService = () => {
   const { toast } = useToast();
 
-  const addQuote = async (newQuote: Omit<CircuitQuote, "id" | "created_at" | "carriers">, userId: string) => {
-    if (!userId) {
-      toast({
-        title: "Error",
-        description: "You must be logged in to create quotes",
-        variant: "destructive"
-      });
-      return;
-    }
-
+  const addQuote = async (newQuote: Omit<CircuitQuote, "id" | "created_at" | "carriers" | "categories">, userId: string, categories: string[] = []) => {
     try {
       const { data, error } = await supabase
         .from('circuit_quotes')
         .insert({
           user_id: userId,
-          client_info_id: newQuote.client_info_id,
           client_name: newQuote.client_name,
+          client_info_id: newQuote.client_info_id,
           location: newQuote.location,
           suite: newQuote.suite,
           status: newQuote.status,
@@ -40,14 +32,19 @@ export const useCircuitQuoteService = () => {
           description: error.message,
           variant: "destructive"
         });
-        return;
+        return null;
+      }
+
+      // Save categories if provided
+      if (categories.length > 0) {
+        await saveCircuitQuoteCategories(data.id, categories);
       }
 
       toast({
         title: "Success",
         description: "Circuit quote created successfully"
       });
-      
+
       return data;
     } catch (error) {
       console.error('Error in addQuote:', error);
@@ -56,6 +53,7 @@ export const useCircuitQuoteService = () => {
         description: "Failed to create circuit quote",
         variant: "destructive"
       });
+      return null;
     }
   };
 
@@ -65,6 +63,7 @@ export const useCircuitQuoteService = () => {
         .from('circuit_quotes')
         .update({
           client_name: updatedQuote.client_name,
+          client_info_id: updatedQuote.client_info_id,
           location: updatedQuote.location,
           suite: updatedQuote.suite,
           status: updatedQuote.status,
@@ -85,6 +84,14 @@ export const useCircuitQuoteService = () => {
         return false;
       }
 
+      // Update categories
+      await saveCircuitQuoteCategories(updatedQuote.id, updatedQuote.categories || []);
+
+      toast({
+        title: "Success",
+        description: "Circuit quote updated successfully"
+      });
+      
       return true;
     } catch (error) {
       console.error('Error in updateQuote:', error);

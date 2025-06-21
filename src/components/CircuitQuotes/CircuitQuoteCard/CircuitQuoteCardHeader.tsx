@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -135,6 +134,20 @@ export const CircuitQuoteCardHeader = ({
             <p className="text-xs text-gray-500">
               Created: {quote.created_at} • Created by: {creatorName}
             </p>
+            
+            {/* Display Circuit Categories */}
+            {quote.categories && quote.categories.length > 0 && (
+              <div className="flex items-center gap-2 mt-2">
+                <span className="text-xs font-medium text-gray-700">Categories:</span>
+                <div className="flex flex-wrap gap-1">
+                  {quote.categories.map((category, index) => (
+                    <Badge key={index} variant="secondary" className="text-xs bg-purple-100 text-purple-800 capitalize">
+                      {category}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         </div>
         

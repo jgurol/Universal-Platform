@@ -15,7 +15,7 @@ import { supabase } from "@/integrations/supabase/client";
 interface AddCircuitQuoteDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onAddQuote: (quote: Omit<CircuitQuote, "id" | "created_at" | "carriers">) => void;
+  onAddQuote: (quote: Omit<CircuitQuote, "id" | "created_at" | "carriers" | "categories">, categories: string[]) => void;
 }
 
 interface AddressData {
@@ -120,7 +120,7 @@ export const AddCircuitQuoteDialog = ({ open, onOpenChange, onAddQuote }: AddCir
       static_ip: staticIp,
       slash_29: slash29,
       mikrotik_required: mikrotikRequired
-    });
+    }, circuitCategories);
     
     // Reset form
     setClientId("");
