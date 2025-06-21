@@ -149,7 +149,7 @@ export const AddQuoteDialog = ({ open, onOpenChange, onAddQuote, clients, client
     }
   }, [open]);
 
-  // Generate next quote number when dialog opens - starting from 3500
+  // Generate next quote number when dialog opens - find highest number and increment by 1
   useEffect(() => {
     const generateNextQuoteNumber = async () => {
       if (open && user) {
@@ -159,20 +159,25 @@ export const AddQuoteDialog = ({ open, onOpenChange, onAddQuote, clients, client
             .select('quote_number')
             .eq('user_id', user.id)
             .not('quote_number', 'is', null)
-            .order('created_at', { ascending: false })
-            .limit(1);
+            .order('created_at', { ascending: false });
 
           if (error) {
-            console.error('Error fetching last quote number:', error);
+            console.error('Error fetching quote numbers:', error);
             setQuoteNumber("3500");
             return;
           }
 
           let nextNumber = 3500; // Start from 3500 instead of 1
-          if (data && data.length > 0 && data[0].quote_number) {
-            const lastNumber = parseInt(data[0].quote_number);
-            if (!isNaN(lastNumber)) {
-              nextNumber = Math.max(lastNumber + 1, 3500); // Ensure we never go below 3500
+          if (data && data.length > 0) {
+            // Extract all numeric quote numbers and find the highest
+            const numericQuoteNumbers = data
+              .map(q => q.quote_number)
+              .filter(qn => qn && !qn.includes('.')) // Exclude revision numbers (those with dots)
+              .map(qn => parseInt(qn))
+              .filter(num => !isNaN(num));
+            
+            if (numericQuoteNumbers.length > 0) {
+              nextNumber = Math.max(...numericQuoteNumbers, 3499) + 1; // Ensure we never go below 3500
             }
           }
           
