@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -106,7 +105,7 @@ export const QuoteItemRow = ({ quoteItem, addresses, onUpdateItem, onRemoveItem 
     onUpdateItem(quoteItem.id, 'unit_price', Math.round(newSellPrice * 100) / 100);
   };
 
-  // Handle sell price changes - ensure commission doesn't go negative
+  // Handle sell price changes - ensure commission doesn't go negative and caps at agent max
   const handleSellPriceChange = (newSellPrice: number) => {
     // Calculate what the minimum sell price would be for 0% commission
     let minimumSellPrice = cost;
@@ -132,15 +131,20 @@ export const QuoteItemRow = ({ quoteItem, addresses, onUpdateItem, onRemoveItem 
       basePriceWithMinimumMarkup = cost * (1 + itemCategory.minimum_markup / 100);
     }
     
-    // Calculate how much discount was applied
-    const discountPercentage = basePriceWithMinimumMarkup > 0 ? 
-      (basePriceWithMinimumMarkup - newSellPrice) / basePriceWithMinimumMarkup : 0;
-    
-    // Convert discount percentage back to commission reduction
-    const commissionReduction = discountPercentage * 100;
-    const newCommissionRate = Math.max(0, agentCommissionRate - commissionReduction);
-    
-    setCommissionRate(newCommissionRate);
+    if (newSellPrice >= basePriceWithMinimumMarkup) {
+      // If sell price is at or above the minimum markup price, lock commission at agent's max rate
+      setCommissionRate(agentCommissionRate);
+    } else {
+      // If sell price is below minimum markup price, calculate reduced commission
+      const discountPercentage = basePriceWithMinimumMarkup > 0 ? 
+        (basePriceWithMinimumMarkup - newSellPrice) / basePriceWithMinimumMarkup : 0;
+      
+      // Convert discount percentage back to commission reduction
+      const commissionReduction = discountPercentage * 100;
+      const newCommissionRate = Math.max(0, agentCommissionRate - commissionReduction);
+      
+      setCommissionRate(newCommissionRate);
+    }
   };
 
   // Calculate the effective minimum markup after commission reduction
