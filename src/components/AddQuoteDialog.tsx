@@ -58,7 +58,7 @@ export const AddQuoteDialog = ({ open, onOpenChange, onAddQuote, clients, client
       try {
         const { data: profile, error } = await supabase
           .from('profiles')
-          .select('full_name, email, is_admin')
+          .select('full_name, email, role')
           .eq('id', user.id)
           .maybeSingle();
         
@@ -79,7 +79,7 @@ export const AddQuoteDialog = ({ open, onOpenChange, onAddQuote, clients, client
           setCurrentUserName('Current User');
         }
         
-        setIsAdmin(profile?.is_admin || false);
+        setIsAdmin(profile?.role === 'admin');
       } catch (error) {
         console.error('Error fetching current user data:', error);
         setCurrentUserName(user.email?.split('@')[0] || 'Current User');
