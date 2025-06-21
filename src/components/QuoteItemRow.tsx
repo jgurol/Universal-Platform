@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -78,16 +79,16 @@ export const QuoteItemRow = ({ quoteItem, addresses, onUpdateItem, onRemoveItem 
 
     setCommissionRate(newCommissionRate);
 
-    // If there's a minimum markup category, adjust the markup based on commission reduction
-    if (itemCategory?.minimum_markup) {
+    // If there's a minimum markup category, calculate the new effective minimum markup
+    if (itemCategory?.minimum_markup && cost > 0) {
       const originalMinimumMarkup = itemCategory.minimum_markup;
       const commissionReduction = agentCommissionRate - newCommissionRate;
       
-      // Reduce the minimum markup by the same amount as the commission reduction
-      const adjustedMinimumMarkup = Math.max(0, originalMinimumMarkup - commissionReduction);
+      // Calculate the effective minimum markup after commission reduction
+      const effectiveMinimumMarkup = Math.max(0, originalMinimumMarkup - commissionReduction);
       
-      // Calculate new sell price based on adjusted minimum markup
-      const newSellPrice = cost * (1 + adjustedMinimumMarkup / 100);
+      // Calculate new sell price based on effective minimum markup
+      const newSellPrice = cost * (1 + effectiveMinimumMarkup / 100);
       
       // Update the sell price
       onUpdateItem(quoteItem.id, 'unit_price', Math.round(newSellPrice * 100) / 100);
