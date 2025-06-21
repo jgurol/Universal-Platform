@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -45,23 +44,18 @@ export const AddCircuitQuoteDialog = ({ open, onOpenChange, onAddQuote }: AddCir
     .filter(category => category.type === 'Circuit')
     .map(category => category.name);
 
-  // Set default categories when dialog opens and categories are available
+  // Set default categories based on default_selected flag when dialog opens
   React.useEffect(() => {
-    if (open && circuitCategoryOptions.length > 0) {
-      const defaultCategories = ['business fiber', 'coax broadband'];
-      const availableDefaults = defaultCategories.filter(cat => 
-        circuitCategoryOptions.some(option => option.toLowerCase() === cat.toLowerCase())
-      );
+    if (open && categories.length > 0) {
+      const defaultCategories = categories
+        .filter(category => category.type === 'Circuit' && category.default_selected)
+        .map(category => category.name);
       
-      if (availableDefaults.length > 0) {
-        // Find the actual category names from the options (case-sensitive)
-        const actualCategoryNames = availableDefaults.map(defaultCat =>
-          circuitCategoryOptions.find(option => option.toLowerCase() === defaultCat.toLowerCase()) || defaultCat
-        );
-        setCircuitCategories(actualCategoryNames);
+      if (defaultCategories.length > 0) {
+        setCircuitCategories(defaultCategories);
       }
     }
-  }, [open, circuitCategoryOptions]);
+  }, [open, categories]);
 
   // Fetch the associated agent ID for the current user
   React.useEffect(() => {

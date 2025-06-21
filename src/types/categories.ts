@@ -5,6 +5,7 @@ export interface Category {
   description?: string;
   type?: 'Circuit' | 'Network' | 'Managed Services' | 'AI' | 'VOIP';
   minimum_markup?: number;
+  default_selected?: boolean;
   is_active: boolean;
   user_id: string;
   created_at: string;

@@ -1,5 +1,4 @@
 
-
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -117,6 +116,12 @@ export const CategoriesManagement = () => {
                           {category.type}
                         </Badge>
                       )}
+                      {/* Show default selected badge for circuit categories */}
+                      {category.type === 'Circuit' && category.default_selected && (
+                        <Badge variant="outline" className="text-xs bg-green-50 text-green-700">
+                          Default Selected
+                        </Badge>
+                      )}
                       {/* Only show minimum markup badge to admins */}
                       {isAdmin && category.minimum_markup !== undefined && category.minimum_markup > 0 && (
                         <Badge variant="outline" className="text-xs bg-orange-50 text-orange-700">
@@ -175,4 +180,3 @@ export const CategoriesManagement = () => {
     </>
   );
 };
-

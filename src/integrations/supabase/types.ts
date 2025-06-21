@@ -219,6 +219,7 @@ export type Database = {
       categories: {
         Row: {
           created_at: string
+          default_selected: boolean
           description: string | null
           id: string
           is_active: boolean
@@ -230,6 +231,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          default_selected?: boolean
           description?: string | null
           id?: string
           is_active?: boolean
@@ -241,6 +243,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          default_selected?: boolean
           description?: string | null
           id?: string
           is_active?: boolean

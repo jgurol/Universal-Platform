@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Category } from "@/types/categories";
 
 interface AddCategoryDialogProps {
@@ -19,6 +20,7 @@ export const AddCategoryDialog = ({ open, onOpenChange, onAddCategory }: AddCate
   const [description, setDescription] = useState("");
   const [type, setType] = useState<'Circuit' | 'Network' | 'Managed Services' | 'AI' | 'VOIP'>('Network');
   const [minimumMarkup, setMinimumMarkup] = useState<number>(0);
+  const [defaultSelected, setDefaultSelected] = useState<boolean>(false);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -28,6 +30,7 @@ export const AddCategoryDialog = ({ open, onOpenChange, onAddCategory }: AddCate
         description: description.trim() || undefined,
         type,
         minimum_markup: minimumMarkup,
+        default_selected: defaultSelected,
         is_active: true
       });
       
@@ -36,6 +39,7 @@ export const AddCategoryDialog = ({ open, onOpenChange, onAddCategory }: AddCate
       setDescription("");
       setType('Network');
       setMinimumMarkup(0);
+      setDefaultSelected(false);
       onOpenChange(false);
     }
   };
@@ -92,6 +96,19 @@ export const AddCategoryDialog = ({ open, onOpenChange, onAddCategory }: AddCate
               Agents can reduce markup below this but it will reduce their commission proportionally
             </p>
           </div>
+
+          {type === 'Circuit' && (
+            <div className="flex items-center space-x-2">
+              <Checkbox
+                id="default-selected"
+                checked={defaultSelected}
+                onCheckedChange={(checked) => setDefaultSelected(checked as boolean)}
+              />
+              <Label htmlFor="default-selected" className="text-sm font-normal">
+                Default selected for circuit quotes
+              </Label>
+            </div>
+          )}
 
           <div className="space-y-2">
             <Label htmlFor="category-description">Description</Label>
