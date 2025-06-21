@@ -1,10 +1,8 @@
 
+import { DragDropContext, Droppable, Draggable, DropResult } from 'react-beautiful-dnd';
 import { QuoteItemData } from "@/types/quoteItems";
 import { ClientAddress } from "@/types/clientAddress";
-import { Label } from "@/components/ui/label";
 import { QuoteItemRow } from "@/components/QuoteItemRow";
-import { QuoteItemTotals } from "@/components/QuoteItemTotals";
-import { DragDropContext, Droppable, Draggable, DropResult } from 'react-beautiful-dnd';
 
 interface QuoteItemsListProps {
   items: QuoteItemData[];
@@ -22,46 +20,30 @@ export const QuoteItemsList = ({
   onReorderItems 
 }: QuoteItemsListProps) => {
   if (items.length === 0) {
-    return null;
+    return (
+      <div className="text-center py-8 text-gray-500">
+        No items added yet. Select an item from above to add it to your quote.
+      </div>
+    );
   }
 
   return (
     <div className="space-y-3">
-      <Label>Quote Items</Label>
-      
-      {/* Column Headers */}
-      <div className="grid grid-cols-7 gap-2 items-center p-2 border-b bg-gray-100 rounded-t-lg font-medium text-sm">
-        <div className="col-span-2">Item & Location</div>
-        <div>Qty</div>
-        <div>Sell / Cost</div>
-        <div>Commission</div>
-        <div>Total</div>
-        <div>Type</div>
-      </div>
-      
+      <h3 className="text-lg font-semibold">Quote Items</h3>
       <DragDropContext onDragEnd={onReorderItems}>
         <Droppable droppableId="quote-items">
           {(provided) => (
-            <div
-              {...provided.droppableProps}
-              ref={provided.innerRef}
-              className="border rounded-lg space-y-3 max-h-96 overflow-y-auto"
-            >
-              {items.map((quoteItem, index) => (
-                <Draggable
-                  key={quoteItem.id}
-                  draggableId={quoteItem.id}
-                  index={index}
-                >
-                  {(provided, snapshot) => (
+            <div {...provided.droppableProps} ref={provided.innerRef} className="space-y-2">
+              {items.map((item, index) => (
+                <Draggable key={item.id} draggableId={item.id} index={index}>
+                  {(provided) => (
                     <div
                       ref={provided.innerRef}
                       {...provided.draggableProps}
                       {...provided.dragHandleProps}
-                      className={`${snapshot.isDragging ? 'shadow-lg' : ''}`}
                     >
                       <QuoteItemRow
-                        quoteItem={quoteItem}
+                        quoteItem={item}
                         addresses={addresses}
                         onUpdateItem={onUpdateItem}
                         onRemoveItem={onRemoveItem}
@@ -75,8 +57,6 @@ export const QuoteItemsList = ({
           )}
         </Droppable>
       </DragDropContext>
-      
-      <QuoteItemTotals items={items} />
     </div>
   );
 };

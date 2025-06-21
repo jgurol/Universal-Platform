@@ -4,6 +4,8 @@ import { useItems } from "@/hooks/useItems";
 import { useClientAddresses } from "@/hooks/useClientAddresses";
 import { useCarrierQuoteItems } from "@/hooks/useCarrierQuoteItems";
 import { useCategories } from "@/hooks/useCategories";
+import { useAuth } from "@/context/AuthContext";
+import { useClients } from "@/hooks/useClients";
 import { parseLocationToAddress } from "@/utils/addressParser";
 
 export const useQuoteItemActions = (clientInfoId?: string) => {
@@ -11,10 +13,16 @@ export const useQuoteItemActions = (clientInfoId?: string) => {
   const { addresses, addAddress } = useClientAddresses(clientInfoId || null);
   const { carrierQuoteItems } = useCarrierQuoteItems(clientInfoId || null);
   const { categories } = useCategories();
+  const { user } = useAuth();
+  const { clients } = useClients(null);
   const [selectedItemId, setSelectedItemId] = useState("");
   const [isAddingCarrierItem, setIsAddingCarrierItem] = useState(false);
 
-  const calculateSellPrice = (cost: number, categoryType?: string) => {
+  // Get agent commission rate from clients data
+  const currentAgent = clients.find(client => client.id === user?.id);
+  const agentCommissionRate = currentAgent?.commissionRate || 15;
+
+  const calculateSellPrice = (cost: number, categoryType?: string, commissionRate: number = agentCommissionRate) => {
     if (!categoryType || !categories.length) {
       return cost; // If no category or categories not loaded, return cost as sell price
     }
@@ -26,8 +34,13 @@ export const useQuoteItemActions = (clientInfoId?: string) => {
     );
 
     if (matchingCategory && matchingCategory.minimum_markup && matchingCategory.minimum_markup > 0) {
-      // Apply the minimum markup: sell price = cost * (1 + minimum_markup/100)
-      const markup = matchingCategory.minimum_markup / 100;
+      // Calculate effective minimum markup after commission reduction
+      const originalMinimumMarkup = matchingCategory.minimum_markup;
+      const commissionReduction = agentCommissionRate - commissionRate;
+      const effectiveMinimumMarkup = Math.max(0, originalMinimumMarkup - commissionReduction);
+      
+      // Apply the effective minimum markup: sell price = cost * (1 + effectiveMinimumMarkup/100)
+      const markup = effectiveMinimumMarkup / 100;
       return Math.round(cost * (1 + markup) * 100) / 100; // Round to 2 decimal places
     }
 
@@ -93,8 +106,8 @@ export const useQuoteItemActions = (clientInfoId?: string) => {
         matchingAddress = addresses.find(addr => addr.is_primary) || addresses[0] || null;
       }
 
-      // Calculate sell price using category markup
-      const sellPrice = calculateSellPrice(carrierItem.price, carrierItem.type);
+      // Calculate sell price using category markup with current agent commission rate
+      const sellPrice = calculateSellPrice(carrierItem.price, carrierItem.type, agentCommissionRate);
 
       // Create a temporary quote item for the carrier quote
       const quoteItem: QuoteItemData = {
@@ -169,6 +182,7 @@ export const useQuoteItemActions = (clientInfoId?: string) => {
     addCarrierItem,
     addRegularItem,
     addresses,
-    carrierQuoteItems
+    carrierQuoteItems,
+    agentCommissionRate
   };
 };
