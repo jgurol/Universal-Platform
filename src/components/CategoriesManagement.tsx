@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -124,7 +125,8 @@ export const CategoriesManagement = () => {
                     {category.description && (
                       <p className="text-sm text-gray-600">{category.description}</p>
                     )}
-                    {category.minimum_markup !== undefined && category.minimum_markup > 0 && (
+                    {/* Only show commission reduction info to admins */}
+                    {isAdmin && category.minimum_markup !== undefined && category.minimum_markup > 0 && (
                       <p className="text-xs text-orange-600 mt-1">
                         Agents can reduce markup but commission decreases proportionally
                       </p>
