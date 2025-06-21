@@ -12,21 +12,26 @@ export const useQuoteActions = (
   const { toast } = useToast();
 
   const addQuote = async (newQuote: Omit<Quote, "id">) => {
-    if (!user) {
-      console.error('[addQuote] No user found, cannot create quote');
+    // Enhanced authentication check for agents
+    if (!user?.id) {
+      console.error('[addQuote] No authenticated user found - user object:', user);
       toast({
-        title: "Error",
-        description: "You must be logged in to create a quote.",
+        title: "Authentication Error",
+        description: "You must be logged in to create a quote. Please refresh the page and try again.",
         variant: "destructive",
       });
       return;
     }
     
     try {
-      console.log('[addQuote] Creating quote with user:', user.id);
-      console.log('[addQuote] Creating quote with data:', {
+      console.log('[addQuote] Creating quote with authenticated user:', user.id);
+      console.log('[addQuote] Quote data being sent:', {
         ...newQuote,
-        quoteItemsCount: newQuote.quoteItems?.length || 0
+        quoteItemsCount: newQuote.quoteItems?.length || 0,
+        hasAddresses: {
+          billing: !!newQuote.billingAddress,
+          service: !!newQuote.serviceAddress
+        }
       });
       
       await addQuoteToDatabase(newQuote, user.id);
@@ -39,9 +44,20 @@ export const useQuoteActions = (
       });
     } catch (error) {
       console.error('[addQuote] Error creating quote:', error);
+      
+      // Provide more specific error messages based on the error type
+      let errorMessage = "Failed to create quote. Please try again.";
+      if (error instanceof Error) {
+        if (error.message.includes('authentication') || error.message.includes('User ID')) {
+          errorMessage = "Authentication error. Please refresh the page and try again.";
+        } else if (error.message.includes('RLS') || error.message.includes('policy')) {
+          errorMessage = "Access denied. Please check your permissions or contact support.";
+        }
+      }
+      
       toast({
         title: "Error",
-        description: "Failed to create quote. Please try again.",
+        description: errorMessage,
         variant: "destructive",
       });
     }
