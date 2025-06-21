@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { ChevronDown, ChevronRight, Edit, Trash2 } from "lucide-react";
 import { CircuitQuoteStatusSelect } from "@/components/CircuitQuoteStatusSelect";
 import { EditCircuitQuoteDialog } from "@/components/EditCircuitQuoteDialog";
+import { useAuth } from "@/context/AuthContext";
 import type { CircuitQuote } from "@/hooks/useCircuitQuotes";
 
 interface CircuitQuoteCardHeaderProps {
@@ -28,6 +29,7 @@ export const CircuitQuoteCardHeader = ({
   onUpdateQuote
 }: CircuitQuoteCardHeaderProps) => {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const { isAdmin } = useAuth();
 
   const handleEditQuote = () => {
     setIsEditDialogOpen(true);
@@ -36,6 +38,36 @@ export const CircuitQuoteCardHeader = ({
   const handleUpdateQuote = (updatedQuote: CircuitQuote) => {
     if (onUpdateQuote) {
       onUpdateQuote(updatedQuote);
+    }
+  };
+
+  const getStatusBadgeColor = (status: string) => {
+    switch (status) {
+      case 'new_pricing':
+        return 'bg-blue-50 text-blue-700 border-blue-200';
+      case 'researching':
+        return 'bg-yellow-50 text-yellow-700 border-yellow-200';
+      case 'completed':
+        return 'bg-green-50 text-green-700 border-green-200';
+      case 'sent_to_customer':
+        return 'bg-purple-50 text-purple-700 border-purple-200';
+      default:
+        return 'bg-gray-50 text-gray-700 border-gray-200';
+    }
+  };
+
+  const formatStatusLabel = (status: string) => {
+    switch (status) {
+      case 'new_pricing':
+        return 'New Pricing';
+      case 'researching':
+        return 'Researching';
+      case 'completed':
+        return 'Completed';
+      case 'sent_to_customer':
+        return 'Sent to Customer';
+      default:
+        return status.charAt(0).toUpperCase() + status.slice(1);
     }
   };
 
@@ -89,34 +121,49 @@ export const CircuitQuoteCardHeader = ({
             </div>
           )}
 
-          <CircuitQuoteStatusSelect
-            status={quote.status}
-            onStatusChange={onStatusChange}
-          />
+          {/* Status - Dropdown for admins, Badge for agents */}
+          {isAdmin ? (
+            <CircuitQuoteStatusSelect
+              status={quote.status}
+              onStatusChange={onStatusChange}
+            />
+          ) : (
+            <Badge 
+              variant="outline" 
+              className={`text-xs ${getStatusBadgeColor(quote.status)}`}
+            >
+              {formatStatusLabel(quote.status)}
+            </Badge>
+          )}
           
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={handleEditQuote}
-            className="h-8 w-8 p-0"
-            title="Edit Quote"
-          >
-            <Edit className="h-4 w-4" />
-          </Button>
-          
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={onDeleteQuote}
-            className="h-8 w-8 p-0 text-red-600 hover:text-red-700"
-            title="Delete Quote"
-          >
-            <Trash2 className="h-4 w-4" />
-          </Button>
+          {/* Action buttons - only visible to admins */}
+          {isAdmin && (
+            <>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleEditQuote}
+                className="h-8 w-8 p-0"
+                title="Edit Quote"
+              >
+                <Edit className="h-4 w-4" />
+              </Button>
+              
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={onDeleteQuote}
+                className="h-8 w-8 p-0 text-red-600 hover:text-red-700"
+                title="Delete Quote"
+              >
+                <Trash2 className="h-4 w-4" />
+              </Button>
+            </>
+          )}
         </div>
       </div>
 
-      {onUpdateQuote && (
+      {isAdmin && onUpdateQuote && (
         <EditCircuitQuoteDialog
           open={isEditDialogOpen}
           onOpenChange={setIsEditDialogOpen}
