@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { QuoteItemData } from "@/types/quoteItems";
 import { useItems } from "@/hooks/useItems";
@@ -107,6 +106,12 @@ export const useQuoteItemActions = (clientInfoId?: string) => {
         matchingAddress = addresses.find(addr => addr.is_primary) || addresses[0] || null;
       }
 
+      // Find matching category for the carrier type to get category_id
+      const matchingCategory = categories.find(cat => 
+        cat.type?.toLowerCase() === carrierItem.type.toLowerCase() ||
+        cat.name.toLowerCase().includes(carrierItem.type.toLowerCase())
+      );
+
       // Calculate sell price using category markup with current agent commission rate
       const sellPrice = calculateSellPrice(carrierItem.price, carrierItem.type, agentCommissionRate);
 
@@ -131,6 +136,7 @@ export const useQuoteItemActions = (clientInfoId?: string) => {
           cost: carrierItem.price,
           charge_type: 'MRC',
           is_active: true,
+          category_id: matchingCategory?.id, // Add category_id here
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString()
         },
