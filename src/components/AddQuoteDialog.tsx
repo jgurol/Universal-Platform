@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -596,7 +595,7 @@ export const AddQuoteDialog = ({ open, onOpenChange, onAddQuote, clients, client
                         onCheckedChange={() => handleDealSelection(deal.id)}
                       />
                       <label
-                        html For={`deal-${deal.id}`}
+                        htmlFor={`deal-${deal.id}`}
                         className="text-sm cursor-pointer flex-1"
                       >
                         <span className="font-medium">{deal.deal_name}</span>
