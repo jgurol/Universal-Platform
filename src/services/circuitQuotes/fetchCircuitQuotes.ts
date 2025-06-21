@@ -43,6 +43,7 @@ export const fetchCircuitQuotes = async (userId: string | undefined, isAdmin: bo
     id: quote.id,
     client_name: quote.client_name,
     client_info_id: quote.client_info_id,
+    deal_registration_id: quote.deal_registration_id, // Include deal registration ID
     location: quote.location,
     suite: quote.suite || '',
     created_at: new Date(quote.created_at).toLocaleDateString('en-US', { 

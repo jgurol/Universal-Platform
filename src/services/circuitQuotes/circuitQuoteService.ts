@@ -15,6 +15,7 @@ export const useCircuitQuoteService = () => {
           user_id: userId,
           client_name: newQuote.client_name,
           client_info_id: newQuote.client_info_id,
+          deal_registration_id: newQuote.deal_registration_id, // Include deal registration ID
           location: newQuote.location,
           suite: newQuote.suite,
           status: newQuote.status,
@@ -65,6 +66,7 @@ export const useCircuitQuoteService = () => {
         .update({
           client_name: updatedQuote.client_name,
           client_info_id: updatedQuote.client_info_id,
+          deal_registration_id: updatedQuote.deal_registration_id, // Include deal registration ID in updates
           location: updatedQuote.location,
           suite: updatedQuote.suite,
           status: updatedQuote.status,

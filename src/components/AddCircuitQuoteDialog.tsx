@@ -250,10 +250,13 @@ export const AddCircuitQuoteDialog = ({ open, onOpenChange, onAddQuote }: AddCir
       return;
     }
     
-    // Always use the client's ID as client_info_id, regardless of deal selection
+    // Determine the deal_registration_id to save
+    const dealRegistrationId = (selectedDealId && selectedDealId !== "no-deal") ? selectedDealId : null;
+    
     onAddQuote({
       client_name: clientName,
       client_info_id: selectedClient?.id || null,
+      deal_registration_id: dealRegistrationId, // Save the selected deal ID
       location,
       suite,
       status: 'new_pricing',

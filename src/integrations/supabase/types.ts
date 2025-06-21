@@ -336,6 +336,7 @@ export type Database = {
           client_info_id: string | null
           client_name: string
           created_at: string
+          deal_registration_id: string | null
           dhcp: boolean | null
           id: string
           location: string
@@ -351,6 +352,7 @@ export type Database = {
           client_info_id?: string | null
           client_name: string
           created_at?: string
+          deal_registration_id?: string | null
           dhcp?: boolean | null
           id?: string
           location: string
@@ -366,6 +368,7 @@ export type Database = {
           client_info_id?: string | null
           client_name?: string
           created_at?: string
+          deal_registration_id?: string | null
           dhcp?: boolean | null
           id?: string
           location?: string
@@ -383,6 +386,13 @@ export type Database = {
             columns: ["client_info_id"]
             isOneToOne: false
             referencedRelation: "client_info"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "circuit_quotes_deal_registration_id_fkey"
+            columns: ["deal_registration_id"]
+            isOneToOne: false
+            referencedRelation: "deal_registrations"
             referencedColumns: ["id"]
           },
         ]

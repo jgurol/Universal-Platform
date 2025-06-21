@@ -3,6 +3,7 @@ export interface CircuitQuote {
   id: string;
   client_name: string;
   client_info_id: string | null;
+  deal_registration_id: string | null; // Add deal registration association
   location: string;
   suite: string;
   created_at: string;
