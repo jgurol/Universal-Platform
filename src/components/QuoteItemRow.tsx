@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -79,14 +80,17 @@ export const QuoteItemRow = ({ quoteItem, addresses, onUpdateItem, onRemoveItem 
   // Handle commission rate change and update sell price accordingly
   const handleCommissionRateChange = (newCommissionRate: number) => {
     // Don't allow commission to go below 0 or above agent's max rate
-    if (newCommissionRate < 0 || newCommissionRate > agentCommissionRate) {
+    const clampedCommissionRate = Math.max(0, Math.min(newCommissionRate, agentCommissionRate));
+    
+    if (clampedCommissionRate !== newCommissionRate) {
+      // If the user tried to go outside bounds, just return without changes
       return;
     }
 
-    setCommissionRate(newCommissionRate);
+    setCommissionRate(clampedCommissionRate);
 
-    // Calculate the commission reduction
-    const commissionReduction = agentCommissionRate - newCommissionRate;
+    // Calculate the commission reduction from the agent's maximum rate
+    const commissionReduction = agentCommissionRate - clampedCommissionRate;
     const commissionReductionPercentage = commissionReduction / 100; // Convert to decimal
 
     // Calculate the base price with minimum markup (if category has one)
@@ -100,6 +104,43 @@ export const QuoteItemRow = ({ quoteItem, addresses, onUpdateItem, onRemoveItem 
     
     // Update the sell price
     onUpdateItem(quoteItem.id, 'unit_price', Math.round(newSellPrice * 100) / 100);
+  };
+
+  // Handle sell price changes - ensure commission doesn't go negative
+  const handleSellPriceChange = (newSellPrice: number) => {
+    // Calculate what the minimum sell price would be for 0% commission
+    let minimumSellPrice = cost;
+    if (itemCategory?.minimum_markup && cost > 0) {
+      minimumSellPrice = cost * (1 + itemCategory.minimum_markup / 100);
+    }
+    
+    // Apply the maximum possible commission reduction (agent's full commission rate)
+    const maxCommissionReductionPercentage = agentCommissionRate / 100;
+    minimumSellPrice = minimumSellPrice * (1 - maxCommissionReductionPercentage);
+    
+    // Don't allow sell price to go below the minimum that would result in 0% commission
+    if (newSellPrice < minimumSellPrice) {
+      return; // Don't update if it would result in negative commission
+    }
+    
+    // Update the sell price
+    onUpdateItem(quoteItem.id, 'unit_price', newSellPrice);
+    
+    // Calculate the new effective commission rate based on the sell price
+    let basePriceWithMinimumMarkup = cost;
+    if (itemCategory?.minimum_markup && cost > 0) {
+      basePriceWithMinimumMarkup = cost * (1 + itemCategory.minimum_markup / 100);
+    }
+    
+    // Calculate how much discount was applied
+    const discountPercentage = basePriceWithMinimumMarkup > 0 ? 
+      (basePriceWithMinimumMarkup - newSellPrice) / basePriceWithMinimumMarkup : 0;
+    
+    // Convert discount percentage back to commission reduction
+    const commissionReduction = discountPercentage * 100;
+    const newCommissionRate = Math.max(0, agentCommissionRate - commissionReduction);
+    
+    setCommissionRate(newCommissionRate);
   };
 
   // Calculate the effective minimum markup after commission reduction
@@ -254,7 +295,7 @@ export const QuoteItemRow = ({ quoteItem, addresses, onUpdateItem, onRemoveItem 
               step="0.01"
               min="0"
               value={quoteItem.unit_price}
-              onChange={(e) => onUpdateItem(quoteItem.id, 'unit_price', parseFloat(e.target.value) || 0)}
+              onChange={(e) => handleSellPriceChange(parseFloat(e.target.value) || 0)}
               className="text-xs h-8"
               placeholder="$"
             />
