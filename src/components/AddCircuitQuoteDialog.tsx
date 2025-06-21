@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -163,7 +162,7 @@ export const AddCircuitQuoteDialog = ({ open, onOpenChange, onAddQuote }: AddCir
     
     onAddQuote({
       client_name: clientName,
-      client_info_id: selectedDealId || selectedClient?.id || null,
+      client_info_id: selectedDealId === "no-deal" ? selectedClient?.id || null : selectedDealId,
       location,
       suite,
       status: 'new_pricing',
@@ -221,7 +220,7 @@ export const AddCircuitQuoteDialog = ({ open, onOpenChange, onAddQuote }: AddCir
                 <SelectValue placeholder="Select a deal registration (optional)" />
               </SelectTrigger>
               <SelectContent className="bg-white">
-                <SelectItem value="">No specific deal</SelectItem>
+                <SelectItem value="no-deal">No specific deal</SelectItem>
                 {associatedDeals.map((deal) => (
                   <SelectItem key={deal.id} value={deal.id}>
                     <div className="flex flex-col">
