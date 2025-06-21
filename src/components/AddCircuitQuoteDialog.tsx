@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -36,7 +37,7 @@ export const AddCircuitQuoteDialog = ({ open, onOpenChange, onAddQuote }: AddCir
   const [suite, setSuite] = useState("");
   const [staticIp, setStaticIp] = useState(false);
   const [slash29, setSlash29] = useState(false);
-  const [mikrotikRequired, setMikrotikRequired] = useState(false);
+  const [mikrotikRequired, setMikrotikRequired] = useState(true); // Changed to default true
   const [circuitCategories, setCircuitCategories] = useState<string[]>([]);
 
   // Get circuit categories from the categories table where type is "Circuit"
@@ -133,7 +134,7 @@ export const AddCircuitQuoteDialog = ({ open, onOpenChange, onAddQuote }: AddCir
     setSuite("");
     setStaticIp(false);
     setSlash29(false);
-    setMikrotikRequired(false);
+    setMikrotikRequired(true); // Reset to default true
     setCircuitCategories([]);
     onOpenChange(false);
   };
@@ -239,7 +240,7 @@ export const AddCircuitQuoteDialog = ({ open, onOpenChange, onAddQuote }: AddCir
                   onCheckedChange={(checked) => setMikrotikRequired(checked as boolean)}
                 />
                 <Label htmlFor="mikrotik-required" className="text-sm font-normal">
-                  Mikrotik Required
+                  Router Required (Mikrotik)
                 </Label>
               </div>
             </div>
