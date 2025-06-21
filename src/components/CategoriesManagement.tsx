@@ -132,12 +132,6 @@ export const CategoriesManagement = () => {
                     {category.description && (
                       <p className="text-sm text-gray-600">{category.description}</p>
                     )}
-                    {/* Only show commission reduction info to admins */}
-                    {isAdmin && category.minimum_markup !== undefined && category.minimum_markup > 0 && (
-                      <p className="text-xs text-orange-600 mt-1">
-                        Agents can reduce markup but commission decreases proportionally
-                      </p>
-                    )}
                   </div>
                   {isAdmin && (
                     <div className="flex items-center gap-2">
