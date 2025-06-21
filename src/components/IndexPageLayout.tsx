@@ -10,7 +10,7 @@ import { useAuth } from "@/context/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { User, Building } from "lucide-react";
+import { User, Building, Percent } from "lucide-react";
 
 export const IndexPageLayout = () => {
   const [isAddClientOpen, setIsAddClientOpen] = useState(false);
@@ -19,6 +19,7 @@ export const IndexPageLayout = () => {
     name: string;
     company: string;
     email: string;
+    commissionRate: number;
   } | null>(null);
   const { isAdmin, user } = useAuth();
 
@@ -60,7 +61,7 @@ export const IndexPageLayout = () => {
     try {
       const { data, error } = await supabase
         .from('agents')
-        .select('first_name, last_name, company_name, email')
+        .select('first_name, last_name, company_name, email, commission_rate')
         .eq('id', agentId)
         .single();
       
@@ -73,7 +74,8 @@ export const IndexPageLayout = () => {
         setAssociatedAgentInfo({
           name: `${data.first_name} ${data.last_name}`,
           company: data.company_name || '',
-          email: data.email || ''
+          email: data.email || '',
+          commissionRate: data.commission_rate || 0
         });
       }
     } catch (err) {
@@ -123,6 +125,12 @@ export const IndexPageLayout = () => {
                       </Badge>
                     </div>
                   )}
+                  <div className="flex items-center gap-2">
+                    <Badge variant="outline" className="bg-purple-50 text-purple-700 border-purple-200">
+                      <Percent className="w-3 h-3 mr-1" />
+                      {associatedAgentInfo.commissionRate}% Commission
+                    </Badge>
+                  </div>
                   {associatedAgentInfo.email && (
                     <div className="text-sm text-gray-600">
                       Contact: {associatedAgentInfo.email}

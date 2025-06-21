@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { NavigationBar } from "@/components/NavigationBar";
 import { Header } from "@/components/Header";
@@ -8,7 +9,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Client, Transaction } from "@/pages/Index";
 import { useAuth } from "@/context/AuthContext";
 import { Button } from "@/components/ui/button";
-import { Plus, User, Building } from "lucide-react";
+import { Plus, User, Building, Percent } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 
@@ -22,6 +23,7 @@ export default function AgentManagement() {
     name: string;
     company: string;
     email: string;
+    commissionRate: number;
   } | null>(null);
   const { toast } = useToast();
   const { user, isAdmin } = useAuth();
@@ -64,7 +66,7 @@ export default function AgentManagement() {
     try {
       const { data, error } = await supabase
         .from('agents')
-        .select('first_name, last_name, company_name, email')
+        .select('first_name, last_name, company_name, email, commission_rate')
         .eq('id', agentId)
         .single();
       
@@ -77,7 +79,8 @@ export default function AgentManagement() {
         setAssociatedAgentInfo({
           name: `${data.first_name} ${data.last_name}`,
           company: data.company_name || '',
-          email: data.email || ''
+          email: data.email || '',
+          commissionRate: data.commission_rate || 0
         });
       }
     } catch (err) {
@@ -316,6 +319,12 @@ export default function AgentManagement() {
                     </Badge>
                   </div>
                 )}
+                <div className="flex items-center gap-2">
+                  <Badge variant="outline" className="bg-purple-50 text-purple-700 border-purple-200">
+                    <Percent className="w-3 h-3 mr-1" />
+                    {associatedAgentInfo.commissionRate}% Commission
+                  </Badge>
+                </div>
                 {associatedAgentInfo.email && (
                   <div className="text-sm text-gray-600">
                     Contact: {associatedAgentInfo.email}
