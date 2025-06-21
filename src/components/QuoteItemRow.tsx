@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -85,20 +86,16 @@ export const QuoteItemRow = ({ quoteItem, addresses, onUpdateItem, onRemoveItem 
 
     setCommissionRate(newCommissionRate);
 
-    // If there's a minimum markup category, calculate the new effective minimum markup
-    if (itemCategory?.minimum_markup && cost > 0) {
-      const originalMinimumMarkup = itemCategory.minimum_markup;
-      const commissionReduction = agentCommissionRate - newCommissionRate;
-      
-      // Calculate the effective minimum markup after commission reduction
-      const effectiveMinimumMarkup = Math.max(0, originalMinimumMarkup - commissionReduction);
-      
-      // Calculate new sell price based on effective minimum markup
-      const newSellPrice = cost * (1 + effectiveMinimumMarkup / 100);
-      
-      // Update the sell price
-      onUpdateItem(quoteItem.id, 'unit_price', Math.round(newSellPrice * 100) / 100);
-    }
+    // Calculate the percentage reduction in commission
+    const commissionReduction = agentCommissionRate - newCommissionRate;
+    const commissionReductionPercentage = commissionReduction / 100; // Convert to decimal
+
+    // Reduce the sell price by the same percentage
+    const currentSellPrice = quoteItem.unit_price || 0;
+    const newSellPrice = currentSellPrice * (1 - commissionReductionPercentage);
+    
+    // Update the sell price
+    onUpdateItem(quoteItem.id, 'unit_price', Math.round(newSellPrice * 100) / 100);
   };
 
   // Calculate the effective minimum markup after commission reduction
@@ -299,6 +296,13 @@ export const QuoteItemRow = ({ quoteItem, addresses, onUpdateItem, onRemoveItem 
             Rate: {commissionRate.toFixed(1)}%
           </div>
           
+          {/* Show commission reduction info */}
+          {agentCommissionRate - commissionRate > 0 && (
+            <div className="text-xs text-red-600">
+              -{(agentCommissionRate - commissionRate).toFixed(1)}% price reduction
+            </div>
+          )}
+          
           {/* Show markup info only if category has minimum markup */}
           {itemCategory?.minimum_markup && (
             <>
@@ -311,11 +315,6 @@ export const QuoteItemRow = ({ quoteItem, addresses, onUpdateItem, onRemoveItem 
               <div className="text-xs text-blue-600">
                 Final: {markupCalculation.finalCommissionRate.toFixed(1)}%
               </div>
-              {agentCommissionRate - commissionRate > 0 && (
-                <div className="text-xs text-red-600">
-                  -{(agentCommissionRate - commissionRate).toFixed(1)}% comm reduction
-                </div>
-              )}
               {!markupCalculation.isValid && (
                 <div className="text-xs text-red-600">
                   {markupCalculation.errorMessage}
