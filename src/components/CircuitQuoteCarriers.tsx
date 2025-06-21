@@ -4,6 +4,7 @@ import { Plus } from "lucide-react";
 import type { CarrierQuote } from "@/hooks/useCircuitQuotes";
 import { CarrierCard } from "./CircuitQuoteCarriers/CarrierCard";
 import { CarrierTags } from "./CircuitQuoteCarriers/CarrierTags";
+import { useAuth } from "@/context/AuthContext";
 
 interface CircuitQuoteCarriersProps {
   carriers: CarrierQuote[];
@@ -28,6 +29,8 @@ export const CircuitQuoteCarriers = ({
   slash29 = false,
   mikrotikRequired = false
 }: CircuitQuoteCarriersProps) => {
+  const { isAdmin } = useAuth();
+
   if (isMinimized) {
     return <CarrierTags carriers={carriers} />;
   }
@@ -45,7 +48,7 @@ export const CircuitQuoteCarriers = ({
     <div className="space-y-4">
       <div className="flex justify-between items-center">
         <h4 className="font-medium text-gray-900">Carrier Quotes</h4>
-        {onAddCarrier && (
+        {isAdmin && onAddCarrier && (
           <Button
             size="sm"
             onClick={onAddCarrier}
@@ -62,9 +65,9 @@ export const CircuitQuoteCarriers = ({
           <CarrierCard
             key={carrier.id}
             carrier={carrier}
-            onEdit={onEditCarrier}
-            onDelete={onDeleteCarrier}
-            onCopy={onCopyCarrier}
+            onEdit={isAdmin ? onEditCarrier : undefined}
+            onDelete={isAdmin ? onDeleteCarrier : undefined}
+            onCopy={isAdmin ? onCopyCarrier : undefined}
           />
         ))}
       </div>
