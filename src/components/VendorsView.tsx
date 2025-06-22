@@ -1,7 +1,8 @@
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Building2, Mail, Phone, User, FileText, ExternalLink } from "lucide-react";
+import { Building2, Mail, Phone, User, FileText, ExternalLink, AlertCircle } from "lucide-react";
 import { useVendors } from "@/hooks/useVendors";
 import { useVendorPriceSheets } from "@/hooks/useVendorPriceSheets";
 import { useAuth } from "@/context/AuthContext";
@@ -44,6 +45,41 @@ export const VendorsView = () => {
 
   const handleOpenPriceSheet = async (priceSheet: any) => {
     try {
+      console.log('Opening price sheet with path:', priceSheet.file_path);
+      
+      // First, let's check if the file exists in storage
+      const { data: fileList, error: listError } = await supabase.storage
+        .from('vendor-price-sheets')
+        .list('', { search: priceSheet.file_path });
+
+      if (listError) {
+        console.error('Error listing files:', listError);
+        toast({
+          title: "Storage Error",
+          description: `Cannot access storage: ${listError.message}`,
+          variant: "destructive"
+        });
+        return;
+      }
+
+      console.log('Files found in storage:', fileList);
+
+      // Check if our specific file exists
+      const fileExists = fileList && fileList.some(file => 
+        priceSheet.file_path.includes(file.name)
+      );
+
+      if (!fileExists) {
+        console.error('File not found in storage:', priceSheet.file_path);
+        toast({
+          title: "File Not Found",
+          description: `The file "${priceSheet.name}" was not found in storage. It may have been deleted or moved.`,
+          variant: "destructive"
+        });
+        return;
+      }
+
+      // Try to create signed URL
       const { data, error } = await supabase.storage
         .from('vendor-price-sheets')
         .createSignedUrl(priceSheet.file_path, 3600); // 1 hour expiry
@@ -51,12 +87,14 @@ export const VendorsView = () => {
       if (error) {
         console.error('Error creating signed URL:', error);
         toast({
-          title: "Error",
-          description: error.message,
+          title: "Access Error",
+          description: `Cannot access file: ${error.message}`,
           variant: "destructive"
         });
         return;
       }
+
+      console.log('Successfully created signed URL');
 
       // Open in popup window
       const popup = window.open(
@@ -71,12 +109,17 @@ export const VendorsView = () => {
           description: "Please allow popups for this site to view price sheets",
           variant: "destructive"
         });
+      } else {
+        toast({
+          title: "Opening price sheet",
+          description: `${priceSheet.name} is opening in a popup window.`,
+        });
       }
     } catch (error) {
-      console.error('Error opening price sheet:', error);
+      console.error('Unexpected error opening price sheet:', error);
       toast({
         title: "Error",
-        description: "Failed to open the price sheet",
+        description: "An unexpected error occurred while opening the price sheet",
         variant: "destructive"
       });
     }

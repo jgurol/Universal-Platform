@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
@@ -45,6 +46,56 @@ export const useVendorPriceSheets = () => {
     }
   };
 
+  const verifyFileExists = async (filePath: string): Promise<boolean> => {
+    try {
+      const { data, error } = await supabase.storage
+        .from('vendor-price-sheets')
+        .list('', { search: filePath });
+      
+      if (error) {
+        console.error('Error checking file existence:', error);
+        return false;
+      }
+      
+      return data && data.some(file => filePath.includes(file.name));
+    } catch (error) {
+      console.error('Error verifying file exists:', error);
+      return false;
+    }
+  };
+
+  const cleanupOrphanedRecords = async () => {
+    if (!isAdmin) return; // Only admins can cleanup
+    
+    try {
+      for (const sheet of priceSheets) {
+        const exists = await verifyFileExists(sheet.file_path);
+        if (!exists) {
+          console.log(`File not found for sheet ${sheet.name}, removing database record`);
+          await supabase
+            .from('vendor_price_sheets')
+            .delete()
+            .eq('id', sheet.id);
+        }
+      }
+      
+      // Refresh the list after cleanup
+      await fetchPriceSheets();
+      
+      toast({
+        title: "Cleanup completed",
+        description: "Removed database records for missing files",
+      });
+    } catch (error) {
+      console.error('Error during cleanup:', error);
+      toast({
+        title: "Cleanup failed",
+        description: "Failed to clean up orphaned records",
+        variant: "destructive"
+      });
+    }
+  };
+
   const uploadPriceSheet = async (file: File, name: string, vendorId?: string, isPublic?: boolean) => {
     if (!user) return;
 
@@ -54,14 +105,19 @@ export const useVendorPriceSheets = () => {
       const fileName = `${Date.now()}.${fileExt}`;
       const filePath = `${user.id}/${fileName}`;
 
+      console.log('Uploading file to path:', filePath);
+
       // Upload file to storage
       const { error: uploadError } = await supabase.storage
         .from('vendor-price-sheets')
         .upload(filePath, file);
 
       if (uploadError) {
+        console.error('Upload error:', uploadError);
         throw uploadError;
       }
+
+      console.log('File uploaded successfully, saving to database');
 
       // Save metadata to database
       const { data, error: dbError } = await supabase
@@ -80,8 +136,11 @@ export const useVendorPriceSheets = () => {
         .single();
 
       if (dbError) {
+        console.error('Database error:', dbError);
         throw dbError;
       }
+
+      console.log('Database record created successfully');
 
       setPriceSheets(prev => [data, ...prev]);
       toast({
@@ -182,6 +241,8 @@ export const useVendorPriceSheets = () => {
     uploadPriceSheet,
     deletePriceSheet,
     downloadPriceSheet,
-    fetchPriceSheets
+    fetchPriceSheets,
+    cleanupOrphanedRecords,
+    verifyFileExists
   };
 };
