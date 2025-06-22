@@ -27,12 +27,32 @@ export const generateQuotePDF = async (quote: Quote, clientInfo?: ClientInfo, sa
       }
     }
     
+    // Fetch primary contact if clientInfo is available
+    let primaryContact = null;
+    if (clientInfo?.id) {
+      console.log('PDF Generation - Fetching primary contact for client:', clientInfo.id);
+      const { data: contactData, error: contactError } = await supabase
+        .from('client_contacts')
+        .select('*')
+        .eq('client_info_id', clientInfo.id)
+        .eq('is_primary', true)
+        .maybeSingle();
+      
+      if (contactError) {
+        console.error('PDF Generation - Error fetching primary contact:', contactError);
+      } else if (contactData) {
+        primaryContact = contactData;
+        console.log('PDF Generation - Found primary contact:', contactData.first_name, contactData.last_name);
+      }
+    }
+    
     // Call our edge function to generate PDF using PDFShift
     const { data, error } = await supabase.functions.invoke('generate-pdf-pdfshift', {
       body: {
         quote: quoteWithUserId,
         clientInfo,
-        salespersonName
+        salespersonName,
+        primaryContact
       }
     });
 

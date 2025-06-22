@@ -21,11 +21,12 @@ const handler = async (req: Request): Promise<Response> => {
 
   try {
     const requestBody = await req.json();
-    const { quote, clientInfo, salespersonName }: PDFRequest = requestBody;
+    const { quote, clientInfo, salespersonName, primaryContact }: PDFRequest = requestBody;
     
     console.log('PDFShift Function - Processing quote:', quote?.id, 'with status:', quote?.status);
     console.log('PDFShift Function - Quote user_id:', quote?.user_id);
     console.log('PDFShift Function - Quote items count:', quote?.quoteItems?.length || 0);
+    console.log('PDFShift Function - Primary contact:', primaryContact ? `${primaryContact.first_name} ${primaryContact.last_name}` : 'None');
     
     // Fetch system settings and template
     const businessSettings = await fetchSystemSettings();
@@ -47,14 +48,15 @@ const handler = async (req: Request): Promise<Response> => {
     
     console.log('PDFShift Function - Final account manager name:', accountManagerName);
     
-    // Create HTML template with logo, settings, and template content
+    // Create HTML template with logo, settings, template content, and primary contact
     const html = generateHTML(
       quote, 
       clientInfo, 
       accountManagerName, 
       businessSettings.logoUrl, 
       businessSettings.companyName, 
-      templateContent
+      templateContent,
+      primaryContact
     );
     console.log('PDFShift Function - HTML generated, length:', html.length);
     

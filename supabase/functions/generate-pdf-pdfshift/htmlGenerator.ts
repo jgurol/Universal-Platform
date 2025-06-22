@@ -9,7 +9,14 @@ export const generateHTML = (
   accountManagerName?: string, 
   logoUrl?: string, 
   companyName?: string, 
-  templateContent?: string
+  templateContent?: string,
+  primaryContact?: {
+    first_name: string;
+    last_name: string;
+    email: string | null;
+    phone: string | null;
+    title: string | null;
+  }
 ): string => {
   // Extract data safely
   const quoteId = quote?.id || '';
@@ -24,9 +31,23 @@ export const generateHTML = (
   const initialTerm = quote?.term || '36 Months';
   
   const clientCompanyName = clientInfo?.company_name || 'Company Name';
-  const contactName = clientInfo?.contact_name || 'Contact Name';
-  const contactEmail = clientInfo?.email || '';
-  const contactPhone = clientInfo?.phone || '';
+  
+  // Use primary contact if available, otherwise fallback to clientInfo
+  let contactName = 'Contact Name';
+  let contactEmail = '';
+  let contactPhone = '';
+  
+  if (primaryContact) {
+    contactName = `${primaryContact.first_name} ${primaryContact.last_name}`;
+    contactEmail = primaryContact.email || '';
+    contactPhone = primaryContact.phone || '';
+    console.log('PDFShift Function - Using primary contact:', contactName);
+  } else if (clientInfo) {
+    contactName = clientInfo.contact_name || 'Contact Name';
+    contactEmail = clientInfo.email || '';
+    contactPhone = clientInfo.phone || '';
+    console.log('PDFShift Function - Using clientInfo contact:', contactName);
+  }
   
   const isApproved = status === 'approved' || status === 'accepted';
   
@@ -582,7 +603,7 @@ export const generateHTML = (
             <div class="address-title">Billing Information</div>
             <div class="address-content">
                 <div><strong>${clientCompanyName}</strong></div>
-                <div>Jonathan Conn</div>
+                <div>${contactName}</div>
                 <div>${billingAddress || 'Address not specified'}</div>
                 ${contactPhone ? `<div>Tel: ${contactPhone}</div>` : ''}
                 ${contactEmail ? `<div>Email: ${contactEmail}</div>` : ''}
@@ -592,7 +613,7 @@ export const generateHTML = (
             <div class="address-title">Service Address</div>
             <div class="address-content">
                 <div><strong>${clientCompanyName}</strong></div>
-                <div>Jonathan Conn</div>
+                <div>${contactName}</div>
                 <div>${serviceAddress || 'Same as billing address'}</div>
                 ${contactPhone ? `<div>Tel: ${contactPhone}</div>` : ''}
                 ${contactEmail ? `<div>Email: ${contactEmail}</div>` : ''}
