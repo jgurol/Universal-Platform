@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Quote, ClientInfo } from "@/pages/Index";
@@ -42,6 +43,14 @@ export const EmailQuoteForm = ({
   const { user } = useAuth();
 
   const { contacts, isLoading: contactsLoading } = useClientContacts(clientInfo?.id || null);
+
+  // Transform contacts to match the expected format for the email components
+  const transformedContacts = contacts.map(contact => ({
+    id: contact.id,
+    name: `${contact.first_name} ${contact.last_name}`,
+    email: contact.email || '',
+    is_primary: contact.is_primary
+  }));
 
   // Fetch the quote owner's name from the profiles table
   useEffect(() => {
@@ -114,7 +123,7 @@ export const EmailQuoteForm = ({
       // Use client info contact name
       contactName = clientInfo?.contact_name || '';
     } else if (selectedRecipientContact !== "custom") {
-      const selectedContact = contacts.find(c => c.id === selectedRecipientContact);
+      const selectedContact = transformedContacts.find(c => c.id === selectedRecipientContact);
       if (selectedContact?.name) {
         contactName = selectedContact.name;
       }
@@ -140,7 +149,7 @@ ${quoteOwnerName}`;
 
     console.log('EmailQuoteForm - Setting message template with greeting:', greeting);
     setMessage(messageTemplate);
-  }, [clientInfo?.contact_name, quoteOwnerName, ownerNameLoaded, selectedRecipientContact, contacts]);
+  }, [clientInfo?.contact_name, quoteOwnerName, ownerNameLoaded, selectedRecipientContact, transformedContacts]);
 
   // Set primary contact as default recipient when component mounts
   useEffect(() => {
@@ -149,16 +158,16 @@ ${quoteOwnerName}`;
       console.log('EmailQuoteForm - Using client info as primary contact:', clientInfo);
       setSelectedRecipientContact("client-info");
       setRecipientEmail(clientInfo.email);
-    } else if (contacts.length > 0) {
-      console.log('EmailQuoteForm - Setting up recipient from contacts:', contacts);
-      const primaryContact = contacts.find(contact => contact.is_primary);
+    } else if (transformedContacts.length > 0) {
+      console.log('EmailQuoteForm - Setting up recipient from contacts:', transformedContacts);
+      const primaryContact = transformedContacts.find(contact => contact.is_primary);
       if (primaryContact?.email) {
         console.log('EmailQuoteForm - Found primary contact:', primaryContact);
         setSelectedRecipientContact(primaryContact.id);
         setRecipientEmail(primaryContact.email);
       } else {
         // If no primary contact with email, use first contact with email
-        const firstContactWithEmail = contacts.find(contact => contact.email);
+        const firstContactWithEmail = transformedContacts.find(contact => contact.email);
         if (firstContactWithEmail) {
           console.log('EmailQuoteForm - Using first contact with email:', firstContactWithEmail);
           setSelectedRecipientContact(firstContactWithEmail.id);
@@ -174,7 +183,7 @@ ${quoteOwnerName}`;
       setRecipientEmail(clientInfo.email);
       setCustomRecipientEmail(clientInfo.email);
     }
-  }, [contacts, clientInfo]);
+  }, [transformedContacts, clientInfo]);
 
   // Update recipient email when contact selection changes
   useEffect(() => {
@@ -183,20 +192,20 @@ ${quoteOwnerName}`;
     } else if (selectedRecipientContact === "client-info") {
       setRecipientEmail(clientInfo?.email || '');
     } else {
-      const selectedContact = contacts.find(c => c.id === selectedRecipientContact);
+      const selectedContact = transformedContacts.find(c => c.id === selectedRecipientContact);
       if (selectedContact?.email) {
         setRecipientEmail(selectedContact.email);
       }
     }
-  }, [selectedRecipientContact, customRecipientEmail, contacts, clientInfo]);
+  }, [selectedRecipientContact, customRecipientEmail, transformedContacts, clientInfo]);
 
   // Update CC emails when CC contact selection changes
   useEffect(() => {
     const ccEmailList = selectedCcContacts
-      .map(contactId => contacts.find(c => c.id === contactId)?.email)
+      .map(contactId => transformedContacts.find(c => c.id === contactId)?.email)
       .filter(email => email && email !== recipientEmail) as string[];
     setCcEmails(ccEmailList);
-  }, [selectedCcContacts, contacts, recipientEmail]);
+  }, [selectedCcContacts, transformedContacts, recipientEmail]);
 
   const handleCcContactToggle = (contactId: string, checked: boolean) => {
     if (checked) {
@@ -207,7 +216,7 @@ ${quoteOwnerName}`;
   };
 
   const removeCcEmail = (emailToRemove: string) => {
-    const contactToRemove = contacts.find(c => c.email === emailToRemove);
+    const contactToRemove = transformedContacts.find(c => c.email === emailToRemove);
     if (contactToRemove) {
       setSelectedCcContacts(prev => prev.filter(id => id !== contactToRemove.id));
     }
@@ -337,7 +346,7 @@ ${quoteOwnerName}`;
     if (selectedRecipientContact === "client-info") {
       return clientInfo?.contact_name || '';
     } else if (selectedRecipientContact !== "custom") {
-      const selectedContact = contacts.find(c => c.id === selectedRecipientContact);
+      const selectedContact = transformedContacts.find(c => c.id === selectedRecipientContact);
       return selectedContact?.name || '';
     }
     return clientInfo?.contact_name || '';
@@ -346,7 +355,7 @@ ${quoteOwnerName}`;
   return (
     <div className="space-y-4">
       <EmailContactSelector
-        contacts={contacts}
+        contacts={transformedContacts}
         contactsLoading={contactsLoading}
         selectedRecipientContact={selectedRecipientContact}
         onRecipientContactChange={setSelectedRecipientContact}
@@ -356,7 +365,7 @@ ${quoteOwnerName}`;
       />
 
       <CCContactSelector
-        contacts={contacts}
+        contacts={transformedContacts}
         selectedRecipientContact={selectedRecipientContact}
         selectedCcContacts={selectedCcContacts}
         onCcContactToggle={handleCcContactToggle}

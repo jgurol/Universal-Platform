@@ -548,30 +548,36 @@ export type Database = {
           client_info_id: string
           created_at: string
           email: string | null
+          first_name: string
           id: string
           is_primary: boolean
-          name: string
-          role: string | null
+          last_name: string
+          phone: string | null
+          title: string | null
           updated_at: string
         }
         Insert: {
           client_info_id: string
           created_at?: string
           email?: string | null
+          first_name?: string
           id?: string
           is_primary?: boolean
-          name: string
-          role?: string | null
+          last_name?: string
+          phone?: string | null
+          title?: string | null
           updated_at?: string
         }
         Update: {
           client_info_id?: string
           created_at?: string
           email?: string | null
+          first_name?: string
           id?: string
           is_primary?: boolean
-          name?: string
-          role?: string | null
+          last_name?: string
+          phone?: string | null
+          title?: string | null
           updated_at?: string
         }
         Relationships: [
