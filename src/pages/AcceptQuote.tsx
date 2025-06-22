@@ -1,6 +1,7 @@
+
 import React, { useState, useEffect } from "react";
 import { useParams, useSearchParams } from "react-router-dom";
-import { ClientInfo } from "@/pages/Index";
+import { ClientInfo } from "@/types/index";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -78,7 +79,7 @@ interface Contact {
   is_primary: boolean;
 }
 
-export const AcceptQuote = () => {
+const AcceptQuote = () => {
   const { quoteId } = useParams<{ quoteId: string }>();
   const [searchParams] = useSearchParams();
   const token = searchParams.get('token');
@@ -542,3 +543,5 @@ export const AcceptQuote = () => {
     </div>
   );
 };
+
+export default AcceptQuote;

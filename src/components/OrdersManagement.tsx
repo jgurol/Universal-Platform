@@ -1,21 +1,16 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
+import { useAuth } from "@/context/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, Package, User, Building2, DollarSign, CheckCircle, Circle, Clock, Search, FileText, Trash2, Archive, RotateCcw } from "lucide-react";
-import { Textarea } from "@/components/ui/textarea";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/context/AuthContext";
 import { useToast } from "@/hooks/use-toast";
-import { ClientInfo } from "@/pages/Index";
-import { useAgentMapping } from "@/hooks/useAgentMapping";
-import { formatDateForDisplay } from "@/utils/dateUtils";
-import { generateQuotePDF } from "@/utils/pdf";
-import { Quote, QuoteItem } from "@/pages/Index";
+import { Plus, Search, Filter, Eye } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { ClientInfo } from "@/types/index";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
 interface Order {
   id: string;
@@ -62,6 +57,11 @@ export const OrdersManagement = () => {
   const [quoteAcceptances, setQuoteAcceptances] = useState<Record<string, QuoteAcceptance>>({});
   const [quotesData, setQuotesData] = useState<Record<string, any>>({});
   const [isGeneratingPdf, setIsGeneratingPdf] = useState<string | null>(null);
+  const [newOrder, setNewOrder] = useState<ClientInfo>({
+    company_name: '',
+    notes: '',
+  });
+  const [showCreateDialog, setShowCreateDialog] = useState(false);
 
   const { user } = useAuth();
   const { toast } = useToast();
@@ -397,6 +397,51 @@ export const OrdersManagement = () => {
     commission_override: null
   };
 
+  const handleCreateOrder = async () => {
+    if (!newOrder.company_name.trim()) {
+      toast({
+        title: "Error",
+        description: "Company name is required",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    try {
+      // Create client info first
+      const clientInfoData = {
+        company_name: newOrder.company_name,
+        notes: newOrder.notes || '',
+      };
+
+      const { error: clientError } = await supabase
+        .from('client_info')
+        .insert(clientInfoData);
+
+      if (clientError) throw clientError;
+
+      toast({
+        title: "Success",
+        description: "Order created successfully",
+      });
+
+      // Reset form and close dialog
+      setNewOrder({
+        company_name: '',
+        notes: '',
+      });
+      setShowCreateDialog(false);
+      fetchOrders();
+    } catch (error) {
+      console.error('Error creating order:', error);
+      toast({
+        title: "Error",
+        description: "Failed to create order",
+        variant: "destructive"
+      });
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
@@ -614,6 +659,100 @@ export const OrdersManagement = () => {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Create Order Dialog */}
+      <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle>Create Order</DialogTitle>
+            <DialogDescription>
+              Add a new order.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="company_name">Company Name</Label>
+              <Input
+                id="company_name"
+                value={newOrder.company_name}
+                onChange={(e) => setNewOrder(prev => ({ ...prev, company_name: e.target.value }))}
+                placeholder="Enter company name"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="notes">Notes</Label>
+              <Textarea
+                id="notes"
+                value={newOrder.notes}
+                onChange={(e) => setNewOrder(prev => ({ ...prev, notes: e.target.value }))}
+                placeholder="Add notes about this order"
+                rows={3}
+              />
+            </div>
+
+            <div className="flex justify-end space-x-2">
+              <Button variant="outline" onClick={() => setShowCreateDialog(false)}>
+                Cancel
+              </Button>
+              <Button onClick={handleCreateOrder}>
+                Create Order
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Create Order Button */}
+      <div className="flex justify-end">
+        <Button variant="outline" onClick={() => setShowCreateDialog(true)}>
+          <Plus className="h-4 w-4 mr-2" />
+          Create Order
+        </Button>
+      </div>
+
+      {/* Orders List */}
+      <div className="bg-white rounded-lg shadow">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Company</TableHead>
+              <TableHead>Notes</TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead>Total</TableHead>
+              <TableHead>Commission</TableHead>
+              <TableHead>Actions</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {filteredOrders.map((order) => (
+              <TableRow key={order.id}>
+                <TableCell>
+                  <div>
+                    <p className="font-medium">{order.company_name}</p>
+                  </div>
+                </TableCell>
+                <TableCell>{order.notes}</TableCell>
+                <TableCell>
+                  <Badge variant="secondary">Active</Badge>
+                </TableCell>
+                <TableCell>$0.00</TableCell>
+                <TableCell>$0.00</TableCell>
+                <TableCell>
+                  <div className="flex space-x-2">
+                    <Button size="sm" variant="outline">
+                      <Eye className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </div>
     </div>
   );
 };
+
+export default OrdersManagement;
