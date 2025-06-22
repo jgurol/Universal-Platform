@@ -3,7 +3,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { Plus, Edit, Trash2, User, Crown } from "lucide-react";
+import { Plus, Edit, Trash2, User, Crown, Mail, Phone } from "lucide-react";
 import { ClientContact } from "@/types/clientContacts";
 import { AddClientContactDialog } from "@/components/AddClientContactDialog";
 import { EditClientContactDialog } from "@/components/EditClientContactDialog";
@@ -58,7 +58,9 @@ export const ClientContactsList = ({
             <div key={contact.id} className="flex items-center justify-between p-3 border border-gray-200 rounded-lg bg-gray-50">
               <div className="flex-1">
                 <div className="flex items-center gap-2 mb-1">
-                  <h4 className="font-medium text-gray-900">{contact.name}</h4>
+                  <h4 className="font-medium text-gray-900">
+                    {contact.first_name} {contact.last_name}
+                  </h4>
                   {contact.is_primary && (
                     <Badge variant="outline" className="text-xs bg-yellow-50 text-yellow-700 border-yellow-200">
                       <Crown className="w-3 h-3 mr-1" />
@@ -66,12 +68,23 @@ export const ClientContactsList = ({
                     </Badge>
                   )}
                 </div>
-                {contact.email && (
-                  <p className="text-sm text-gray-600">{contact.email}</p>
-                )}
-                {contact.role && (
-                  <p className="text-sm text-gray-500">{contact.role}</p>
-                )}
+                <div className="space-y-1">
+                  {contact.title && (
+                    <p className="text-sm text-gray-600 font-medium">{contact.title}</p>
+                  )}
+                  {contact.email && (
+                    <div className="flex items-center gap-1 text-sm text-gray-600">
+                      <Mail className="w-3 h-3" />
+                      {contact.email}
+                    </div>
+                  )}
+                  {contact.phone && (
+                    <div className="flex items-center gap-1 text-sm text-gray-600">
+                      <Phone className="w-3 h-3" />
+                      {contact.phone}
+                    </div>
+                  )}
+                </div>
               </div>
               
               <div className="flex gap-2">
@@ -99,7 +112,7 @@ export const ClientContactsList = ({
                     <AlertDialogHeader>
                       <AlertDialogTitle>Are you sure?</AlertDialogTitle>
                       <AlertDialogDescription>
-                        This action will permanently delete the contact "{contact.name}". This cannot be undone.
+                        This action will permanently delete the contact "{contact.first_name} {contact.last_name}". This cannot be undone.
                       </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>

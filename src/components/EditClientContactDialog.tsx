@@ -20,32 +20,38 @@ export const EditClientContactDialog = ({
   onOpenChange, 
   onUpdateContact 
 }: EditClientContactDialogProps) => {
-  const [name, setName] = useState("");
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
-  const [role, setRole] = useState("");
+  const [phone, setPhone] = useState("");
+  const [title, setTitle] = useState("");
   const [isPrimary, setIsPrimary] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     if (contact) {
-      setName(contact.name);
+      setFirstName(contact.first_name);
+      setLastName(contact.last_name);
       setEmail(contact.email || "");
-      setRole(contact.role || "");
+      setPhone(contact.phone || "");
+      setTitle(contact.title || "");
       setIsPrimary(contact.is_primary);
     }
   }, [contact]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!contact || !name.trim()) return;
+    if (!contact || !firstName.trim() || !lastName.trim()) return;
 
     setIsSubmitting(true);
     try {
       await onUpdateContact({
         id: contact.id,
-        name: name.trim(),
+        first_name: firstName.trim(),
+        last_name: lastName.trim(),
         email: email.trim() || null,
-        role: role.trim() || null,
+        phone: phone.trim() || null,
+        title: title.trim() || null,
         is_primary: isPrimary
       });
       onOpenChange(false);
@@ -66,15 +72,27 @@ export const EditClientContactDialog = ({
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="edit-name">Name *</Label>
-            <Input
-              id="edit-name"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="Enter contact name"
-              required
-            />
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="edit-firstName">First Name *</Label>
+              <Input
+                id="edit-firstName"
+                value={firstName}
+                onChange={(e) => setFirstName(e.target.value)}
+                placeholder="Enter first name"
+                required
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="edit-lastName">Last Name *</Label>
+              <Input
+                id="edit-lastName"
+                value={lastName}
+                onChange={(e) => setLastName(e.target.value)}
+                placeholder="Enter last name"
+                required
+              />
+            </div>
           </div>
           
           <div className="space-y-2">
@@ -89,11 +107,21 @@ export const EditClientContactDialog = ({
           </div>
           
           <div className="space-y-2">
-            <Label htmlFor="edit-role">Role/Title</Label>
+            <Label htmlFor="edit-phone">Phone</Label>
             <Input
-              id="edit-role"
-              value={role}
-              onChange={(e) => setRole(e.target.value)}
+              id="edit-phone"
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+              placeholder="Enter phone number"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="edit-title">Title</Label>
+            <Input
+              id="edit-title"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
               placeholder="e.g., Manager, CEO, IT Director"
             />
           </div>
@@ -114,7 +142,7 @@ export const EditClientContactDialog = ({
             <Button 
               type="submit" 
               className="bg-green-600 hover:bg-green-700"
-              disabled={isSubmitting || !name.trim()}
+              disabled={isSubmitting || !firstName.trim() || !lastName.trim()}
             >
               {isSubmitting ? 'Updating...' : 'Update Contact'}
             </Button>

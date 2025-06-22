@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -7,6 +6,7 @@ import { Edit, Trash2, Mail, Building, User, MapPin } from "lucide-react";
 import { ClientInfo } from "@/pages/Index";
 import { EditClientInfoDialog } from "@/components/EditClientInfoDialog";
 import { ClientLocationsDialog } from "@/components/ClientLocationsDialog";
+import { ClientContactsDialog } from "@/components/ClientContactsDialog";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
@@ -31,6 +31,7 @@ export const ClientInfoList = ({
 }: ClientInfoListProps) => {
   const [editingClientInfo, setEditingClientInfo] = useState<ClientInfo | null>(null);
   const [viewingLocationsClientId, setViewingLocationsClientId] = useState<string | null>(null);
+  const [viewingContactsClientId, setViewingContactsClientId] = useState<string | null>(null);
   const [agents, setAgents] = useState<Agent[]>([]);
   const [agentMap, setAgentMap] = useState<Record<string, string>>({});
   const { toast } = useToast();
@@ -163,6 +164,15 @@ export const ClientInfoList = ({
                       <Button
                         variant="outline"
                         size="sm"
+                        onClick={() => setViewingContactsClientId(clientInfo.id)}
+                        className="hover:bg-purple-50 hover:border-purple-300 text-purple-600"
+                        title="View Contacts"
+                      >
+                        <User className="w-4 h-4" />
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
                         onClick={() => setViewingLocationsClientId(clientInfo.id)}
                         className="hover:bg-green-50 hover:border-green-300 text-green-600"
                         title="View Locations"
@@ -208,6 +218,14 @@ export const ClientInfoList = ({
           clientId={viewingLocationsClientId}
           open={!!viewingLocationsClientId}
           onOpenChange={(open) => !open && setViewingLocationsClientId(null)}
+        />
+      )}
+
+      {viewingContactsClientId && (
+        <ClientContactsDialog
+          clientId={viewingContactsClientId}
+          open={!!viewingContactsClientId}
+          onOpenChange={(open) => !open && setViewingContactsClientId(null)}
         />
       )}
     </>

@@ -18,7 +18,7 @@ export const useClientContacts = (clientInfoId: string | null) => {
         .from('client_contacts')
         .select('*')
         .eq('client_info_id', clientInfoId)
-        .order('name');
+        .order('first_name');
 
       if (error) throw error;
       setContacts(data || []);
@@ -52,7 +52,7 @@ export const useClientContacts = (clientInfoId: string | null) => {
       setContacts(prev => [...prev, data]);
       toast({
         title: "Contact added",
-        description: `${data.name} has been added successfully.`
+        description: `${data.first_name} ${data.last_name} has been added successfully.`
       });
     } catch (error) {
       console.error('Error adding contact:', error);
@@ -69,9 +69,11 @@ export const useClientContacts = (clientInfoId: string | null) => {
       const { data, error } = await supabase
         .from('client_contacts')
         .update({
-          name: contactData.name,
+          first_name: contactData.first_name,
+          last_name: contactData.last_name,
           email: contactData.email,
-          role: contactData.role,
+          phone: contactData.phone,
+          title: contactData.title,
           is_primary: contactData.is_primary
         })
         .eq('id', contactData.id)
@@ -85,7 +87,7 @@ export const useClientContacts = (clientInfoId: string | null) => {
       ));
       toast({
         title: "Contact updated",
-        description: `${data.name} has been updated successfully.`
+        description: `${data.first_name} ${data.last_name} has been updated successfully.`
       });
     } catch (error) {
       console.error('Error updating contact:', error);

@@ -18,22 +18,26 @@ export const AddClientContactDialog = ({
   onOpenChange, 
   onAddContact 
 }: AddClientContactDialogProps) => {
-  const [name, setName] = useState("");
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
-  const [role, setRole] = useState("");
+  const [phone, setPhone] = useState("");
+  const [title, setTitle] = useState("");
   const [isPrimary, setIsPrimary] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name.trim()) return;
+    if (!firstName.trim() || !lastName.trim()) return;
 
     setIsSubmitting(true);
     try {
       await onAddContact({
-        name: name.trim(),
+        first_name: firstName.trim(),
+        last_name: lastName.trim(),
         email: email.trim() || null,
-        role: role.trim() || null,
+        phone: phone.trim() || null,
+        title: title.trim() || null,
         is_primary: isPrimary
       });
       resetForm();
@@ -46,9 +50,11 @@ export const AddClientContactDialog = ({
   };
 
   const resetForm = () => {
-    setName("");
+    setFirstName("");
+    setLastName("");
     setEmail("");
-    setRole("");
+    setPhone("");
+    setTitle("");
     setIsPrimary(false);
   };
 
@@ -65,15 +71,27 @@ export const AddClientContactDialog = ({
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="name">Name *</Label>
-            <Input
-              id="name"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="Enter contact name"
-              required
-            />
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="firstName">First Name *</Label>
+              <Input
+                id="firstName"
+                value={firstName}
+                onChange={(e) => setFirstName(e.target.value)}
+                placeholder="Enter first name"
+                required
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="lastName">Last Name *</Label>
+              <Input
+                id="lastName"
+                value={lastName}
+                onChange={(e) => setLastName(e.target.value)}
+                placeholder="Enter last name"
+                required
+              />
+            </div>
           </div>
           
           <div className="space-y-2">
@@ -88,11 +106,21 @@ export const AddClientContactDialog = ({
           </div>
           
           <div className="space-y-2">
-            <Label htmlFor="role">Role/Title</Label>
+            <Label htmlFor="phone">Phone</Label>
             <Input
-              id="role"
-              value={role}
-              onChange={(e) => setRole(e.target.value)}
+              id="phone"
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+              placeholder="Enter phone number"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="title">Title</Label>
+            <Input
+              id="title"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
               placeholder="e.g., Manager, CEO, IT Director"
             />
           </div>
@@ -116,7 +144,7 @@ export const AddClientContactDialog = ({
             <Button 
               type="submit" 
               className="bg-green-600 hover:bg-green-700"
-              disabled={isSubmitting || !name.trim()}
+              disabled={isSubmitting || !firstName.trim() || !lastName.trim()}
             >
               {isSubmitting ? 'Adding...' : 'Add Contact'}
             </Button>
