@@ -30,7 +30,10 @@ export const EmailContactSelector = ({
   onCustomRecipientEmailChange,
   clientInfo
 }: EmailContactSelectorProps) => {
-  const availableContacts = contacts.filter(contact => contact.email);
+  // Only show contacts that have email addresses and belong to this client
+  const availableContacts = contacts.filter(contact => 
+    contact.email && contact.email.trim() !== ''
+  );
 
   return (
     <>
@@ -44,8 +47,8 @@ export const EmailContactSelector = ({
               <SelectValue placeholder="Select recipient" />
             </SelectTrigger>
             <SelectContent>
-              {/* Show client info as an option if we have contact name and email */}
-              {clientInfo?.contact_name && clientInfo?.email && (
+              {/* Show client info as an option only if we have contact name and email and no contacts exist */}
+              {clientInfo?.contact_name && clientInfo?.email && availableContacts.length === 0 && (
                 <SelectItem value="client-info">
                   {clientInfo.contact_name} ({clientInfo.email}) - Primary Contact
                 </SelectItem>
