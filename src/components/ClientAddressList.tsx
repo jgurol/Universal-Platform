@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { Edit, MapPin, Plus, Trash2 } from "lucide-react";
+import { Edit, MapPin, Plus, Trash2, Crown } from "lucide-react";
 import { ClientAddress, AddClientAddressData, UpdateClientAddressData } from "@/types/clientAddress";
 import { AddAddressDialog } from "@/components/AddAddressDialog";
 import { EditAddressDialog } from "@/components/EditAddressDialog";
@@ -79,7 +79,8 @@ export const ClientAddressList = ({
                       {address.address_type.charAt(0).toUpperCase() + address.address_type.slice(1)}
                     </Badge>
                     {address.is_primary && (
-                      <Badge variant="default" className="bg-green-600">
+                      <Badge variant="default" className="bg-green-600 text-white">
+                        <Crown className="w-3 h-3 mr-1" />
                         Primary
                       </Badge>
                     )}
