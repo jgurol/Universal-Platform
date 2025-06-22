@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Edit, Trash2, Mail, Building, User, MapPin, Phone, Crown } from "lucide-react";
+import { Edit, Trash2, Building, User, MapPin, Crown } from "lucide-react";
 import { ClientInfo } from "@/pages/Index";
 import { EditClientInfoDialog } from "@/components/EditClientInfoDialog";
 import { ClientLocationsDialog } from "@/components/ClientLocationsDialog";
@@ -257,26 +257,6 @@ export const ClientInfoList = ({
                             )}
                           </div>
                         )}
-                        
-                        <div className="flex flex-col sm:flex-row gap-4 text-sm text-gray-600">
-                          {clientInfo.contact_name && (
-                            <div className="flex items-center gap-1">
-                              <User className="w-4 h-4" />
-                              {clientInfo.contact_name}
-                            </div>
-                          )}
-                          {clientInfo.email && (
-                            <div className="flex items-center gap-1">
-                              <Mail className="w-4 h-4" />
-                              {clientInfo.email}
-                            </div>
-                          )}
-                          {clientInfo.phone && (
-                            <div className="text-gray-500">
-                              Phone: {clientInfo.phone}
-                            </div>
-                          )}
-                        </div>
                         
                         {clientInfo.notes && (
                           <div className="mt-2 text-sm text-gray-600">
