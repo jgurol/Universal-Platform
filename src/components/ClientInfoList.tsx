@@ -1,14 +1,16 @@
+
 import { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Edit, Trash2, Mail, Building, User, MapPin } from "lucide-react";
+import { Edit, Trash2, Mail, Building, User, MapPin, Phone, Crown } from "lucide-react";
 import { ClientInfo } from "@/pages/Index";
 import { EditClientInfoDialog } from "@/components/EditClientInfoDialog";
 import { ClientLocationsDialog } from "@/components/ClientLocationsDialog";
 import { ClientContactsDialog } from "@/components/ClientContactsDialog";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { ClientContact } from "@/types/clientContacts";
 
 interface ClientInfoListProps {
   clientInfos: ClientInfo[];
@@ -34,6 +36,7 @@ export const ClientInfoList = ({
   const [viewingContactsClientId, setViewingContactsClientId] = useState<string | null>(null);
   const [agents, setAgents] = useState<Agent[]>([]);
   const [agentMap, setAgentMap] = useState<Record<string, string>>({});
+  const [primaryContacts, setPrimaryContacts] = useState<Record<string, ClientContact>>({});
   const { toast } = useToast();
 
   // Fetch agents to create mapping
@@ -65,6 +68,38 @@ export const ClientInfoList = ({
 
     fetchAgents();
   }, []);
+
+  // Fetch primary contacts for all clients
+  useEffect(() => {
+    const fetchPrimaryContacts = async () => {
+      if (clientInfos.length === 0) return;
+
+      try {
+        const clientIds = clientInfos.map(client => client.id);
+        const { data, error } = await supabase
+          .from('client_contacts')
+          .select('*')
+          .in('client_info_id', clientIds)
+          .eq('is_primary', true);
+
+        if (error) {
+          console.error('Error fetching primary contacts:', error);
+          return;
+        }
+
+        // Create a mapping of client_info_id to primary contact
+        const contactsMap: Record<string, ClientContact> = {};
+        data?.forEach(contact => {
+          contactsMap[contact.client_info_id] = contact;
+        });
+        setPrimaryContacts(contactsMap);
+      } catch (err) {
+        console.error('Error in primary contacts fetch:', err);
+      }
+    };
+
+    fetchPrimaryContacts();
+  }, [clientInfos]);
 
   const handleDelete = async (clientInfo: ClientInfo) => {
     if (window.confirm(`Are you sure you want to delete ${clientInfo.company_name}?`)) {
@@ -105,100 +140,136 @@ export const ClientInfoList = ({
                 <p>No clients added yet. Click "Add Client" to get started!</p>
               </div>
             ) : (
-              clientInfos.map((clientInfo) => (
-                <div
-                  key={clientInfo.id}
-                  className="flex flex-col p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors duration-200"
-                >
-                  <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-4">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-3 mb-2">
-                        <h3 className="font-semibold text-gray-900">{clientInfo.company_name}</h3>
-                        {clientInfo.agent_id && agentMap[clientInfo.agent_id] && (
-                          <Badge variant="secondary" className="bg-blue-100 text-blue-800">
-                            <User className="w-3 h-3 mr-1" />
-                            {agentMap[clientInfo.agent_id]}
-                          </Badge>
+              clientInfos.map((clientInfo) => {
+                const primaryContact = primaryContacts[clientInfo.id];
+                
+                return (
+                  <div
+                    key={clientInfo.id}
+                    className="flex flex-col p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors duration-200"
+                  >
+                    <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-4">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-3 mb-2">
+                          <h3 className="font-semibold text-gray-900">{clientInfo.company_name}</h3>
+                          {clientInfo.agent_id && agentMap[clientInfo.agent_id] && (
+                            <Badge variant="secondary" className="bg-blue-100 text-blue-800">
+                              <User className="w-3 h-3 mr-1" />
+                              {agentMap[clientInfo.agent_id]}
+                            </Badge>
+                          )}
+                          {clientInfo.commission_override && (
+                            <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+                              {clientInfo.commission_override}% Override
+                            </Badge>
+                          )}
+                        </div>
+                        
+                        {/* Primary Contact Section */}
+                        {primaryContact && (
+                          <div className="mb-3 p-3 bg-yellow-50 border border-yellow-200 rounded-md">
+                            <div className="flex items-center gap-2 mb-2">
+                              <Crown className="w-4 h-4 text-yellow-600" />
+                              <span className="font-medium text-yellow-800">Primary Contact</span>
+                            </div>
+                            <div className="space-y-1 text-sm">
+                              <div className="font-medium text-gray-900">
+                                {primaryContact.first_name} {primaryContact.last_name}
+                              </div>
+                              {primaryContact.title && (
+                                <div className="text-gray-600">{primaryContact.title}</div>
+                              )}
+                              <div className="flex flex-col sm:flex-row gap-2 text-gray-600">
+                                {primaryContact.email && (
+                                  <div className="flex items-center gap-1">
+                                    <Mail className="w-3 h-3" />
+                                    {primaryContact.email}
+                                  </div>
+                                )}
+                                {primaryContact.phone && (
+                                  <div className="flex items-center gap-1">
+                                    <Phone className="w-3 h-3" />
+                                    {primaryContact.phone}
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          </div>
                         )}
-                        {clientInfo.commission_override && (
-                          <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
-                            {clientInfo.commission_override}% Override
-                          </Badge>
+                        
+                        <div className="flex flex-col sm:flex-row gap-4 text-sm text-gray-600">
+                          {clientInfo.contact_name && (
+                            <div className="flex items-center gap-1">
+                              <User className="w-4 h-4" />
+                              {clientInfo.contact_name}
+                            </div>
+                          )}
+                          {clientInfo.email && (
+                            <div className="flex items-center gap-1">
+                              <Mail className="w-4 h-4" />
+                              {clientInfo.email}
+                            </div>
+                          )}
+                          {clientInfo.phone && (
+                            <div className="text-gray-500">
+                              Phone: {clientInfo.phone}
+                            </div>
+                          )}
+                        </div>
+                        
+                        {clientInfo.notes && (
+                          <div className="mt-2 text-sm text-gray-600">
+                            <strong>Notes:</strong> {clientInfo.notes}
+                          </div>
+                        )}
+                        
+                        {clientInfo.revio_id && (
+                          <div className="mt-1 text-sm text-gray-500">
+                            Revio ID: {clientInfo.revio_id}
+                          </div>
                         )}
                       </div>
                       
-                      <div className="flex flex-col sm:flex-row gap-4 text-sm text-gray-600">
-                        {clientInfo.contact_name && (
-                          <div className="flex items-center gap-1">
-                            <User className="w-4 h-4" />
-                            {clientInfo.contact_name}
-                          </div>
-                        )}
-                        {clientInfo.email && (
-                          <div className="flex items-center gap-1">
-                            <Mail className="w-4 h-4" />
-                            {clientInfo.email}
-                          </div>
-                        )}
-                        {clientInfo.phone && (
-                          <div className="text-gray-500">
-                            Phone: {clientInfo.phone}
-                          </div>
-                        )}
+                      <div className="flex gap-2 mt-3 md:mt-0">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setViewingContactsClientId(clientInfo.id)}
+                          className="hover:bg-purple-50 hover:border-purple-300 text-purple-600"
+                          title="View Contacts"
+                        >
+                          <User className="w-4 h-4" />
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setViewingLocationsClientId(clientInfo.id)}
+                          className="hover:bg-green-50 hover:border-green-300 text-green-600"
+                          title="View Locations"
+                        >
+                          <MapPin className="w-4 h-4" />
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setEditingClientInfo(clientInfo)}
+                          className="hover:bg-blue-50 hover:border-blue-300"
+                        >
+                          <Edit className="w-4 h-4" />
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleDelete(clientInfo)}
+                          className="hover:bg-red-50 hover:border-red-300 text-red-600"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
                       </div>
-                      
-                      {clientInfo.notes && (
-                        <div className="mt-2 text-sm text-gray-600">
-                          <strong>Notes:</strong> {clientInfo.notes}
-                        </div>
-                      )}
-                      
-                      {clientInfo.revio_id && (
-                        <div className="mt-1 text-sm text-gray-500">
-                          Revio ID: {clientInfo.revio_id}
-                        </div>
-                      )}
-                    </div>
-                    
-                    <div className="flex gap-2 mt-3 md:mt-0">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setViewingContactsClientId(clientInfo.id)}
-                        className="hover:bg-purple-50 hover:border-purple-300 text-purple-600"
-                        title="View Contacts"
-                      >
-                        <User className="w-4 h-4" />
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setViewingLocationsClientId(clientInfo.id)}
-                        className="hover:bg-green-50 hover:border-green-300 text-green-600"
-                        title="View Locations"
-                      >
-                        <MapPin className="w-4 h-4" />
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setEditingClientInfo(clientInfo)}
-                        className="hover:bg-blue-50 hover:border-blue-300"
-                      >
-                        <Edit className="w-4 h-4" />
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleDelete(clientInfo)}
-                        className="hover:bg-red-50 hover:border-red-300 text-red-600"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
                     </div>
                   </div>
-                </div>
-              ))
+                );
+              })
             )}
           </div>
         </CardContent>
