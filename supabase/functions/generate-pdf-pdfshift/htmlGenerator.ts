@@ -1,4 +1,3 @@
-
 import { processRichTextContent, processTemplateContent } from './contentProcessor.ts';
 import { BusinessSettings } from './types.ts';
 
@@ -32,21 +31,28 @@ export const generateHTML = (
   
   const clientCompanyName = clientInfo?.company_name || 'Company Name';
   
-  // Use primary contact if available, otherwise fallback to clientInfo
+  // Use primary contact if available, with detailed logging
   let contactName = 'Contact Name';
   let contactEmail = '';
   let contactPhone = '';
+  
+  console.log('PDFShift Function - Processing contact info');
+  console.log('PDFShift Function - Primary contact received:', primaryContact);
+  console.log('PDFShift Function - Client info received:', clientInfo);
   
   if (primaryContact) {
     contactName = `${primaryContact.first_name} ${primaryContact.last_name}`;
     contactEmail = primaryContact.email || '';
     contactPhone = primaryContact.phone || '';
-    console.log('PDFShift Function - Using primary contact:', contactName, 'email:', contactEmail);
+    console.log('PDFShift Function - Using primary contact:', contactName, 'email:', contactEmail, 'phone:', contactPhone);
   } else if (clientInfo) {
+    // Only use clientInfo if no primary contact found
     contactName = clientInfo.contact_name || 'Contact Name';
     contactEmail = clientInfo.email || '';
     contactPhone = clientInfo.phone || '';
-    console.log('PDFShift Function - Using clientInfo contact:', contactName, 'email:', contactEmail);
+    console.log('PDFShift Function - Using clientInfo contact (fallback):', contactName, 'email:', contactEmail, 'phone:', contactPhone);
+  } else {
+    console.log('PDFShift Function - No contact information available');
   }
   
   const isApproved = status === 'approved' || status === 'accepted';

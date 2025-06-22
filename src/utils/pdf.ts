@@ -5,6 +5,7 @@ import { supabase } from '@/integrations/supabase/client';
 export const generateQuotePDF = async (quote: Quote, clientInfo?: ClientInfo, salespersonName?: string) => {
   console.log('PDF Generation - Using PDFShift integration for quote:', quote.id);
   console.log('PDF Generation - Quote user_id before sending:', quote.user_id);
+  console.log('PDF Generation - Client info ID:', clientInfo?.id);
   
   try {
     // Ensure we have the user_id in the quote object
@@ -42,10 +43,23 @@ export const generateQuotePDF = async (quote: Quote, clientInfo?: ClientInfo, sa
         console.error('PDF Generation - Error fetching primary contact:', contactError);
       } else if (contactData) {
         primaryContact = contactData;
-        console.log('PDF Generation - Found primary contact:', contactData.first_name, contactData.last_name, 'email:', contactData.email);
+        console.log('PDF Generation - Found primary contact:', contactData.first_name, contactData.last_name, 'email:', contactData.email, 'phone:', contactData.phone);
       } else {
         console.log('PDF Generation - No primary contact found for client:', clientInfo.id);
+        
+        // Let's also check what contacts exist for this client
+        const { data: allContacts, error: allContactsError } = await supabase
+          .from('client_contacts')
+          .select('*')
+          .eq('client_info_id', clientInfo.id);
+        
+        console.log('PDF Generation - All contacts for client:', allContacts);
+        if (allContactsError) {
+          console.error('PDF Generation - Error fetching all contacts:', allContactsError);
+        }
       }
+    } else {
+      console.log('PDF Generation - No client info ID provided, cannot fetch primary contact');
     }
     
     // Call our edge function to generate PDF using PDFShift
