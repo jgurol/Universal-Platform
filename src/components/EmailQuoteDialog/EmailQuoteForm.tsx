@@ -236,6 +236,28 @@ ${quoteOwnerName}`;
     onEmailStatusChange('idle');
     
     try {
+      // Fetch primary contact for PDF generation
+      let primaryContact = null;
+      if (clientInfo?.id) {
+        console.log('EmailQuoteForm - Fetching primary contact for PDF generation, client ID:', clientInfo.id);
+        const { data: contactData, error: contactError } = await supabase
+          .from('client_contacts')
+          .select('*')
+          .eq('client_info_id', clientInfo.id)
+          .eq('is_primary', true)
+          .maybeSingle();
+        
+        if (contactError) {
+          console.error('EmailQuoteForm - Error fetching primary contact:', contactError);
+        } else if (contactData) {
+          primaryContact = contactData;
+          console.log('EmailQuoteForm - Found primary contact for PDF:', contactData.first_name, contactData.last_name, 'email:', contactData.email);
+        } else {
+          console.log('EmailQuoteForm - No primary contact found for PDF generation');
+        }
+      }
+
+      console.log('EmailQuoteForm - Generating PDF with primary contact:', primaryContact);
       const pdf = await generateQuotePDF(quote, clientInfo, quoteOwnerName);
       const pdfBlob = pdf.output('blob');
       
