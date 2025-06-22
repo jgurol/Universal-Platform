@@ -29,7 +29,7 @@ export const useIndexData = () => {
         })
         .finally(() => setIsLoading(false));
     }
-  }, [user, associatedAgentId, isAdmin, fetchClients, fetchClientInfos, fetchQuotes]);
+  }, [user?.id, associatedAgentId, isAdmin]); // Remove fetchClients, fetchClientInfos, fetchQuotes from dependencies
 
   return {
     clients,
