@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Quote, ClientInfo } from "@/pages/Index";
@@ -39,7 +38,7 @@ export const EmailQuoteForm = ({
   const [ownerNameLoaded, setOwnerNameLoaded] = useState(false);
   const [messageTemplateSet, setMessageTemplateSet] = useState(false);
   const { toast } = useToast();
-  const { user } = useAuth();
+  const { user, isAdmin } = useAuth();
 
   const { contacts, isLoading: contactsLoading } = useClientContacts(clientInfo?.id || null);
 
@@ -51,7 +50,7 @@ export const EmailQuoteForm = ({
     is_primary: contact.is_primary
   }));
 
-  // Fetch the quote owner's name and email from the profiles table
+  // Fetch the quote owner's name and set appropriate email based on role
   useEffect(() => {
     const fetchQuoteOwnerInfo = async () => {
       console.log('EmailQuoteForm - Fetching quote owner info for user_id:', quote.user_id);
@@ -80,24 +79,26 @@ export const EmailQuoteForm = ({
           const name = profile.full_name && profile.full_name.trim() !== '' 
             ? profile.full_name 
             : profile.email?.split('@')[0] || 'Sales Team';
-          const email = profile.email || user?.email || 'sales@californiatelecom.com';
           
-          console.log('EmailQuoteForm - Found quote owner info:', name, email);
+          // Set email based on role: admin uses their email, agent uses sales@californiatelecom.com
+          const email = isAdmin ? (profile.email || user?.email || 'sales@californiatelecom.com') : 'sales@californiatelecom.com';
+          
+          console.log('EmailQuoteForm - Found quote owner info:', name, email, 'isAdmin:', isAdmin);
           setQuoteOwnerName(name);
           setQuoteOwnerEmail(email);
         } else {
           console.log('EmailQuoteForm - Could not fetch quote owner info, using current user fallback');
-          // If we can't get the quote owner, use current user info
+          // If we can't get the quote owner, use current user info with role-based email
           const name = user?.email?.split('@')[0] || 'Sales Team';
-          const email = user?.email || 'sales@californiatelecom.com';
+          const email = isAdmin ? (user?.email || 'sales@californiatelecom.com') : 'sales@californiatelecom.com';
           setQuoteOwnerName(name);
           setQuoteOwnerEmail(email);
         }
       } catch (error) {
         console.error('EmailQuoteForm - Error fetching quote owner info:', error);
-        // Use current user as fallback
+        // Use current user as fallback with role-based email
         const name = user?.email?.split('@')[0] || 'Sales Team';
-        const email = user?.email || 'sales@californiatelecom.com';
+        const email = isAdmin ? (user?.email || 'sales@californiatelecom.com') : 'sales@californiatelecom.com';
         setQuoteOwnerName(name);
         setQuoteOwnerEmail(email);
       }
@@ -105,7 +106,7 @@ export const EmailQuoteForm = ({
     };
 
     fetchQuoteOwnerInfo();
-  }, [quote.user_id, user]);
+  }, [quote.user_id, user, isAdmin]);
 
   // Set primary contact as default recipient when contacts load
   useEffect(() => {
@@ -359,7 +360,7 @@ ${quoteOwnerName}`;
         quoteId={quote.id}
         contactName={getCurrentContactName()}
         quoteOwnerName={quoteOwnerName}
-        fromEmail={user?.email || quoteOwnerEmail}
+        fromEmail={quoteOwnerEmail}
         recipientEmails={recipientEmail}
         onRecipientEmailsChange={handleRecipientEmailChange}
         ccEmails={ccEmails}
