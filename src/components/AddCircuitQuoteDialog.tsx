@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -105,7 +104,7 @@ const DealDetailsDialog = ({ open, onOpenChange, deal }: {
 export const AddCircuitQuoteDialog = ({ open, onOpenChange, onAddQuote }: AddCircuitQuoteDialogProps) => {
   const { user, isAdmin } = useAuth();
   const [associatedAgentId, setAssociatedAgentId] = useState<string | null>(null);
-  const { clients, fetchClients } = useClients(associatedAgentId);
+  const { clients, fetchClients } = useClients();
   const { categories } = useCategories();
   const [clientId, setClientId] = useState("");
   const [selectedDealId, setSelectedDealId] = useState("");

@@ -1,4 +1,3 @@
-
 import { Button } from "@/components/ui/button";
 import { Edit, Trash2, Copy } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
@@ -16,7 +15,7 @@ interface CarrierCardProps {
 export const CarrierCard = ({ carrier, onEdit, onDelete, onCopy }: CarrierCardProps) => {
   const { isAdmin, user } = useAuth();
   const { categories } = useCategories();
-  const { clients } = useClients(null);
+  const { clients } = useClients();
   
   const isPending = !carrier.price || carrier.price === 0;
   const isNoService = carrier.no_service;

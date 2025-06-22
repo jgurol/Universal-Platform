@@ -14,7 +14,7 @@ export const useQuoteItemActions = (clientInfoId?: string) => {
   const { carrierQuoteItems } = useCarrierQuoteItems(clientInfoId || null);
   const { categories } = useCategories();
   const { user } = useAuth();
-  const { clients } = useClients(null);
+  const { clients } = useClients();
   const [selectedItemId, setSelectedItemId] = useState("");
   const [isAddingCarrierItem, setIsAddingCarrierItem] = useState(false);
 

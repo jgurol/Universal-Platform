@@ -18,7 +18,7 @@ export const useIndexData = () => {
 
   useEffect(() => {
     if (user && associatedAgentId !== undefined) {
-      Promise.all([fetchClients(), fetchQuotes(), fetchClientInfos()])
+      Promise.all([fetchClients(), fetchQuotes(), fetchClientInfos(user.id, associatedAgentId, user.role === 'admin')])
         .finally(() => setIsLoading(false));
     }
   }, [user, associatedAgentId]);

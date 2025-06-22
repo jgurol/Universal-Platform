@@ -733,7 +733,7 @@ export const OrdersManagement = () => {
               <TableRow key={order.id}>
                 <TableCell>
                   <div>
-                    <p className="font-medium">{order.company_name}</p>
+                    <p className="font-medium">Order #{order.order_number}</p>
                   </div>
                 </TableCell>
                 <TableCell>{order.notes}</TableCell>

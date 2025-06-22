@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -31,7 +30,7 @@ export const QuoteItemRow = ({ quoteItem, addresses, onUpdateItem, onRemoveItem,
   
   const { categories } = useCategories();
   const { user, isAdmin } = useAuth();
-  const { clients } = useClients(null);
+  const { clients } = useClients();
 
   // Get agent commission rate from clients data
   const currentAgent = clients.find(client => client.id === user?.id);
