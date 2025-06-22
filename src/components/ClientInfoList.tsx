@@ -1,10 +1,12 @@
+
 import { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Edit, Trash2, Mail, Building, User } from "lucide-react";
+import { Edit, Trash2, Mail, Building, User, MapPin } from "lucide-react";
 import { ClientInfo } from "@/pages/Index";
 import { EditClientInfoDialog } from "@/components/EditClientInfoDialog";
+import { ClientLocationsDialog } from "@/components/ClientLocationsDialog";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
@@ -28,6 +30,7 @@ export const ClientInfoList = ({
   agentMapping 
 }: ClientInfoListProps) => {
   const [editingClientInfo, setEditingClientInfo] = useState<ClientInfo | null>(null);
+  const [viewingLocationsClientId, setViewingLocationsClientId] = useState<string | null>(null);
   const [agents, setAgents] = useState<Agent[]>([]);
   const [agentMap, setAgentMap] = useState<Record<string, string>>({});
   const { toast } = useToast();
@@ -160,6 +163,15 @@ export const ClientInfoList = ({
                       <Button
                         variant="outline"
                         size="sm"
+                        onClick={() => setViewingLocationsClientId(clientInfo.id)}
+                        className="hover:bg-green-50 hover:border-green-300 text-green-600"
+                        title="View Locations"
+                      >
+                        <MapPin className="w-4 h-4" />
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
                         onClick={() => setEditingClientInfo(clientInfo)}
                         className="hover:bg-blue-50 hover:border-blue-300"
                       >
@@ -188,6 +200,14 @@ export const ClientInfoList = ({
           open={!!editingClientInfo}
           onOpenChange={(open) => !open && setEditingClientInfo(null)}
           onUpdateClientInfo={onUpdateClientInfo}
+        />
+      )}
+
+      {viewingLocationsClientId && (
+        <ClientLocationsDialog
+          clientId={viewingLocationsClientId}
+          open={!!viewingLocationsClientId}
+          onOpenChange={(open) => !open && setViewingLocationsClientId(null)}
         />
       )}
     </>
