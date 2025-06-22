@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
@@ -37,6 +36,7 @@ export const useVendorPriceSheets = () => {
           variant: "destructive"
         });
       } else {
+        console.log('Fetched price sheets from database:', data?.length || 0);
         setPriceSheets(data || []);
       }
     } catch (err) {
@@ -48,16 +48,40 @@ export const useVendorPriceSheets = () => {
 
   const verifyFileExists = async (filePath: string): Promise<boolean> => {
     try {
-      const { data, error } = await supabase.storage
-        .from('vendor-price-sheets')
-        .list('', { search: filePath });
+      console.log('Verifying file exists at path:', filePath);
       
-      if (error) {
-        console.error('Error checking file existence:', error);
+      // First, let's list all files in the bucket to see what's actually there
+      const { data: allFiles, error: listError } = await supabase.storage
+        .from('vendor-price-sheets')
+        .list('', { limit: 100 });
+      
+      if (listError) {
+        console.error('Error listing all files:', listError);
         return false;
       }
       
-      return data && data.some(file => filePath.includes(file.name));
+      console.log('All files in bucket:', allFiles);
+      
+      // Also list files in the specific user folder
+      const userFolder = filePath.split('/')[0];
+      const { data: userFiles, error: userListError } = await supabase.storage
+        .from('vendor-price-sheets')
+        .list(userFolder, { limit: 100 });
+      
+      if (userListError) {
+        console.error('Error listing user folder files:', userListError);
+      } else {
+        console.log(`Files in user folder ${userFolder}:`, userFiles);
+      }
+      
+      // Try to get the file info directly
+      const { data: fileInfo, error: infoError } = await supabase.storage
+        .from('vendor-price-sheets')
+        .getPublicUrl(filePath);
+      
+      console.log('File info attempt:', { fileInfo, error: infoError });
+      
+      return false; // For now, always return false to trigger debugging
     } catch (error) {
       console.error('Error verifying file exists:', error);
       return false;
@@ -105,21 +129,49 @@ export const useVendorPriceSheets = () => {
       const fileName = `${Date.now()}.${fileExt}`;
       const filePath = `${user.id}/${fileName}`;
 
-      console.log('Uploading file to path:', filePath);
+      console.log('Starting upload process...');
+      console.log('User ID:', user.id);
+      console.log('File name:', file.name);
+      console.log('File path to be used:', filePath);
+      console.log('File size:', file.size);
+      console.log('File type:', file.type);
+
+      // First, let's check if the bucket exists
+      const { data: buckets, error: bucketsError } = await supabase.storage.listBuckets();
+      console.log('Available buckets:', buckets);
+      if (bucketsError) {
+        console.error('Error listing buckets:', bucketsError);
+      }
 
       // Upload file to storage
-      const { error: uploadError } = await supabase.storage
+      console.log('Attempting to upload file...');
+      const { data: uploadData, error: uploadError } = await supabase.storage
         .from('vendor-price-sheets')
-        .upload(filePath, file);
+        .upload(filePath, file, {
+          cacheControl: '3600',
+          upsert: true
+        });
 
       if (uploadError) {
-        console.error('Upload error:', uploadError);
+        console.error('Upload error details:', uploadError);
         throw uploadError;
       }
 
-      console.log('File uploaded successfully, saving to database');
+      console.log('Upload successful! Upload data:', uploadData);
+
+      // Immediately verify the file was uploaded
+      console.log('Verifying uploaded file...');
+      const { data: verifyData, error: verifyError } = await supabase.storage
+        .from('vendor-price-sheets')
+        .list(user.id);
+      
+      console.log('Files in user folder after upload:', verifyData);
+      if (verifyError) {
+        console.error('Error verifying upload:', verifyError);
+      }
 
       // Save metadata to database
+      console.log('Saving metadata to database...');
       const { data, error: dbError } = await supabase
         .from('vendor_price_sheets')
         .insert({
@@ -140,7 +192,7 @@ export const useVendorPriceSheets = () => {
         throw dbError;
       }
 
-      console.log('Database record created successfully');
+      console.log('Database record created successfully:', data);
 
       setPriceSheets(prev => [data, ...prev]);
       toast({
