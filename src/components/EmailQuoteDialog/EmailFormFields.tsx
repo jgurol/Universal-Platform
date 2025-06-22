@@ -41,17 +41,15 @@ export const EmailFormFields = ({
 
   return (
     <div className="space-y-6">
-      {/* From Section */}
+      {/* From Section - Now at the top and read-only */}
       <div className="space-y-2">
         <Label htmlFor="from" className="text-sm font-medium">From</Label>
-        <Select defaultValue={fromEmail}>
-          <SelectTrigger className="w-full">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value={fromEmail}>{fromEmail}</SelectItem>
-          </SelectContent>
-        </Select>
+        <Input
+          id="from"
+          value={`${quoteOwnerName} <${fromEmail.split('<')[1]?.replace('>', '') || fromEmail}>`}
+          readOnly
+          className="bg-gray-50 border-gray-200"
+        />
       </div>
 
       {/* Recipients Section */}
