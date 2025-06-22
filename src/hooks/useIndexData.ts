@@ -7,7 +7,7 @@ import { useClientInfos } from "@/hooks/useClientInfos";
 import { useQuotes } from "@/hooks/useQuotes";
 
 export const useIndexData = () => {
-  const { user } = useAuth();
+  const { user, isAdmin } = useAuth();
   const [isLoading, setIsLoading] = useState(true);
 
   // Use individual hooks for different data concerns
@@ -18,10 +18,14 @@ export const useIndexData = () => {
 
   useEffect(() => {
     if (user && associatedAgentId !== undefined) {
-      Promise.all([fetchClients(), fetchQuotes(), fetchClientInfos(user.id, associatedAgentId, user.role === 'admin')])
+      Promise.all([
+        fetchClients(), 
+        fetchQuotes(), 
+        fetchClientInfos(user.id, associatedAgentId, isAdmin)
+      ])
         .finally(() => setIsLoading(false));
     }
-  }, [user, associatedAgentId]);
+  }, [user, associatedAgentId, isAdmin]);
 
   return {
     clients,
