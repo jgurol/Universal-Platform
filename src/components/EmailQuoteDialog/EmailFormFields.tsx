@@ -3,8 +3,6 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Checkbox } from "@/components/ui/checkbox";
-import { useState } from "react";
 
 interface EmailFormFieldsProps {
   subject: string;
@@ -31,14 +29,6 @@ export const EmailFormFields = ({
   fromEmail = "jim@californiatelecom.com",
   recipientEmails
 }: EmailFormFieldsProps) => {
-  const [reminderEnabled, setReminderEnabled] = useState(false);
-  const [reminderDays1, setReminderDays1] = useState("7");
-  const [reminderDays2, setReminderDays2] = useState("14");
-  const [reminderDays3, setReminderDays3] = useState("3");
-  const [reminderType1, setReminderType1] = useState("days-from-sent");
-  const [reminderType2, setReminderType2] = useState("days-from-sent");
-  const [reminderType3, setReminderType3] = useState("days-before-expiry");
-
   return (
     <div className="space-y-6">
       {/* From Section - At the very top */}
@@ -70,84 +60,6 @@ export const EmailFormFields = ({
             Add CC/BCC
           </button>
         </div>
-      </div>
-
-      {/* Send Automated Reminder Section */}
-      <div className="space-y-4">
-        <div className="flex items-center space-x-2">
-          <Checkbox 
-            id="reminder" 
-            checked={reminderEnabled}
-            onCheckedChange={(checked) => setReminderEnabled(!!checked)}
-          />
-          <Label htmlFor="reminder" className="text-sm font-medium">
-            Send Automated Reminder
-          </Label>
-          <div className="w-4 h-4 rounded-full border border-gray-400 flex items-center justify-center text-xs text-gray-500">
-            ?
-          </div>
-        </div>
-
-        {reminderEnabled && (
-          <div className="ml-6 space-y-3">
-            {/* First Reminder */}
-            <div className="flex items-center space-x-2">
-              <Checkbox id="reminder1" defaultChecked />
-              <Input
-                value={reminderDays1}
-                onChange={(e) => setReminderDays1(e.target.value)}
-                className="w-16"
-              />
-              <Select value={reminderType1} onValueChange={setReminderType1}>
-                <SelectTrigger className="w-40">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="days-from-sent">Days from sent</SelectItem>
-                  <SelectItem value="days-before-expiry">Days before expiry</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            {/* Second Reminder */}
-            <div className="flex items-center space-x-2">
-              <Checkbox id="reminder2" defaultChecked />
-              <Input
-                value={reminderDays2}
-                onChange={(e) => setReminderDays2(e.target.value)}
-                className="w-16"
-              />
-              <Select value={reminderType2} onValueChange={setReminderType2}>
-                <SelectTrigger className="w-40">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="days-from-sent">Days from sent</SelectItem>
-                  <SelectItem value="days-before-expiry">Days before expiry</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            {/* Third Reminder */}
-            <div className="flex items-center space-x-2">
-              <Checkbox id="reminder3" defaultChecked />
-              <Input
-                value={reminderDays3}
-                onChange={(e) => setReminderDays3(e.target.value)}
-                className="w-16"
-              />
-              <Select value={reminderType3} onValueChange={setReminderType3}>
-                <SelectTrigger className="w-40">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="days-from-sent">Days from sent</SelectItem>
-                  <SelectItem value="days-before-expiry">Days before expiry</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-        )}
       </div>
 
       {/* Subject Section */}
