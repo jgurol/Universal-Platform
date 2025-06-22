@@ -1,7 +1,7 @@
 
 import { PDFGenerationContext } from '../types';
 
-export const resolveBillingAddress = (context: PDF GenerationContext): string | null => {
+export const resolveBillingAddress = (context: PDFGenerationContext): string | null => {
   const { quote } = context;
   
   // Use quote.billingAddress only
