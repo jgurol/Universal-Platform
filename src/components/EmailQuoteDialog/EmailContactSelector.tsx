@@ -35,6 +35,11 @@ export const EmailContactSelector = ({
     contact.email && contact.email.trim() !== ''
   );
 
+  const handleValueChange = (value: string) => {
+    console.log('EmailContactSelector - Selected value:', value);
+    onRecipientContactChange(value);
+  };
+
   return (
     <>
       <div className="space-y-2">
@@ -42,18 +47,18 @@ export const EmailContactSelector = ({
         {contactsLoading ? (
           <div className="text-sm text-gray-500">Loading contacts...</div>
         ) : (
-          <Select value={selectedRecipientContact} onValueChange={onRecipientContactChange}>
+          <Select value={selectedRecipientContact} onValueChange={handleValueChange}>
             <SelectTrigger>
               <SelectValue placeholder="Select recipient" />
             </SelectTrigger>
             <SelectContent>
+              <SelectItem value="custom">Custom Email</SelectItem>
               {/* Show client info as an option only if we have contact name and email and no contacts exist */}
               {clientInfo?.contact_name && clientInfo?.email && availableContacts.length === 0 && (
                 <SelectItem value="client-info">
                   {clientInfo.contact_name} ({clientInfo.email}) - Primary Contact
                 </SelectItem>
               )}
-              <SelectItem value="custom">Custom Email</SelectItem>
               {availableContacts.map((contact) => (
                 <SelectItem key={contact.id} value={contact.id}>
                   {contact.name} ({contact.email}) {contact.is_primary && '- Primary'}
@@ -69,7 +74,7 @@ export const EmailContactSelector = ({
           <Label htmlFor="customEmail">Custom Email Address(es) *</Label>
           <Input
             id="customEmail"
-            type="text"
+            type="email"
             value={customRecipientEmail}
             onChange={(e) => onCustomRecipientEmailChange(e.target.value)}
             placeholder="Enter email address(es) separated by commas"
