@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Navigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
@@ -6,6 +5,18 @@ import { IndexPageLayout } from "@/components/IndexPageLayout";
 
 // Re-export types for backward compatibility
 export type { Client, Quote, ClientInfo, Transaction, QuoteItem } from "@/types/index";
+
+export interface ClientInfo {
+  id: string;
+  user_id: string;
+  company_name: string;
+  notes?: string;
+  revio_id?: string;
+  agent_id?: string | null;
+  commission_override?: number | null;
+  created_at?: string;
+  updated_at?: string;
+}
 
 const Index = () => {
   const { user, session, loading } = useAuth();

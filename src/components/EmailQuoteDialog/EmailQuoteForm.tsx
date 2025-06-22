@@ -122,19 +122,12 @@ export const EmailQuoteForm = ({
         if (firstContactWithEmail) {
           console.log('EmailQuoteForm - Using first contact with email:', firstContactWithEmail);
           setRecipientEmail(firstContactWithEmail.email);
-        } else if (clientInfo?.email) {
-          console.log('EmailQuoteForm - Using client info email:', clientInfo.email);
-          setRecipientEmail(clientInfo.email);
         }
       }
-    } else if (!contactsLoading && transformedContacts.length === 0 && clientInfo?.email && !recipientEmail) {
-      // No contacts but we have client info email
-      console.log('EmailQuoteForm - No contacts, using client info email:', clientInfo.email);
-      setRecipientEmail(clientInfo.email);
     }
-  }, [contactsLoading, transformedContacts, clientInfo, recipientEmail]);
+  }, [contactsLoading, transformedContacts, recipientEmail]);
 
-  // Set the message template with the quote owner's name and selected contact name - ONLY ONCE
+  // Set the message template with the quote owner's name and primary contact name - ONLY ONCE
   useEffect(() => {
     if (!ownerNameLoaded || messageTemplateSet) {
       return;
@@ -142,10 +135,14 @@ export const EmailQuoteForm = ({
 
     console.log('EmailQuoteForm - Creating message template with quote owner:', quoteOwnerName);
     
-    // Get the contact name from client info
+    // Get the primary contact name from the contacts list
     let contactName = '';
-    if (clientInfo?.contact_name) {
-      contactName = clientInfo.contact_name;
+    const primaryContact = transformedContacts.find(contact => contact.is_primary);
+    if (primaryContact) {
+      contactName = primaryContact.name;
+    } else if (transformedContacts.length > 0) {
+      // Use first contact if no primary contact
+      contactName = transformedContacts[0].name;
     }
     
     console.log('EmailQuoteForm - Using contact name for greeting:', contactName);
@@ -164,7 +161,7 @@ ${quoteOwnerName}`;
     console.log('EmailQuoteForm - Setting message template with greeting:', greeting);
     setMessage(messageTemplate);
     setMessageTemplateSet(true);
-  }, [ownerNameLoaded, quoteOwnerName, messageTemplateSet, clientInfo]);
+  }, [ownerNameLoaded, quoteOwnerName, messageTemplateSet, transformedContacts]);
 
   // Handle direct recipient email changes
   const handleRecipientEmailChange = (value: string) => {
@@ -344,9 +341,15 @@ ${quoteOwnerName}`;
     }
   };
 
-  // Get current contact name for the template editor
+  // Get current primary contact name for the template editor
   const getCurrentContactName = () => {
-    return clientInfo?.contact_name || '';
+    const primaryContact = transformedContacts.find(contact => contact.is_primary);
+    if (primaryContact) {
+      return primaryContact.name;
+    } else if (transformedContacts.length > 0) {
+      return transformedContacts[0].name;
+    }
+    return '';
   };
 
   return (

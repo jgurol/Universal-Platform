@@ -53,11 +53,6 @@ export const BasicInfoTab = ({
             ))}
           </SelectContent>
         </Select>
-        {clientInfoId && clientInfoId !== "none" && (
-          <div className="text-xs text-gray-500">
-            Contact: {clientInfos.find(ci => ci.id === clientInfoId)?.contact_name || "N/A"}
-          </div>
-        )}
       </div>
       
       {/* Show agent information only when a client is assigned */}

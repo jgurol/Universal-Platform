@@ -592,46 +592,34 @@ export type Database = {
       }
       client_info: {
         Row: {
-          address: string | null
           agent_id: string | null
           commission_override: number | null
           company_name: string
-          contact_name: string | null
           created_at: string | null
-          email: string | null
           id: string
           notes: string | null
-          phone: string | null
           revio_id: string | null
           updated_at: string | null
           user_id: string
         }
         Insert: {
-          address?: string | null
           agent_id?: string | null
           commission_override?: number | null
           company_name: string
-          contact_name?: string | null
           created_at?: string | null
-          email?: string | null
           id?: string
           notes?: string | null
-          phone?: string | null
           revio_id?: string | null
           updated_at?: string | null
           user_id: string
         }
         Update: {
-          address?: string | null
           agent_id?: string | null
           commission_override?: number | null
           company_name?: string
-          contact_name?: string | null
           created_at?: string | null
-          email?: string | null
           id?: string
           notes?: string | null
-          phone?: string | null
           revio_id?: string | null
           updated_at?: string | null
           user_id?: string
