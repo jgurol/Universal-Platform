@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
@@ -16,7 +15,6 @@ export const useVendorPriceSheets = () => {
     
     try {
       setIsLoading(true);
-      console.log('Fetching price sheets for user:', user.id, 'isAdmin:', isAdmin);
       
       let query = supabase
         .from('vendor_price_sheets')
@@ -26,9 +24,6 @@ export const useVendorPriceSheets = () => {
       // For admins, show all sheets
       if (!isAdmin) {
         query = query.or(`user_id.eq.${user.id},is_public.eq.true`);
-        console.log('Agent query filter: user_id =', user.id, 'OR is_public = true');
-      } else {
-        console.log('Admin - fetching all price sheets');
       }
 
       const { data, error } = await query.order('uploaded_at', { ascending: false });
@@ -41,12 +36,6 @@ export const useVendorPriceSheets = () => {
           variant: "destructive"
         });
       } else {
-        console.log('Price sheets fetched:', data);
-        console.log('Number of sheets:', data?.length || 0);
-        if (data && data.length > 0) {
-          console.log('Sample sheet:', data[0]);
-          console.log('Public sheets:', data.filter(sheet => sheet.is_public));
-        }
         setPriceSheets(data || []);
       }
     } catch (err) {
