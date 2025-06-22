@@ -1,6 +1,6 @@
 
 import jsPDF from 'jspdf';
-import { Quote, ClientInfo } from '@/pages/Index';
+import { Quote, ClientInfo } from '@/types/index';
 import { loadSettingsFromDatabase } from './settingsLoader';
 import { setupDocument, addAgreementDetailsBox, addStatusIndicator } from './documentSetup';
 import { addCompanyInfo } from './companyInfo';
@@ -40,6 +40,7 @@ export const generateQuotePDF = async (quote: Quote, clientInfo?: ClientInfo, sa
   const context: PDFGenerationContext = {
     quote,
     clientInfo,
+    quoteItems: quote.quoteItems || [],
     salespersonName,
     businessSettings,
     acceptanceDetails: acceptanceDetails || undefined,

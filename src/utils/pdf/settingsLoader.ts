@@ -21,7 +21,9 @@ export const loadSettingsFromDatabase = async (): Promise<BusinessSettings> => {
 
       return {
         companyName: settingsMap.company_name || 'California Telecom, Inc.',
+        address: settingsMap.business_address || '14538 Central Ave, Chino, CA 91710, United States',
         businessAddress: settingsMap.business_address || '14538 Central Ave, Chino, CA 91710, United States',
+        phone: settingsMap.business_phone || '213-270-1349',
         businessPhone: settingsMap.business_phone || '213-270-1349',
         businessFax: settingsMap.business_fax || '',
         showCompanyNameOnPDF: settingsMap.show_company_name_on_pdf !== 'false',
@@ -37,7 +39,9 @@ export const loadSettingsFromDatabase = async (): Promise<BusinessSettings> => {
 
 const getDefaultSettings = (): BusinessSettings => ({
   companyName: 'California Telecom, Inc.',
+  address: '14538 Central Ave, Chino, CA 91710, United States',
   businessAddress: '14538 Central Ave, Chino, CA 91710, United States',
+  phone: '213-270-1349',
   businessPhone: '213-270-1349',
   businessFax: '',
   showCompanyNameOnPDF: true,

@@ -5,7 +5,7 @@ export interface PDFGenerationContext {
   quote: Quote;
   clientInfo?: ClientInfo;
   quoteItems: QuoteItem[];
-  salespersonName: string;
+  salespersonName?: string;
   primaryContact?: {
     first_name: string;
     last_name: string;
@@ -39,4 +39,8 @@ export interface BusinessSettings {
   phone?: string;
   email?: string;
   website?: string;
+  businessAddress?: string;
+  businessPhone?: string;
+  businessFax?: string;
+  showCompanyNameOnPDF?: boolean;
 }
