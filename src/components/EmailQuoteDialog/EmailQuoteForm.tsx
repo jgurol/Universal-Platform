@@ -7,8 +7,6 @@ import { generateQuotePDF } from "@/utils/pdfUtils";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
 import { Mail } from "lucide-react";
-import { EmailContactSelector } from "./EmailContactSelector";
-import { CCContactSelector } from "./CCContactSelector";
 import { EmailFormFields } from "./EmailFormFields";
 
 interface EmailQuoteFormProps {
@@ -29,10 +27,6 @@ export const EmailQuoteForm = ({
   emailStatus
 }: EmailQuoteFormProps) => {
   const [recipientEmail, setRecipientEmail] = useState("");
-  const [ccEmails, setCcEmails] = useState<string[]>([]);
-  const [selectedRecipientContact, setSelectedRecipientContact] = useState<string>("custom");
-  const [selectedCcContacts, setSelectedCcContacts] = useState<string[]>([]);
-  const [customRecipientEmail, setCustomRecipientEmail] = useState("");
   const [subject, setSubject] = useState(`Quote #${quote.quoteNumber || quote.id.slice(0, 8)} - ${quote.description || 'Service Agreement'}`);
   const [message, setMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -111,33 +105,29 @@ export const EmailQuoteForm = ({
 
   // Set primary contact as default recipient when contacts load
   useEffect(() => {
-    if (!contactsLoading && transformedContacts.length > 0 && selectedRecipientContact === "custom") {
+    if (!contactsLoading && transformedContacts.length > 0 && !recipientEmail) {
       console.log('EmailQuoteForm - Setting up recipient from contacts:', transformedContacts);
       const primaryContact = transformedContacts.find(contact => contact.is_primary && contact.email);
       if (primaryContact) {
         console.log('EmailQuoteForm - Found primary contact:', primaryContact);
-        setSelectedRecipientContact(primaryContact.id);
         setRecipientEmail(primaryContact.email);
       } else {
         // If no primary contact with email, use first contact with email
         const firstContactWithEmail = transformedContacts.find(contact => contact.email && contact.email.trim() !== '');
         if (firstContactWithEmail) {
           console.log('EmailQuoteForm - Using first contact with email:', firstContactWithEmail);
-          setSelectedRecipientContact(firstContactWithEmail.id);
           setRecipientEmail(firstContactWithEmail.email);
         } else if (clientInfo?.email) {
           console.log('EmailQuoteForm - Using client info email:', clientInfo.email);
-          setSelectedRecipientContact("client-info");
           setRecipientEmail(clientInfo.email);
         }
       }
-    } else if (!contactsLoading && transformedContacts.length === 0 && clientInfo?.email && selectedRecipientContact === "custom") {
+    } else if (!contactsLoading && transformedContacts.length === 0 && clientInfo?.email && !recipientEmail) {
       // No contacts but we have client info email
       console.log('EmailQuoteForm - No contacts, using client info email:', clientInfo.email);
-      setSelectedRecipientContact("client-info");
       setRecipientEmail(clientInfo.email);
     }
-  }, [contactsLoading, transformedContacts, clientInfo, selectedRecipientContact]);
+  }, [contactsLoading, transformedContacts, clientInfo, recipientEmail]);
 
   // Set the message template with the quote owner's name and selected contact name - ONLY ONCE
   useEffect(() => {
@@ -147,21 +137,9 @@ export const EmailQuoteForm = ({
 
     console.log('EmailQuoteForm - Creating message template with quote owner:', quoteOwnerName);
     
-    // Get the contact name - prioritize selected contact, then client contact_name
+    // Get the contact name from client info
     let contactName = '';
-    
-    if (selectedRecipientContact === "client-info") {
-      // Use client info contact name
-      contactName = clientInfo?.contact_name || '';
-    } else if (selectedRecipientContact !== "custom") {
-      const selectedContact = transformedContacts.find(c => c.id === selectedRecipientContact);
-      if (selectedContact?.name) {
-        contactName = selectedContact.name;
-      }
-    }
-    
-    // If no contact name from selected contact, try client info contact_name as fallback
-    if (!contactName && clientInfo?.contact_name) {
+    if (clientInfo?.contact_name) {
       contactName = clientInfo.contact_name;
     }
     
@@ -181,57 +159,11 @@ ${quoteOwnerName}`;
     console.log('EmailQuoteForm - Setting message template with greeting:', greeting);
     setMessage(messageTemplate);
     setMessageTemplateSet(true);
-  }, [ownerNameLoaded, quoteOwnerName, messageTemplateSet]);
-
-  // Update recipient email when contact selection changes
-  useEffect(() => {
-    if (selectedRecipientContact === "custom") {
-      // For custom emails, handle comma-separated values
-      const emails = customRecipientEmail.split(',').map(email => email.trim()).filter(email => email);
-      setRecipientEmail(emails.join(', '));
-    } else if (selectedRecipientContact === "client-info") {
-      setRecipientEmail(clientInfo?.email || '');
-    } else {
-      const selectedContact = transformedContacts.find(c => c.id === selectedRecipientContact);
-      if (selectedContact?.email) {
-        setRecipientEmail(selectedContact.email);
-      }
-    }
-  }, [selectedRecipientContact, customRecipientEmail, transformedContacts, clientInfo]);
-
-  // Update CC emails when CC contact selection changes
-  useEffect(() => {
-    const ccEmailList = selectedCcContacts
-      .map(contactId => transformedContacts.find(c => c.id === contactId)?.email)
-      .filter(email => email && email !== recipientEmail) as string[];
-    setCcEmails(ccEmailList);
-  }, [selectedCcContacts, transformedContacts, recipientEmail]);
-
-  const handleCcContactToggle = (contactId: string, checked: boolean) => {
-    if (checked) {
-      setSelectedCcContacts(prev => [...prev, contactId]);
-    } else {
-      setSelectedCcContacts(prev => prev.filter(id => id !== contactId));
-    }
-  };
-
-  const removeCcEmail = (emailToRemove: string) => {
-    const contactToRemove = transformedContacts.find(c => c.email === emailToRemove);
-    if (contactToRemove) {
-      setSelectedCcContacts(prev => prev.filter(id => id !== contactToRemove.id));
-    }
-  };
+  }, [ownerNameLoaded, quoteOwnerName, messageTemplateSet, clientInfo]);
 
   // Handle direct recipient email changes
   const handleRecipientEmailChange = (value: string) => {
     setRecipientEmail(value);
-    // If the user is editing the email directly, switch to custom mode
-    if (selectedRecipientContact !== "custom") {
-      setSelectedRecipientContact("custom");
-      setCustomRecipientEmail(value);
-    } else {
-      setCustomRecipientEmail(value);
-    }
   };
 
   const handleSendEmail = async () => {
@@ -244,20 +176,18 @@ ${quoteOwnerName}`;
       return;
     }
 
-    // Validate email format for custom emails
-    if (selectedRecipientContact === "custom") {
-      const emails = customRecipientEmail.split(',').map(email => email.trim()).filter(email => email);
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      const invalidEmails = emails.filter(email => !emailRegex.test(email));
-      
-      if (invalidEmails.length > 0) {
-        toast({
-          title: "Invalid email format",
-          description: `Please check the following email(s): ${invalidEmails.join(', ')}`,
-          variant: "destructive"
-        });
-        return;
-      }
+    // Validate email format
+    const emails = recipientEmail.split(',').map(email => email.trim()).filter(email => email);
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    const invalidEmails = emails.filter(email => !emailRegex.test(email));
+    
+    if (invalidEmails.length > 0) {
+      toast({
+        title: "Invalid email format",
+        description: `Please check the following email(s): ${invalidEmails.join(', ')}`,
+        variant: "destructive"
+      });
+      return;
     }
 
     setIsLoading(true);
@@ -294,20 +224,15 @@ ${quoteOwnerName}`;
         const base64String = (reader.result as string).split(',')[1];
         
         try {
-          // For custom emails, split comma-separated values into array
+          // For emails, split comma-separated values into array
           let toEmails: string | string[];
-          if (selectedRecipientContact === "custom") {
-            const emails = customRecipientEmail.split(',').map(email => email.trim()).filter(email => email);
-            toEmails = emails.length === 1 ? emails[0] : emails;
-          } else {
-            toEmails = recipientEmail;
-          }
+          const emailArray = recipientEmail.split(',').map(email => email.trim()).filter(email => email);
+          toEmails = emailArray.length === 1 ? emailArray[0] : emailArray;
 
           // Include primary contact in the email function call
           const { data, error } = await supabase.functions.invoke('send-quote-email', {
             body: {
               to: toEmails,
-              cc: ccEmails.length > 0 ? ccEmails : undefined,
               subject,
               message,
               pdfBase64: base64String,
@@ -342,13 +267,11 @@ ${quoteOwnerName}`;
               .update({ email_status: 'success' })
               .eq('id', quote.id);
 
-            const recipientCount = selectedRecipientContact === "custom" 
-              ? customRecipientEmail.split(',').map(email => email.trim()).filter(email => email).length
-              : 1;
+            const recipientCount = emailArray.length;
             
             toast({
               title: "Email sent successfully",
-              description: `Quote has been sent to ${recipientCount} recipient(s)${ccEmails.length > 0 ? ` and ${ccEmails.length} CC recipient(s)` : ''}`,
+              description: `Quote has been sent to ${recipientCount} recipient(s)`,
             });
             
             setTimeout(() => {
@@ -408,36 +331,11 @@ ${quoteOwnerName}`;
 
   // Get current contact name for the template editor
   const getCurrentContactName = () => {
-    if (selectedRecipientContact === "client-info") {
-      return clientInfo?.contact_name || '';
-    } else if (selectedRecipientContact !== "custom") {
-      const selectedContact = transformedContacts.find(c => c.id === selectedRecipientContact);
-      return selectedContact?.name || '';
-    }
     return clientInfo?.contact_name || '';
   };
 
   return (
     <div className="space-y-4">
-      <EmailContactSelector
-        contacts={transformedContacts}
-        contactsLoading={contactsLoading}
-        selectedRecipientContact={selectedRecipientContact}
-        onRecipientContactChange={setSelectedRecipientContact}
-        customRecipientEmail={customRecipientEmail}
-        onCustomRecipientEmailChange={setCustomRecipientEmail}
-        clientInfo={clientInfo}
-      />
-
-      <CCContactSelector
-        contacts={transformedContacts}
-        selectedRecipientContact={selectedRecipientContact}
-        selectedCcContacts={selectedCcContacts}
-        onCcContactToggle={handleCcContactToggle}
-        ccEmails={ccEmails}
-        onRemoveCcEmail={removeCcEmail}
-      />
-
       <EmailFormFields
         subject={subject}
         onSubjectChange={setSubject}
