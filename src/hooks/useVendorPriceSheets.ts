@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
@@ -21,9 +22,9 @@ export const useVendorPriceSheets = () => {
         .from('vendor_price_sheets')
         .select('*');
 
-      // Only filter by user_id if not admin
+      // Admins see all sheets, agents see their own + public sheets
       if (!isAdmin) {
-        query = query.eq('user_id', user.id);
+        query = query.or(`user_id.eq.${user.id},is_public.eq.true`);
       }
 
       const { data, error } = await query.order('uploaded_at', { ascending: false });
