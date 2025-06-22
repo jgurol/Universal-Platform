@@ -74,14 +74,25 @@ export const useVendorPriceSheets = () => {
         console.log(`Files in user folder ${userFolder}:`, userFiles);
       }
       
-      // Try to get the file info directly
-      const { data: fileInfo, error: infoError } = await supabase.storage
+      // Try to get the file public URL (this doesn't have an error property)
+      const { data: fileInfo } = await supabase.storage
         .from('vendor-price-sheets')
         .getPublicUrl(filePath);
       
-      console.log('File info attempt:', { fileInfo, error: infoError });
+      console.log('File public URL:', fileInfo);
       
-      return false; // For now, always return false to trigger debugging
+      // Check if the file actually exists by trying to download it
+      const { data: downloadData, error: downloadError } = await supabase.storage
+        .from('vendor-price-sheets')
+        .download(filePath);
+      
+      if (downloadError) {
+        console.log('File does not exist - download error:', downloadError);
+        return false;
+      }
+      
+      console.log('File exists and can be downloaded');
+      return true;
     } catch (error) {
       console.error('Error verifying file exists:', error);
       return false;
