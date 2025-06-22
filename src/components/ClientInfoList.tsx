@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Edit, Trash2, Building, User, MapPin, Crown } from "lucide-react";
+import { Edit, Trash2, Building, User, MapPin, Crown, Mail, Phone } from "lucide-react";
 import { ClientInfo } from "@/pages/Index";
 import { EditClientInfoDialog } from "@/components/EditClientInfoDialog";
 import { ClientLocationsDialog } from "@/components/ClientLocationsDialog";
