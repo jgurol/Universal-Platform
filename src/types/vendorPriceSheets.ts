@@ -8,6 +8,7 @@ export interface VendorPriceSheet {
   file_path: string;
   file_size?: number;
   file_type?: string;
+  is_public?: boolean;
   uploaded_at: string;
   updated_at: string;
 }

@@ -1,9 +1,10 @@
+
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { FileText, Download, Trash2, Upload, Calendar, HardDrive } from "lucide-react";
+import { FileText, Download, Trash2, Upload, Calendar, HardDrive, Eye } from "lucide-react";
 import { useVendorPriceSheets } from "@/hooks/useVendorPriceSheets";
 import { UploadPriceSheetDialog } from "@/components/UploadPriceSheetDialog";
 import { useToast } from "@/hooks/use-toast";
@@ -89,9 +90,9 @@ export const VendorPriceSheetsList = ({ vendorId, vendorName }: VendorPriceSheet
     }
   };
 
-  const handleUpload = async (file: File, name: string, selectedVendorId?: string) => {
+  const handleUpload = async (file: File, name: string, selectedVendorId?: string, isPublic?: boolean) => {
     try {
-      await uploadPriceSheet(file, name, selectedVendorId || vendorId);
+      await uploadPriceSheet(file, name, selectedVendorId || vendorId, isPublic);
       setIsUploadDialogOpen(false);
     } catch (error) {
       console.error('Upload failed:', error);
@@ -176,6 +177,12 @@ export const VendorPriceSheetsList = ({ vendorId, vendorName }: VendorPriceSheet
                       {priceSheet.vendor_id && (
                         <Badge variant="outline" className="ml-2">
                           Vendor Sheet
+                        </Badge>
+                      )}
+                      {priceSheet.is_public && (
+                        <Badge variant="outline" className="ml-2 bg-green-50 text-green-700 border-green-200">
+                          <Eye className="h-3 w-3 mr-1" />
+                          Public
                         </Badge>
                       )}
                     </div>

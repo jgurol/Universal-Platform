@@ -5,13 +5,14 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Upload } from "lucide-react";
 import { Vendor } from "@/types/vendors";
 
 interface UploadPriceSheetDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onUpload: (file: File, name: string, vendorId?: string) => Promise<void>;
+  onUpload: (file: File, name: string, vendorId?: string, isPublic?: boolean) => Promise<void>;
   vendors: Vendor[];
 }
 
@@ -19,6 +20,7 @@ export const UploadPriceSheetDialog = ({ open, onOpenChange, onUpload, vendors }
   const [file, setFile] = useState<File | null>(null);
   const [name, setName] = useState("");
   const [vendorId, setVendorId] = useState<string>("");
+  const [isPublic, setIsPublic] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -39,12 +41,13 @@ export const UploadPriceSheetDialog = ({ open, onOpenChange, onUpload, vendors }
 
     try {
       setIsUploading(true);
-      await onUpload(file, name, vendorId || undefined);
+      await onUpload(file, name, vendorId || undefined, isPublic);
       
       // Reset form
       setFile(null);
       setName("");
       setVendorId("");
+      setIsPublic(false);
       onOpenChange(false);
     } catch (error) {
       console.error('Upload error:', error);
@@ -95,6 +98,17 @@ export const UploadPriceSheetDialog = ({ open, onOpenChange, onUpload, vendors }
                 ))}
               </SelectContent>
             </Select>
+          </div>
+
+          <div className="flex items-center space-x-2">
+            <Checkbox
+              id="public"
+              checked={isPublic}
+              onCheckedChange={(checked) => setIsPublic(checked === true)}
+            />
+            <Label htmlFor="public" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+              Public - Allow agents to see this price sheet
+            </Label>
           </div>
 
           <div className="space-y-2">

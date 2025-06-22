@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
@@ -47,7 +46,7 @@ export const useVendorPriceSheets = () => {
     }
   };
 
-  const uploadPriceSheet = async (file: File, name: string, vendorId?: string) => {
+  const uploadPriceSheet = async (file: File, name: string, vendorId?: string, isPublic?: boolean) => {
     if (!user) return;
 
     try {
@@ -75,7 +74,8 @@ export const useVendorPriceSheets = () => {
           file_name: file.name,
           file_path: filePath,
           file_size: file.size,
-          file_type: file.type
+          file_type: file.type,
+          is_public: isPublic || false
         })
         .select('*')
         .single();
