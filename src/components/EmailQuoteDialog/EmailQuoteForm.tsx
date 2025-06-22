@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Quote, ClientInfo } from "@/pages/Index";
@@ -433,7 +432,14 @@ ${quoteOwnerName}`;
         quoteId={quote.id}
         contactName={getCurrentContactName()}
         quoteOwnerName={quoteOwnerName}
+        recipientEmails={recipientEmail}
       />
+
+      <div className="bg-gray-50 p-3 rounded-lg">
+        <p className="text-sm text-gray-600">
+          <strong>Attachment:</strong> Quote_{quote.quoteNumber || quote.id.slice(0, 8)}.pdf
+        </p>
+      </div>
 
       <div className="flex justify-end space-x-2 mt-6">
         <Button 
