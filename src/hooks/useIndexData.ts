@@ -14,15 +14,18 @@ export const useIndexData = () => {
   const { associatedAgentId } = useUserProfile();
   const { clients, setClients, fetchClients } = useClients();
   const { clientInfos, setClientInfos, fetchClientInfos } = useClientInfos();
-  const { quotes, setQuotes, fetchQuotes } = useQuotes();
+  const { quotes, setQuotes, fetchQuotes } = useQuotes(associatedAgentId, clients, clientInfos);
 
   useEffect(() => {
     if (user && associatedAgentId !== undefined) {
       Promise.all([
         fetchClients(), 
-        fetchQuotes(), 
         fetchClientInfos(user.id, associatedAgentId, isAdmin)
       ])
+        .then(() => {
+          // After clients and clientInfos are loaded, fetch quotes
+          return fetchQuotes();
+        })
         .finally(() => setIsLoading(false));
     }
   }, [user, associatedAgentId, isAdmin]);
