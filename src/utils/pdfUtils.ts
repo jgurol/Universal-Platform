@@ -60,12 +60,36 @@ export const generateQuotePDF = async (quote: Quote, clientInfo?: ClientInfo, sa
     
     console.log('PDF Generation - Final salesperson name:', finalSalespersonName);
     
+    // Fetch primary contact for PDF generation
+    let primaryContact = null;
+    if (clientInfo?.id) {
+      console.log('PDF Generation - Fetching primary contact for client:', clientInfo.id);
+      const { data: contactData, error: contactError } = await supabase
+        .from('client_contacts')
+        .select('*')
+        .eq('client_info_id', clientInfo.id)
+        .eq('is_primary', true)
+        .maybeSingle();
+      
+      if (contactError) {
+        console.error('PDF Generation - Error fetching primary contact:', contactError);
+      } else if (contactData) {
+        primaryContact = contactData;
+        console.log('PDF Generation - Found primary contact:', contactData.first_name, contactData.last_name, 'email:', contactData.email, 'phone:', contactData.phone);
+      } else {
+        console.log('PDF Generation - No primary contact found for client:', clientInfo.id);
+      }
+    } else {
+      console.log('PDF Generation - No client info ID provided, cannot fetch primary contact');
+    }
+    
     // Call our edge function to generate PDF using PDFShift
     const { data, error } = await supabase.functions.invoke('generate-pdf-pdfshift', {
       body: {
         quote: quoteWithUserId,
         clientInfo,
-        salespersonName: finalSalespersonName
+        salespersonName: finalSalespersonName,
+        primaryContact
       }
     });
 

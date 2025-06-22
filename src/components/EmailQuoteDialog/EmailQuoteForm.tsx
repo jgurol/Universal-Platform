@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Quote, ClientInfo } from "@/pages/Index";
@@ -266,6 +265,7 @@ ${quoteOwnerName}`;
         const base64String = (reader.result as string).split(',')[1];
         
         try {
+          // Include primary contact in the email function call
           const { data, error } = await supabase.functions.invoke('send-quote-email', {
             body: {
               to: recipientEmail,
@@ -274,7 +274,8 @@ ${quoteOwnerName}`;
               message,
               pdfBase64: base64String,
               fileName: `Quote_${quote.quoteNumber || quote.id.slice(0, 8)}.pdf`,
-              quoteId: quote.id
+              quoteId: quote.id,
+              primaryContact // Pass the primary contact to the email function
             }
           });
 
