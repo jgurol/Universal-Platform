@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -132,10 +131,43 @@ export const TemplatesList: React.FC = () => {
   };
 
   const handleDeleteTemplate = async (templateId: string) => {
-    if (!confirm("Are you sure you want to delete this template?")) return;
-
     setLoading(true);
     try {
+      // First check if the template is being used by any quotes
+      const { data: quotesUsingTemplate, error: checkError } = await supabase
+        .from('quotes')
+        .select('id, description, quote_number')
+        .eq('template_id', templateId)
+        .limit(5); // Just get a few examples
+
+      if (checkError) throw checkError;
+
+      if (quotesUsingTemplate && quotesUsingTemplate.length > 0) {
+        const quotesList = quotesUsingTemplate
+          .map(q => q.quote_number || q.description || 'Unnamed quote')
+          .join(', ');
+        
+        const shouldProceed = confirm(
+          `This template is currently being used by ${quotesUsingTemplate.length} quote(s): ${quotesList}.\n\n` +
+          'Deleting this template will remove the template reference from these quotes (the quotes themselves will remain). ' +
+          'Are you sure you want to proceed?'
+        );
+
+        if (!shouldProceed) {
+          setLoading(false);
+          return;
+        }
+
+        // First, update all quotes to remove the template reference
+        const { error: updateError } = await supabase
+          .from('quotes')
+          .update({ template_id: null })
+          .eq('template_id', templateId);
+
+        if (updateError) throw updateError;
+      }
+
+      // Now delete the template
       const { error } = await supabase
         .from('quote_templates')
         .delete()
@@ -146,7 +178,9 @@ export const TemplatesList: React.FC = () => {
       fetchTemplates();
       toast({
         title: "Template deleted",
-        description: "Quote template has been deleted successfully",
+        description: quotesUsingTemplate && quotesUsingTemplate.length > 0 
+          ? `Template deleted and removed from ${quotesUsingTemplate.length} quote(s)`
+          : "Quote template has been deleted successfully",
       });
     } catch (error: any) {
       toast({
