@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -11,6 +10,7 @@ import { ClientContactsDialog } from "@/components/ClientContactsDialog";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { ClientContact } from "@/types/clientContacts";
+import { ClientAddress } from "@/types/clientAddress";
 
 interface ClientInfoListProps {
   clientInfos: ClientInfo[];
@@ -37,6 +37,7 @@ export const ClientInfoList = ({
   const [agents, setAgents] = useState<Agent[]>([]);
   const [agentMap, setAgentMap] = useState<Record<string, string>>({});
   const [primaryContacts, setPrimaryContacts] = useState<Record<string, ClientContact>>({});
+  const [primaryAddresses, setPrimaryAddresses] = useState<Record<string, ClientAddress>>({});
   const { toast } = useToast();
 
   // Fetch agents to create mapping
@@ -69,7 +70,7 @@ export const ClientInfoList = ({
     fetchAgents();
   }, []);
 
-  // Fetch primary contacts for all clients
+  // Fetch primary contacts for all clients  
   useEffect(() => {
     const fetchPrimaryContacts = async () => {
       if (clientInfos.length === 0) return;
@@ -101,6 +102,38 @@ export const ClientInfoList = ({
     fetchPrimaryContacts();
   }, [clientInfos]);
 
+  // Fetch primary addresses for all clients
+  useEffect(() => {
+    const fetchPrimaryAddresses = async () => {
+      if (clientInfos.length === 0) return;
+
+      try {
+        const clientIds = clientInfos.map(client => client.id);
+        const { data, error } = await supabase
+          .from('client_addresses')
+          .select('*')
+          .in('client_info_id', clientIds)
+          .eq('is_primary', true);
+
+        if (error) {
+          console.error('Error fetching primary addresses:', error);
+          return;
+        }
+
+        // Create a mapping of client_info_id to primary address
+        const addressesMap: Record<string, ClientAddress> = {};
+        data?.forEach(address => {
+          addressesMap[address.client_info_id] = address;
+        });
+        setPrimaryAddresses(addressesMap);
+      } catch (err) {
+        console.error('Error in primary addresses fetch:', err);
+      }
+    };
+
+    fetchPrimaryAddresses();
+  }, [clientInfos]);
+
   const handleDelete = async (clientInfo: ClientInfo) => {
     if (window.confirm(`Are you sure you want to delete ${clientInfo.company_name}?`)) {
       try {
@@ -129,6 +162,12 @@ export const ClientInfoList = ({
     }
   };
 
+  const formatAddress = (address: ClientAddress) => {
+    const addressLine1 = address.street_address;
+    const addressLine2 = address.street_address_2 ? `, ${address.street_address_2}` : '';
+    return `${addressLine1}${addressLine2}, ${address.city}, ${address.state} ${address.zip_code}${address.country !== 'United States' ? `, ${address.country}` : ''}`;
+  };
+
   return (
     <>
       <Card className="bg-white shadow-lg border-0">
@@ -142,6 +181,7 @@ export const ClientInfoList = ({
             ) : (
               clientInfos.map((clientInfo) => {
                 const primaryContact = primaryContacts[clientInfo.id];
+                const primaryAddress = primaryAddresses[clientInfo.id];
                 
                 return (
                   <div
@@ -193,6 +233,22 @@ export const ClientInfoList = ({
                                   </div>
                                 )}
                               </div>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Primary Address Section */}
+                        {primaryAddress && (
+                          <div className="mb-3 p-3 bg-green-50 border border-green-200 rounded-md">
+                            <div className="flex items-center gap-2 mb-2">
+                              <MapPin className="w-4 h-4 text-green-600" />
+                              <span className="font-medium text-green-800">Primary Address</span>
+                              <Badge variant="secondary" className="bg-gray-100 text-gray-800 text-xs">
+                                {primaryAddress.address_type.charAt(0).toUpperCase() + primaryAddress.address_type.slice(1)}
+                              </Badge>
+                            </div>
+                            <div className="text-sm text-gray-700">
+                              {formatAddress(primaryAddress)}
                             </div>
                           </div>
                         )}
