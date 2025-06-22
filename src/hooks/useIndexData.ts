@@ -9,6 +9,7 @@ import { useQuotes } from "@/hooks/useQuotes";
 export const useIndexData = () => {
   const { user, isAdmin } = useAuth();
   const [isLoading, setIsLoading] = useState(true);
+  const [fetchAttempted, setFetchAttempted] = useState(false);
 
   // Use individual hooks for different data concerns
   const { associatedAgentId } = useUserProfile();
@@ -17,15 +18,27 @@ export const useIndexData = () => {
   const { quotes, setQuotes, fetchQuotes } = useQuotes(associatedAgentId, clients, clientInfos);
 
   useEffect(() => {
-    if (user && associatedAgentId !== undefined) {
+    // Prevent multiple fetch attempts and only run when we have proper auth info
+    if (user && associatedAgentId !== undefined && !fetchAttempted) {
+      setFetchAttempted(true);
+      
       // First load clients and clientInfos in parallel
       Promise.all([
-        fetchClients(), 
-        fetchClientInfos(user.id, associatedAgentId, isAdmin)
+        fetchClients().catch(err => {
+          console.error('Failed to fetch clients:', err);
+          return []; // Return empty array on error to prevent retry
+        }), 
+        fetchClientInfos(user.id, associatedAgentId, isAdmin).catch(err => {
+          console.error('Failed to fetch client infos:', err);
+          return []; // Return empty array on error to prevent retry
+        })
       ])
         .then(() => {
           // After clients and clientInfos are loaded, fetch quotes
-          return fetchQuotes();
+          return fetchQuotes().catch(err => {
+            console.error('Failed to fetch quotes:', err);
+            return []; // Return empty array on error to prevent retry
+          });
         })
         .finally(() => setIsLoading(false));
     }
