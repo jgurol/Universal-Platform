@@ -41,12 +41,12 @@ export const generateHTML = (
     contactName = `${primaryContact.first_name} ${primaryContact.last_name}`;
     contactEmail = primaryContact.email || '';
     contactPhone = primaryContact.phone || '';
-    console.log('PDFShift Function - Using primary contact:', contactName);
+    console.log('PDFShift Function - Using primary contact:', contactName, 'email:', contactEmail);
   } else if (clientInfo) {
     contactName = clientInfo.contact_name || 'Contact Name';
     contactEmail = clientInfo.email || '';
     contactPhone = clientInfo.phone || '';
-    console.log('PDFShift Function - Using clientInfo contact:', contactName);
+    console.log('PDFShift Function - Using clientInfo contact:', contactName, 'email:', contactEmail);
   }
   
   const isApproved = status === 'approved' || status === 'accepted';
