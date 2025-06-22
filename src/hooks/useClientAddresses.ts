@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import { ClientAddress, AddClientAddressData, UpdateClientAddressData } from "@/types/clientAddress";
 import { useToast } from "@/hooks/use-toast";
 import { clientAddressService } from "@/services/clientAddressService";
+import { supabase } from "@/integrations/supabase/client";
 
 export const useClientAddresses = (clientInfoId: string | null) => {
   const [addresses, setAddresses] = useState<ClientAddress[]>([]);
@@ -97,12 +98,52 @@ export const useClientAddresses = (clientInfoId: string | null) => {
     }
   };
 
+  const setPrimaryAddress = async (addressId: string) => {
+    if (!clientInfoId) return;
+
+    try {
+      // First, unset all primary addresses for this client
+      const { error: unsetError } = await supabase
+        .from('client_addresses')
+        .update({ is_primary: false })
+        .eq('client_info_id', clientInfoId);
+
+      if (unsetError) throw unsetError;
+
+      // Then, set the selected address as primary
+      const { data, error } = await supabase
+        .from('client_addresses')
+        .update({ is_primary: true })
+        .eq('id', addressId)
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      // Refresh the addresses list to get the updated data
+      await fetchAddresses(clientInfoId);
+
+      toast({
+        title: "Primary address updated",
+        description: "The address has been set as the primary address."
+      });
+    } catch (error) {
+      console.error('Error setting primary address:', error);
+      toast({
+        title: "Error",
+        description: "Failed to set primary address",
+        variant: "destructive"
+      });
+    }
+  };
+
   return {
     addresses,
     isLoading,
     addAddress,
     updateAddress,
     deleteAddress,
+    setPrimaryAddress,
     refetchAddresses: () => clientInfoId && fetchAddresses(clientInfoId)
   };
 };

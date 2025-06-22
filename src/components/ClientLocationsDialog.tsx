@@ -15,7 +15,13 @@ export const ClientLocationsDialog = ({
   open, 
   onOpenChange 
 }: ClientLocationsDialogProps) => {
-  const { addresses, addAddress, updateAddress, deleteAddress } = useClientAddresses(clientId);
+  const { 
+    addresses, 
+    addAddress, 
+    updateAddress, 
+    deleteAddress,
+    setPrimaryAddress
+  } = useClientAddresses(clientId);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -34,6 +40,7 @@ export const ClientLocationsDialog = ({
             onAddAddress={addAddress}
             onUpdateAddress={updateAddress}
             onDeleteAddress={deleteAddress}
+            onSetPrimaryAddress={setPrimaryAddress}
           />
         </div>
       </DialogContent>

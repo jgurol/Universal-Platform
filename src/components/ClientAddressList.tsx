@@ -15,6 +15,7 @@ interface ClientAddressListProps {
   onAddAddress: (address: AddClientAddressData) => Promise<ClientAddress>;
   onUpdateAddress: (address: UpdateClientAddressData) => Promise<void>;
   onDeleteAddress: (addressId: string) => Promise<void>;
+  onSetPrimaryAddress?: (addressId: string) => Promise<void>;
 }
 
 export const ClientAddressList = ({ 
@@ -22,7 +23,8 @@ export const ClientAddressList = ({
   clientInfoId, 
   onAddAddress, 
   onUpdateAddress, 
-  onDeleteAddress 
+  onDeleteAddress,
+  onSetPrimaryAddress
 }: ClientAddressListProps) => {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [editingAddress, setEditingAddress] = useState<ClientAddress | null>(null);
@@ -41,6 +43,12 @@ export const ClientAddressList = ({
       case 'mailing': return 'bg-purple-100 text-purple-800';
       case 'office': return 'bg-orange-100 text-orange-800';
       default: return 'bg-gray-100 text-gray-800';
+    }
+  };
+
+  const handleSetPrimary = async (addressId: string) => {
+    if (onSetPrimaryAddress) {
+      await onSetPrimaryAddress(addressId);
     }
   };
 
@@ -86,6 +94,18 @@ export const ClientAddressList = ({
                     )}
                   </div>
                   <div className="flex gap-2">
+                    {!address.is_primary && onSetPrimaryAddress && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleSetPrimary(address.id)}
+                        className="hover:bg-yellow-50 hover:border-yellow-300 text-yellow-600 hover:text-yellow-700"
+                        title="Set as Primary Address"
+                      >
+                        <Crown className="w-4 h-4" />
+                      </Button>
+                    )}
+                    
                     <Button
                       variant="outline"
                       size="sm"
