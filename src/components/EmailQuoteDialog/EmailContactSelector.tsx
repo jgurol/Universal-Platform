@@ -66,15 +66,18 @@ export const EmailContactSelector = ({
 
       {selectedRecipientContact === "custom" && (
         <div className="space-y-2">
-          <Label htmlFor="customEmail">Custom Email Address *</Label>
+          <Label htmlFor="customEmail">Custom Email Address(es) *</Label>
           <Input
             id="customEmail"
-            type="email"
+            type="text"
             value={customRecipientEmail}
             onChange={(e) => onCustomRecipientEmailChange(e.target.value)}
-            placeholder="Enter custom email address"
+            placeholder="Enter email address(es) separated by commas"
             required
           />
+          <div className="text-sm text-gray-500">
+            Enter one or more email addresses separated by commas (e.g., email1@example.com, email2@example.com)
+          </div>
         </div>
       )}
     </>

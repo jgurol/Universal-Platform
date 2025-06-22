@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Quote, ClientInfo } from "@/pages/Index";
@@ -184,7 +183,9 @@ ${quoteOwnerName}`;
   // Update recipient email when contact selection changes
   useEffect(() => {
     if (selectedRecipientContact === "custom") {
-      setRecipientEmail(customRecipientEmail);
+      // For custom emails, handle comma-separated values
+      const emails = customRecipientEmail.split(',').map(email => email.trim()).filter(email => email);
+      setRecipientEmail(emails.join(', '));
     } else if (selectedRecipientContact === "client-info") {
       setRecipientEmail(clientInfo?.email || '');
     } else {
@@ -228,6 +229,22 @@ ${quoteOwnerName}`;
       return;
     }
 
+    // Validate email format for custom emails
+    if (selectedRecipientContact === "custom") {
+      const emails = customRecipientEmail.split(',').map(email => email.trim()).filter(email => email);
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      const invalidEmails = emails.filter(email => !emailRegex.test(email));
+      
+      if (invalidEmails.length > 0) {
+        toast({
+          title: "Invalid email format",
+          description: `Please check the following email(s): ${invalidEmails.join(', ')}`,
+          variant: "destructive"
+        });
+        return;
+      }
+    }
+
     setIsLoading(true);
     onEmailStatusChange('idle');
     
@@ -262,10 +279,17 @@ ${quoteOwnerName}`;
         const base64String = (reader.result as string).split(',')[1];
         
         try {
+          // For custom emails, split comma-separated values into array
+          let toEmails = recipientEmail;
+          if (selectedRecipientContact === "custom") {
+            const emails = customRecipientEmail.split(',').map(email => email.trim()).filter(email => email);
+            toEmails = emails.length === 1 ? emails[0] : emails;
+          }
+
           // Include primary contact in the email function call
           const { data, error } = await supabase.functions.invoke('send-quote-email', {
             body: {
-              to: recipientEmail,
+              to: toEmails,
               cc: ccEmails.length > 0 ? ccEmails : undefined,
               subject,
               message,
@@ -300,10 +324,14 @@ ${quoteOwnerName}`;
               .from('quotes')
               .update({ email_status: 'success' })
               .eq('id', quote.id);
+
+            const recipientCount = selectedRecipientContact === "custom" 
+              ? customRecipientEmail.split(',').map(email => email.trim()).filter(email => email).length
+              : 1;
             
             toast({
               title: "Email sent successfully",
-              description: `Quote has been sent to ${recipientEmail}${ccEmails.length > 0 ? ` and ${ccEmails.length} CC recipient(s)` : ''}`,
+              description: `Quote has been sent to ${recipientCount} recipient(s)${ccEmails.length > 0 ? ` and ${ccEmails.length} CC recipient(s)` : ''}`,
             });
             
             setTimeout(() => {
