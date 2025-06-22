@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -77,6 +78,8 @@ export const ClientInfoList = ({
 
       try {
         const clientIds = clientInfos.map(client => client.id);
+        console.log('Fetching primary contacts for client IDs:', clientIds);
+        
         const { data, error } = await supabase
           .from('client_contacts')
           .select('*')
@@ -88,11 +91,14 @@ export const ClientInfoList = ({
           return;
         }
 
+        console.log('Primary contacts data:', data);
+
         // Create a mapping of client_info_id to primary contact
         const contactsMap: Record<string, ClientContact> = {};
         data?.forEach(contact => {
           contactsMap[contact.client_info_id] = contact;
         });
+        console.log('Primary contacts map:', contactsMap);
         setPrimaryContacts(contactsMap);
       } catch (err) {
         console.error('Error in primary contacts fetch:', err);
@@ -109,6 +115,8 @@ export const ClientInfoList = ({
 
       try {
         const clientIds = clientInfos.map(client => client.id);
+        console.log('Fetching primary addresses for client IDs:', clientIds);
+        
         const { data, error } = await supabase
           .from('client_addresses')
           .select('*')
@@ -120,11 +128,14 @@ export const ClientInfoList = ({
           return;
         }
 
+        console.log('Primary addresses data:', data);
+
         // Create a mapping of client_info_id to primary address
         const addressesMap: Record<string, ClientAddress> = {};
         data?.forEach(address => {
           addressesMap[address.client_info_id] = address;
         });
+        console.log('Primary addresses map:', addressesMap);
         setPrimaryAddresses(addressesMap);
       } catch (err) {
         console.error('Error in primary addresses fetch:', err);
@@ -182,6 +193,14 @@ export const ClientInfoList = ({
               clientInfos.map((clientInfo) => {
                 const primaryContact = primaryContacts[clientInfo.id];
                 const primaryAddress = primaryAddresses[clientInfo.id];
+                
+                console.log(`Client ${clientInfo.company_name}:`, {
+                  clientId: clientInfo.id,
+                  primaryContact,
+                  primaryAddress,
+                  hasPrimaryContact: !!primaryContact,
+                  hasPrimaryAddress: !!primaryAddress
+                });
                 
                 return (
                   <div
