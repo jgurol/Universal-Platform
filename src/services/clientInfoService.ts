@@ -1,6 +1,6 @@
 
 import { supabase } from "@/integrations/supabase/client";
-import { ClientInfo } from "@/pages/Index";
+import { ClientInfo } from "@/types/index";
 import { AddClientInfoData, UpdateClientInfoData } from "@/types/clientManagement";
 
 export const clientInfoService = {
@@ -21,13 +21,23 @@ export const clientInfoService = {
       throw error;
     }
     
-    return data || [];
+    // Transform the data to match ClientInfo interface
+    return (data || []).map(info => ({
+      id: info.id,
+      user_id: info.user_id,
+      company_name: info.company_name,
+      notes: info.notes,
+      revio_id: info.revio_id,
+      agent_id: info.agent_id,
+      created_at: info.created_at,
+      updated_at: info.updated_at,
+      commission_override: info.commission_override
+    }));
   },
 
   async addClientInfo(clientData: AddClientInfoData, userId: string): Promise<ClientInfo> {
     const clientInfoToInsert = {
       ...clientData,
-      // Fix: Handle empty string and "none" values properly
       agent_id: (!clientData.agent_id || clientData.agent_id === "none" || clientData.agent_id === "") ? null : clientData.agent_id,
       user_id: userId,
       notes: clientData.notes || null
@@ -44,13 +54,22 @@ export const clientInfoService = {
       throw error;
     }
 
-    return data;
+    return {
+      id: data.id,
+      user_id: data.user_id,
+      company_name: data.company_name,
+      notes: data.notes,
+      revio_id: data.revio_id,
+      agent_id: data.agent_id,
+      created_at: data.created_at,
+      updated_at: data.updated_at,
+      commission_override: data.commission_override
+    };
   },
 
   async updateClientInfo(clientData: UpdateClientInfoData): Promise<ClientInfo> {
     const clientInfoToUpdate = {
       ...clientData,
-      // Fix: Handle empty string and "none" values properly
       agent_id: (!clientData.agent_id || clientData.agent_id === "none" || clientData.agent_id === "") ? null : clientData.agent_id,
       notes: clientData.notes || null
     };
@@ -73,6 +92,16 @@ export const clientInfoService = {
       throw error;
     }
 
-    return data;
+    return {
+      id: data.id,
+      user_id: data.user_id,
+      company_name: data.company_name,
+      notes: data.notes,
+      revio_id: data.revio_id,
+      agent_id: data.agent_id,
+      created_at: data.created_at,
+      updated_at: data.updated_at,
+      commission_override: data.commission_override
+    };
   }
 };

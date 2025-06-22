@@ -1,3 +1,4 @@
+
 export interface Client {
   id: string;
   firstName: string;
@@ -42,14 +43,14 @@ export interface Quote {
   emailOpened?: boolean;
   emailOpenedAt?: string;
   emailOpenCount?: number;
-  user_id?: string; // Add this property
+  user_id?: string;
 }
 
 export interface QuoteItem {
   id: string;
-  quote_id?: string; // Make optional since it's not available when creating quotes
+  quote_id?: string;
   item_id?: string;
-  name?: string; // Make optional to match QuoteItemData
+  name?: string;
   description?: string;
   quantity: number;
   unit_price: number;
@@ -87,13 +88,10 @@ export interface QuoteItem {
   };
 }
 
+// Update ClientInfo to match actual database schema
 export interface ClientInfo {
   id: string;
   company_name: string;
-  contact_name: string | null;
-  email: string | null;
-  phone: string | null;
-  address: string | null;
   notes: string | null;
   revio_id: string | null;
   agent_id: string | null;
@@ -111,9 +109,9 @@ export interface Transaction {
   amount: number;
   date: string;
   description?: string;
-  commissionRate?: number; // Make optional
-  commissionAmount?: number; // Make optional
-  status?: 'pending' | 'approved' | 'paid'; // Make optional
+  commissionRate?: number;
+  commissionAmount?: number;
+  status?: 'pending' | 'approved' | 'paid';
   isPaid: boolean;
   paidDate?: string;
   datePaid?: string;

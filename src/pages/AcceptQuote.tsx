@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useParams, useSearchParams } from "react-router-dom";
 import { ClientInfo } from "@/types/index";
@@ -7,7 +6,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { CheckCircle, AlertCircle, Clock, Building, Mail, Phone, MapPin } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
@@ -142,7 +140,7 @@ const AcceptQuote = () => {
         return;
       }
 
-      // Fetch quote items
+      // Fetch quote items with type assertion for charge_type
       const { data: itemsData, error: itemsError } = await supabase
         .from('quote_items')
         .select(`
@@ -152,7 +150,14 @@ const AcceptQuote = () => {
         .eq('quote_id', quoteId);
 
       if (itemsError) throw itemsError;
-      setQuoteItems(itemsData || []);
+      
+      // Transform the data to ensure charge_type is properly typed
+      const transformedItems: QuoteItem[] = (itemsData || []).map(item => ({
+        ...item,
+        charge_type: (item.charge_type === 'MRC' || item.charge_type === 'NRC') ? item.charge_type : 'NRC'
+      }));
+      
+      setQuoteItems(transformedItems);
 
       // Fetch client info if available
       if (quoteData.client_info_id) {
@@ -163,7 +168,20 @@ const AcceptQuote = () => {
           .single();
 
         if (!clientError && clientData) {
-          setClientInfo(clientData);
+          // Transform the data to match ClientInfo interface
+          const transformedClientInfo: ClientInfo = {
+            id: clientData.id,
+            user_id: clientData.user_id,
+            company_name: clientData.company_name,
+            notes: clientData.notes,
+            revio_id: clientData.revio_id,
+            agent_id: clientData.agent_id,
+            created_at: clientData.created_at,
+            updated_at: clientData.updated_at,
+            commission_override: clientData.commission_override
+          };
+          
+          setClientInfo(transformedClientInfo);
 
           // Fetch contacts for this client
           const { data: contactsData, error: contactsError } = await supabase

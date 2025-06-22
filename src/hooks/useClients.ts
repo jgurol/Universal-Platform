@@ -43,7 +43,7 @@ export const useClients = () => {
           firstName: agent.first_name || '',
           lastName: agent.last_name || '',
           name: `${agent.first_name || ''} ${agent.last_name || ''}`.trim(),
-          email: agent.email || '', // Use email from agents table
+          email: agent.email || '',
           companyName: agent.company_name,
           commissionRate: parseFloat(agent.commission_rate?.toString() || '0'),
           totalEarnings: parseFloat(agent.total_earnings?.toString() || '0'),
