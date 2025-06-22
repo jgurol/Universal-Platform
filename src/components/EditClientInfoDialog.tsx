@@ -53,6 +53,7 @@ export const EditClientInfoDialog = ({
         ...clientInfo,
         agent_id: clientInfo.agent_id || null
       });
+      // Fix: Set the selectedAgentId to the actual agent_id from clientInfo
       setSelectedAgentId(clientInfo.agent_id || "none");
     }
   }, [clientInfo, open, reset]);
