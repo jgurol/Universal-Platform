@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Quote, ClientInfo } from "@/pages/Index";
@@ -105,6 +106,36 @@ export const EmailQuoteForm = ({
     fetchQuoteOwnerName();
   }, [quote.user_id, user]);
 
+  // Set primary contact as default recipient when contacts load
+  useEffect(() => {
+    if (!contactsLoading && transformedContacts.length > 0) {
+      console.log('EmailQuoteForm - Setting up recipient from contacts:', transformedContacts);
+      const primaryContact = transformedContacts.find(contact => contact.is_primary && contact.email);
+      if (primaryContact) {
+        console.log('EmailQuoteForm - Found primary contact:', primaryContact);
+        setSelectedRecipientContact(primaryContact.id);
+        setRecipientEmail(primaryContact.email);
+      } else {
+        // If no primary contact with email, use first contact with email
+        const firstContactWithEmail = transformedContacts.find(contact => contact.email && contact.email.trim() !== '');
+        if (firstContactWithEmail) {
+          console.log('EmailQuoteForm - Using first contact with email:', firstContactWithEmail);
+          setSelectedRecipientContact(firstContactWithEmail.id);
+          setRecipientEmail(firstContactWithEmail.email);
+        } else if (clientInfo?.email) {
+          console.log('EmailQuoteForm - Using client info email:', clientInfo.email);
+          setSelectedRecipientContact("client-info");
+          setRecipientEmail(clientInfo.email);
+        }
+      }
+    } else if (!contactsLoading && transformedContacts.length === 0 && clientInfo?.email) {
+      // No contacts but we have client info email
+      console.log('EmailQuoteForm - No contacts, using client info email:', clientInfo.email);
+      setSelectedRecipientContact("client-info");
+      setRecipientEmail(clientInfo.email);
+    }
+  }, [contactsLoading, transformedContacts, clientInfo]);
+
   // Set the message template with the quote owner's name and selected contact name
   useEffect(() => {
     if (!ownerNameLoaded) {
@@ -149,40 +180,6 @@ ${quoteOwnerName}`;
     console.log('EmailQuoteForm - Setting message template with greeting:', greeting);
     setMessage(messageTemplate);
   }, [clientInfo?.contact_name, quoteOwnerName, ownerNameLoaded, selectedRecipientContact, transformedContacts]);
-
-  // Set primary contact as default recipient when component mounts
-  useEffect(() => {
-    // First, check if we have client info with contact name and email - prioritize this
-    if (clientInfo?.contact_name && clientInfo?.email) {
-      console.log('EmailQuoteForm - Using client info as primary contact:', clientInfo);
-      setSelectedRecipientContact("client-info");
-      setRecipientEmail(clientInfo.email);
-    } else if (transformedContacts.length > 0) {
-      console.log('EmailQuoteForm - Setting up recipient from contacts:', transformedContacts);
-      const primaryContact = transformedContacts.find(contact => contact.is_primary);
-      if (primaryContact?.email) {
-        console.log('EmailQuoteForm - Found primary contact:', primaryContact);
-        setSelectedRecipientContact(primaryContact.id);
-        setRecipientEmail(primaryContact.email);
-      } else {
-        // If no primary contact with email, use first contact with email
-        const firstContactWithEmail = transformedContacts.find(contact => contact.email);
-        if (firstContactWithEmail) {
-          console.log('EmailQuoteForm - Using first contact with email:', firstContactWithEmail);
-          setSelectedRecipientContact(firstContactWithEmail.id);
-          setRecipientEmail(firstContactWithEmail.email);
-        } else if (clientInfo?.email) {
-          console.log('EmailQuoteForm - Using client info email:', clientInfo.email);
-          setRecipientEmail(clientInfo.email);
-          setCustomRecipientEmail(clientInfo.email);
-        }
-      }
-    } else if (clientInfo?.email) {
-      console.log('EmailQuoteForm - No contacts, using client info email:', clientInfo.email);
-      setRecipientEmail(clientInfo.email);
-      setCustomRecipientEmail(clientInfo.email);
-    }
-  }, [transformedContacts, clientInfo]);
 
   // Update recipient email when contact selection changes
   useEffect(() => {
