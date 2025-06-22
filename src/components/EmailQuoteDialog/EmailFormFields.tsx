@@ -28,7 +28,7 @@ export const EmailFormFields = ({
   quoteId,
   contactName,
   quoteOwnerName,
-  fromEmail = "Jim Gurol <jim@californiatelecom.com>",
+  fromEmail = "jim@californiatelecom.com",
   recipientEmails
 }: EmailFormFieldsProps) => {
   const [reminderEnabled, setReminderEnabled] = useState(false);
@@ -41,12 +41,12 @@ export const EmailFormFields = ({
 
   return (
     <div className="space-y-6">
-      {/* From Section - Now at the top and read-only */}
+      {/* From Section - At the very top */}
       <div className="space-y-2">
         <Label htmlFor="from" className="text-sm font-medium">From</Label>
         <Input
           id="from"
-          value={`${quoteOwnerName} <${fromEmail.split('<')[1]?.replace('>', '') || fromEmail}>`}
+          value={`${quoteOwnerName} <${fromEmail}>`}
           readOnly
           className="bg-gray-50 border-gray-200"
         />

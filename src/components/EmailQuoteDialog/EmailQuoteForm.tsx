@@ -37,6 +37,7 @@ export const EmailQuoteForm = ({
   const [message, setMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [quoteOwnerName, setQuoteOwnerName] = useState('');
+  const [quoteOwnerEmail, setQuoteOwnerEmail] = useState('');
   const [ownerNameLoaded, setOwnerNameLoaded] = useState(false);
   const [messageTemplateSet, setMessageTemplateSet] = useState(false);
   const { toast } = useToast();
@@ -52,10 +53,10 @@ export const EmailQuoteForm = ({
     is_primary: contact.is_primary
   }));
 
-  // Fetch the quote owner's name from the profiles table
+  // Fetch the quote owner's name and email from the profiles table
   useEffect(() => {
-    const fetchQuoteOwnerName = async () => {
-      console.log('EmailQuoteForm - Fetching quote owner name for user_id:', quote.user_id);
+    const fetchQuoteOwnerInfo = async () => {
+      console.log('EmailQuoteForm - Fetching quote owner info for user_id:', quote.user_id);
       
       // If quote doesn't have user_id, use current user as fallback
       const ownerUserId = quote.user_id || user?.id;
@@ -63,6 +64,7 @@ export const EmailQuoteForm = ({
       if (!ownerUserId) {
         console.log('EmailQuoteForm - No user_id found and no current user, using fallback');
         setQuoteOwnerName('Sales Team');
+        setQuoteOwnerEmail('sales@californiatelecom.com');
         setOwnerNameLoaded(true);
         return;
       }
@@ -76,34 +78,35 @@ export const EmailQuoteForm = ({
         
         console.log('EmailQuoteForm - Profile query result:', { profile, error });
         
-        if (!error && profile?.full_name && profile.full_name.trim() !== '') {
-          console.log('EmailQuoteForm - Found quote owner name:', profile.full_name);
-          setQuoteOwnerName(profile.full_name);
-        } else if (!error && profile?.email) {
-          console.log('EmailQuoteForm - Using email as fallback name:', profile.email);
-          setQuoteOwnerName(profile.email.split('@')[0]); // Use part before @ as name
+        if (!error && profile) {
+          const name = profile.full_name && profile.full_name.trim() !== '' 
+            ? profile.full_name 
+            : profile.email?.split('@')[0] || 'Sales Team';
+          const email = profile.email || user?.email || 'sales@californiatelecom.com';
+          
+          console.log('EmailQuoteForm - Found quote owner info:', name, email);
+          setQuoteOwnerName(name);
+          setQuoteOwnerEmail(email);
         } else {
-          console.log('EmailQuoteForm - Could not fetch quote owner name, using current user fallback');
+          console.log('EmailQuoteForm - Could not fetch quote owner info, using current user fallback');
           // If we can't get the quote owner, use current user info
-          if (user?.email) {
-            setQuoteOwnerName(user.email.split('@')[0]);
-          } else {
-            setQuoteOwnerName('Sales Team');
-          }
+          const name = user?.email?.split('@')[0] || 'Sales Team';
+          const email = user?.email || 'sales@californiatelecom.com';
+          setQuoteOwnerName(name);
+          setQuoteOwnerEmail(email);
         }
       } catch (error) {
-        console.error('EmailQuoteForm - Error fetching quote owner name:', error);
+        console.error('EmailQuoteForm - Error fetching quote owner info:', error);
         // Use current user as fallback
-        if (user?.email) {
-          setQuoteOwnerName(user.email.split('@')[0]);
-        } else {
-          setQuoteOwnerName('Sales Team');
-        }
+        const name = user?.email?.split('@')[0] || 'Sales Team';
+        const email = user?.email || 'sales@californiatelecom.com';
+        setQuoteOwnerName(name);
+        setQuoteOwnerEmail(email);
       }
       setOwnerNameLoaded(true);
     };
 
-    fetchQuoteOwnerName();
+    fetchQuoteOwnerInfo();
   }, [quote.user_id, user]);
 
   // Set primary contact as default recipient when contacts load
@@ -432,6 +435,7 @@ ${quoteOwnerName}`;
         quoteId={quote.id}
         contactName={getCurrentContactName()}
         quoteOwnerName={quoteOwnerName}
+        fromEmail={quoteOwnerEmail}
         recipientEmails={recipientEmail}
       />
 
