@@ -1,4 +1,3 @@
-
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -47,30 +46,13 @@ export const VendorsView = () => {
     try {
       console.log('Opening price sheet with path:', priceSheet.file_path);
       
-      // First, let's check if the file exists in storage
-      const { data: fileList, error: listError } = await supabase.storage
+      // Check if the file exists by trying to download it (more reliable than listing)
+      const { data: downloadData, error: downloadError } = await supabase.storage
         .from('vendor-price-sheets')
-        .list('', { search: priceSheet.file_path });
+        .download(priceSheet.file_path);
 
-      if (listError) {
-        console.error('Error listing files:', listError);
-        toast({
-          title: "Storage Error",
-          description: `Cannot access storage: ${listError.message}`,
-          variant: "destructive"
-        });
-        return;
-      }
-
-      console.log('Files found in storage:', fileList);
-
-      // Check if our specific file exists
-      const fileExists = fileList && fileList.some(file => 
-        priceSheet.file_path.includes(file.name)
-      );
-
-      if (!fileExists) {
-        console.error('File not found in storage:', priceSheet.file_path);
+      if (downloadError) {
+        console.error('File does not exist - download error:', downloadError);
         toast({
           title: "File Not Found",
           description: `The file "${priceSheet.name}" was not found in storage. It may have been deleted or moved.`,
@@ -79,7 +61,9 @@ export const VendorsView = () => {
         return;
       }
 
-      // Try to create signed URL
+      console.log('File exists and can be downloaded, creating signed URL');
+
+      // File exists, now create signed URL
       const { data, error } = await supabase.storage
         .from('vendor-price-sheets')
         .createSignedUrl(priceSheet.file_path, 3600); // 1 hour expiry
