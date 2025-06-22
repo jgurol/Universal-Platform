@@ -38,6 +38,7 @@ export const useIndexData = () => {
     associatedAgentId,
     fetchClients,
     fetchQuotes,
-    fetchClientInfos
+    fetchClientInfos: (userId?: string, associatedAgentId?: string | null, isAdmin?: boolean) => 
+      fetchClientInfos(userId, associatedAgentId, isAdmin)
   };
 };
