@@ -15,6 +15,7 @@ interface EmailFormFieldsProps {
   quoteOwnerName: string;
   fromEmail?: string;
   recipientEmails: string;
+  onRecipientEmailsChange: (value: string) => void;
 }
 
 export const EmailFormFields = ({
@@ -27,7 +28,8 @@ export const EmailFormFields = ({
   contactName,
   quoteOwnerName,
   fromEmail = "jim@californiatelecom.com",
-  recipientEmails
+  recipientEmails,
+  onRecipientEmailsChange
 }: EmailFormFieldsProps) => {
   return (
     <div className="space-y-6">
@@ -49,8 +51,8 @@ export const EmailFormFields = ({
           <Input
             id="recipients"
             value={recipientEmails}
-            readOnly
-            className="flex-1 bg-cyan-50 border-cyan-200"
+            onChange={(e) => onRecipientEmailsChange(e.target.value)}
+            className="flex-1"
             placeholder="Enter recipient emails"
           />
           <button 

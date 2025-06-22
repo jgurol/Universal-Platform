@@ -222,6 +222,18 @@ ${quoteOwnerName}`;
     }
   };
 
+  // Handle direct recipient email changes
+  const handleRecipientEmailChange = (value: string) => {
+    setRecipientEmail(value);
+    // If the user is editing the email directly, switch to custom mode
+    if (selectedRecipientContact !== "custom") {
+      setSelectedRecipientContact("custom");
+      setCustomRecipientEmail(value);
+    } else {
+      setCustomRecipientEmail(value);
+    }
+  };
+
   const handleSendEmail = async () => {
     if (!recipientEmail) {
       toast({
@@ -435,8 +447,9 @@ ${quoteOwnerName}`;
         quoteId={quote.id}
         contactName={getCurrentContactName()}
         quoteOwnerName={quoteOwnerName}
-        fromEmail={quoteOwnerEmail}
+        fromEmail={user?.email || quoteOwnerEmail}
         recipientEmails={recipientEmail}
+        onRecipientEmailsChange={handleRecipientEmailChange}
       />
 
       <div className="bg-gray-50 p-3 rounded-lg">
