@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -36,9 +37,6 @@ export const AddClientInfoDialog = ({
   const { register, handleSubmit, reset, setValue, formState: { errors } } = useForm<AddClientInfoData>({
     defaultValues: {
       company_name: "",
-      contact_name: "",
-      email: "",
-      phone: "",
       notes: "",
       revio_id: "",
       agent_id: null,
@@ -132,7 +130,7 @@ export const AddClientInfoDialog = ({
         <DialogHeader>
           <DialogTitle>Add New Client</DialogTitle>
           <DialogDescription>
-            Add a new client to your database.
+            Add a new client to your database. Contact information can be managed separately in the contacts section.
           </DialogDescription>
         </DialogHeader>
 
@@ -147,42 +145,6 @@ export const AddClientInfoDialog = ({
             {errors.company_name && (
               <p className="text-sm text-red-500">{errors.company_name.message}</p>
             )}
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="contact_name">Contact Name</Label>
-            <Input
-              id="contact_name"
-              {...register("contact_name")}
-              placeholder="Enter contact person's name"
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="email">Email</Label>
-            <Input
-              id="email"
-              type="email"
-              {...register("email", {
-                pattern: {
-                  value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
-                  message: "Invalid email address"
-                }
-              })}
-              placeholder="Enter email address"
-            />
-            {errors.email && (
-              <p className="text-sm text-red-500">{errors.email.message}</p>
-            )}
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="phone">Phone</Label>
-            <Input
-              id="phone"
-              {...register("phone")}
-              placeholder="Enter phone number"
-            />
           </div>
 
           <div className="space-y-2">

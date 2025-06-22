@@ -57,9 +57,6 @@ export const clientInfoService = {
       .from('client_info')
       .update({
         company_name: clientInfoToUpdate.company_name,
-        contact_name: clientInfoToUpdate.contact_name,
-        email: clientInfoToUpdate.email,
-        phone: clientInfoToUpdate.phone,
         notes: clientInfoToUpdate.notes,
         revio_id: clientInfoToUpdate.revio_id,
         agent_id: clientInfoToUpdate.agent_id,

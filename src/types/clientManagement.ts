@@ -11,9 +11,6 @@ export interface ClientManagementHook {
 
 export interface AddClientInfoData {
   company_name: string;
-  contact_name: string | null;
-  email: string | null;
-  phone: string | null;
   notes: string | null;
   revio_id: string | null;
   agent_id: string | null;

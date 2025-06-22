@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -37,9 +38,6 @@ export const EditClientInfoDialog = ({
   const { register, handleSubmit, reset, setValue, formState: { errors } } = useForm<ClientInfo>({
     defaultValues: {
       company_name: "",
-      contact_name: "",
-      email: "",
-      phone: "",
       notes: "",
       revio_id: "",
       agent_id: null,
@@ -142,7 +140,7 @@ export const EditClientInfoDialog = ({
         <DialogHeader>
           <DialogTitle>Edit Client</DialogTitle>
           <DialogDescription>
-            Update the client details and associate with an agent.
+            Update the client details and associate with an agent. Use the contacts section to manage contact information.
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
@@ -156,42 +154,6 @@ export const EditClientInfoDialog = ({
             {errors.company_name && (
               <p className="text-sm text-red-500">{errors.company_name.message}</p>
             )}
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="edit-contact_name">Contact Name</Label>
-            <Input
-              id="edit-contact_name"
-              {...register("contact_name")}
-              placeholder="Enter contact person's name"
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="edit-email">Email</Label>
-            <Input
-              id="edit-email"
-              type="email"
-              {...register("email", {
-                pattern: {
-                  value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
-                  message: "Invalid email address"
-                }
-              })}
-              placeholder="Enter email address"
-            />
-            {errors.email && (
-              <p className="text-sm text-red-500">{errors.email.message}</p>
-            )}
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="edit-phone">Phone</Label>
-            <Input
-              id="edit-phone"
-              {...register("phone")}
-              placeholder="Enter phone number"
-            />
           </div>
 
           <div className="space-y-2">
