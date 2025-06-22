@@ -280,10 +280,12 @@ ${quoteOwnerName}`;
         
         try {
           // For custom emails, split comma-separated values into array
-          let toEmails = recipientEmail;
+          let toEmails: string | string[];
           if (selectedRecipientContact === "custom") {
             const emails = customRecipientEmail.split(',').map(email => email.trim()).filter(email => email);
             toEmails = emails.length === 1 ? emails[0] : emails;
+          } else {
+            toEmails = recipientEmail;
           }
 
           // Include primary contact in the email function call
