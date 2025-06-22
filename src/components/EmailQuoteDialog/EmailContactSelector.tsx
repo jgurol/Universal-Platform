@@ -53,12 +53,6 @@ export const EmailContactSelector = ({
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="custom">Custom Email</SelectItem>
-              {/* Show client info as an option only if we have contact name and email and no contacts exist */}
-              {clientInfo?.contact_name && clientInfo?.email && availableContacts.length === 0 && (
-                <SelectItem value="client-info">
-                  {clientInfo.contact_name} ({clientInfo.email}) - Primary Contact
-                </SelectItem>
-              )}
               {availableContacts.map((contact) => (
                 <SelectItem key={contact.id} value={contact.id}>
                   {contact.name} ({contact.email}) {contact.is_primary && '- Primary'}

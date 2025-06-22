@@ -29,7 +29,8 @@ export const clientInfoService = {
       ...clientData,
       // Fix: Handle empty string and "none" values properly
       agent_id: (!clientData.agent_id || clientData.agent_id === "none" || clientData.agent_id === "") ? null : clientData.agent_id,
-      user_id: userId
+      user_id: userId,
+      notes: clientData.notes || null
     };
 
     const { data, error } = await supabase
@@ -51,6 +52,7 @@ export const clientInfoService = {
       ...clientData,
       // Fix: Handle empty string and "none" values properly
       agent_id: (!clientData.agent_id || clientData.agent_id === "none" || clientData.agent_id === "") ? null : clientData.agent_id,
+      notes: clientData.notes || null
     };
 
     const { data, error } = await supabase

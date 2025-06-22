@@ -5,7 +5,7 @@ import { useAuth } from "@/context/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { useAgentMapping } from "@/hooks/useAgentMapping";
 import { clientInfoService } from "@/services/clientInfoService";
-import { ClientManagementHook } from "@/types/clientManagement";
+import { ClientManagementHook, AddClientInfoData } from "@/types/clientManagement";
 import { supabase } from "@/integrations/supabase/client";
 
 export const useClientManagement = (): ClientManagementHook => {
@@ -73,7 +73,7 @@ export const useClientManagement = (): ClientManagementHook => {
   }, [user, isAdmin, associatedAgentId, toast]);
 
   // Function to add client info
-  const addClientInfo = async (newClientInfo: Omit<ClientInfo, "id" | "created_at" | "updated_at" | "user_id">) => {
+  const addClientInfo = async (newClientInfo: AddClientInfoData) => {
     if (!user) return;
 
     try {

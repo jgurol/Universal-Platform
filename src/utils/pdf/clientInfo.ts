@@ -13,8 +13,8 @@ export const addClientInfo = (doc: jsPDF, context: PDFGenerationContext): number
     quoteId: quote.id,
     quoteBillingAddress: quote.billingAddress,
     quoteServiceAddress: quote.serviceAddress,
-    clientInfoAddress: clientInfo?.address,
-    hasClientInfo: !!clientInfo
+    hasClientInfo: !!clientInfo,
+    hasPrimaryContact: !!context.primaryContact
   });
   
   if (!clientInfo) {

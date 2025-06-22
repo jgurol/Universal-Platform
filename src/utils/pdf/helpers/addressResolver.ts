@@ -1,29 +1,25 @@
 
 import { PDFGenerationContext } from '../types';
 
-export const resolveBillingAddress = (context: PDFGenerationContext): string | null => {
-  const { quote, clientInfo } = context;
+export const resolveBillingAddress = (context: PDF GenerationContext): string | null => {
+  const { quote } = context;
   
-  // Prioritize quote.billingAddress
+  // Use quote.billingAddress only
   let billingAddress = quote.billingAddress;
-  if (!billingAddress || billingAddress.trim() === '') {
-    billingAddress = clientInfo?.address || null;
-  }
   
   console.log('PDF addressResolver - Billing address determination:', {
     quoteBillingAddress: quote.billingAddress,
     quoteBillingAddressLength: quote.billingAddress?.length,
     quoteBillingAddressTrimmed: quote.billingAddress?.trim(),
-    clientInfoAddress: clientInfo?.address,
     finalBillingAddress: billingAddress,
     finalBillingAddressLength: billingAddress?.length
   });
   
-  return billingAddress;
+  return billingAddress || null;
 };
 
 export const resolveServiceAddress = (context: PDFGenerationContext, billingAddress: string | null): string | null => {
-  const { quote, clientInfo } = context;
+  const { quote } = context;
   
   // ONLY use quote.serviceAddress if it exists - don't auto-populate with billing or client address
   let finalServiceAddress = null;

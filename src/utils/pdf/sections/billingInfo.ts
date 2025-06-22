@@ -4,7 +4,7 @@ import { PDFGenerationContext } from '../types';
 import { formatAddress } from '../addressFormatting';
 
 export const renderBillingInfo = (doc: jsPDF, context: PDFGenerationContext, yPos: number, billingAddress: string | null, xPos: number = 20): void => {
-  const { clientInfo } = context;
+  const { clientInfo, primaryContact } = context;
   
   if (!clientInfo) return;
   
@@ -16,8 +16,9 @@ export const renderBillingInfo = (doc: jsPDF, context: PDFGenerationContext, yPo
   doc.setTextColor(0, 0, 0);
   
   let currentYPos = yPos;
-  if (clientInfo.contact_name) {
-    doc.text(clientInfo.contact_name, xPos, currentYPos + 4);
+  if (primaryContact) {
+    const contactName = `${primaryContact.first_name} ${primaryContact.last_name}`;
+    doc.text(contactName, xPos, currentYPos + 4);
     currentYPos += 4;
   }
   
