@@ -22,12 +22,15 @@ export const ClientContactsList = ({
   onAddContact,
   onUpdateContact,
   onDeleteContact,
-  contacts
+  contacts: propContacts
 }: ClientContactsListProps) => {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [editingContact, setEditingContact] = useState<ClientContact | null>(null);
   const [deletingContactId, setDeletingContactId] = useState<string | null>(null);
-  const { setPrimaryContact } = useClientContacts(clientInfoId);
+  const { contacts: hookContacts, setPrimaryContact } = useClientContacts(clientInfoId);
+
+  // Use contacts from hook if available, fallback to props
+  const contacts = hookContacts.length > 0 ? hookContacts : propContacts;
 
   const handleDelete = async (contactId: string) => {
     await onDeleteContact(contactId);
