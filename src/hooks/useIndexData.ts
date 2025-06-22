@@ -12,9 +12,9 @@ export const useIndexData = () => {
 
   // Use individual hooks for different data concerns
   const { associatedAgentId } = useUserProfile();
-  const { clients, setClients, fetchClients } = useClients(associatedAgentId);
-  const { clientInfos, setClientInfos, fetchClientInfos } = useClientInfos(associatedAgentId);
-  const { quotes, setQuotes, fetchQuotes } = useQuotes(associatedAgentId, clients, clientInfos);
+  const { clients, setClients, fetchClients } = useClients();
+  const { clientInfos, setClientInfos, fetchClientInfos } = useClientInfos();
+  const { quotes, setQuotes, fetchQuotes } = useQuotes();
 
   useEffect(() => {
     if (user && associatedAgentId !== undefined) {

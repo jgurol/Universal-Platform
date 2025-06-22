@@ -5,12 +5,22 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Search, Filter, Eye } from "lucide-react";
+import { Plus, Search, Filter, Eye, Package, Trash2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
 import { ClientInfo } from "@/types/index";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { useAgentMapping } from "@/hooks/useAgentMapping";
+import { generateQuotePDF } from "@/utils/pdf";
+import { Quote } from "@/types/index";
+
+// Helper function to format dates
+const formatDateForDisplay = (dateString: string) => {
+  return new Date(dateString).toLocaleDateString();
+};
 
 interface Order {
   id: string;
@@ -57,7 +67,7 @@ export const OrdersManagement = () => {
   const [quoteAcceptances, setQuoteAcceptances] = useState<Record<string, QuoteAcceptance>>({});
   const [quotesData, setQuotesData] = useState<Record<string, any>>({});
   const [isGeneratingPdf, setIsGeneratingPdf] = useState<string | null>(null);
-  const [newOrder, setNewOrder] = useState<ClientInfo>({
+  const [newOrder, setNewOrder] = useState({
     company_name: '',
     notes: '',
   });
@@ -412,6 +422,7 @@ export const OrdersManagement = () => {
       const clientInfoData = {
         company_name: newOrder.company_name,
         notes: newOrder.notes || '',
+        user_id: user?.id || ''
       };
 
       const { error: clientError } = await supabase

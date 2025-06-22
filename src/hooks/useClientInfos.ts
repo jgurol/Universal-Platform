@@ -1,49 +1,66 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
-import { ClientInfo } from "@/pages/Index";
+import { ClientInfo } from "@/types/index";
 
-export const useClientInfos = (associatedAgentId: string | null) => {
-  const { user, isAdmin } = useAuth();
+export const useClientInfos = () => {
   const [clientInfos, setClientInfos] = useState<ClientInfo[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const { user } = useAuth();
 
   const fetchClientInfos = async () => {
-    if (!user) return;
+    if (!user) {
+      setIsLoading(false);
+      return;
+    }
 
     try {
-      console.info('[fetchClientInfos] Starting client info fetch - isAdmin:', isAdmin, 'associatedAgentId:', associatedAgentId);
-
-      let query = supabase
+      const { data, error } = await supabase
         .from('client_info')
-        .select('*');
-
-      if (!isAdmin && associatedAgentId) {
-        console.info('[fetchClientInfos] Non-admin user - filtering by agent:', associatedAgentId);
-        query = query.eq('agent_id', associatedAgentId);
-      } else {
-        console.info('[fetchClientInfos] Admin user - no filtering applied');
-      }
-
-      const { data: clientInfosData, error } = await query;
+        .select('*')
+        .eq('user_id', user.id)
+        .order('company_name');
 
       if (error) {
         console.error('Error fetching client infos:', error);
+        setClientInfos([]);
         return;
       }
 
-      if (clientInfosData) {
-        setClientInfos(clientInfosData);
-        console.info('[fetchClientInfos] Fetched client infos:', clientInfosData.length);
+      if (data) {
+        // Transform the data to match ClientInfo interface
+        const formattedClientInfos: ClientInfo[] = data.map(info => ({
+          id: info.id,
+          user_id: info.user_id,
+          company_name: info.company_name,
+          notes: info.notes,
+          revio_id: info.revio_id,
+          agent_id: info.agent_id,
+          created_at: info.created_at,
+          updated_at: info.updated_at,
+          commission_override: info.commission_override
+        }));
+
+        setClientInfos(formattedClientInfos);
       }
     } catch (err) {
       console.error('Error in fetchClientInfos:', err);
+      setClientInfos([]);
+    } finally {
+      setIsLoading(false);
     }
   };
+
+  useEffect(() => {
+    fetchClientInfos();
+  }, [user]);
 
   return {
     clientInfos,
     setClientInfos,
+    isLoading,
+    refetch: fetchClientInfos,
     fetchClientInfos
   };
 };

@@ -20,10 +20,6 @@ export const useClients = () => {
   const [isLoading, setIsLoading] = useState(true);
   const { user } = useAuth();
 
-  useEffect(() => {
-    fetchClients();
-  }, [user]);
-
   const fetchClients = async () => {
     if (!user) {
       setIsLoading(false);
@@ -47,7 +43,7 @@ export const useClients = () => {
           firstName: agent.first_name || '',
           lastName: agent.last_name || '',
           name: `${agent.first_name || ''} ${agent.last_name || ''}`.trim(),
-          email: '', // Default empty since agents table doesn't have email
+          email: agent.email || '', // Use email from agents table
           companyName: agent.company_name,
           commissionRate: parseFloat(agent.commission_rate?.toString() || '0'),
           totalEarnings: parseFloat(agent.total_earnings?.toString() || '0'),
@@ -64,9 +60,15 @@ export const useClients = () => {
     }
   };
 
+  useEffect(() => {
+    fetchClients();
+  }, [user]);
+
   return {
     clients,
+    setClients,
     isLoading,
-    refetch: fetchClients
+    refetch: fetchClients,
+    fetchClients
   };
 };
