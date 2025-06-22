@@ -99,6 +99,48 @@ export const useClientContacts = (clientInfoId: string | null) => {
     }
   };
 
+  const setPrimaryContact = async (contactId: string) => {
+    if (!clientInfoId) return;
+
+    try {
+      // First, unset all primary contacts for this client
+      const { error: unsetError } = await supabase
+        .from('client_contacts')
+        .update({ is_primary: false })
+        .eq('client_info_id', clientInfoId);
+
+      if (unsetError) throw unsetError;
+
+      // Then, set the selected contact as primary
+      const { data, error } = await supabase
+        .from('client_contacts')
+        .update({ is_primary: true })
+        .eq('id', contactId)
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      // Update local state
+      setContacts(prev => prev.map(contact => ({
+        ...contact,
+        is_primary: contact.id === contactId
+      })));
+
+      toast({
+        title: "Primary contact updated",
+        description: `${data.first_name} ${data.last_name} has been set as the primary contact.`
+      });
+    } catch (error) {
+      console.error('Error setting primary contact:', error);
+      toast({
+        title: "Error",
+        description: "Failed to set primary contact",
+        variant: "destructive"
+      });
+    }
+  };
+
   const deleteContact = async (contactId: string) => {
     try {
       const { error } = await supabase
@@ -132,6 +174,7 @@ export const useClientContacts = (clientInfoId: string | null) => {
     isLoading,
     addContact,
     updateContact,
-    deleteContact
+    deleteContact,
+    setPrimaryContact
   };
 };

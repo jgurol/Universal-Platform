@@ -3,7 +3,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { Plus, Edit, Trash2, User, Crown, Mail, Phone } from "lucide-react";
+import { Plus, Edit, Trash2, User, Crown, Mail, Phone, Star } from "lucide-react";
 import { ClientContact } from "@/types/clientContacts";
 import { AddClientContactDialog } from "@/components/AddClientContactDialog";
 import { EditClientContactDialog } from "@/components/EditClientContactDialog";
@@ -27,10 +27,15 @@ export const ClientContactsList = ({
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [editingContact, setEditingContact] = useState<ClientContact | null>(null);
   const [deletingContactId, setDeletingContactId] = useState<string | null>(null);
+  const { setPrimaryContact } = useClientContacts(clientInfoId);
 
   const handleDelete = async (contactId: string) => {
     await onDeleteContact(contactId);
     setDeletingContactId(null);
+  };
+
+  const handleSetPrimary = async (contactId: string) => {
+    await setPrimaryContact(contactId);
   };
 
   return (
@@ -88,6 +93,18 @@ export const ClientContactsList = ({
               </div>
               
               <div className="flex gap-2">
+                {!contact.is_primary && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleSetPrimary(contact.id)}
+                    className="hover:bg-yellow-50 hover:border-yellow-300 text-yellow-600 hover:text-yellow-700"
+                    title="Set as Primary Contact"
+                  >
+                    <Star className="w-4 h-4" />
+                  </Button>
+                )}
+                
                 <Button
                   variant="outline"
                   size="sm"
