@@ -1222,6 +1222,7 @@ export type Database = {
           file_size: number | null
           file_type: string | null
           id: string
+          is_public: boolean | null
           name: string
           updated_at: string
           uploaded_at: string
@@ -1234,6 +1235,7 @@ export type Database = {
           file_size?: number | null
           file_type?: string | null
           id?: string
+          is_public?: boolean | null
           name: string
           updated_at?: string
           uploaded_at?: string
@@ -1246,6 +1248,7 @@ export type Database = {
           file_size?: number | null
           file_type?: string | null
           id?: string
+          is_public?: boolean | null
           name?: string
           updated_at?: string
           uploaded_at?: string
