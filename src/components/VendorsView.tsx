@@ -29,10 +29,14 @@ export const VendorsView = () => {
   };
 
   const getPublicPriceSheetsForVendor = (vendorId: string) => {
-    return priceSheets.filter(sheet => 
-      sheet.vendor_id === vendorId && 
-      sheet.is_public === true
-    );
+    // For admins, show all price sheets for the vendor
+    // For agents, show only public price sheets for the vendor
+    return priceSheets.filter(sheet => {
+      if (sheet.vendor_id === vendorId) {
+        return isAdmin || sheet.is_public === true;
+      }
+      return false;
+    });
   };
 
   const handleOpenPriceSheet = async (priceSheet: any) => {
@@ -155,10 +159,12 @@ export const VendorsView = () => {
                         </div>
                       )}
                       
-                      {/* Public Price Sheets */}
+                      {/* Public Price Sheets - Show for both admins and agents */}
                       {publicPriceSheets.length > 0 && (
                         <div className="mt-2">
-                          <p className="text-xs text-gray-500 mb-1">Public Price Sheets:</p>
+                          <p className="text-xs text-gray-500 mb-1">
+                            {isAdmin ? "Price Sheets:" : "Public Price Sheets:"}
+                          </p>
                           <div className="flex flex-wrap gap-1">
                             {publicPriceSheets.map((sheet) => (
                               <Button
