@@ -1,4 +1,5 @@
 
+
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -146,59 +147,13 @@ export const AddAddressDialog = ({ open, onOpenChange, onAddAddress, clientInfoI
           )}
 
           <div className="space-y-2">
-            <Label htmlFor="street-address-2">Street Address 2 (Optional)</Label>
+            <Label htmlFor="street-address-2">Suite/Apt # (Optional)</Label>
             <Input
               id="street-address-2"
               value={streetAddress2}
               onChange={(e) => setStreetAddress2(e.target.value)}
-              placeholder="Apt, suite, unit, etc."
+              placeholder="Suite 100, Apt 2B, etc."
             />
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="city">City</Label>
-              <Input
-                id="city"
-                value={city}
-                onChange={(e) => setCity(e.target.value)}
-                placeholder="City"
-                required
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="state">State</Label>
-              <Input
-                id="state"
-                value={state}
-                onChange={(e) => setState(e.target.value)}
-                placeholder="State"
-                required
-              />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="zip-code">ZIP Code</Label>
-              <Input
-                id="zip-code"
-                value={zipCode}
-                onChange={(e) => setZipCode(e.target.value)}
-                placeholder="12345"
-                required
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="country">Country</Label>
-              <Input
-                id="country"
-                value={country}
-                onChange={(e) => setCountry(e.target.value)}
-                placeholder="Country"
-                required
-              />
-            </div>
           </div>
 
           <div className="flex items-center space-x-2">
@@ -228,3 +183,4 @@ export const AddAddressDialog = ({ open, onOpenChange, onAddAddress, clientInfoI
     </Dialog>
   );
 };
+
