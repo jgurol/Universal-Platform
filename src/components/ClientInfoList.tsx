@@ -205,51 +205,56 @@ export const ClientInfoList = ({
                           )}
                         </div>
                         
-                        {/* Primary Contact Section */}
-                        {primaryContact && (
-                          <div className="mb-3 p-3 bg-yellow-50 border border-yellow-200 rounded-md">
-                            <div className="flex items-center gap-2 mb-2">
-                              <Crown className="w-4 h-4 text-yellow-600" />
-                              <span className="font-medium text-yellow-800">Primary Contact</span>
-                            </div>
-                            <div className="space-y-1 text-sm">
-                              <div className="font-medium text-gray-900">
-                                {primaryContact.first_name} {primaryContact.last_name}
-                              </div>
-                              {primaryContact.title && (
-                                <div className="text-gray-600">{primaryContact.title}</div>
-                              )}
-                              <div className="flex flex-col sm:flex-row gap-2 text-gray-600">
-                                {primaryContact.email && (
-                                  <div className="flex items-center gap-1">
-                                    <Mail className="w-3 h-3" />
-                                    {primaryContact.email}
+                        {/* Primary Contact and Address in Two Columns */}
+                        {(primaryContact || primaryAddress) && (
+                          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-3">
+                            {/* Primary Contact Section */}
+                            {primaryContact && (
+                              <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-md">
+                                <div className="flex items-center gap-2 mb-2">
+                                  <Crown className="w-4 h-4 text-yellow-600" />
+                                  <span className="font-medium text-yellow-800">Primary Contact</span>
+                                </div>
+                                <div className="space-y-1 text-sm">
+                                  <div className="font-medium text-gray-900">
+                                    {primaryContact.first_name} {primaryContact.last_name}
                                   </div>
-                                )}
-                                {primaryContact.phone && (
-                                  <div className="flex items-center gap-1">
-                                    <Phone className="w-3 h-3" />
-                                    {primaryContact.phone}
+                                  {primaryContact.title && (
+                                    <div className="text-gray-600">{primaryContact.title}</div>
+                                  )}
+                                  <div className="space-y-1 text-gray-600">
+                                    {primaryContact.email && (
+                                      <div className="flex items-center gap-1">
+                                        <Mail className="w-3 h-3" />
+                                        {primaryContact.email}
+                                      </div>
+                                    )}
+                                    {primaryContact.phone && (
+                                      <div className="flex items-center gap-1">
+                                        <Phone className="w-3 h-3" />
+                                        {primaryContact.phone}
+                                      </div>
+                                    )}
                                   </div>
-                                )}
+                                </div>
                               </div>
-                            </div>
-                          </div>
-                        )}
+                            )}
 
-                        {/* Primary Address Section */}
-                        {primaryAddress && (
-                          <div className="mb-3 p-3 bg-green-50 border border-green-200 rounded-md">
-                            <div className="flex items-center gap-2 mb-2">
-                              <MapPin className="w-4 h-4 text-green-600" />
-                              <span className="font-medium text-green-800">Primary Address</span>
-                              <Badge variant="secondary" className="bg-gray-100 text-gray-800 text-xs">
-                                {primaryAddress.address_type.charAt(0).toUpperCase() + primaryAddress.address_type.slice(1)}
-                              </Badge>
-                            </div>
-                            <div className="text-sm text-gray-700">
-                              {formatAddress(primaryAddress)}
-                            </div>
+                            {/* Primary Address Section */}
+                            {primaryAddress && (
+                              <div className="p-3 bg-green-50 border border-green-200 rounded-md">
+                                <div className="flex items-center gap-2 mb-2">
+                                  <MapPin className="w-4 h-4 text-green-600" />
+                                  <span className="font-medium text-green-800">Primary Address</span>
+                                  <Badge variant="secondary" className="bg-gray-100 text-gray-800 text-xs">
+                                    {primaryAddress.address_type.charAt(0).toUpperCase() + primaryAddress.address_type.slice(1)}
+                                  </Badge>
+                                </div>
+                                <div className="text-sm text-gray-700">
+                                  {formatAddress(primaryAddress)}
+                                </div>
+                              </div>
+                            )}
                           </div>
                         )}
                         
