@@ -14,7 +14,7 @@ export const useIndexData = () => {
   const { associatedAgentId } = useUserProfile();
   const { clients, setClients, fetchClients } = useClients();
   const { clientInfos, setClientInfos, fetchClientInfos } = useClientInfos();
-  const { quotes, setQuotes, fetchQuotes } = useQuotes();
+  const { quotes, setQuotes, fetchQuotes } = useQuotes(associatedAgentId, clients, clientInfos);
 
   useEffect(() => {
     if (user && associatedAgentId !== undefined) {
