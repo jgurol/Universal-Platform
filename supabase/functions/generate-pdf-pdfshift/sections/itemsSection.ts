@@ -22,12 +22,14 @@ export const generateItemsSection = (quoteItems: any[]) => {
     };
 
     // Process rich text content for descriptions
+    let imageCount = 0; // Declare imageCount at the proper scope
+    
     if (processedItem.description) {
       console.log('PDFShift Function - Processing rich text content:', processedItem.description.substring(0, 100) + '...');
       
       // Extract and count images
       const imageMatches = processedItem.description.match(/<img[^>]+src="([^"]+)"[^>]*>/g);
-      const imageCount = imageMatches ? imageMatches.length : 0;
+      imageCount = imageMatches ? imageMatches.length : 0;
       console.log('PDFShift Function - Found images count:', imageCount);
       
       if (imageMatches) {
@@ -53,7 +55,7 @@ export const generateItemsSection = (quoteItems: any[]) => {
       processedItem.description = processedContent;
     }
 
-    console.log('PDFShift Function - Item:', processedItem.name, 'has description length:', processedItem.description.length, 'images:', imageCount || 0);
+    console.log('PDFShift Function - Item:', processedItem.name, 'has description length:', processedItem.description.length, 'images:', imageCount);
 
     if (processedItem.charge_type === 'MRC') {
       mrcItems.push(processedItem);
