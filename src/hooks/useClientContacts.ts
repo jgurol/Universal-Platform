@@ -121,11 +121,8 @@ export const useClientContacts = (clientInfoId: string | null) => {
 
       if (error) throw error;
 
-      // Update local state
-      setContacts(prev => prev.map(contact => ({
-        ...contact,
-        is_primary: contact.id === contactId
-      })));
+      // Refresh the contacts list to get the updated data
+      await fetchContacts();
 
       toast({
         title: "Primary contact updated",
