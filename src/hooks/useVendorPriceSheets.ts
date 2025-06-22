@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
@@ -50,38 +51,7 @@ export const useVendorPriceSheets = () => {
     try {
       console.log('Verifying file exists at path:', filePath);
       
-      // First, let's list all files in the bucket to see what's actually there
-      const { data: allFiles, error: listError } = await supabase.storage
-        .from('vendor-price-sheets')
-        .list('', { limit: 100 });
-      
-      if (listError) {
-        console.error('Error listing all files:', listError);
-        return false;
-      }
-      
-      console.log('All files in bucket:', allFiles);
-      
-      // Also list files in the specific user folder
-      const userFolder = filePath.split('/')[0];
-      const { data: userFiles, error: userListError } = await supabase.storage
-        .from('vendor-price-sheets')
-        .list(userFolder, { limit: 100 });
-      
-      if (userListError) {
-        console.error('Error listing user folder files:', userListError);
-      } else {
-        console.log(`Files in user folder ${userFolder}:`, userFiles);
-      }
-      
-      // Try to get the file public URL (this doesn't have an error property)
-      const { data: fileInfo } = await supabase.storage
-        .from('vendor-price-sheets')
-        .getPublicUrl(filePath);
-      
-      console.log('File public URL:', fileInfo);
-      
-      // Check if the file actually exists by trying to download it
+      // Try to download the file to check if it exists
       const { data: downloadData, error: downloadError } = await supabase.storage
         .from('vendor-price-sheets')
         .download(filePath);
@@ -103,14 +73,23 @@ export const useVendorPriceSheets = () => {
     if (!isAdmin) return; // Only admins can cleanup
     
     try {
+      console.log('Starting cleanup of orphaned records...');
+      let cleanedCount = 0;
+      
       for (const sheet of priceSheets) {
         const exists = await verifyFileExists(sheet.file_path);
         if (!exists) {
           console.log(`File not found for sheet ${sheet.name}, removing database record`);
-          await supabase
+          const { error } = await supabase
             .from('vendor_price_sheets')
             .delete()
             .eq('id', sheet.id);
+            
+          if (error) {
+            console.error('Error deleting orphaned record:', error);
+          } else {
+            cleanedCount++;
+          }
         }
       }
       
@@ -119,7 +98,7 @@ export const useVendorPriceSheets = () => {
       
       toast({
         title: "Cleanup completed",
-        description: "Removed database records for missing files",
+        description: `Removed ${cleanedCount} orphaned database records`,
       });
     } catch (error) {
       console.error('Error during cleanup:', error);
@@ -147,13 +126,6 @@ export const useVendorPriceSheets = () => {
       console.log('File size:', file.size);
       console.log('File type:', file.type);
 
-      // First, let's check if the bucket exists
-      const { data: buckets, error: bucketsError } = await supabase.storage.listBuckets();
-      console.log('Available buckets:', buckets);
-      if (bucketsError) {
-        console.error('Error listing buckets:', bucketsError);
-      }
-
       // Upload file to storage
       console.log('Attempting to upload file...');
       const { data: uploadData, error: uploadError } = await supabase.storage
@@ -170,15 +142,11 @@ export const useVendorPriceSheets = () => {
 
       console.log('Upload successful! Upload data:', uploadData);
 
-      // Immediately verify the file was uploaded
-      console.log('Verifying uploaded file...');
-      const { data: verifyData, error: verifyError } = await supabase.storage
-        .from('vendor-price-sheets')
-        .list(user.id);
-      
-      console.log('Files in user folder after upload:', verifyData);
-      if (verifyError) {
-        console.error('Error verifying upload:', verifyError);
+      // Verify the file was uploaded by trying to download it
+      const fileExists = await verifyFileExists(filePath);
+      if (!fileExists) {
+        console.error('File verification failed after upload');
+        throw new Error('File upload verification failed');
       }
 
       // Save metadata to database

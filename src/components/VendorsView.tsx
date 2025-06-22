@@ -1,7 +1,8 @@
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Building2, Mail, Phone, User, FileText, ExternalLink, AlertCircle } from "lucide-react";
+import { Building2, Mail, Phone, User, FileText, ExternalLink, AlertCircle, Trash2 } from "lucide-react";
 import { useVendors } from "@/hooks/useVendors";
 import { useVendorPriceSheets } from "@/hooks/useVendorPriceSheets";
 import { useAuth } from "@/context/AuthContext";
@@ -10,7 +11,7 @@ import { useToast } from "@/hooks/use-toast";
 
 export const VendorsView = () => {
   const { vendors, isLoading } = useVendors();
-  const { priceSheets } = useVendorPriceSheets();
+  const { priceSheets, cleanupOrphanedRecords, verifyFileExists } = useVendorPriceSheets();
   const { isAdmin } = useAuth();
   const { toast } = useToast();
 
@@ -46,13 +47,11 @@ export const VendorsView = () => {
     try {
       console.log('Opening price sheet with path:', priceSheet.file_path);
       
-      // Check if the file exists by trying to download it (more reliable than listing)
-      const { data: downloadData, error: downloadError } = await supabase.storage
-        .from('vendor-price-sheets')
-        .download(priceSheet.file_path);
-
-      if (downloadError) {
-        console.error('File does not exist - download error:', downloadError);
+      // First verify the file exists
+      const fileExists = await verifyFileExists(priceSheet.file_path);
+      
+      if (!fileExists) {
+        console.error('File does not exist:', priceSheet.file_path);
         toast({
           title: "File Not Found",
           description: `The file "${priceSheet.name}" was not found in storage. It may have been deleted or moved.`,
@@ -61,7 +60,7 @@ export const VendorsView = () => {
         return;
       }
 
-      console.log('File exists and can be downloaded, creating signed URL');
+      console.log('File exists, creating signed URL');
 
       // File exists, now create signed URL
       const { data, error } = await supabase.storage
@@ -122,12 +121,24 @@ export const VendorsView = () => {
   return (
     <Card>
       <CardHeader>
-        <div className="flex items-center gap-2">
-          <Building2 className="h-5 w-5 text-blue-600" />
-          <CardTitle>Vendors</CardTitle>
-          <Badge variant="outline" className="ml-2">
-            {vendors.length} vendors
-          </Badge>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Building2 className="h-5 w-5 text-blue-600" />
+            <CardTitle>Vendors</CardTitle>
+            <Badge variant="outline" className="ml-2">
+              {vendors.length} vendors
+            </Badge>
+          </div>
+          {isAdmin && (
+            <Button 
+              onClick={cleanupOrphanedRecords}
+              variant="outline"
+              className="text-red-600 border-red-200 hover:bg-red-50"
+            >
+              <Trash2 className="h-4 w-4 mr-2" />
+              Cleanup Missing Files
+            </Button>
+          )}
         </div>
       </CardHeader>
       <CardContent>
