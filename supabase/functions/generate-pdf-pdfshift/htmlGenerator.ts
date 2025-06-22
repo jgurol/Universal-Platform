@@ -1,3 +1,4 @@
+
 import { processRichTextContent, processTemplateContent } from './contentProcessor.ts';
 import { BusinessSettings } from './types.ts';
 
@@ -25,7 +26,7 @@ export const generateHTML = (
   const date = quote?.date || new Date().toISOString();
   const expiresAt = quote?.expiresAt || '';
   const billingAddress = quote?.billingAddress || '';
-  const serviceAddress = quote?.serviceAddress || billingAddress || '';
+  const serviceAddress = quote?.serviceAddress || '';
   // Extract the initial term from the quote
   const initialTerm = quote?.term || '36 Months';
   
@@ -107,6 +108,9 @@ export const generateHTML = (
   
   // Process template content for display with enhanced formatting
   const processedTemplateContent = templateContent ? processTemplateContent(templateContent) : '';
+  
+  // Check if service address is provided and different from billing
+  const hasServiceAddress = serviceAddress && serviceAddress.trim() !== '' && serviceAddress !== billingAddress;
   
   // Generate items HTML with proper formatting matching the interface and page break prevention
   const generateItemsHTML = (items: any[], sectionTitle: string) => {
@@ -272,8 +276,17 @@ export const generateHTML = (
             gap: 20px;
         }
         
+        .addresses-section.single-address {
+            justify-content: flex-start;
+        }
+        
         .address-block {
             flex: 1;
+        }
+        
+        .address-block.single {
+            flex: none;
+            max-width: 300px;
         }
         
         .address-title {
@@ -604,8 +617,8 @@ export const generateHTML = (
         }
     </div>
     
-    <div class="addresses-section">
-        <div class="address-block">
+    <div class="addresses-section${hasServiceAddress ? '' : ' single-address'}">
+        <div class="address-block${hasServiceAddress ? '' : ' single'}">
             <div class="address-title">Billing Information</div>
             <div class="address-content">
                 <div><strong>${clientCompanyName}</strong></div>
@@ -615,16 +628,18 @@ export const generateHTML = (
                 ${contactEmail ? `<div>Email: ${contactEmail}</div>` : ''}
             </div>
         </div>
+        ${hasServiceAddress ? `
         <div class="address-block">
             <div class="address-title">Service Address</div>
             <div class="address-content">
                 <div><strong>${clientCompanyName}</strong></div>
                 <div>${contactName}</div>
-                <div>${serviceAddress || 'Same as billing address'}</div>
+                <div>${serviceAddress}</div>
                 ${contactPhone ? `<div>Tel: ${contactPhone}</div>` : ''}
                 ${contactEmail ? `<div>Email: ${contactEmail}</div>` : ''}
             </div>
         </div>
+        ` : ''}
     </div>
     
     <div class="quote-title">${description}</div>
