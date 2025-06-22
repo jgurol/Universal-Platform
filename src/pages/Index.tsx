@@ -1,10 +1,11 @@
+
 import React from "react";
 import { Navigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import { IndexPageLayout } from "@/components/IndexPageLayout";
 
 // Re-export types for backward compatibility
-export type { Client, Quote, Transaction, QuoteItem } from "@/types/index";
+export type { Client, Quote, Transaction, QuoteItem, ClientInfo } from "@/types/index";
 
 const Index = () => {
   const { user, session, loading } = useAuth();

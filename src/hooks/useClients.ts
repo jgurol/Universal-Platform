@@ -1,57 +1,72 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
-import { Client } from "@/pages/Index";
 
-export const useClients = (associatedAgentId: string | null) => {
-  const { user, isAdmin } = useAuth();
+interface Client {
+  id: string;
+  firstName: string;
+  lastName: string;
+  name: string;
+  email: string;
+  companyName: string | null;
+  commissionRate: number;
+  totalEarnings: number;
+  lastPayment: string;
+}
+
+export const useClients = () => {
   const [clients, setClients] = useState<Client[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const { user } = useAuth();
+
+  useEffect(() => {
+    fetchClients();
+  }, [user]);
 
   const fetchClients = async () => {
-    if (!user) return;
-    
+    if (!user) {
+      setIsLoading(false);
+      return;
+    }
+
     try {
-      console.info('[fetchClients] Fetching clients - isAdmin:', isAdmin, 'associatedAgentId:', associatedAgentId);
-      
-      let query = supabase.from('client_info').select('*');
-      
-      // If not admin and has associated agent, filter by that agent
-      if (!isAdmin && associatedAgentId) {
-        query = query.eq('agent_id', associatedAgentId);
-      }
-      
-      const { data: clientsData, error } = await query.order('company_name', { ascending: true });
-      
+      const { data: agentsData, error } = await supabase
+        .from('agents')
+        .select('*');
+
       if (error) {
-        console.error('Error fetching clients:', error);
+        console.error('Error fetching agents:', error);
+        setClients([]);
         return;
       }
 
-      if (clientsData) {
-        const mappedClients = clientsData.map(client => ({
-          id: client.id,
-          firstName: '',
-          lastName: '',
-          name: client.company_name,
-          email: client.email || '',
-          companyName: client.company_name,
-          commissionRate: 0,
-          totalEarnings: 0,
-          lastPayment: new Date().toISOString(),
+      if (agentsData) {
+        const formattedClients = agentsData.map(agent => ({
+          id: agent.id,
+          firstName: agent.first_name || '',
+          lastName: agent.last_name || '',
+          name: `${agent.first_name || ''} ${agent.last_name || ''}`.trim(),
+          email: agent.email || '',
+          companyName: agent.company_name,
+          commissionRate: parseFloat(agent.commission_rate?.toString() || '0'),
+          totalEarnings: parseFloat(agent.total_earnings?.toString() || '0'),
+          lastPayment: agent.last_payment || new Date().toISOString()
         }));
-        
-        setClients(mappedClients);
-        console.info('[fetchClients] Fetched clients:', mappedClients.length);
+
+        setClients(formattedClients);
       }
     } catch (err) {
       console.error('Error in fetchClients:', err);
+      setClients([]);
+    } finally {
+      setIsLoading(false);
     }
   };
 
   return {
     clients,
-    setClients,
-    fetchClients
+    isLoading,
+    refetch: fetchClients
   };
 };

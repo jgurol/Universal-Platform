@@ -14,3 +14,15 @@ export interface PDFGenerationContext {
     title: string | null;
   } | null;
 }
+
+export interface FormattedAddress {
+  street: string;
+  cityStateZip?: string;
+}
+
+export interface AcceptanceDetails {
+  clientName: string;
+  signatureData: string;
+  acceptedAt: string;
+  ipAddress?: string;
+}
