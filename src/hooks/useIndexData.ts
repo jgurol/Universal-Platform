@@ -14,10 +14,11 @@ export const useIndexData = () => {
   const { associatedAgentId } = useUserProfile();
   const { clients, setClients, fetchClients } = useClients();
   const { clientInfos, setClientInfos, fetchClientInfos } = useClientInfos();
-  const { quotes, setQuotes, fetchQuotes } = useQuotes(associatedAgentId, clients, clientInfos);
+  const { quotes, setQuotes, fetchQuotes } = useQuotes();
 
   useEffect(() => {
     if (user && associatedAgentId !== undefined) {
+      // First load clients and clientInfos in parallel
       Promise.all([
         fetchClients(), 
         fetchClientInfos(user.id, associatedAgentId, isAdmin)
@@ -28,7 +29,7 @@ export const useIndexData = () => {
         })
         .finally(() => setIsLoading(false));
     }
-  }, [user, associatedAgentId, isAdmin]);
+  }, [user, associatedAgentId, isAdmin, fetchClients, fetchClientInfos, fetchQuotes]);
 
   return {
     clients,
