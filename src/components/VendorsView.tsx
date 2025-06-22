@@ -1,4 +1,3 @@
-
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -14,6 +13,10 @@ export const VendorsView = () => {
   const { priceSheets } = useVendorPriceSheets();
   const { isAdmin } = useAuth();
   const { toast } = useToast();
+
+  console.log('VendorsView - Total price sheets:', priceSheets.length);
+  console.log('VendorsView - Public price sheets:', priceSheets.filter(sheet => sheet.is_public).length);
+  console.log('VendorsView - isAdmin:', isAdmin);
 
   const getSalesModelBadgeColor = (salesModel?: string) => {
     switch (salesModel) {
@@ -31,12 +34,17 @@ export const VendorsView = () => {
   const getPublicPriceSheetsForVendor = (vendorId: string) => {
     // For admins, show all price sheets for the vendor
     // For agents, show only public price sheets for the vendor
-    return priceSheets.filter(sheet => {
+    const filtered = priceSheets.filter(sheet => {
       if (sheet.vendor_id === vendorId) {
-        return isAdmin || sheet.is_public === true;
+        const shouldShow = isAdmin || sheet.is_public === true;
+        console.log(`Sheet ${sheet.name} for vendor ${vendorId}: isAdmin=${isAdmin}, is_public=${sheet.is_public}, shouldShow=${shouldShow}`);
+        return shouldShow;
       }
       return false;
     });
+    
+    console.log(`Price sheets for vendor ${vendorId}:`, filtered.length);
+    return filtered;
   };
 
   const handleOpenPriceSheet = async (priceSheet: any) => {

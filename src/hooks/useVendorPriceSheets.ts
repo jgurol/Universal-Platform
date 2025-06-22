@@ -22,9 +22,13 @@ export const useVendorPriceSheets = () => {
         .from('vendor_price_sheets')
         .select('*');
 
-      // Admins see all sheets, agents see their own + public sheets
+      // For agents, show only public sheets OR their own sheets
+      // For admins, show all sheets
       if (!isAdmin) {
         query = query.or(`user_id.eq.${user.id},is_public.eq.true`);
+        console.log('Agent query filter: user_id =', user.id, 'OR is_public = true');
+      } else {
+        console.log('Admin - fetching all price sheets');
       }
 
       const { data, error } = await query.order('uploaded_at', { ascending: false });
@@ -38,6 +42,11 @@ export const useVendorPriceSheets = () => {
         });
       } else {
         console.log('Price sheets fetched:', data);
+        console.log('Number of sheets:', data?.length || 0);
+        if (data && data.length > 0) {
+          console.log('Sample sheet:', data[0]);
+          console.log('Public sheets:', data.filter(sheet => sheet.is_public));
+        }
         setPriceSheets(data || []);
       }
     } catch (err) {
