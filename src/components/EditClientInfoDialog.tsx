@@ -45,25 +45,31 @@ export const EditClientInfoDialog = ({
     }
   });
 
-  // Reset form when clientInfo changes or dialog opens
-  useEffect(() => {
-    if (clientInfo && open) {
-      console.log('[EditClient] Resetting form with clientInfo:', clientInfo);
-      reset({
-        ...clientInfo,
-        agent_id: clientInfo.agent_id || null
-      });
-      // Fix: Set the selectedAgentId to the actual agent_id from clientInfo
-      setSelectedAgentId(clientInfo.agent_id || "none");
-    }
-  }, [clientInfo, open, reset]);
-
   // Fetch agents when dialog opens
   useEffect(() => {
     if (open) {
       fetchAgents();
     }
   }, [open]);
+
+  // Reset form and set selected agent when clientInfo changes or dialog opens
+  useEffect(() => {
+    if (clientInfo && open && agents.length > 0) {
+      console.log('[EditClient] Resetting form with clientInfo:', clientInfo);
+      reset({
+        ...clientInfo,
+        agent_id: clientInfo.agent_id || null
+      });
+      
+      // Set the selectedAgentId after agents are loaded
+      const agentId = clientInfo.agent_id;
+      if (agentId && agents.some(agent => agent.id === agentId)) {
+        setSelectedAgentId(agentId);
+      } else {
+        setSelectedAgentId("none");
+      }
+    }
+  }, [clientInfo, open, reset, agents]);
 
   const fetchAgents = async () => {
     console.log('[EditClient] Starting agent fetch...');
