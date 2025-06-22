@@ -283,12 +283,6 @@ export const ClientInfoList = ({
                             <strong>Notes:</strong> {clientInfo.notes}
                           </div>
                         )}
-                        
-                        {clientInfo.revio_id && (
-                          <div className="mt-1 text-sm text-gray-500">
-                            Revio ID: {clientInfo.revio_id}
-                          </div>
-                        )}
                       </div>
                       
                       <div className="flex gap-2 mt-3 md:mt-0">
