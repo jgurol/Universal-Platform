@@ -21,7 +21,13 @@ export const EditQuoteTemplateSection = ({
       <Label htmlFor="templateId">Quote Template (Required)</Label>
       <Select value={selectedTemplateId} onValueChange={onTemplateChange} required>
         <SelectTrigger>
-          <SelectValue placeholder="Template will be auto-selected" />
+          <SelectValue placeholder={
+            templates.length === 0 
+              ? "No templates available" 
+              : selectedTemplateId 
+                ? `${templates.find(t => t.id === selectedTemplateId)?.name}${templates.find(t => t.id === selectedTemplateId)?.is_default ? " (Default)" : ""}`
+                : "Select template"
+          } />
         </SelectTrigger>
         <SelectContent>
           {templates.map((template) => (
