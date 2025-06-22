@@ -42,7 +42,9 @@ export const generateQuotePDF = async (quote: Quote, clientInfo?: ClientInfo, sa
         console.error('PDF Generation - Error fetching primary contact:', contactError);
       } else if (contactData) {
         primaryContact = contactData;
-        console.log('PDF Generation - Found primary contact:', contactData.first_name, contactData.last_name);
+        console.log('PDF Generation - Found primary contact:', contactData.first_name, contactData.last_name, 'email:', contactData.email);
+      } else {
+        console.log('PDF Generation - No primary contact found for client:', clientInfo.id);
       }
     }
     
