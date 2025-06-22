@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Quote, ClientInfo } from "@/pages/Index";
@@ -38,6 +39,7 @@ export const EmailQuoteForm = ({
   const [isLoading, setIsLoading] = useState(false);
   const [quoteOwnerName, setQuoteOwnerName] = useState('');
   const [ownerNameLoaded, setOwnerNameLoaded] = useState(false);
+  const [messageTemplateSet, setMessageTemplateSet] = useState(false);
   const { toast } = useToast();
   const { user } = useAuth();
 
@@ -107,7 +109,7 @@ export const EmailQuoteForm = ({
 
   // Set primary contact as default recipient when contacts load
   useEffect(() => {
-    if (!contactsLoading && transformedContacts.length > 0) {
+    if (!contactsLoading && transformedContacts.length > 0 && selectedRecipientContact === "custom") {
       console.log('EmailQuoteForm - Setting up recipient from contacts:', transformedContacts);
       const primaryContact = transformedContacts.find(contact => contact.is_primary && contact.email);
       if (primaryContact) {
@@ -127,23 +129,21 @@ export const EmailQuoteForm = ({
           setRecipientEmail(clientInfo.email);
         }
       }
-    } else if (!contactsLoading && transformedContacts.length === 0 && clientInfo?.email) {
+    } else if (!contactsLoading && transformedContacts.length === 0 && clientInfo?.email && selectedRecipientContact === "custom") {
       // No contacts but we have client info email
       console.log('EmailQuoteForm - No contacts, using client info email:', clientInfo.email);
       setSelectedRecipientContact("client-info");
       setRecipientEmail(clientInfo.email);
     }
-  }, [contactsLoading, transformedContacts, clientInfo]);
+  }, [contactsLoading, transformedContacts, clientInfo, selectedRecipientContact]);
 
-  // Set the message template with the quote owner's name and selected contact name
+  // Set the message template with the quote owner's name and selected contact name - ONLY ONCE
   useEffect(() => {
-    if (!ownerNameLoaded) {
-      console.log('EmailQuoteForm - Quote owner name not loaded yet, skipping message template update');
+    if (!ownerNameLoaded || messageTemplateSet) {
       return;
     }
 
     console.log('EmailQuoteForm - Creating message template with quote owner:', quoteOwnerName);
-    console.log('EmailQuoteForm - Selected recipient contact:', selectedRecipientContact);
     
     // Get the contact name - prioritize selected contact, then client contact_name
     let contactName = '';
@@ -178,7 +178,8 @@ ${quoteOwnerName}`;
 
     console.log('EmailQuoteForm - Setting message template with greeting:', greeting);
     setMessage(messageTemplate);
-  }, [clientInfo?.contact_name, quoteOwnerName, ownerNameLoaded, selectedRecipientContact, transformedContacts]);
+    setMessageTemplateSet(true);
+  }, [ownerNameLoaded, quoteOwnerName, messageTemplateSet]);
 
   // Update recipient email when contact selection changes
   useEffect(() => {
