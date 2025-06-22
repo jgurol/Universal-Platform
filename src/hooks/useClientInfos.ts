@@ -9,18 +9,27 @@ export const useClientInfos = () => {
   const [isLoading, setIsLoading] = useState(true);
   const { user } = useAuth();
 
-  const fetchClientInfos = async () => {
-    if (!user) {
+  const fetchClientInfos = async (userId?: string, associatedAgentId?: string | null, isAdmin?: boolean) => {
+    const currentUserId = userId || user?.id;
+    if (!currentUserId) {
       setIsLoading(false);
       return;
     }
 
     try {
-      const { data, error } = await supabase
+      let query = supabase
         .from('client_info')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('company_name');
+        .select('*');
+      
+      // If not admin and has associated agent, filter by that agent
+      if (!isAdmin && associatedAgentId) {
+        query = query.eq('agent_id', associatedAgentId);
+      } else if (!isAdmin) {
+        // If user is not admin but has no associated agent, show only their own client infos
+        query = query.eq('user_id', currentUserId);
+      }
+
+      const { data, error } = await query.order('company_name');
 
       if (error) {
         console.error('Error fetching client infos:', error);
