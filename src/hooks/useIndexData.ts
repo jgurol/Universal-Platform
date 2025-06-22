@@ -18,8 +18,16 @@ export const useIndexData = () => {
   const { quotes, setQuotes, fetchQuotes } = useQuotes(associatedAgentId, clients, clientInfos);
 
   useEffect(() => {
+    // Reset fetch attempted when user changes to allow refetch
+    if (user?.id) {
+      setFetchAttempted(false);
+    }
+  }, [user?.id]);
+
+  useEffect(() => {
     // Prevent multiple fetch attempts and only run when we have proper auth info
     if (user && associatedAgentId !== undefined && !fetchAttempted) {
+      console.log('useIndexData - Starting data fetch for user:', user.id, 'agent:', associatedAgentId);
       setFetchAttempted(true);
       
       // First load clients and clientInfos in parallel
@@ -34,15 +42,25 @@ export const useIndexData = () => {
         })
       ])
         .then(() => {
+          console.log('useIndexData - Clients and client infos loaded, fetching quotes');
           // After clients and clientInfos are loaded, fetch quotes
           return fetchQuotes().catch(err => {
             console.error('Failed to fetch quotes:', err);
             return []; // Return empty array on error to prevent retry
           });
         })
-        .finally(() => setIsLoading(false));
+        .then(() => {
+          console.log('useIndexData - All data fetched successfully');
+        })
+        .catch(err => {
+          console.error('useIndexData - Error in data fetching chain:', err);
+        })
+        .finally(() => {
+          console.log('useIndexData - Setting loading to false');
+          setIsLoading(false);
+        });
     }
-  }, [user?.id, associatedAgentId, isAdmin]); // Remove fetchClients, fetchClientInfos, fetchQuotes from dependencies
+  }, [user?.id, associatedAgentId, isAdmin, fetchAttempted]);
 
   return {
     clients,
