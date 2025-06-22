@@ -16,6 +16,12 @@ interface EmailFormFieldsProps {
   fromEmail?: string;
   recipientEmails: string;
   onRecipientEmailsChange: (value: string) => void;
+  ccEmails?: string;
+  onCcEmailsChange?: (value: string) => void;
+  bccEmails?: string;
+  onBccEmailsChange?: (value: string) => void;
+  showCcBcc?: boolean;
+  onToggleCcBcc?: () => void;
 }
 
 export const EmailFormFields = ({
@@ -29,7 +35,13 @@ export const EmailFormFields = ({
   quoteOwnerName,
   fromEmail = "jim@californiatelecom.com",
   recipientEmails,
-  onRecipientEmailsChange
+  onRecipientEmailsChange,
+  ccEmails = "",
+  onCcEmailsChange,
+  bccEmails = "",
+  onBccEmailsChange,
+  showCcBcc = false,
+  onToggleCcBcc
 }: EmailFormFieldsProps) => {
   return (
     <div className="space-y-6">
@@ -57,12 +69,38 @@ export const EmailFormFields = ({
           />
           <button 
             type="button"
+            onClick={onToggleCcBcc}
             className="px-4 py-2 text-sm text-blue-600 hover:text-blue-800 whitespace-nowrap"
           >
-            Add CC/BCC
+            {showCcBcc ? 'Hide CC/BCC' : 'Add CC/BCC'}
           </button>
         </div>
       </div>
+
+      {/* CC/BCC Section - Show when toggled */}
+      {showCcBcc && (
+        <>
+          <div className="space-y-2">
+            <Label htmlFor="cc" className="text-sm font-medium">CC (comma separated)</Label>
+            <Input
+              id="cc"
+              value={ccEmails}
+              onChange={(e) => onCcEmailsChange?.(e.target.value)}
+              placeholder="Enter CC email addresses"
+            />
+          </div>
+          
+          <div className="space-y-2">
+            <Label htmlFor="bcc" className="text-sm font-medium">BCC (comma separated)</Label>
+            <Input
+              id="bcc"
+              value={bccEmails}
+              onChange={(e) => onBccEmailsChange?.(e.target.value)}
+              placeholder="Enter BCC email addresses"
+            />
+          </div>
+        </>
+      )}
 
       {/* Subject Section */}
       <div className="space-y-2">

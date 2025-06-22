@@ -10,8 +10,9 @@ const corsHeaders = {
 };
 
 interface SendQuoteEmailRequest {
-  to: string;
+  to: string | string[];
   cc?: string[];
+  bcc?: string[];
   subject: string;
   message: string;
   pdfBase64: string;
@@ -28,10 +29,11 @@ const handler = async (req: Request): Promise<Response> => {
   try {
     console.log('Starting email send process...');
     
-    const { to, cc, subject, message, pdfBase64, fileName, quoteId }: SendQuoteEmailRequest = await req.json();
+    const { to, cc, bcc, subject, message, pdfBase64, fileName, quoteId }: SendQuoteEmailRequest = await req.json();
 
     console.log('Sending email to:', to);
     console.log('CC recipients:', cc);
+    console.log('BCC recipients:', bcc);
     console.log('Subject:', subject);
     console.log('Quote ID for tracking:', quoteId);
 
@@ -65,12 +67,6 @@ const handler = async (req: Request): Promise<Response> => {
       });
     }
 
-    // Prepare email recipients
-    const recipients = [to];
-    if (cc && cc.length > 0) {
-      recipients.push(...cc);
-    }
-
     // Create tracking pixel URL
     const trackingPixelUrl = `${Deno.env.get("SUPABASE_URL")}/functions/v1/track-email-open?quote=${quoteId}`;
     
@@ -80,11 +76,10 @@ const handler = async (req: Request): Promise<Response> => {
 
     console.log('Acceptance URL generated:', acceptanceUrl);
 
-    // Send email with PDF attachment, tracking pixel, and acceptance button
-    console.log('Calling Resend API...');
-    const emailResponse = await resend.emails.send({
+    // Prepare email data
+    const emailData: any = {
       from: "Quotes <onboarding@resend.dev>", // You can customize this
-      to: recipients,
+      to: Array.isArray(to) ? to : [to],
       subject: subject,
       html: `
         <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto;">
@@ -117,7 +112,21 @@ const handler = async (req: Request): Promise<Response> => {
           content: pdfBase64,
         },
       ],
-    });
+    };
+
+    // Add CC recipients if provided
+    if (cc && cc.length > 0) {
+      emailData.cc = cc;
+    }
+
+    // Add BCC recipients if provided
+    if (bcc && bcc.length > 0) {
+      emailData.bcc = bcc;
+    }
+
+    // Send email with PDF attachment, tracking pixel, and acceptance button
+    console.log('Calling Resend API...');
+    const emailResponse = await resend.emails.send(emailData);
 
     console.log("Resend API response:", emailResponse);
 

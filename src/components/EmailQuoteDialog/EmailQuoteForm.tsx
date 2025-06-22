@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Quote, ClientInfo } from "@/pages/Index";
@@ -27,6 +28,9 @@ export const EmailQuoteForm = ({
   emailStatus
 }: EmailQuoteFormProps) => {
   const [recipientEmail, setRecipientEmail] = useState("");
+  const [ccEmails, setCcEmails] = useState("");
+  const [bccEmails, setBccEmails] = useState("");
+  const [showCcBcc, setShowCcBcc] = useState(false);
   const [subject, setSubject] = useState(`Quote #${quote.quoteNumber || quote.id.slice(0, 8)} - ${quote.description || 'Service Agreement'}`);
   const [message, setMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -166,6 +170,13 @@ ${quoteOwnerName}`;
     setRecipientEmail(value);
   };
 
+  const validateEmails = (emails: string) => {
+    if (!emails.trim()) return [];
+    const emailArray = emails.split(',').map(email => email.trim()).filter(email => email);
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailArray.filter(email => !emailRegex.test(email));
+  };
+
   const handleSendEmail = async () => {
     if (!recipientEmail) {
       toast({
@@ -176,15 +187,17 @@ ${quoteOwnerName}`;
       return;
     }
 
-    // Validate email format
-    const emails = recipientEmail.split(',').map(email => email.trim()).filter(email => email);
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    const invalidEmails = emails.filter(email => !emailRegex.test(email));
+    // Validate all email fields
+    const invalidRecipients = validateEmails(recipientEmail);
+    const invalidCC = validateEmails(ccEmails);
+    const invalidBCC = validateEmails(bccEmails);
     
-    if (invalidEmails.length > 0) {
+    const allInvalid = [...invalidRecipients, ...invalidCC, ...invalidBCC];
+    
+    if (allInvalid.length > 0) {
       toast({
         title: "Invalid email format",
-        description: `Please check the following email(s): ${invalidEmails.join(', ')}`,
+        description: `Please check the following email(s): ${allInvalid.join(', ')}`,
         variant: "destructive"
       });
       return;
@@ -224,21 +237,22 @@ ${quoteOwnerName}`;
         const base64String = (reader.result as string).split(',')[1];
         
         try {
-          // For emails, split comma-separated values into array
-          let toEmails: string | string[];
-          const emailArray = recipientEmail.split(',').map(email => email.trim()).filter(email => email);
-          toEmails = emailArray.length === 1 ? emailArray[0] : emailArray;
+          // Prepare email recipients
+          const toEmails = recipientEmail.split(',').map(email => email.trim()).filter(email => email);
+          const ccEmailsArray = ccEmails ? ccEmails.split(',').map(email => email.trim()).filter(email => email) : [];
+          const bccEmailsArray = bccEmails ? bccEmails.split(',').map(email => email.trim()).filter(email => email) : [];
 
-          // Include primary contact in the email function call
           const { data, error } = await supabase.functions.invoke('send-quote-email', {
             body: {
-              to: toEmails,
+              to: toEmails.length === 1 ? toEmails[0] : toEmails,
+              cc: ccEmailsArray.length > 0 ? ccEmailsArray : undefined,
+              bcc: bccEmailsArray.length > 0 ? bccEmailsArray : undefined,
               subject,
               message,
               pdfBase64: base64String,
               fileName: `Quote_${quote.quoteNumber || quote.id.slice(0, 8)}.pdf`,
               quoteId: quote.id,
-              primaryContact // Pass the primary contact to the email function
+              primaryContact
             }
           });
 
@@ -267,11 +281,11 @@ ${quoteOwnerName}`;
               .update({ email_status: 'success' })
               .eq('id', quote.id);
 
-            const recipientCount = emailArray.length;
+            const totalRecipients = toEmails.length + ccEmailsArray.length + bccEmailsArray.length;
             
             toast({
               title: "Email sent successfully",
-              description: `Quote has been sent to ${recipientCount} recipient(s)`,
+              description: `Quote has been sent to ${totalRecipients} recipient(s)`,
             });
             
             setTimeout(() => {
@@ -348,6 +362,12 @@ ${quoteOwnerName}`;
         fromEmail={user?.email || quoteOwnerEmail}
         recipientEmails={recipientEmail}
         onRecipientEmailsChange={handleRecipientEmailChange}
+        ccEmails={ccEmails}
+        onCcEmailsChange={setCcEmails}
+        bccEmails={bccEmails}
+        onBccEmailsChange={setBccEmails}
+        showCcBcc={showCcBcc}
+        onToggleCcBcc={() => setShowCcBcc(!showCcBcc)}
       />
 
       <div className="bg-gray-50 p-3 rounded-lg">
