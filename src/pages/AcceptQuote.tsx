@@ -238,6 +238,7 @@ const AcceptQuote = () => {
 
     try {
       console.log('Starting quote acceptance process for quote:', quote.id);
+      console.log('Quote data:', quote);
 
       // First check if quote acceptance already exists
       const { data: existingAcceptance, error: checkError } = await supabase
@@ -245,6 +246,8 @@ const AcceptQuote = () => {
         .select('id')
         .eq('quote_id', quote.id)
         .maybeSingle();
+
+      console.log('Existing acceptance check:', { existingAcceptance, checkError });
 
       if (checkError) {
         console.error('Error checking existing acceptance:', checkError);
@@ -271,7 +274,7 @@ const AcceptQuote = () => {
         user_agent: navigator.userAgent
       };
 
-      console.log('Inserting acceptance data...');
+      console.log('Inserting acceptance data:', acceptanceData);
 
       const { data: acceptanceResult, error: acceptanceError } = await supabase
         .from('quote_acceptances')
@@ -286,25 +289,22 @@ const AcceptQuote = () => {
 
       console.log('Acceptance recorded successfully:', acceptanceResult);
 
-      // Now let's try updating the quote status with very detailed logging
-      console.log('About to update quote status...');
-      console.log('Quote ID to update:', quote.id);
-      
-      // First, let's verify we can read the quote
-      const { data: currentQuote, error: readError } = await supabase
+      // Now attempt to update the quote status with detailed logging
+      console.log('=== STARTING QUOTE UPDATE PROCESS ===');
+      console.log('Quote ID:', quote.id);
+      console.log('Quote user_id:', quote.user_id);
+
+      // Check current quote state before update
+      const { data: beforeUpdate, error: beforeError } = await supabase
         .from('quotes')
         .select('*')
         .eq('id', quote.id)
         .single();
-      
-      if (readError) {
-        console.error('Cannot read quote for update:', readError);
-        throw new Error(`Cannot read quote: ${readError.message}`);
-      }
-      
-      console.log('Current quote data before update:', currentQuote);
 
-      // Now attempt the update
+      console.log('Quote before update:', beforeUpdate);
+      console.log('Before update error:', beforeError);
+
+      // Prepare update data
       const updateData = {
         acceptance_status: 'accepted',
         accepted_at: new Date().toISOString(),
@@ -312,8 +312,10 @@ const AcceptQuote = () => {
         status: 'approved'
       };
 
-      console.log('Update data to apply:', updateData);
+      console.log('Update data:', updateData);
 
+      // Perform the update with maximum logging
+      console.log('Attempting quote update...');
       const { data: updateResult, error: updateError } = await supabase
         .from('quotes')
         .update(updateData)
@@ -321,44 +323,59 @@ const AcceptQuote = () => {
         .select('*')
         .single();
 
+      console.log('Update result:', updateResult);
+      console.log('Update error:', updateError);
+
       if (updateError) {
-        console.error('DETAILED UPDATE ERROR:', {
-          error: updateError,
-          message: updateError.message,
-          details: updateError.details,
-          hint: updateError.hint,
-          code: updateError.code
-        });
+        console.error('=== QUOTE UPDATE FAILED ===');
+        console.error('Full error object:', updateError);
+        console.error('Error message:', updateError.message);
+        console.error('Error code:', updateError.code);
+        console.error('Error details:', updateError.details);
+        console.error('Error hint:', updateError.hint);
+
+        // Let's try to understand what's preventing the update
+        console.log('Attempting to diagnose update failure...');
         
-        // Try a simpler update to see if it works
-        console.log('Trying simpler update...');
-        const { data: simpleResult, error: simpleError } = await supabase
+        // Check if we can select the quote
+        const { data: selectTest, error: selectError } = await supabase
+          .from('quotes')
+          .select('id, status, acceptance_status, user_id')
+          .eq('id', quote.id);
+        
+        console.log('Select test result:', selectTest);
+        console.log('Select test error:', selectError);
+
+        // Try a minimal update to test permissions
+        console.log('Testing minimal update...');
+        const { data: minimalUpdate, error: minimalError } = await supabase
           .from('quotes')
           .update({ acceptance_status: 'accepted' })
           .eq('id', quote.id)
-          .select('*')
+          .select('acceptance_status')
           .single();
-          
-        if (simpleError) {
-          console.error('Simple update also failed:', simpleError);
-          throw new Error(`Quote update failed: ${updateError.message}`);
-        } else {
-          console.log('Simple update succeeded:', simpleResult);
+
+        console.log('Minimal update result:', minimalUpdate);
+        console.log('Minimal update error:', minimalError);
+
+        if (minimalError) {
+          console.error('Even minimal update failed - this is a permissions issue');
+          throw new Error(`Quote update blocked: ${updateError.message}. This may be a database permissions issue.`);
         }
       } else {
-        console.log('Quote update succeeded:', updateResult);
+        console.log('=== QUOTE UPDATE SUCCESSFUL ===');
+        console.log('Updated quote data:', updateResult);
       }
 
-      // Verify the update worked
-      const { data: verifyQuote, error: verifyError } = await supabase
+      // Verify the final state
+      const { data: finalState, error: finalError } = await supabase
         .from('quotes')
         .select('*')
         .eq('id', quote.id)
         .single();
-      
-      if (!verifyError && verifyQuote) {
-        console.log('Quote after update verification:', verifyQuote);
-      }
+
+      console.log('Final quote state:', finalState);
+      console.log('Final state error:', finalError);
 
       setIsAccepted(true);
       toast({
@@ -367,7 +384,11 @@ const AcceptQuote = () => {
       });
 
     } catch (err: any) {
-      console.error('Error accepting quote:', err);
+      console.error('=== QUOTE ACCEPTANCE PROCESS FAILED ===');
+      console.error('Full error:', err);
+      console.error('Error message:', err.message);
+      console.error('Error stack:', err.stack);
+      
       toast({
         title: "Error",
         description: err.message || "Failed to accept quote. Please try again.",
