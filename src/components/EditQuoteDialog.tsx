@@ -1,6 +1,6 @@
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Quote, Client, ClientInfo } from "@/types/index";
+import { Quote, Client, ClientInfo } from "@/pages/Index";
 import { QuoteItemsManager } from "@/components/QuoteItemsManager";
 import { useQuoteForm } from "@/hooks/useQuoteForm";
 import { useQuoteItems } from "@/hooks/useQuoteItems";
@@ -10,13 +10,11 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
 import type { Database } from "@/integrations/supabase/types";
-import { EditQuoteHeader } from "./EditQuote/EditQuoteHeader";
+import { EditQuoteHeader } from "@/components/EditQuote/EditQuoteHeader";
 import { EditQuoteAddressSection } from "@/components/EditQuote/EditQuoteAddressSection";
 import { EditQuoteTemplateSection } from "@/components/EditQuote/EditQuoteTemplateSection";
 import { EditQuoteFormFields } from "@/components/EditQuote/EditQuoteFormFields";
 import { useToast } from "@/hooks/use-toast";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { QuoteItemsTab } from "@/components/QuoteItemsTab";
 
 type QuoteTemplate = Database['public']['Tables']['quote_templates']['Row'];
 

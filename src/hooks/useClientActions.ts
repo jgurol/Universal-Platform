@@ -1,61 +1,90 @@
 
 import { supabase } from "@/integrations/supabase/client";
-import { Client } from "@/types/index";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/context/AuthContext";
+import { Client } from "@/pages/Index";
 
 export const useClientActions = (
   clients: Client[],
   setClients: (clients: Client[]) => void,
-  fetchClients: () => Promise<void>
+  fetchClients: () => void
 ) => {
+  const { user } = useAuth();
   const { toast } = useToast();
 
-  const addClient = async (clientData: Omit<Client, "id" | "totalEarnings" | "lastPayment">) => {
+  // Function to add a new client to Supabase
+  const addClient = async (newClient: Omit<Client, "id" | "totalEarnings" | "lastPayment">) => {
+    if (!user) return;
+    
     try {
-      console.log('Adding client with data:', clientData);
-      
       const { data, error } = await supabase
         .from('agents')
-        .insert([{
-          first_name: clientData.name.split(' ')[0] || clientData.name,
-          last_name: clientData.name.split(' ').slice(1).join(' ') || '',
-          email: clientData.email,
-          company_name: clientData.companyName || '',
-          commission_rate: clientData.commissionRate || 0,
+        .insert({
+          first_name: newClient.firstName,
+          last_name: newClient.lastName,
+          email: newClient.email,
+          company_name: newClient.companyName,
+          commission_rate: newClient.commissionRate,
+          user_id: user.id,
           total_earnings: 0,
           last_payment: new Date().toISOString()
-        }])
-        .select()
+        })
+        .select('*')
         .single();
 
       if (error) {
-        console.error('Error adding client:', error);
-        throw error;
+        console.error('Error adding agent:', error);
+        toast({
+          title: "Failed to add agent",
+          description: error.message,
+          variant: "destructive"
+        });
+      } else if (data) {
+        // Map the returned data to our Client interface
+        const newClientWithId: Client = {
+          id: data.id,
+          firstName: data.first_name,
+          lastName: data.last_name,
+          name: `${data.first_name} ${data.last_name}`,
+          email: data.email,
+          companyName: data.company_name,
+          commissionRate: data.commission_rate,
+          totalEarnings: data.total_earnings || 0,
+          lastPayment: data.last_payment ? new Date(data.last_payment).toISOString() : new Date().toISOString()
+        };
+
+        setClients([...clients, newClientWithId]);
+        toast({
+          title: "Agent added",
+          description: `${newClientWithId.name} has been added successfully.`,
+        });
       }
-
-      console.log('Client added successfully:', data);
-      
-      // Refresh the clients list
-      await fetchClients();
-      
-      toast({
-        title: "Success",
-        description: "Client added successfully!",
-      });
-
-      return data;
-    } catch (error) {
-      console.error('Error adding client:', error);
+    } catch (err) {
+      console.error('Error in add client operation:', err);
       toast({
         title: "Error",
-        description: "Failed to add client. Please try again.",
-        variant: "destructive",
+        description: "Failed to add agent",
+        variant: "destructive"
       });
-      throw error;
     }
   };
 
+  // Function to update a client in Supabase
+  const updateClient = async (updatedClient: Client) => {
+    // Update locally first
+    setClients(clients.map(client => 
+      client.id === updatedClient.id ? updatedClient : client
+    ));
+  };
+
+  // Function to delete a client
+  const deleteClient = async (clientId: string) => {
+    setClients(clients.filter(client => client.id !== clientId));
+  };
+
   return {
-    addClient
+    addClient,
+    updateClient,
+    deleteClient
   };
 };

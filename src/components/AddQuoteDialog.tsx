@@ -6,41 +6,18 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Quote, Client, ClientInfo } from "@/types/index";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { QuoteItemsTab } from "@/components/QuoteItemsTab";
-import { AddressSelector } from "@/components/AddressSelector";
+import { Quote, Client, ClientInfo } from "@/pages/Index";
+import { getTodayInTimezone } from "@/utils/dateUtils";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
+import { QuoteItemsManager } from "@/components/QuoteItemsManager";
+import { QuoteItemData } from "@/types/quoteItems";
+import { AddressSelector } from "@/components/AddressSelector";
 import { useToast } from "@/hooks/use-toast";
+import { DealRegistration } from "@/services/dealRegistrationService";
 import type { Database } from "@/integrations/supabase/types";
 
 type QuoteTemplate = Database['public']['Tables']['quote_templates']['Row'];
-type QuoteItemData = {
-  id?: string;
-  description: string;
-  quantity: number;
-  unit_price: number;
-  total_price: number;
-  category?: string;
-  vendor?: string;
-};
-
-type DealRegistration = {
-  id: string;
-  deal_name: string;
-  deal_value: number;
-  stage: string;
-  client_info_id: string;
-  status: string;
-  created_at: string;
-};
-
-// Helper function to get today's date in timezone
-const getTodayInTimezone = (): string => {
-  const today = new Date();
-  return today.toISOString().split('T')[0];
-};
 
 interface AddQuoteDialogProps {
   open: boolean;
@@ -656,7 +633,7 @@ export const AddQuoteDialog = ({ open, onOpenChange, onAddQuote, clients, client
 
           <div className="space-y-2">
             <Label className="text-sm font-medium">Quote Items *</Label>
-            <QuoteItemsTab 
+            <QuoteItemsManager 
               items={quoteItems}
               onItemsChange={setQuoteItems}
               clientInfoId={clientInfoId !== "none" ? clientInfoId : undefined}

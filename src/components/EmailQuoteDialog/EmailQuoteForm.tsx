@@ -1,7 +1,6 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Quote, ClientInfo } from "@/types/index";
+import { Quote, ClientInfo } from "@/pages/Index";
 import { useToast } from "@/hooks/use-toast";
 import { useClientContacts } from "@/hooks/useClientContacts";
 import { generateQuotePDF } from "@/utils/pdfUtils";

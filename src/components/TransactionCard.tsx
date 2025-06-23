@@ -2,7 +2,7 @@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { CheckCircle, Clock, Building, FileText, Users, Pencil, DollarSign, Trash2 } from "lucide-react";
-import { Transaction, ClientInfo } from "@/types/index";
+import { Transaction, ClientInfo } from "@/pages/Index";
 import { useAuth } from "@/context/AuthContext";
 import { useState } from "react";
 import { PayCommissionDialog } from "./PayCommissionDialog";

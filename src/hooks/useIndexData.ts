@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
 import { useToast } from "@/hooks/use-toast";
-import { Quote, Client, ClientInfo } from "@/types/index";
+import { Quote, Client, ClientInfo } from "@/pages/Index";
 
 export const useIndexData = () => {
   const [clients, setClients] = useState<Client[]>([]);
@@ -56,66 +56,34 @@ export const useIndexData = () => {
     if (!user) return;
 
     try {
-      // First fetch quotes
-      let quotesQuery = supabase
+      // Make sure to include user_id in the select statement
+      let query = supabase
         .from('quotes')
         .select(`
           *,
+          user_id,
           client_info:client_info_id(*)
         `)
         .eq('archived', false);
 
       if (!isAdmin && associatedAgentId) {
-        quotesQuery = quotesQuery.eq('client_id', associatedAgentId);
+        query = query.eq('client_id', associatedAgentId);
       }
 
-      const { data: quotesData, error: quotesError } = await quotesQuery.order('created_at', { ascending: false });
+      const { data, error } = await query.order('created_at', { ascending: false });
 
-      if (quotesError) {
-        console.error('Error fetching quotes:', quotesError);
+      if (error) {
+        console.error('Error fetching quotes:', error);
         toast({
           title: "Error",
           description: "Failed to fetch quotes",
           variant: "destructive"
         });
-        return;
-      }
-
-      // Get unique user_ids from quotes
-      const userIds = [...new Set(quotesData?.map(q => q.user_id).filter(Boolean))];
-      
-      // Fetch profiles for these users
-      let profilesData: any[] = [];
-      if (userIds.length > 0) {
-        const { data: profiles, error: profilesError } = await supabase
-          .from('profiles')
-          .select('id, full_name, email')
-          .in('id', userIds);
-
-        if (profilesError) {
-          console.error('Error fetching profiles:', profilesError);
-        } else {
-          profilesData = profiles || [];
-        }
-      }
-
-      // Create a map of user_id to profile
-      const profilesMap = profilesData.reduce((acc, profile) => {
-        acc[profile.id] = profile;
-        return acc;
-      }, {} as Record<string, any>);
-
-      console.log('Fetched quotes with profiles:', quotesData?.map(q => ({ 
-        id: q.id, 
-        user_id: q.user_id, 
-        profile: profilesMap[q.user_id] 
-      })));
-
-      const transformedQuotes = (quotesData || []).map(quote => {
-        const profile = profilesMap[quote.user_id];
-        return {
+      } else {
+        console.log('Fetched quotes with user_id:', data?.map(q => ({ id: q.id, user_id: q.user_id })));
+        const quotesData = (data || []).map(quote => ({
           id: quote.id,
-          clientId: quote.client_id || "",
+          clientId: quote.client_id || "", // Ensure clientId is included
           clientName: quote.client_info?.company_name || 'Unknown Client',
           companyName: quote.client_info?.company_name || '',
           clientInfoId: quote.client_info_id,
@@ -123,8 +91,7 @@ export const useIndexData = () => {
           date: quote.date,
           description: quote.description || "",
           status: quote.status || 'pending',
-          user_id: quote.user_id,
-          salespersonName: profile?.full_name || profile?.email || 'Sales Team',
+          user_id: quote.user_id, // Ensure user_id is explicitly included
           quoteNumber: quote.quote_number,
           quoteMonth: quote.quote_month,
           quoteYear: quote.quote_year,
@@ -132,7 +99,7 @@ export const useIndexData = () => {
           commissionOverride: quote.commission_override ? parseFloat(String(quote.commission_override)) : undefined,
           expiresAt: quote.expires_at,
           notes: quote.notes,
-          quoteItems: [],
+          quoteItems: [], // Initialize as empty array since quote_items doesn't exist on the base quote object
           billingAddress: quote.billing_address,
           serviceAddress: quote.service_address,
           templateId: quote.template_id,
@@ -140,9 +107,9 @@ export const useIndexData = () => {
           acceptedAt: quote.accepted_at,
           acceptedBy: quote.accepted_by,
           archived: quote.archived || false
-        };
-      });
-      setQuotes(transformedQuotes);
+        }));
+        setQuotes(quotesData);
+      }
     } catch (err) {
       console.error('Error in fetchQuotes:', err);
     }

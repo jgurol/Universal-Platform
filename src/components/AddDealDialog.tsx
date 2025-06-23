@@ -1,14 +1,15 @@
+
 import { useState, useEffect } from "react";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { useToast } from "@/hooks/use-toast";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useForm } from "react-hook-form";
 import { supabase } from "@/integrations/supabase/client";
-import { ClientInfo } from "@/types/index";
-import { useAuth } from "@/context/AuthContext";
+import { AddDealData } from "@/services/dealRegistrationService";
+import { ClientInfo } from "@/pages/Index";
 
 interface AddDealDialogProps {
   open: boolean;
