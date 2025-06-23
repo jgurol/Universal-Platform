@@ -16,29 +16,13 @@ import { Textarea } from "@/components/ui/textarea";
 import { useAgentMapping } from "@/hooks/useAgentMapping";
 import { generateQuotePDF } from "@/utils/pdf";
 import { Quote } from "@/types/index";
+import { useOrders } from "@/hooks/useOrders";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 
 // Helper function to format dates
 const formatDateForDisplay = (dateString: string) => {
   return new Date(dateString).toLocaleDateString();
 };
-
-interface Order {
-  id: string;
-  order_number: string;
-  quote_id: string;
-  user_id: string;
-  client_id?: string;
-  client_info_id?: string;
-  amount: number;
-  commission: number;
-  commission_override?: number;
-  status: string;
-  billing_address?: string;
-  service_address?: string;
-  notes?: string;
-  created_at: string;
-  updated_at: string;
-}
 
 interface QuoteAcceptance {
   id: string;
@@ -51,12 +35,11 @@ interface QuoteAcceptance {
 }
 
 export const OrdersManagement = () => {
-  const [orders, setOrders] = useState<Order[]>([]);
-  const [filteredOrders, setFilteredOrders] = useState<Order[]>([]);
+  const { orders, isLoading, deleteOrder } = useOrders();
+  const [filteredOrders, setFilteredOrders] = useState(orders);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
-  const [isLoading, setIsLoading] = useState(true);
-  const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
+  const [selectedOrder, setSelectedOrder] = useState<any | null>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [editFormData, setEditFormData] = useState({
     status: "",
@@ -76,10 +59,6 @@ export const OrdersManagement = () => {
   const { user } = useAuth();
   const { toast } = useToast();
   const { agentMapping } = useAgentMapping();
-
-  useEffect(() => {
-    fetchOrders();
-  }, [user]);
 
   useEffect(() => {
     filterOrders();
@@ -160,7 +139,7 @@ export const OrdersManagement = () => {
     setFilteredOrders(filtered);
   };
 
-  const handleEditOrder = (order: Order) => {
+  const handleEditOrder = (order: any) => {
     setSelectedOrder(order);
     setEditFormData({
       status: order.status,
@@ -194,7 +173,6 @@ export const OrdersManagement = () => {
       });
 
       setIsEditDialogOpen(false);
-      fetchOrders();
     } catch (error) {
       console.error('Error updating order:', error);
       toast({
@@ -206,22 +184,12 @@ export const OrdersManagement = () => {
   };
 
   const handleDeleteOrder = async (orderId: string) => {
-    if (!confirm('Are you sure you want to delete this order?')) return;
-
     try {
-      const { error } = await supabase
-        .from('orders')
-        .delete()
-        .eq('id', orderId);
-
-      if (error) throw error;
-
+      await deleteOrder(orderId);
       toast({
         title: "Order deleted",
         description: "Order has been deleted successfully.",
       });
-
-      fetchOrders();
     } catch (error) {
       console.error('Error deleting order:', error);
       toast({
@@ -229,33 +197,6 @@ export const OrdersManagement = () => {
         description: "Failed to delete order.",
         variant: "destructive"
       });
-    }
-  };
-
-  const fetchOrders = async () => {
-    if (!user) return;
-
-    try {
-      setIsLoading(true);
-      const { data, error } = await supabase
-        .from('orders')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-
-      setOrders(data || []);
-      setFilteredOrders(data || []);
-    } catch (error) {
-      console.error('Error fetching orders:', error);
-      toast({
-        title: "Error",
-        description: "Failed to fetch orders.",
-        variant: "destructive"
-      });
-    } finally {
-      setIsLoading(false);
     }
   };
 
@@ -434,7 +375,6 @@ export const OrdersManagement = () => {
         notes: '',
       });
       setShowCreateDialog(false);
-      fetchOrders();
     } catch (error) {
       console.error('Error creating order:', error);
       toast({
@@ -572,14 +512,34 @@ export const OrdersManagement = () => {
                           )}
                         </TableCell>
                         <TableCell className="text-right">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleDeleteOrder(order.id)}
-                            className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </Button>
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>Delete Order?</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  Are you sure you want to delete this order? This action cannot be undone.
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                <AlertDialogAction 
+                                  onClick={() => handleDeleteOrder(order.id)}
+                                  className="bg-red-600 hover:bg-red-700"
+                                >
+                                  Delete Order
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
                         </TableCell>
                       </TableRow>
                     );
