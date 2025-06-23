@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
@@ -11,7 +12,7 @@ import {
   navigationMenuTriggerStyle,
 } from "@/components/ui/navigation-menu";
 import { cn } from "@/lib/utils";
-import { Settings, Users, FileText, Home, UserPlus, Building, UserCog, Zap, LogOut, User } from 'lucide-react';
+import { Settings, Users, FileText, Home, UserPlus, Building, UserCog, Zap, LogOut, User, Package } from 'lucide-react';
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import {
@@ -87,6 +88,10 @@ export function NavigationBar() {
                   <NavigationMenuTrigger>System Settings</NavigationMenuTrigger>
                   <NavigationMenuContent>
                     <ul className="grid w-[300px] gap-3 p-4">
+                      <ListItem href="/orders-management" title="Orders Management" Icon={Package}>
+                        Manage and track customer orders
+                      </ListItem>
+                      
                       <ListItem href="/vendors" title="Vendor Management" Icon={Building}>
                         Manage vendors and supplier information
                       </ListItem>

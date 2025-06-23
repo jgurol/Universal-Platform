@@ -8,7 +8,6 @@ import { GeneralSettingsTab } from "@/components/settings/GeneralSettingsTab";
 import { DateTimeSettingsTab } from "@/components/settings/DateTimeSettingsTab";
 import { QuoteTemplatesTab } from "@/components/settings/QuoteTemplatesTab";
 import { SecuritySettingsTab } from "@/components/settings/SecuritySettingsTab";
-import { OrdersManagement } from "@/components/OrdersManagement";
 
 export default function SystemSettings() {
   const { user, isAdmin } = useAuth();
@@ -41,11 +40,10 @@ export default function SystemSettings() {
           </div>
 
           <Tabs defaultValue="general" className="space-y-6">
-            <TabsList className="grid w-full grid-cols-5">
+            <TabsList className="grid w-full grid-cols-4">
               <TabsTrigger value="general">General</TabsTrigger>
               <TabsTrigger value="datetime">Date & Time</TabsTrigger>
               <TabsTrigger value="quotes">Quotes</TabsTrigger>
-              <TabsTrigger value="orders">Orders</TabsTrigger>
               <TabsTrigger value="security">Security</TabsTrigger>
             </TabsList>
 
@@ -59,10 +57,6 @@ export default function SystemSettings() {
 
             <TabsContent value="quotes">
               <QuoteTemplatesTab />
-            </TabsContent>
-
-            <TabsContent value="orders">
-              <OrdersManagement />
             </TabsContent>
 
             <TabsContent value="security">
