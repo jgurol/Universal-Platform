@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Quote, ClientInfo } from "@/pages/Index";
@@ -10,6 +11,7 @@ import { Mail } from "lucide-react";
 import { EmailFormFields } from "./EmailFormFields";
 import { EmailTemplateSelector } from "./EmailTemplateSelector";
 import { EmailTemplate } from "@/hooks/useEmailTemplates";
+import { replaceTemplateVariables, TemplateVariables } from "@/utils/emailTemplateVariables";
 
 interface EmailQuoteFormProps {
   quote: Quote;
@@ -41,6 +43,7 @@ export const EmailQuoteForm = ({
   const [messageTemplateSet, setMessageTemplateSet] = useState(false);
   const [selectedTemplateId, setSelectedTemplateId] = useState("none");
   const [isUsingTemplate, setIsUsingTemplate] = useState(false);
+  const [primaryContactName, setPrimaryContactName] = useState('');
   const { toast } = useToast();
   const { user, isAdmin } = useAuth();
 
@@ -120,12 +123,14 @@ export const EmailQuoteForm = ({
       if (primaryContact) {
         console.log('EmailQuoteForm - Found primary contact:', primaryContact);
         setRecipientEmail(primaryContact.email);
+        setPrimaryContactName(primaryContact.name);
       } else {
         // If no primary contact with email, use first contact with email
         const firstContactWithEmail = transformedContacts.find(contact => contact.email && contact.email.trim() !== '');
         if (firstContactWithEmail) {
           console.log('EmailQuoteForm - Using first contact with email:', firstContactWithEmail);
           setRecipientEmail(firstContactWithEmail.email);
+          setPrimaryContactName(firstContactWithEmail.name);
         }
       }
     }
@@ -144,9 +149,11 @@ export const EmailQuoteForm = ({
     const primaryContact = transformedContacts.find(contact => contact.is_primary);
     if (primaryContact) {
       contactName = primaryContact.name;
+      setPrimaryContactName(contactName);
     } else if (transformedContacts.length > 0) {
       // Use first contact if no primary contact
       contactName = transformedContacts[0].name;
+      setPrimaryContactName(contactName);
     }
     
     console.log('EmailQuoteForm - Using contact name for greeting:', contactName);
@@ -167,12 +174,33 @@ ${quoteOwnerName}`;
     setMessageTemplateSet(true);
   }, [ownerNameLoaded, quoteOwnerName, messageTemplateSet, transformedContacts, isUsingTemplate]);
 
+  const createTemplateVariables = (): TemplateVariables => {
+    const clientFirstName = primaryContactName.split(' ')[0] || '';
+    const clientLastName = primaryContactName.split(' ').slice(1).join(' ') || '';
+    
+    return {
+      quoteNumber: quote.quoteNumber || quote.id.slice(0, 8),
+      clientFirstName,
+      clientLastName,
+      salesPerson: quoteOwnerName,
+      companyName: clientInfo?.company_name || '',
+      quoteAmount: `$${quote.amount.toLocaleString()}`,
+      quoteDescription: quote.description || 'Service Agreement'
+    };
+  };
+
   const handleTemplateSelect = (template: EmailTemplate | null) => {
     if (template) {
       console.log('EmailQuoteForm - Applying template:', template.name);
       setSelectedTemplateId(template.id);
-      setSubject(template.subject);
-      setMessage(template.content);
+      
+      // Replace variables in template
+      const variables = createTemplateVariables();
+      const processedSubject = replaceTemplateVariables(template.subject, variables);
+      const processedContent = replaceTemplateVariables(template.content, variables);
+      
+      setSubject(processedSubject);
+      setMessage(processedContent);
       setIsUsingTemplate(true);
       setMessageTemplateSet(true);
     } else {

@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -8,13 +7,16 @@ import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger, AlertDialogFooter } from "@/components/ui/alert-dialog";
-import { Plus, Pencil, Trash2, Mail } from "lucide-react";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { Plus, Pencil, Trash2, Mail, ChevronDown, ChevronRight } from "lucide-react";
 import { useEmailTemplates, EmailTemplate } from "@/hooks/useEmailTemplates";
+import { VariableHelper } from "./EmailTemplatesManagement/VariableHelper";
 
 export const EmailTemplatesManagement = () => {
   const { templates, isLoading, addTemplate, updateTemplate, deleteTemplate } = useEmailTemplates();
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [editingTemplate, setEditingTemplate] = useState<EmailTemplate | null>(null);
+  const [showVariables, setShowVariables] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
     subject: '',
@@ -71,6 +73,40 @@ export const EmailTemplatesManagement = () => {
     resetForm();
   };
 
+  const insertVariableIntoContent = (variable: string) => {
+    const textarea = document.getElementById('content') as HTMLTextAreaElement;
+    if (textarea) {
+      const start = textarea.selectionStart;
+      const end = textarea.selectionEnd;
+      const currentContent = formData.content;
+      const newContent = currentContent.substring(0, start) + variable + currentContent.substring(end);
+      setFormData({ ...formData, content: newContent });
+      
+      // Restore cursor position
+      setTimeout(() => {
+        textarea.selectionStart = textarea.selectionEnd = start + variable.length;
+        textarea.focus();
+      }, 0);
+    }
+  };
+
+  const insertVariableIntoSubject = (variable: string) => {
+    const input = document.getElementById('subject') as HTMLInputElement;
+    if (input) {
+      const start = input.selectionStart || 0;
+      const end = input.selectionEnd || 0;
+      const currentSubject = formData.subject;
+      const newSubject = currentSubject.substring(0, start) + variable + currentSubject.substring(end);
+      setFormData({ ...formData, subject: newSubject });
+      
+      // Restore cursor position
+      setTimeout(() => {
+        input.selectionStart = input.selectionEnd = start + variable.length;
+        input.focus();
+      }, 0);
+    }
+  };
+
   if (isLoading) {
     return (
       <Card>
@@ -89,7 +125,7 @@ export const EmailTemplatesManagement = () => {
           Email Templates
         </CardTitle>
         <CardDescription>
-          Manage email templates for sending quotes to customers
+          Manage email templates for sending quotes to customers. Use variables like {{quoteNumber}}, {{clientFirstName}}, {{clientLastName}}, and {{salesPerson}} in your templates.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
@@ -102,14 +138,26 @@ export const EmailTemplatesManagement = () => {
                 Add Template
               </Button>
             </DialogTrigger>
-            <DialogContent className="sm:max-w-[600px]">
+            <DialogContent className="sm:max-w-[700px]">
               <DialogHeader>
                 <DialogTitle>Add Email Template</DialogTitle>
                 <DialogDescription>
-                  Create a new email template for sending quotes
+                  Create a new email template for sending quotes. Use variables like {{quoteNumber}} and {{clientFirstName}} to personalize your emails.
                 </DialogDescription>
               </DialogHeader>
               <div className="space-y-4">
+                <Collapsible open={showVariables} onOpenChange={setShowVariables}>
+                  <CollapsibleTrigger asChild>
+                    <Button variant="outline" className="w-full justify-between">
+                      <span>Available Variables</span>
+                      {showVariables ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+                    </Button>
+                  </CollapsibleTrigger>
+                  <CollapsibleContent className="space-y-2">
+                    <VariableHelper onVariableInsert={insertVariableIntoContent} />
+                  </CollapsibleContent>
+                </Collapsible>
+
                 <div className="space-y-2">
                   <Label htmlFor="name">Template Name</Label>
                   <Input
@@ -120,7 +168,18 @@ export const EmailTemplatesManagement = () => {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="subject">Email Subject</Label>
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="subject">Email Subject</Label>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => insertVariableIntoSubject('{{quoteNumber}}')}
+                      className="text-xs"
+                    >
+                      Insert {{quoteNumber}}
+                    </Button>
+                  </div>
                   <Input
                     id="subject"
                     value={formData.subject}
@@ -134,7 +193,7 @@ export const EmailTemplatesManagement = () => {
                     id="content"
                     value={formData.content}
                     onChange={(e) => setFormData({ ...formData, content: e.target.value })}
-                    placeholder="Enter email content..."
+                    placeholder="Enter email content... Use variables like {{clientFirstName}}, {{salesPerson}}, etc."
                     rows={8}
                   />
                 </div>
@@ -194,14 +253,26 @@ export const EmailTemplatesManagement = () => {
                           <Pencil className="h-4 w-4" />
                         </Button>
                       </DialogTrigger>
-                      <DialogContent className="sm:max-w-[600px]">
+                      <DialogContent className="sm:max-w-[700px]">
                         <DialogHeader>
                           <DialogTitle>Edit Email Template</DialogTitle>
                           <DialogDescription>
-                            Update the email template
+                            Update the email template. Use variables like {{quoteNumber}} and {{clientFirstName}} to personalize your emails.
                           </DialogDescription>
                         </DialogHeader>
                         <div className="space-y-4">
+                          <Collapsible>
+                            <CollapsibleTrigger asChild>
+                              <Button variant="outline" className="w-full justify-between">
+                                <span>Available Variables</span>
+                                <ChevronRight className="h-4 w-4" />
+                              </Button>
+                            </CollapsibleTrigger>
+                            <CollapsibleContent className="space-y-2">
+                              <VariableHelper />
+                            </CollapsibleContent>
+                          </Collapsible>
+
                           <div className="space-y-2">
                             <Label htmlFor="edit-name">Template Name</Label>
                             <Input

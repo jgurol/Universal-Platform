@@ -3,8 +3,10 @@ import React from 'react';
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { RefreshCw } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { RefreshCw, Info } from "lucide-react";
 import { useEmailTemplates, EmailTemplate } from "@/hooks/useEmailTemplates";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 
 interface EmailTemplateSelectorProps {
   selectedTemplateId: string;
@@ -13,6 +15,9 @@ interface EmailTemplateSelectorProps {
 
 export const EmailTemplateSelector = ({ selectedTemplateId, onTemplateSelect }: EmailTemplateSelectorProps) => {
   const { templates, isLoading, refetch } = useEmailTemplates();
+  const [showPreview, setShowPreview] = React.useState(false);
+  
+  const selectedTemplate = templates.find(t => t.id === selectedTemplateId);
 
   const handleTemplateChange = (templateId: string) => {
     if (templateId === "none") {
@@ -58,9 +63,42 @@ export const EmailTemplateSelector = ({ selectedTemplateId, onTemplateSelect }: 
           ))}
         </SelectContent>
       </Select>
+      
+      {selectedTemplate && (
+        <div className="mt-2">
+          <Collapsible open={showPreview} onOpenChange={setShowPreview}>
+            <CollapsibleTrigger asChild>
+              <Button variant="ghost" size="sm" className="text-xs">
+                <Info className="h-3 w-3 mr-1" />
+                {showPreview ? 'Hide' : 'Show'} Template Preview
+              </Button>
+            </CollapsibleTrigger>
+            <CollapsibleContent className="space-y-2 mt-2">
+              <div className="p-3 bg-gray-50 rounded border text-sm">
+                <div className="space-y-2">
+                  <div>
+                    <strong>Subject:</strong> {selectedTemplate.subject}
+                  </div>
+                  <div>
+                    <strong>Content Preview:</strong>
+                    <div className="mt-1 text-gray-600 text-xs whitespace-pre-wrap max-h-20 overflow-y-auto">
+                      {selectedTemplate.content.substring(0, 200)}
+                      {selectedTemplate.content.length > 200 && '...'}
+                    </div>
+                  </div>
+                  <div className="flex flex-wrap gap-1 mt-2">
+                    <Badge variant="secondary" className="text-xs">Variables will be replaced</Badge>
+                  </div>
+                </div>
+              </div>
+            </CollapsibleContent>
+          </Collapsible>
+        </div>
+      )}
+      
       {templates.length === 0 && !isLoading && (
         <p className="text-xs text-muted-foreground">
-          No email templates found. Create templates in System Settings → Templates.
+          No email templates found. Create templates in Templates → Email Templates.
         </p>
       )}
     </div>
