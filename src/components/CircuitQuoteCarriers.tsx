@@ -30,6 +30,7 @@ export const CircuitQuoteCarriers = ({
     return (
       <div className="space-y-4">
         <CarrierTags 
+          carriers={carriers}
           staticIp={staticIp}
           slash29={slash29}
           mikrotikRequired={mikrotikRequired}
@@ -52,6 +53,7 @@ export const CircuitQuoteCarriers = ({
   return (
     <div className="space-y-4">
       <CarrierTags 
+        carriers={carriers}
         staticIp={staticIp}
         slash29={slash29}
         mikrotikRequired={mikrotikRequired}
