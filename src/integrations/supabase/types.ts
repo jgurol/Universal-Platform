@@ -1344,7 +1344,7 @@ export type Database = {
         Returns: undefined
       }
       permanently_delete_quote: {
-        Args: { quote_id: string }
+        Args: { p_quote_id: string }
         Returns: undefined
       }
       update_user_profile: {
