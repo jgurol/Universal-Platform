@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
@@ -12,7 +11,7 @@ import {
   navigationMenuTriggerStyle,
 } from "@/components/ui/navigation-menu";
 import { cn } from "@/lib/utils";
-import { Settings, Users, FileText, Home, UserPlus, Building, UserCog, Zap, LogOut, User, Package } from 'lucide-react';
+import { Settings, Users, FileText, Home, UserPlus, Building, UserCog, Zap, LogOut, User } from 'lucide-react';
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import {
@@ -76,18 +75,11 @@ export function NavigationBar() {
               </NavigationMenuItem>
 
               <NavigationMenuItem>
-                <NavigationMenuTrigger>Management</NavigationMenuTrigger>
-                <NavigationMenuContent>
-                  <ul className="grid w-[300px] gap-3 p-4">
-                    <ListItem href="/orders-management" title="Orders Management" Icon={Package}>
-                      Manage and track your orders
-                    </ListItem>
-                    
-                    <ListItem href="/circuit-tracking" title="Circuit Tracking" Icon={Zap}>
-                      Monitor and manage circuit installation progress
-                    </ListItem>
-                  </ul>
-                </NavigationMenuContent>
+                <Link to="/circuit-tracking">
+                  <NavigationMenuLink className={navigationMenuTriggerStyle()}>
+                    Circuit Tracking
+                  </NavigationMenuLink>
+                </Link>
               </NavigationMenuItem>
 
               {isAdmin && (
