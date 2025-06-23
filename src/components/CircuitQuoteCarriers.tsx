@@ -35,17 +35,6 @@ export const CircuitQuoteCarriers = ({
           slash29={slash29}
           mikrotikRequired={mikrotikRequired}
         />
-        <div className="space-y-2">
-          {carriers.map((carrier) => (
-            <CarrierCard
-              key={carrier.id}
-              carrier={carrier}
-              onEdit={onEditCarrier}
-              onDelete={onDeleteCarrier}
-              onCopy={onCopyCarrier}
-            />
-          ))}
-        </div>
       </div>
     );
   }
