@@ -59,11 +59,11 @@ export const QuoteStatusBadge = ({ quoteId, status, onStatusUpdate }: QuoteStatu
         });
 
       } else if (newStatus === 'approved') {
-        // For approval, call the edge function to handle quote approval only
-        console.log('Calling edge function to handle quote approval...');
+        // For approval, call the fix-quote-approval function instead of handle-quote-approval
+        console.log('Calling fix-quote-approval function to handle quote approval...');
         
         const { data: approvalResult, error: approvalError } = await supabase.functions
-          .invoke('handle-quote-approval', {
+          .invoke('fix-quote-approval', {
             body: { quoteId: quoteId }
           });
 
@@ -79,10 +79,29 @@ export const QuoteStatusBadge = ({ quoteId, status, onStatusUpdate }: QuoteStatu
 
         console.log('Quote approval completed:', approvalResult);
         
-        toast({
-          title: "Quote approved successfully",
-          description: "Quote status has been updated to approved.",
-        });
+        // Update the quote status to approved
+        const { error: updateError } = await supabase
+          .from('quotes')
+          .update({ 
+            status: 'approved',
+            acceptance_status: 'accepted',
+            accepted_at: new Date().toISOString()
+          })
+          .eq('id', quoteId);
+
+        if (updateError) {
+          console.error('Error updating quote status after approval:', updateError);
+          toast({
+            title: "Warning",
+            description: "Order was created but quote status update failed. Please refresh the page.",
+            variant: "destructive"
+          });
+        } else {
+          toast({
+            title: "Quote approved successfully",
+            description: "Quote status has been updated to approved and order has been created.",
+          });
+        }
 
         // Force a page refresh to ensure all data is up to date
         setTimeout(() => {

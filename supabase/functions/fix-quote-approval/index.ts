@@ -107,7 +107,8 @@ const handler = async (req: Request): Promise<Response> => {
 
     console.log(`Creating order for quote ${quoteId} with user_id: ${quote.user_id} and order number: ${orderNumber}`);
 
-    // Create single order for the entire quote
+    // Create single order for the entire quote using the service role client
+    // This should bypass RLS since we're using SUPABASE_SERVICE_ROLE_KEY
     const orderData = {
       quote_id: quoteId,
       order_number: orderNumber,
@@ -125,7 +126,7 @@ const handler = async (req: Request): Promise<Response> => {
 
     console.log('Order data to insert:', orderData);
 
-    // Insert the order
+    // Insert the order using service role which should bypass RLS
     const { data: newOrder, error: orderError } = await supabase
       .from('orders')
       .insert(orderData)
