@@ -20,6 +20,7 @@ import AcceptQuote from "./pages/AcceptQuote";
 import CircuitTracking from "./pages/CircuitTracking";
 import CircuitQuotes from "./pages/CircuitQuotes";
 import Vendors from "./pages/Vendors";
+import OrdersManagement from "./pages/OrdersManagement";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -92,6 +93,11 @@ const App = () => (
             <Route path="/vendors" element={
               <ProtectedRoute>
                 <Vendors />
+              </ProtectedRoute>
+            } />
+            <Route path="/orders-management" element={
+              <ProtectedRoute>
+                <OrdersManagement />
               </ProtectedRoute>
             } />
             <Route path="*" element={<NotFound />} />
