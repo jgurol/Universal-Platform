@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import { ClientInfo } from "@/types/index";
@@ -285,7 +286,25 @@ const AcceptQuote = () => {
 
       console.log('Acceptance recorded successfully:', acceptanceResult);
 
-      // Update quote status - simplified approach
+      // Now let's try updating the quote status with very detailed logging
+      console.log('About to update quote status...');
+      console.log('Quote ID to update:', quote.id);
+      
+      // First, let's verify we can read the quote
+      const { data: currentQuote, error: readError } = await supabase
+        .from('quotes')
+        .select('*')
+        .eq('id', quote.id)
+        .single();
+      
+      if (readError) {
+        console.error('Cannot read quote for update:', readError);
+        throw new Error(`Cannot read quote: ${readError.message}`);
+      }
+      
+      console.log('Current quote data before update:', currentQuote);
+
+      // Now attempt the update
       const updateData = {
         acceptance_status: 'accepted',
         accepted_at: new Date().toISOString(),
@@ -293,24 +312,54 @@ const AcceptQuote = () => {
         status: 'approved'
       };
 
-      console.log('Updating quote with data:', updateData);
+      console.log('Update data to apply:', updateData);
 
       const { data: updateResult, error: updateError } = await supabase
         .from('quotes')
         .update(updateData)
         .eq('id', quote.id)
-        .select()
+        .select('*')
         .single();
 
       if (updateError) {
-        console.error('Error updating quote status:', updateError);
-        // Even if status update fails, the acceptance was recorded
-        console.log('Acceptance was recorded but status update failed');
+        console.error('DETAILED UPDATE ERROR:', {
+          error: updateError,
+          message: updateError.message,
+          details: updateError.details,
+          hint: updateError.hint,
+          code: updateError.code
+        });
+        
+        // Try a simpler update to see if it works
+        console.log('Trying simpler update...');
+        const { data: simpleResult, error: simpleError } = await supabase
+          .from('quotes')
+          .update({ acceptance_status: 'accepted' })
+          .eq('id', quote.id)
+          .select('*')
+          .single();
+          
+        if (simpleError) {
+          console.error('Simple update also failed:', simpleError);
+          throw new Error(`Quote update failed: ${updateError.message}`);
+        } else {
+          console.log('Simple update succeeded:', simpleResult);
+        }
       } else {
-        console.log('Quote status updated successfully:', updateResult);
+        console.log('Quote update succeeded:', updateResult);
       }
 
-      // Always show success since acceptance was recorded
+      // Verify the update worked
+      const { data: verifyQuote, error: verifyError } = await supabase
+        .from('quotes')
+        .select('*')
+        .eq('id', quote.id)
+        .single();
+      
+      if (!verifyError && verifyQuote) {
+        console.log('Quote after update verification:', verifyQuote);
+      }
+
       setIsAccepted(true);
       toast({
         title: "Quote Accepted",
