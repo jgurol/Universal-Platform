@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
-import { Quote, Client, ClientInfo } from "@/pages/Index";
+import { Quote, Client, ClientInfo } from "@/types/index";
 import { mapQuoteData } from "@/utils/quoteUtils";
 
 export const useQuotes = (
@@ -73,13 +73,38 @@ export const useQuotes = (
       if (quotesData) {
         const mappedQuotes = quotesData.map(quote => {
           const mapped = mapQuoteData(quote, clients, clientInfos);
-          console.log(`[fetchQuotes] Mapped quote ${quote.id} - Number: "${quote.quote_number}", Status: "${mapped.status}", Description: "${mapped.description}"`);
+          
+          // Process quote items properly
+          if (quote.quote_items && Array.isArray(quote.quote_items)) {
+            mapped.quoteItems = quote.quote_items.map((item: any) => ({
+              id: item.id,
+              quote_id: item.quote_id,
+              item_id: item.item_id,
+              name: item.item?.name || 'Unknown Item',
+              description: item.item?.description || '',
+              quantity: item.quantity || 1,
+              unit_price: parseFloat(item.unit_price) || 0,
+              total_price: parseFloat(item.total_price) || 0,
+              charge_type: item.charge_type || 'NRC',
+              address_id: item.address_id,
+              item: item.item,
+              address: item.address
+            }));
+            
+            console.log(`[fetchQuotes] Mapped quote ${quote.id} with ${mapped.quoteItems.length} items`);
+          } else {
+            mapped.quoteItems = [];
+            console.log(`[fetchQuotes] No quote items found for quote ${quote.id}`);
+          }
+          
+          console.log(`[fetchQuotes] Mapped quote ${quote.id} - Number: "${quote.quote_number}", Status: "${mapped.status}", Description: "${mapped.description}", Items: ${mapped.quoteItems?.length || 0}`);
           return mapped;
         });
         
         setQuotes(mappedQuotes);
         console.info('[fetchQuotes] Final mapped quotes count:', mappedQuotes.length);
         console.info('[fetchQuotes] Final quote numbers:', mappedQuotes.map(q => q.quoteNumber));
+        console.info('[fetchQuotes] Quote items summary:', mappedQuotes.map(q => ({ id: q.id, itemCount: q.quoteItems?.length || 0 })));
       }
     } catch (err) {
       console.error('Error in fetchQuotes:', err);
