@@ -285,8 +285,8 @@ const AcceptQuote = () => {
 
       console.log('Acceptance recorded successfully:', acceptanceResult);
 
-      // Now update the quote status
-      console.log('Updating quote status...');
+      // Now update the quote status to approved
+      console.log('Updating quote status to approved...');
       
       const updateData = {
         acceptance_status: 'accepted',
@@ -309,11 +309,29 @@ const AcceptQuote = () => {
 
       console.log('Quote status updated successfully:', updateResult);
 
+      // Show success immediately - don't wait for order creation
       setIsAccepted(true);
       toast({
         title: "Quote Accepted",
         description: "Thank you! Your quote has been successfully accepted.",
       });
+
+      // Try to trigger order creation in the background, but don't fail if it doesn't work
+      try {
+        console.log('Attempting to trigger order creation...');
+        const { data: orderResult, error: orderError } = await supabase.functions.invoke('fix-quote-approval', {
+          body: { quoteId: quote.id }
+        });
+
+        if (orderError) {
+          console.warn('Order creation failed, but quote was accepted:', orderError);
+        } else {
+          console.log('Order creation triggered successfully:', orderResult);
+        }
+      } catch (orderErr) {
+        console.warn('Failed to trigger order creation, but quote was accepted:', orderErr);
+        // Don't show this error to the user since the quote acceptance was successful
+      }
 
     } catch (err: any) {
       console.error('Quote acceptance process failed:', err);
