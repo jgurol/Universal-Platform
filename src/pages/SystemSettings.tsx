@@ -6,7 +6,6 @@ import { NavigationBar } from "@/components/NavigationBar";
 import { SystemSettingsProvider } from "@/context/SystemSettingsContext";
 import { GeneralSettingsTab } from "@/components/settings/GeneralSettingsTab";
 import { DateTimeSettingsTab } from "@/components/settings/DateTimeSettingsTab";
-import { QuoteTemplatesTab } from "@/components/settings/QuoteTemplatesTab";
 import { SecuritySettingsTab } from "@/components/settings/SecuritySettingsTab";
 
 export default function SystemSettings() {
@@ -40,10 +39,9 @@ export default function SystemSettings() {
           </div>
 
           <Tabs defaultValue="general" className="space-y-6">
-            <TabsList className="grid w-full grid-cols-4">
+            <TabsList className="grid w-full grid-cols-3">
               <TabsTrigger value="general">General</TabsTrigger>
               <TabsTrigger value="datetime">Date & Time</TabsTrigger>
-              <TabsTrigger value="quotes">Quotes</TabsTrigger>
               <TabsTrigger value="security">Security</TabsTrigger>
             </TabsList>
 
@@ -53,10 +51,6 @@ export default function SystemSettings() {
 
             <TabsContent value="datetime">
               <DateTimeSettingsTab />
-            </TabsContent>
-
-            <TabsContent value="quotes">
-              <QuoteTemplatesTab />
             </TabsContent>
 
             <TabsContent value="security">

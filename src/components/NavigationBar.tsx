@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
@@ -90,6 +89,10 @@ export function NavigationBar() {
                     <ul className="grid w-[300px] gap-3 p-4">
                       <ListItem href="/orders-management" title="Orders Management" Icon={Package}>
                         Manage and track customer orders
+                      </ListItem>
+                      
+                      <ListItem href="/templates" title="Templates" Icon={FileText}>
+                        Manage quote templates and terms & conditions
                       </ListItem>
                       
                       <ListItem href="/vendors" title="Vendor Management" Icon={Building}>

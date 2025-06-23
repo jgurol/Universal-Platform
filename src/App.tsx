@@ -21,6 +21,7 @@ import CircuitTracking from "./pages/CircuitTracking";
 import CircuitQuotes from "./pages/CircuitQuotes";
 import Vendors from "./pages/Vendors";
 import OrdersManagement from "./pages/OrdersManagement";
+import Templates from "./pages/Templates";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -98,6 +99,11 @@ const App = () => (
             <Route path="/orders-management" element={
               <ProtectedRoute requireAdmin>
                 <OrdersManagement />
+              </ProtectedRoute>
+            } />
+            <Route path="/templates" element={
+              <ProtectedRoute requireAdmin>
+                <Templates />
               </ProtectedRoute>
             } />
             <Route path="*" element={<NotFound />} />
