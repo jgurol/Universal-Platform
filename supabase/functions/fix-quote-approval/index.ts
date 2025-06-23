@@ -107,9 +107,8 @@ const handler = async (req: Request): Promise<Response> => {
 
     console.log(`Creating order for quote ${quoteId} with user_id: ${quote.user_id} and order number: ${orderNumber}`);
 
-    // Create single order for the entire quote
-    // Use RPC call to bypass RLS entirely with corrected parameter order
-    const { data: newOrder, error: orderError } = await supabase
+    // Create single order for the entire quote using RPC call to bypass RLS
+    const { data: newOrderId, error: orderError } = await supabase
       .rpc('create_order_bypass_rls', {
         p_quote_id: quoteId,
         p_order_number: orderNumber,
@@ -127,68 +126,14 @@ const handler = async (req: Request): Promise<Response> => {
 
     if (orderError) {
       console.error(`Failed to create order via RPC:`, orderError);
-      
-      // Fallback to direct insert if RPC fails
-      console.log('Attempting direct insert as fallback...');
-      
-      const orderData = {
-        quote_id: quoteId,
-        order_number: orderNumber,
-        user_id: quote.user_id,
-        client_id: quote.client_id,
-        client_info_id: quote.client_info_id,
-        amount: quote.amount,
-        status: 'pending',
-        billing_address: quote.billing_address,
-        service_address: quote.service_address,
-        notes: quote.notes || `Order for quote ${quote.quote_number || quoteId}`,
-        commission: quote.commission || 0,
-        commission_override: quote.commission_override
-      };
-
-      console.log('Order data to insert:', orderData);
-
-      const { data: fallbackOrder, error: fallbackError } = await supabase
-        .from('orders')
-        .insert(orderData)
-        .select()
-        .single();
-
-      if (fallbackError) {
-        console.error(`Fallback insert also failed:`, fallbackError);
-        
-        // If it's a duplicate key error, try to fetch the existing order
-        if (fallbackError.code === '23505') {
-          console.log('Duplicate order detected, fetching existing order');
-          const { data: existingOrder } = await supabase
-            .from('orders')
-            .select('*')
-            .eq('quote_id', quoteId)
-            .single();
-          
-          if (existingOrder) {
-            console.log('Found existing order:', existingOrder.id);
-            return new Response(JSON.stringify({ 
-              success: true, 
-              orderIds: [existingOrder.id],
-              orderNumbers: [existingOrder.order_number],
-              ordersCount: 1,
-              message: 'Order already exists for this quote'
-            }), {
-              status: 200,
-              headers: { "Content-Type": "application/json", ...corsHeaders },
-            });
-          }
-        }
-        
-        throw new Error(`Failed to create order: ${fallbackError.message}`);
-      }
-
-      console.log(`Created order via fallback ${fallbackOrder.id} with number ${orderNumber}`);
-      newOrder = fallbackOrder;
+      throw new Error(`Failed to create order: ${orderError.message}`);
     }
 
-    const orderId = newOrder?.id || newOrder;
+    if (!newOrderId) {
+      throw new Error('Order creation returned no ID');
+    }
+
+    console.log(`Created order ${newOrderId} with number ${orderNumber}`);
 
     // Now fetch quote items with circuit category types and create circuit tracking for each
     const { data: quoteItems, error: quoteItemsError } = await supabase
@@ -250,7 +195,7 @@ const handler = async (req: Request): Promise<Response> => {
       for (let i = 0; i < circuitItems.length; i++) {
         const circuitItem = circuitItems[i];
         const circuitTrackingData = {
-          order_id: orderId,
+          order_id: newOrderId,
           quote_item_id: circuitItem.id,
           circuit_type: circuitItem.item?.category?.name || 'Circuit',
           status: 'ordered',
@@ -284,7 +229,7 @@ const handler = async (req: Request): Promise<Response> => {
 
     return new Response(JSON.stringify({ 
       success: true, 
-      orderIds: [orderId],
+      orderIds: [newOrderId],
       orderNumbers: [orderNumber],
       ordersCount: 1
     }), {
