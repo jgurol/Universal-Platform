@@ -1,3 +1,4 @@
+
 import { Button } from "@/components/ui/button";
 import { Edit, Trash2, Copy } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
@@ -20,8 +21,8 @@ export const CarrierCard = ({ carrier, onEdit, onDelete, onCopy }: CarrierCardPr
   const isPending = !carrier.price || carrier.price === 0;
   const isNoService = carrier.no_service;
   
-  // Calculate markup price for agents
-  const getDisplayPrice = () => {
+  // Calculate display price immediately and memoize it
+  const displayPrice = (() => {
     if (isAdmin || isPending || isNoService) {
       return carrier.price;
     }
@@ -47,9 +48,7 @@ export const CarrierCard = ({ carrier, onEdit, onDelete, onCopy }: CarrierCardPr
     }
 
     return carrier.price;
-  };
-
-  const displayPrice = getDisplayPrice();
+  })();
   
   const getTickedCheckboxes = () => {
     const ticked = [];
