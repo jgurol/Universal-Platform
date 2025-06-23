@@ -74,14 +74,6 @@ export function NavigationBar() {
                 </Link>
               </NavigationMenuItem>
 
-              <NavigationMenuItem>
-                <Link to="/circuit-tracking">
-                  <NavigationMenuLink className={navigationMenuTriggerStyle()}>
-                    Circuit Tracking
-                  </NavigationMenuLink>
-                </Link>
-              </NavigationMenuItem>
-
               {isAdmin && (
                 <NavigationMenuItem>
                   <NavigationMenuTrigger>System Settings</NavigationMenuTrigger>
