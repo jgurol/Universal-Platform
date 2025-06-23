@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
@@ -82,11 +81,31 @@ export const useIndexData = () => {
       } else {
         console.log('Fetched quotes with user_id:', data?.map(q => ({ id: q.id, user_id: q.user_id })));
         const quotesData = (data || []).map(quote => ({
-          ...quote,
-          user_id: quote.user_id, // Ensure user_id is explicitly included
+          id: quote.id,
+          clientId: quote.client_id || "", // Ensure clientId is included
           clientName: quote.client_info?.company_name || 'Unknown Client',
           companyName: quote.client_info?.company_name || '',
           clientInfoId: quote.client_info_id,
+          amount: parseFloat(quote.amount || "0"),
+          date: quote.date,
+          description: quote.description || "",
+          status: quote.status || 'pending',
+          user_id: quote.user_id, // Ensure user_id is explicitly included
+          quoteNumber: quote.quote_number,
+          quoteMonth: quote.quote_month,
+          quoteYear: quote.quote_year,
+          commission: parseFloat(quote.commission || "0"),
+          commissionOverride: quote.commission_override ? parseFloat(quote.commission_override) : undefined,
+          expiresAt: quote.expires_at,
+          notes: quote.notes,
+          quoteItems: quote.quote_items || [],
+          billingAddress: quote.billing_address,
+          serviceAddress: quote.service_address,
+          templateId: quote.template_id,
+          acceptanceStatus: quote.acceptance_status,
+          acceptedAt: quote.accepted_at,
+          acceptedBy: quote.accepted_by,
+          archived: quote.archived || false
         }));
         setQuotes(quotesData);
       }
