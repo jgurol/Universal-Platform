@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -125,7 +126,7 @@ export const EmailTemplatesManagement = () => {
           Email Templates
         </CardTitle>
         <CardDescription>
-          Manage email templates for sending quotes to customers. Use variables like {{quoteNumber}}, {{clientFirstName}}, {{clientLastName}}, and {{salesPerson}} in your templates.
+          Manage email templates for sending quotes to customers. Use variables like {"{{quoteNumber}}"}, {"{{clientFirstName}}"}, {"{{clientLastName}}"}, and {"{{salesPerson}}"} in your templates.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
@@ -142,7 +143,7 @@ export const EmailTemplatesManagement = () => {
               <DialogHeader>
                 <DialogTitle>Add Email Template</DialogTitle>
                 <DialogDescription>
-                  Create a new email template for sending quotes. Use variables like {{quoteNumber}} and {{clientFirstName}} to personalize your emails.
+                  Create a new email template for sending quotes. Use variables like {"{{quoteNumber}}"} and {"{{clientFirstName}}"} to personalize your emails.
                 </DialogDescription>
               </DialogHeader>
               <div className="space-y-4">
@@ -177,7 +178,7 @@ export const EmailTemplatesManagement = () => {
                       onClick={() => insertVariableIntoSubject('{{quoteNumber}}')}
                       className="text-xs"
                     >
-                      Insert {{quoteNumber}}
+                      Insert {"{{quoteNumber}}"}
                     </Button>
                   </div>
                   <Input
@@ -257,7 +258,7 @@ export const EmailTemplatesManagement = () => {
                         <DialogHeader>
                           <DialogTitle>Edit Email Template</DialogTitle>
                           <DialogDescription>
-                            Update the email template. Use variables like {{quoteNumber}} and {{clientFirstName}} to personalize your emails.
+                            Update the email template. Use variables like {"{{quoteNumber}}"} and {"{{clientFirstName}}"} to personalize your emails.
                           </DialogDescription>
                         </DialogHeader>
                         <div className="space-y-4">
