@@ -19,6 +19,7 @@ interface RecentQuotesProps {
   onUpdateQuote: (quote: Quote) => void;
   onDeleteQuote?: (quoteId: string) => void;
   onUnarchiveQuote?: (quoteId: string) => void;
+  onPermanentlyDeleteQuote?: (quoteId: string) => void;
   associatedAgentId?: string | null;
 }
 
@@ -30,6 +31,7 @@ export const RecentQuotes = ({
   onUpdateQuote,
   onDeleteQuote,
   onUnarchiveQuote,
+  onPermanentlyDeleteQuote,
   associatedAgentId
 }: RecentQuotesProps) => {
   const [isAddQuoteOpen, setIsAddQuoteOpen] = useState(false);

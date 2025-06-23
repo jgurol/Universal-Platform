@@ -1,8 +1,7 @@
-
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/context/AuthContext";
 import { Quote, Client } from "@/pages/Index";
-import { addQuoteToDatabase, updateQuoteInDatabase, deleteQuoteFromDatabase, unarchiveQuoteFromDatabase } from "@/services/quoteService";
+import { addQuoteToDatabase, updateQuoteInDatabase, deleteQuoteFromDatabase, unarchiveQuoteFromDatabase, permanentlyDeleteQuoteFromDatabase } from "@/services/quoteService";
 
 export const useQuoteActions = (
   clients: Client[],
@@ -129,10 +128,36 @@ export const useQuoteActions = (
     }
   };
 
+  const permanentlyDeleteQuote = async (quoteId: string) => {
+    if (!user) {
+      console.error('[permanentlyDeleteQuote] No user found, cannot permanently delete quote');
+      return;
+    }
+    
+    try {
+      console.log('[permanentlyDeleteQuote] Permanently deleting quote:', quoteId, 'by user:', user.id);
+      await permanentlyDeleteQuoteFromDatabase(quoteId);
+      
+      fetchQuotes();
+      toast({
+        title: "Quote deleted permanently",
+        description: "The quote has been permanently deleted and cannot be recovered.",
+      });
+    } catch (error) {
+      console.error('[permanentlyDeleteQuote] Error permanently deleting quote:', error);
+      toast({
+        title: "Error",
+        description: "Failed to permanently delete quote. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
   return {
     addQuote,
     updateQuote,
     deleteQuote,
-    unarchiveQuote
+    unarchiveQuote,
+    permanentlyDeleteQuote
   };
 };

@@ -4,3 +4,4 @@ export { createQuoteInDatabase as addQuoteToDatabase } from "./quoteCreationServ
 export { updateQuoteInDatabase } from "./quoteUpdateService";
 export { deleteQuoteFromDatabase } from "./quoteDeletionService";
 export { unarchiveQuoteFromDatabase } from "./quoteUnarchiveService";
+export { permanentlyDeleteQuoteFromDatabase } from "./quotePermanentDeletionService";

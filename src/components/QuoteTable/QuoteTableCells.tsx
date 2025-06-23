@@ -15,6 +15,7 @@ interface QuoteTableCellsProps {
   onEmailClick: () => void;
   onStatusUpdate: (newStatus: string) => void;
   onUnarchiveQuote?: (quoteId: string) => void;
+  onPermanentlyDeleteQuote?: (quoteId: string) => void;
 }
 
 const formatDate = (dateString?: string): string => {
@@ -40,7 +41,8 @@ export const QuoteTableCells = ({
   onCopyQuote,
   onEmailClick,
   onStatusUpdate,
-  onUnarchiveQuote
+  onUnarchiveQuote,
+  onPermanentlyDeleteQuote
 }: QuoteTableCellsProps) => {
   const mrcTotal = getMRCTotal(quote);
   const nrcTotal = getNRCTotal(quote);
@@ -103,6 +105,7 @@ export const QuoteTableCells = ({
           onCopyQuote={onCopyQuote}
           onEmailClick={onEmailClick}
           onUnarchiveQuote={onUnarchiveQuote}
+          onPermanentlyDeleteQuote={onPermanentlyDeleteQuote}
         />
       </TableCell>
     </>

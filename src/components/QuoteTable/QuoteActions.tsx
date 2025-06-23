@@ -1,11 +1,13 @@
 
 import { Button } from "@/components/ui/button";
-import { Pencil, Trash2, FileText, Copy } from "lucide-react";
+import { Pencil, Trash2, FileText, Copy, XCircle } from "lucide-react";
 import { ArchiveRestore } from "lucide-react";
 import { Quote, ClientInfo } from "@/pages/Index";
 import { generateQuotePDF } from "@/utils/pdfUtils";
 import { useToast } from "@/hooks/use-toast";
 import { EmailStatusButton } from "./EmailStatusButton";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { useState } from "react";
 
 interface QuoteActionsProps {
   quote: Quote;
@@ -16,6 +18,7 @@ interface QuoteActionsProps {
   onCopyQuote?: (quote: Quote) => void;
   onEmailClick: () => void;
   onUnarchiveQuote?: (quoteId: string) => void;
+  onPermanentlyDeleteQuote?: (quoteId: string) => void;
 }
 
 export const QuoteActions = ({
@@ -26,9 +29,11 @@ export const QuoteActions = ({
   onDeleteQuote,
   onCopyQuote,
   onEmailClick,
-  onUnarchiveQuote
+  onUnarchiveQuote,
+  onPermanentlyDeleteQuote
 }: QuoteActionsProps) => {
   const { toast } = useToast();
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
 
   const handlePreviewPDF = async () => {
     try {
@@ -52,6 +57,13 @@ export const QuoteActions = ({
         variant: "destructive"
       });
     }
+  };
+
+  const handlePermanentDelete = () => {
+    if (onPermanentlyDeleteQuote) {
+      onPermanentlyDeleteQuote(quote.id);
+    }
+    setIsDeleteDialogOpen(false);
   };
 
   const isArchived = (quote as any).archived === true;
@@ -119,6 +131,38 @@ export const QuoteActions = ({
         >
           <Trash2 className="w-4 h-4" />
         </Button>
+      )}
+
+      {onPermanentlyDeleteQuote && (
+        <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+          <AlertDialogTrigger asChild>
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="h-8 w-8 p-0 text-gray-500 hover:text-red-800"
+              title="Permanently Delete Quote"
+            >
+              <XCircle className="w-4 h-4" />
+            </Button>
+          </AlertDialogTrigger>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Permanently Delete Quote?</AlertDialogTitle>
+              <AlertDialogDescription>
+                This action cannot be undone. This will permanently delete the quote and all associated data including quote items and acceptance records. The quote will be completely removed from the system.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction 
+                onClick={handlePermanentDelete}
+                className="bg-red-600 hover:bg-red-700"
+              >
+                Permanently Delete
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       )}
     </div>
   );

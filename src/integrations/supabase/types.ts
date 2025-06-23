@@ -1343,6 +1343,10 @@ export type Database = {
         Args: { user_id: string }
         Returns: undefined
       }
+      permanently_delete_quote: {
+        Args: { quote_id: string }
+        Returns: undefined
+      }
       update_user_profile: {
         Args: {
           _user_id: string
