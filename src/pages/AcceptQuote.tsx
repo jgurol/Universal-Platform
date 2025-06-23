@@ -112,6 +112,8 @@ const AcceptQuote = () => {
       setIsLoading(true);
       setError(null);
 
+      console.log('Fetching quote data for ID:', quoteId);
+
       // Fetch quote data
       const { data: quoteData, error: quoteError } = await supabase
         .from('quotes')
@@ -119,13 +121,18 @@ const AcceptQuote = () => {
         .eq('id', quoteId)
         .single();
 
-      if (quoteError) throw quoteError;
+      if (quoteError) {
+        console.error('Error fetching quote:', quoteError);
+        throw quoteError;
+      }
       if (!quoteData) throw new Error('Quote not found');
 
+      console.log('Quote data fetched:', quoteData);
       setQuote(quoteData);
 
       // Check if quote is already accepted
       if (quoteData.acceptance_status === 'accepted') {
+        console.log('Quote already accepted');
         setIsAccepted(true);
         setIsLoading(false);
         return;
@@ -244,6 +251,7 @@ const AcceptQuote = () => {
       }
 
       if (existingAcceptance) {
+        console.log('Quote already accepted, showing success state');
         setIsAccepted(true);
         toast({
           title: "Already Accepted",
@@ -252,7 +260,7 @@ const AcceptQuote = () => {
         return;
       }
 
-      // Record the acceptance with proper error handling
+      // Record the acceptance
       const acceptanceData = {
         quote_id: quote.id,
         client_name: clientName.trim(),
@@ -262,7 +270,7 @@ const AcceptQuote = () => {
         user_agent: navigator.userAgent
       };
 
-      console.log('Inserting acceptance data:', acceptanceData);
+      console.log('Inserting acceptance data...');
 
       const { data: acceptanceResult, error: acceptanceError } = await supabase
         .from('quote_acceptances')
@@ -277,7 +285,7 @@ const AcceptQuote = () => {
 
       console.log('Acceptance recorded successfully:', acceptanceResult);
 
-      // Update quote status with better error handling
+      // Update quote status - simplified approach
       const updateData = {
         acceptance_status: 'accepted',
         accepted_at: new Date().toISOString(),
@@ -285,19 +293,24 @@ const AcceptQuote = () => {
         status: 'approved'
       };
 
-      console.log('Updating quote status:', updateData);
+      console.log('Updating quote with data:', updateData);
 
-      const { error: updateError } = await supabase
+      const { data: updateResult, error: updateError } = await supabase
         .from('quotes')
         .update(updateData)
-        .eq('id', quote.id);
+        .eq('id', quote.id)
+        .select()
+        .single();
 
       if (updateError) {
-        console.error('Error updating quote:', updateError);
-        // Don't throw here since acceptance was recorded successfully
-        console.warn('Quote acceptance recorded but status update failed');
+        console.error('Error updating quote status:', updateError);
+        // Even if status update fails, the acceptance was recorded
+        console.log('Acceptance was recorded but status update failed');
+      } else {
+        console.log('Quote status updated successfully:', updateResult);
       }
 
+      // Always show success since acceptance was recorded
       setIsAccepted(true);
       toast({
         title: "Quote Accepted",
