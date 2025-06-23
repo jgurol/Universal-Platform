@@ -1345,6 +1345,23 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      create_order_bypass_rls: {
+        Args: {
+          p_quote_id: string
+          p_order_number: string
+          p_user_id: string
+          p_amount: number
+          p_status?: string
+          p_commission?: number
+          p_client_id?: string
+          p_client_info_id?: string
+          p_billing_address?: string
+          p_service_address?: string
+          p_notes?: string
+          p_commission_override?: number
+        }
+        Returns: string
+      }
       delete_quote: {
         Args: { quote_id: string }
         Returns: undefined

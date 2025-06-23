@@ -108,20 +108,20 @@ const handler = async (req: Request): Promise<Response> => {
     console.log(`Creating order for quote ${quoteId} with user_id: ${quote.user_id} and order number: ${orderNumber}`);
 
     // Create single order for the entire quote
-    // Use RPC call to bypass RLS entirely
+    // Use RPC call to bypass RLS entirely with corrected parameter order
     const { data: newOrder, error: orderError } = await supabase
       .rpc('create_order_bypass_rls', {
         p_quote_id: quoteId,
         p_order_number: orderNumber,
         p_user_id: quote.user_id,
-        p_client_id: quote.client_id,
-        p_client_info_id: quote.client_info_id,
         p_amount: quote.amount,
         p_status: 'pending',
+        p_commission: quote.commission || 0,
+        p_client_id: quote.client_id,
+        p_client_info_id: quote.client_info_id,
         p_billing_address: quote.billing_address,
         p_service_address: quote.service_address,
         p_notes: quote.notes || `Order for quote ${quote.quote_number || quoteId}`,
-        p_commission: quote.commission || 0,
         p_commission_override: quote.commission_override
       });
 
