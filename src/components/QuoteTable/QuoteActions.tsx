@@ -72,15 +72,21 @@ export const QuoteActions = ({
   return (
     <TooltipProvider>
       <div className="flex gap-1 justify-center">
-        <Button 
-          variant="ghost" 
-          size="sm" 
-          className="h-8 w-8 p-0 text-gray-500 hover:text-blue-600"
-          onClick={handlePreviewPDF}
-          title="Preview PDF"
-        >
-          <FileText className="w-4 h-4" />
-        </Button>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="h-8 w-8 p-0 text-gray-500 hover:text-blue-600"
+              onClick={handlePreviewPDF}
+            >
+              <FileText className="w-4 h-4" />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>
+            <p>Preview PDF</p>
+          </TooltipContent>
+        </Tooltip>
         
         <EmailStatusButton 
           quoteId={quote.id}
@@ -88,51 +94,75 @@ export const QuoteActions = ({
         />
         
         {onCopyQuote && (
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            className="h-8 w-8 p-0 text-gray-500 hover:text-green-600"
-            onClick={() => onCopyQuote(quote)}
-            title="Copy Quote"
-          >
-            <Copy className="w-4 h-4" />
-          </Button>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="h-8 w-8 p-0 text-gray-500 hover:text-green-600"
+                onClick={() => onCopyQuote(quote)}
+              >
+                <Copy className="w-4 h-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Copy Quote</p>
+            </TooltipContent>
+          </Tooltip>
         )}
         
         {onEditClick && !isArchived && (
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            className="h-8 w-8 p-0 text-gray-500 hover:text-blue-600"
-            onClick={() => onEditClick(quote)}
-            title="Edit Quote"
-          >
-            <Pencil className="w-4 h-4" />
-          </Button>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="h-8 w-8 p-0 text-gray-500 hover:text-blue-600"
+                onClick={() => onEditClick(quote)}
+              >
+                <Pencil className="w-4 h-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Edit Quote</p>
+            </TooltipContent>
+          </Tooltip>
         )}
         
         {isArchived && onUnarchiveQuote && (
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            className="h-8 w-8 p-0 text-gray-500 hover:text-green-600"
-            onClick={() => onUnarchiveQuote(quote.id)}
-            title="Restore Quote"
-          >
-            <ArchiveRestore className="w-4 h-4" />
-          </Button>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="h-8 w-8 p-0 text-gray-500 hover:text-green-600"
+                onClick={() => onUnarchiveQuote(quote.id)}
+              >
+                <ArchiveRestore className="w-4 h-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Restore Quote</p>
+            </TooltipContent>
+          </Tooltip>
         )}
         
         {onDeleteQuote && !isArchived && (
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            className="h-8 w-8 p-0 text-gray-500 hover:text-red-600"
-            onClick={() => onDeleteQuote(quote.id)}
-            title="Archive Quote"
-          >
-            <Trash2 className="w-4 h-4" />
-          </Button>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="h-8 w-8 p-0 text-gray-500 hover:text-red-600"
+                onClick={() => onDeleteQuote(quote.id)}
+              >
+                <Trash2 className="w-4 h-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Archive Quote</p>
+            </TooltipContent>
+          </Tooltip>
         )}
 
         {onPermanentlyDeleteQuote && (
