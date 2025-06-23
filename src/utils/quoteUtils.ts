@@ -9,6 +9,7 @@ export const mapQuoteData = (
 ): Quote => {
   console.log(`[mapQuoteData] Processing quote ${quoteData.id} with description: "${quoteData.description}"`);
   console.log(`[mapQuoteData] Raw addresses from DB - billing: "${quoteData.billing_address}", service: "${quoteData.service_address}"`);
+  console.log(`[mapQuoteData] User ID from database: "${quoteData.user_id}"`);
   
   const client = clients.find(c => c.id === quoteData.client_id);
   const clientInfo = clientInfos.find(ci => ci.id === quoteData.client_info_id);
@@ -16,8 +17,9 @@ export const mapQuoteData = (
   // Handle null service address properly - don't convert "null" string to actual value
   const serviceAddress = quoteData.service_address === "null" || quoteData.service_address === null ? undefined : quoteData.service_address;
   
-  const mapped: Quote & { archived?: boolean } = {
+  const mapped: Quote & { archived?: boolean; user_id?: string; user_profile?: any } = {
     id: quoteData.id,
+    user_id: quoteData.user_id, // Ensure user_id is preserved
     clientId: quoteData.client_id || "",
     clientName: client?.name || "Unknown Client",
     companyName: clientInfo?.company_name || client?.companyName || "Unknown Company",
@@ -41,11 +43,13 @@ export const mapQuoteData = (
     acceptanceStatus: quoteData.acceptance_status,
     acceptedAt: quoteData.accepted_at,
     acceptedBy: quoteData.accepted_by,
-    archived: quoteData.archived || false
+    archived: quoteData.archived || false,
+    user_profile: quoteData.user_profile // Preserve the attached user profile data
   };
   
   console.log(`[mapQuoteData] Mapped quote ${quoteData.id} final description: "${mapped.description}"`);
   console.log(`[mapQuoteData] Mapped addresses - billing: "${mapped.billingAddress}", service: "${mapped.serviceAddress}"`);
+  console.log(`[mapQuoteData] Mapped user_id: "${mapped.user_id}"`);
   
   return mapped;
 };
