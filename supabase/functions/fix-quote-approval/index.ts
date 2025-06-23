@@ -84,7 +84,7 @@ const handler = async (req: Request): Promise<Response> => {
       });
     }
 
-    // Get quote details 
+    // Get quote details using service role client to bypass RLS
     const { data: quote, error: quoteError } = await supabase
       .from('quotes')
       .select('*')
@@ -108,6 +108,7 @@ const handler = async (req: Request): Promise<Response> => {
     console.log(`Creating order for quote ${quoteId} with user_id: ${quote.user_id} and order number: ${orderNumber}`);
 
     // Create single order for the entire quote using RPC call to bypass RLS
+    // This is the ONLY way we create orders - no fallback direct inserts
     const { data: newOrderId, error: orderError } = await supabase
       .rpc('create_order_bypass_rls', {
         p_quote_id: quoteId,
@@ -191,7 +192,7 @@ const handler = async (req: Request): Promise<Response> => {
         }
       }
 
-      // Create circuit tracking records for each circuit item
+      // Create circuit tracking records for each circuit item using service role client
       for (let i = 0; i < circuitItems.length; i++) {
         const circuitItem = circuitItems[i];
         const circuitTrackingData = {
