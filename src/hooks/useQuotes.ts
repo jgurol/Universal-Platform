@@ -25,7 +25,18 @@ export const useQuotes = (
         .select(`
           *,
           quote_items (
-            *,
+            id,
+            quote_id,
+            item_id,
+            quantity,
+            unit_price,
+            total_price,
+            charge_type,
+            address_id,
+            created_at,
+            updated_at,
+            image_url,
+            image_name,
             item:items(*),
             address:client_addresses(*)
           )
@@ -76,9 +87,11 @@ export const useQuotes = (
           
           const mapped = mapQuoteData(quote, clients, clientInfos);
           
-          // Process quote items properly
+          // Process quote items properly - ensure we have the data we need
           if (quote.quote_items && Array.isArray(quote.quote_items)) {
             mapped.quoteItems = quote.quote_items.map((item: any) => {
+              console.log(`[fetchQuotes] Processing quote item:`, item);
+              
               const mappedItem = {
                 id: item.id,
                 quote_id: item.quote_id,
@@ -91,7 +104,9 @@ export const useQuotes = (
                 charge_type: item.charge_type || 'NRC',
                 address_id: item.address_id,
                 item: item.item,
-                address: item.address
+                address: item.address,
+                image_url: item.image_url,
+                image_name: item.image_name
               };
               
               console.log(`[fetchQuotes] Mapped quote item for quote ${quote.id}:`, mappedItem);
@@ -114,7 +129,11 @@ export const useQuotes = (
         console.info('[fetchQuotes] Quote items summary:', mappedQuotes.map(q => ({ 
           id: q.id, 
           itemCount: q.quoteItems?.length || 0,
-          items: q.quoteItems?.map(item => ({ name: item.name, price: item.total_price })) || []
+          items: q.quoteItems?.map(item => ({ 
+            name: item.name, 
+            price: item.total_price,
+            charge_type: item.charge_type 
+          })) || []
         })));
       }
     } catch (err) {

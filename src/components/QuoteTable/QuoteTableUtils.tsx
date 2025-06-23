@@ -9,14 +9,19 @@ export const getMRCTotal = (quote: Quote) => {
     return 0;
   }
   
-  const mrcItems = quote.quoteItems.filter(item => item.charge_type === 'MRC');
+  const mrcItems = quote.quoteItems.filter(item => {
+    const isMRC = item.charge_type === 'MRC';
+    console.log(`[getMRCTotal] Item "${item.name}" charge_type: "${item.charge_type}", is MRC: ${isMRC}`);
+    return isMRC;
+  });
+  
   const total = mrcItems.reduce((total, item) => {
     const itemTotal = Number(item.total_price) || 0;
     console.log(`[getMRCTotal] MRC item: ${item.name}, total_price: ${itemTotal}`);
     return total + itemTotal;
   }, 0);
   
-  console.log(`[getMRCTotal] Quote ${quote.id} MRC total: ${total}`);
+  console.log(`[getMRCTotal] Quote ${quote.id} MRC total: ${total} from ${mrcItems.length} MRC items`);
   return total;
 };
 
@@ -28,14 +33,19 @@ export const getNRCTotal = (quote: Quote) => {
     return 0;
   }
   
-  const nrcItems = quote.quoteItems.filter(item => item.charge_type === 'NRC');
+  const nrcItems = quote.quoteItems.filter(item => {
+    const isNRC = item.charge_type === 'NRC';
+    console.log(`[getNRCTotal] Item "${item.name}" charge_type: "${item.charge_type}", is NRC: ${isNRC}`);
+    return isNRC;
+  });
+  
   const total = nrcItems.reduce((total, item) => {
     const itemTotal = Number(item.total_price) || 0;
     console.log(`[getNRCTotal] NRC item: ${item.name}, total_price: ${itemTotal}`);
     return total + itemTotal;
   }, 0);
   
-  console.log(`[getNRCTotal] Quote ${quote.id} NRC total: ${total}`);
+  console.log(`[getNRCTotal] Quote ${quote.id} NRC total: ${total} from ${nrcItems.length} NRC items`);
   return total;
 };
 
