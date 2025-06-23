@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Plus, Package, Edit, Trash2 } from "lucide-react";
+import { Plus, Package, Edit, Trash2, Copy } from "lucide-react";
 import { useItems } from "@/hooks/useItems";
 import { useCategories } from "@/hooks/useCategories";
 import { useVendors } from "@/hooks/useVendors";
@@ -49,6 +49,22 @@ export const ItemsManagement = () => {
     if (confirm('Are you sure you want to delete this item?')) {
       deleteItem(itemId);
     }
+  };
+
+  const handleCopyItem = (item: Item) => {
+    if (!isAdmin) return;
+    const copiedItem = {
+      name: `${item.name} (Copy)`,
+      description: item.description,
+      price: item.price,
+      cost: item.cost,
+      charge_type: item.charge_type,
+      category_id: item.category_id,
+      vendor_id: item.vendor_id,
+      sku: item.sku ? `${item.sku}-COPY` : undefined,
+      is_active: true
+    };
+    addItem(copiedItem);
   };
 
   if (isLoading) {
@@ -148,6 +164,15 @@ export const ItemsManagement = () => {
                   </div>
                   {isAdmin && (
                     <div className="flex items-center gap-2">
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        onClick={() => handleCopyItem(item)}
+                        title="Copy Item"
+                        className="text-gray-500 hover:text-green-600"
+                      >
+                        <Copy className="h-4 w-4" />
+                      </Button>
                       <Button variant="ghost" size="sm" onClick={() => handleEditItem(item)}>
                         <Edit className="h-4 w-4" />
                       </Button>
