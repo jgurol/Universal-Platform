@@ -1,40 +1,8 @@
+
 import React from "react";
 import { Navigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import { IndexPageLayout } from "@/components/IndexPageLayout";
-
-// Re-export types for backward compatibility
-export type { Client, Quote, Transaction, QuoteItem, ClientInfo } from "@/types/index";
-
-export interface Quote {
-  id: string;
-  clientId: string;
-  clientName: string;
-  companyName: string;
-  amount: number;
-  date: string;
-  description: string;
-  status: string;
-  clientInfoId?: string;
-  clientCompanyName?: string;
-  user_id?: string;
-  salespersonName?: string; // Add this field
-  quoteNumber?: string;
-  quoteMonth?: string;
-  quoteYear?: string;
-  commission?: number;
-  commissionOverride?: number;
-  expiresAt?: string;
-  notes?: string;
-  quoteItems?: QuoteItem[];
-  billingAddress?: string;
-  serviceAddress?: string;
-  templateId?: string;
-  acceptanceStatus?: string;
-  acceptedAt?: string;
-  acceptedBy?: string;
-  archived?: boolean;
-}
 
 const Index = () => {
   const { user, session, loading } = useAuth();
