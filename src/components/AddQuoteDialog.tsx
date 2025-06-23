@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -52,7 +53,23 @@ export const AddQuoteDialog = ({ open, onOpenChange, onAddQuote, clients, client
   const [isAdmin, setIsAdmin] = useState<boolean>(false);
   const [associatedDeals, setAssociatedDeals] = useState<DealRegistration[]>([]);
   const [selectedDealIds, setSelectedDealIds] = useState<string[]>([]);
+  const [isDataLoading, setIsDataLoading] = useState(true);
   const { user } = useAuth();
+  
+  // Monitor data loading state
+  useEffect(() => {
+    console.log('[AddQuoteDialog] Data loading check:', {
+      clientInfosLength: clientInfos.length,
+      templatesLength: templates.length,
+      hasUser: !!user,
+      isDataLoading
+    });
+    
+    // Consider data loaded when we have user and either have clientInfos or confirmed they're empty
+    if (user && templates.length >= 0) {
+      setIsDataLoading(false);
+    }
+  }, [clientInfos.length, templates.length, user]);
   
   // Fetch current user's name and admin status from profile
   useEffect(() => {
@@ -184,6 +201,7 @@ export const AddQuoteDialog = ({ open, onOpenChange, onAddQuote, clients, client
   useEffect(() => {
     if (open) {
       resetForm();
+      setIsDataLoading(true);
     }
   }, [open]);
 
@@ -340,7 +358,8 @@ export const AddQuoteDialog = ({ open, onOpenChange, onAddQuote, clients, client
       quoteItemsLength: quoteItems.length,
       templatesLength: templates.length,
       selectedTemplateId,
-      user: !!user
+      user: !!user,
+      clientInfosLength: clientInfos.length
     });
     
     // Enhanced validation with specific error messages
@@ -356,7 +375,9 @@ export const AddQuoteDialog = ({ open, onOpenChange, onAddQuote, clients, client
     if (!clientInfoId || clientInfoId === "none") {
       toast({
         title: "Client Required",
-        description: "Please select a client company before creating the quote.",
+        description: clientInfos.length === 0 
+          ? "No client companies available. Please add a client company first in Deal Registration."
+          : "Please select a client company before creating the quote.",
         variant: "destructive",
       });
       return;
@@ -459,7 +480,8 @@ export const AddQuoteDialog = ({ open, onOpenChange, onAddQuote, clients, client
     date &&
     quoteItems.length > 0 && 
     selectedTemplateId &&
-    !isSubmitting
+    !isSubmitting &&
+    !isDataLoading
   );
 
   console.log('[AddQuoteDialog] Form validation status:', {
@@ -469,6 +491,8 @@ export const AddQuoteDialog = ({ open, onOpenChange, onAddQuote, clients, client
     hasQuoteItems: quoteItems.length > 0,
     hasTemplate: !!selectedTemplateId,
     isSubmitting,
+    isDataLoading,
+    clientInfosLength: clientInfos.length,
     isFormValid
   });
 
@@ -541,6 +565,15 @@ export const AddQuoteDialog = ({ open, onOpenChange, onAddQuote, clients, client
           </div>
         </DialogHeader>
         
+        {/* Show loading state while data is loading */}
+        {isDataLoading && (
+          <div className="flex items-center justify-center py-8">
+            <div className="text-center">
+              <p className="text-muted-foreground">Loading form data...</p>
+            </div>
+          </div>
+        )}
+        
         <form onSubmit={handleSubmit} className="space-y-4">
           {/* Quote Name */}
           <div className="space-y-2">
@@ -553,17 +586,28 @@ export const AddQuoteDialog = ({ open, onOpenChange, onAddQuote, clients, client
                 setDescription(e.target.value);
               }}
               placeholder="Enter quote name (optional - will auto-generate if empty)"
+              disabled={isDataLoading}
             />
           </div>
 
           <div className="space-y-2">
             <Label htmlFor="clientInfo">Client Company *</Label>
-            <Select value={clientInfoId} onValueChange={setClientInfoId} required>
+            <Select value={clientInfoId} onValueChange={setClientInfoId} required disabled={isDataLoading}>
               <SelectTrigger>
-                <SelectValue placeholder="Select a client company" />
+                <SelectValue placeholder={
+                  isDataLoading 
+                    ? "Loading client companies..." 
+                    : clientInfos.length === 0 
+                      ? "No clients available - Add clients first" 
+                      : "Select a client company"
+                } />
               </SelectTrigger>
               <SelectContent>
-                {clientInfos.length === 0 ? (
+                {isDataLoading ? (
+                  <SelectItem value="loading" disabled>
+                    Loading...
+                  </SelectItem>
+                ) : clientInfos.length === 0 ? (
                   <SelectItem value="no-clients" disabled>
                     No clients available - Add clients first
                   </SelectItem>
@@ -576,6 +620,11 @@ export const AddQuoteDialog = ({ open, onOpenChange, onAddQuote, clients, client
                 )}
               </SelectContent>
             </Select>
+            {!isDataLoading && clientInfos.length === 0 && (
+              <p className="text-sm text-amber-600">
+                No client companies found. Please add a client company in Deal Registration first.
+              </p>
+            )}
           </div>
 
           {/* Associated Deals Section */}
@@ -593,6 +642,7 @@ export const AddQuoteDialog = ({ open, onOpenChange, onAddQuote, clients, client
                         id={`deal-${deal.id}`}
                         checked={selectedDealIds.includes(deal.id)}
                         onCheckedChange={() => handleDealSelection(deal.id)}
+                        disabled={isDataLoading}
                       />
                       <label
                         htmlFor={`deal-${deal.id}`}
@@ -647,18 +697,24 @@ export const AddQuoteDialog = ({ open, onOpenChange, onAddQuote, clients, client
 
           <div className="space-y-2">
             <Label htmlFor="templateId">Quote Template *</Label>
-            <Select value={selectedTemplateId} onValueChange={setSelectedTemplateId} required>
+            <Select value={selectedTemplateId} onValueChange={setSelectedTemplateId} required disabled={isDataLoading}>
               <SelectTrigger>
                 <SelectValue placeholder={
-                  templates.length === 0 
-                    ? "No templates available" 
-                    : selectedTemplateId 
-                      ? `${templates.find(t => t.id === selectedTemplateId)?.name}${templates.find(t => t.id === selectedTemplateId)?.is_default ? " (Default)" : ""}`
-                      : "Select template"
+                  isDataLoading
+                    ? "Loading templates..."
+                    : templates.length === 0 
+                      ? "No templates available" 
+                      : selectedTemplateId 
+                        ? `${templates.find(t => t.id === selectedTemplateId)?.name}${templates.find(t => t.id === selectedTemplateId)?.is_default ? " (Default)" : ""}`
+                        : "Select template"
                 } />
               </SelectTrigger>
               <SelectContent>
-                {templates.length === 0 ? (
+                {isDataLoading ? (
+                  <SelectItem value="loading" disabled>
+                    Loading...
+                  </SelectItem>
+                ) : templates.length === 0 ? (
                   <SelectItem value="no-templates" disabled>
                     No templates available - Create one in System Settings
                   </SelectItem>
@@ -671,16 +727,16 @@ export const AddQuoteDialog = ({ open, onOpenChange, onAddQuote, clients, client
                 )}
               </SelectContent>
             </Select>
-            {templates.length === 0 && (
+            {!isDataLoading && templates.length === 0 && (
               <p className="text-sm text-red-500">
-                No templates available. Create templates in System Settings → Quote Templates.
+                No templates available. Create templates in System Settings → Templates.
               </p>
             )}
           </div>
 
           <div className="space-y-2">
             <Label htmlFor="term">Initial Term</Label>
-            <Select value={term} onValueChange={setTerm}>
+            <Select value={term} onValueChange={setTerm} disabled={isDataLoading}>
               <SelectTrigger>
                 <SelectValue placeholder="Select initial term" />
               </SelectTrigger>
@@ -706,6 +762,7 @@ export const AddQuoteDialog = ({ open, onOpenChange, onAddQuote, clients, client
                 value={commissionOverride}
                 onChange={(e) => setCommissionOverride(e.target.value)}
                 placeholder="Optional commission override"
+                disabled={isDataLoading}
               />
             </div>
           )}
@@ -718,6 +775,7 @@ export const AddQuoteDialog = ({ open, onOpenChange, onAddQuote, clients, client
               onChange={(e) => setNotes(e.target.value)}
               placeholder="Additional notes about the quote"
               rows={3}
+              disabled={isDataLoading}
             />
           </div>
           
@@ -744,7 +802,8 @@ export const AddQuoteDialog = ({ open, onOpenChange, onAddQuote, clients, client
             <div className="text-xs text-muted-foreground border-t pt-2">
               Debug: Form valid = {isFormValid ? 'true' : 'false'} 
               (User: {!!user ? 'yes' : 'no'}, ClientInfo: {clientInfoId && clientInfoId !== "none" ? 'yes' : 'no'}, 
-              Date: {!!date ? 'yes' : 'no'}, Items: {quoteItems.length}, Template: {!!selectedTemplateId ? 'yes' : 'no'})
+              Date: {!!date ? 'yes' : 'no'}, Items: {quoteItems.length}, Template: {!!selectedTemplateId ? 'yes' : 'no'}, 
+              DataLoading: {isDataLoading ? 'yes' : 'no'}, ClientInfos: {clientInfos.length})
             </div>
           )}
         </form>
