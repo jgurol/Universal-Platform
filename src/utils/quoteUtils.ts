@@ -10,6 +10,8 @@ export const mapQuoteData = (
   const client = quote.client_id ? clients.find(c => c.id === quote.client_id) : null;
   const clientInfo = quote.client_info_id ? clientInfos.find(ci => ci.id === quote.client_info_id) : null;
 
+  console.log(`[mapQuoteData] Mapping quote ${quote.id} - client: ${client?.name}, clientInfo: ${clientInfo?.company_name}`);
+
   return {
     id: quote.id,
     clientId: quote.client_id || "",
@@ -42,7 +44,7 @@ export const mapQuoteData = (
     emailOpenedAt: quote.email_opened_at || undefined,
     emailOpenCount: quote.email_open_count || 0,
     user_id: quote.user_id,
-    // Note: quoteItems should be set by the calling function after this mapping
+    // Note: quoteItems will be set by the calling function after this mapping
     quoteItems: []
   };
 };

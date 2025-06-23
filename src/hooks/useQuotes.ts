@@ -60,7 +60,7 @@ export const useQuotes = (
         console.info('[fetchQuotes] Admin user - no filtering applied');
       }
       
-      const { data: quotesData, error } = await query;
+      const { data: quotesData, error } = await query.order('created_at', { ascending: false });
       
       if (error) {
         console.error('Error fetching quotes:', error);
@@ -72,24 +72,31 @@ export const useQuotes = (
       
       if (quotesData) {
         const mappedQuotes = quotesData.map(quote => {
+          console.log(`[fetchQuotes] Processing quote ${quote.id} with quote_items:`, quote.quote_items);
+          
           const mapped = mapQuoteData(quote, clients, clientInfos);
           
           // Process quote items properly
           if (quote.quote_items && Array.isArray(quote.quote_items)) {
-            mapped.quoteItems = quote.quote_items.map((item: any) => ({
-              id: item.id,
-              quote_id: item.quote_id,
-              item_id: item.item_id,
-              name: item.item?.name || 'Unknown Item',
-              description: item.item?.description || '',
-              quantity: item.quantity || 1,
-              unit_price: parseFloat(item.unit_price) || 0,
-              total_price: parseFloat(item.total_price) || 0,
-              charge_type: item.charge_type || 'NRC',
-              address_id: item.address_id,
-              item: item.item,
-              address: item.address
-            }));
+            mapped.quoteItems = quote.quote_items.map((item: any) => {
+              const mappedItem = {
+                id: item.id,
+                quote_id: item.quote_id,
+                item_id: item.item_id,
+                name: item.item?.name || 'Unknown Item',
+                description: item.item?.description || '',
+                quantity: item.quantity || 1,
+                unit_price: parseFloat(item.unit_price) || 0,
+                total_price: parseFloat(item.total_price) || 0,
+                charge_type: item.charge_type || 'NRC',
+                address_id: item.address_id,
+                item: item.item,
+                address: item.address
+              };
+              
+              console.log(`[fetchQuotes] Mapped quote item for quote ${quote.id}:`, mappedItem);
+              return mappedItem;
+            });
             
             console.log(`[fetchQuotes] Mapped quote ${quote.id} with ${mapped.quoteItems.length} items`);
           } else {
@@ -97,14 +104,18 @@ export const useQuotes = (
             console.log(`[fetchQuotes] No quote items found for quote ${quote.id}`);
           }
           
-          console.log(`[fetchQuotes] Mapped quote ${quote.id} - Number: "${quote.quote_number}", Status: "${mapped.status}", Description: "${mapped.description}", Items: ${mapped.quoteItems?.length || 0}`);
+          console.log(`[fetchQuotes] Final mapped quote ${quote.id} - Number: "${quote.quote_number}", Status: "${mapped.status}", Description: "${mapped.description}", Items: ${mapped.quoteItems?.length || 0}`);
           return mapped;
         });
         
         setQuotes(mappedQuotes);
         console.info('[fetchQuotes] Final mapped quotes count:', mappedQuotes.length);
         console.info('[fetchQuotes] Final quote numbers:', mappedQuotes.map(q => q.quoteNumber));
-        console.info('[fetchQuotes] Quote items summary:', mappedQuotes.map(q => ({ id: q.id, itemCount: q.quoteItems?.length || 0 })));
+        console.info('[fetchQuotes] Quote items summary:', mappedQuotes.map(q => ({ 
+          id: q.id, 
+          itemCount: q.quoteItems?.length || 0,
+          items: q.quoteItems?.map(item => ({ name: item.name, price: item.total_price })) || []
+        })));
       }
     } catch (err) {
       console.error('Error in fetchQuotes:', err);
