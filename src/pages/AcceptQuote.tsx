@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import { ClientInfo } from "@/types/index";
@@ -230,32 +229,74 @@ const AcceptQuote = () => {
     setIsSubmitting(true);
 
     try {
-      // Record the acceptance
-      const { error: acceptanceError } = await supabase
+      console.log('Starting quote acceptance process for quote:', quote.id);
+
+      // First check if quote acceptance already exists
+      const { data: existingAcceptance, error: checkError } = await supabase
         .from('quote_acceptances')
-        .insert({
-          quote_id: quote.id,
-          client_name: clientName,
-          client_email: clientEmail,
-          signature_data: signatureData,
-          ip_address: null, // This could be enhanced to capture real IP
-          user_agent: navigator.userAgent
+        .select('id')
+        .eq('quote_id', quote.id)
+        .maybeSingle();
+
+      if (checkError) {
+        console.error('Error checking existing acceptance:', checkError);
+        throw new Error('Failed to check acceptance status');
+      }
+
+      if (existingAcceptance) {
+        setIsAccepted(true);
+        toast({
+          title: "Already Accepted",
+          description: "This quote has already been accepted.",
         });
+        return;
+      }
 
-      if (acceptanceError) throw acceptanceError;
+      // Record the acceptance with proper error handling
+      const acceptanceData = {
+        quote_id: quote.id,
+        client_name: clientName.trim(),
+        client_email: clientEmail.trim(),
+        signature_data: signatureData,
+        ip_address: null,
+        user_agent: navigator.userAgent
+      };
 
-      // Update quote status
+      console.log('Inserting acceptance data:', acceptanceData);
+
+      const { data: acceptanceResult, error: acceptanceError } = await supabase
+        .from('quote_acceptances')
+        .insert(acceptanceData)
+        .select()
+        .single();
+
+      if (acceptanceError) {
+        console.error('Error inserting acceptance:', acceptanceError);
+        throw new Error(`Failed to record acceptance: ${acceptanceError.message}`);
+      }
+
+      console.log('Acceptance recorded successfully:', acceptanceResult);
+
+      // Update quote status with better error handling
+      const updateData = {
+        acceptance_status: 'accepted',
+        accepted_at: new Date().toISOString(),
+        accepted_by: clientName.trim(),
+        status: 'approved'
+      };
+
+      console.log('Updating quote status:', updateData);
+
       const { error: updateError } = await supabase
         .from('quotes')
-        .update({
-          acceptance_status: 'accepted',
-          accepted_at: new Date().toISOString(),
-          accepted_by: clientName,
-          status: 'approved'
-        })
+        .update(updateData)
         .eq('id', quote.id);
 
-      if (updateError) throw updateError;
+      if (updateError) {
+        console.error('Error updating quote:', updateError);
+        // Don't throw here since acceptance was recorded successfully
+        console.warn('Quote acceptance recorded but status update failed');
+      }
 
       setIsAccepted(true);
       toast({
@@ -263,11 +304,11 @@ const AcceptQuote = () => {
         description: "Thank you! Your quote has been successfully accepted.",
       });
 
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error accepting quote:', err);
       toast({
         title: "Error",
-        description: "Failed to accept quote. Please try again.",
+        description: err.message || "Failed to accept quote. Please try again.",
         variant: "destructive"
       });
     } finally {
