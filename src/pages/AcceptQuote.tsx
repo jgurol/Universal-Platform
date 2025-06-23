@@ -1,5 +1,6 @@
+
 import React, { useState, useEffect } from "react";
-import { useParams, useSearchParams } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import { ClientInfo } from "@/types/index";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -79,8 +80,6 @@ interface Contact {
 
 const AcceptQuote = () => {
   const { quoteId } = useParams<{ quoteId: string }>();
-  const [searchParams] = useSearchParams();
-  const token = searchParams.get('token');
   
   const [quote, setQuote] = useState<Quote | null>(null);
   const [quoteItems, setQuoteItems] = useState<QuoteItem[]>([]);
@@ -101,13 +100,13 @@ const AcceptQuote = () => {
   const { toast } = useToast();
 
   useEffect(() => {
-    if (quoteId && token) {
+    if (quoteId) {
       fetchQuoteData();
     } else {
       setError('Invalid quote link. Please check the URL and try again.');
       setIsLoading(false);
     }
-  }, [quoteId, token]);
+  }, [quoteId]);
 
   const fetchQuoteData = async () => {
     try {
