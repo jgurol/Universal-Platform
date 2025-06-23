@@ -1,4 +1,3 @@
-
 import { Button } from "@/components/ui/button";
 import { Edit, Trash2, Copy } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
@@ -21,10 +20,17 @@ export const CarrierCard = ({ carrier, onEdit, onDelete, onCopy }: CarrierCardPr
   const isPending = !carrier.price || carrier.price === 0;
   const isNoService = carrier.no_service;
   
-  // Calculate display price immediately and memoize it
+  // Calculate display price immediately and ensure agents never see cost during loading
   const displayPrice = (() => {
+    // Always show actual price for admins, pending, or no service
     if (isAdmin || isPending || isNoService) {
       return carrier.price;
+    }
+
+    // For non-admin users, if categories or clients data isn't loaded yet, 
+    // show "Loading..." instead of the raw cost
+    if (!categories.length || !clients.length) {
+      return null; // This will show "Loading..." in the UI
     }
 
     // Find matching category for the carrier type
@@ -102,7 +108,9 @@ export const CarrierCard = ({ carrier, onEdit, onDelete, onCopy }: CarrierCardPr
         <div>
           <div className={`font-semibold text-lg ${isNoService ? 'text-red-600' : ''}`}>
             {isNoService ? 'No Service' : (
-              displayPrice > 0 ? `$${displayPrice}` : (
+              displayPrice === null ? (
+                <span className="text-gray-500 text-sm">Loading...</span>
+              ) : displayPrice > 0 ? `$${displayPrice}` : (
                 <span className="text-orange-600 text-sm">Pending</span>
               )
             )}
