@@ -28,6 +28,11 @@ export const useQuotes = (
             *,
             item:items(*),
             address:client_addresses(*)
+          ),
+          user_profile:profiles!quotes_user_id_fkey(
+            id,
+            full_name,
+            email
           )
         `);
       
@@ -74,6 +79,7 @@ export const useQuotes = (
         const mappedQuotes = quotesData.map(quote => {
           const mapped = mapQuoteData(quote, clients, clientInfos);
           console.log(`[fetchQuotes] Mapped quote ${quote.id} - Number: "${quote.quote_number}", Status: "${mapped.status}", Description: "${mapped.description}"`);
+          console.log(`[fetchQuotes] Quote user profile:`, quote.user_profile);
           return mapped;
         });
         
