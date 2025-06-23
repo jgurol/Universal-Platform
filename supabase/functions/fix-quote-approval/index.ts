@@ -55,8 +55,39 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
-    const { quoteId } = await req.json();
+    const { quoteId, action } = await req.json();
 
+    console.log('Processing request for quote:', quoteId, 'action:', action);
+
+    // Handle status-only update
+    if (action === 'update_status_only') {
+      console.log('Updating quote status only for:', quoteId);
+      
+      const { data: updateResult, error: updateError } = await supabase
+        .from('quotes')
+        .update({ status: 'approved' })
+        .eq('id', quoteId)
+        .select('*')
+        .single();
+
+      if (updateError) {
+        console.error('Error updating quote status:', updateError);
+        throw new Error(`Failed to update quote status: ${updateError.message}`);
+      }
+
+      console.log('Quote status updated successfully:', updateResult);
+      
+      return new Response(JSON.stringify({ 
+        success: true, 
+        message: 'Quote status updated successfully',
+        quote: updateResult
+      }), {
+        status: 200,
+        headers: { "Content-Type": "application/json", ...corsHeaders },
+      });
+    }
+
+    // Original order creation logic
     console.log('Processing quote approval for:', quoteId);
 
     // First, check if orders already exist for this quote

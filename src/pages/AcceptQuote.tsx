@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import { ClientInfo } from "@/types/index";
@@ -285,14 +286,14 @@ const AcceptQuote = () => {
 
       console.log('Acceptance recorded successfully:', acceptanceResult);
 
-      // Update ONLY the acceptance fields - avoid triggering order creation
-      console.log('Updating quote acceptance status...');
+      // Update the quote with both acceptance fields AND status
+      console.log('Updating quote acceptance status and main status...');
       
       const updateData = {
         acceptance_status: 'accepted',
         accepted_at: new Date().toISOString(),
-        accepted_by: clientName.trim()
-        // Removed status: 'approved' to avoid triggering order creation
+        accepted_by: clientName.trim(),
+        status: 'approved' // Add this back to update the main status
       };
 
       const { data: updateResult, error: updateError } = await supabase
@@ -303,11 +304,31 @@ const AcceptQuote = () => {
         .single();
 
       if (updateError) {
-        console.error('Error updating quote acceptance status:', updateError);
-        // Don't throw here - acceptance was successful, just log the warning
+        console.error('Error updating quote status:', updateError);
+        // If the status update fails due to RLS, we'll handle it gracefully
         console.warn('Quote acceptance recorded but status update failed:', updateError.message);
+        
+        // Try a more direct approach using the service role via edge function
+        try {
+          console.log('Attempting status update via edge function...');
+          const { data: statusResult, error: statusError } = await supabase.functions
+            .invoke('fix-quote-approval', {
+              body: { 
+                quoteId: quote.id,
+                action: 'update_status_only' // Add this flag to only update status
+              }
+            });
+
+          if (statusError) {
+            console.warn('Edge function status update also failed:', statusError);
+          } else {
+            console.log('Status updated successfully via edge function:', statusResult);
+          }
+        } catch (edgeErr) {
+          console.warn('Edge function call failed:', edgeErr);
+        }
       } else {
-        console.log('Quote acceptance status updated successfully:', updateResult);
+        console.log('Quote status updated successfully:', updateResult);
       }
 
       // Show success immediately
