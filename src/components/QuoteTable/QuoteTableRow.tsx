@@ -39,36 +39,28 @@ export const QuoteTableRow = ({
       console.log('QuoteTableRow - Quote user_id:', quote.user_id);
       console.log('QuoteTableRow - Current auth user:', user?.id);
       
-      // Determine which user_id to use for lookup
-      const lookupUserId = quote.user_id || user?.id;
-      
-      if (!lookupUserId) {
-        console.log('QuoteTableRow - No user_id found (quote or current user), using fallback');
+      // Always use the quote's user_id if available, don't fall back to current user
+      if (!quote.user_id) {
+        console.log('QuoteTableRow - No user_id found on quote, using fallback');
         setQuoteOwnerName('Sales Team');
         return;
       }
 
       try {
-        console.log('QuoteTableRow - Querying profiles table for user_id:', lookupUserId);
+        console.log('QuoteTableRow - Querying profiles table for user_id:', quote.user_id);
         
-        // First try to get the profile
+        // Query the profile for the quote's creator
         const { data: profile, error } = await supabase
           .from('profiles')
           .select('full_name, email')
-          .eq('id', lookupUserId)
-          .maybeSingle(); // Use maybeSingle to avoid errors when no record found
+          .eq('id', quote.user_id)
+          .maybeSingle();
         
         console.log('QuoteTableRow - Profile query result:', { profile, error });
         
         if (error) {
           console.error('QuoteTableRow - Error fetching profile:', error);
-          // If there's an error, try to get user info from auth if it's the current user
-          if (lookupUserId === user?.id && user?.email) {
-            console.log('QuoteTableRow - Using current user email as fallback:', user.email);
-            setQuoteOwnerName(user.email.split('@')[0]);
-          } else {
-            setQuoteOwnerName('Sales Team');
-          }
+          setQuoteOwnerName('Sales Team');
           return;
         }
         
@@ -79,20 +71,8 @@ export const QuoteTableRow = ({
           console.log('QuoteTableRow - Setting quote owner name to email:', profile.email);
           setQuoteOwnerName(profile.email);
         } else {
-          console.log('QuoteTableRow - No profile data found, checking if current user');
-          // If no profile found but this is the current user, use their auth info
-          if (lookupUserId === user?.id) {
-            if (user?.email) {
-              console.log('QuoteTableRow - Using current user auth email:', user.email);
-              setQuoteOwnerName(user.email.split('@')[0]);
-            } else {
-              console.log('QuoteTableRow - No current user email, using Sales Team');
-              setQuoteOwnerName('Sales Team');
-            }
-          } else {
-            console.log('QuoteTableRow - Not current user, using Sales Team fallback');
-            setQuoteOwnerName('Sales Team');
-          }
+          console.log('QuoteTableRow - No profile data found for user_id:', quote.user_id);
+          setQuoteOwnerName('Sales Team');
         }
       } catch (error) {
         console.error('QuoteTableRow - Error fetching quote owner name:', error);
@@ -101,7 +81,7 @@ export const QuoteTableRow = ({
     };
 
     fetchQuoteOwnerName();
-  }, [quote.user_id, user]);
+  }, [quote.user_id]); // Only depend on quote.user_id, not current user
 
   const clientInfo = clientInfos.find(ci => ci.id === quote.clientInfoId);
 
