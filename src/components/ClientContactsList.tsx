@@ -27,10 +27,10 @@ export const ClientContactsList = ({
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [editingContact, setEditingContact] = useState<ClientContact | null>(null);
   const [deletingContactId, setDeletingContactId] = useState<string | null>(null);
-  const { contacts: hookContacts, setPrimaryContact } = useClientContacts(clientInfoId);
+  const { setPrimaryContact } = useClientContacts(clientInfoId);
 
-  // Use contacts from hook if available, fallback to props
-  const contacts = hookContacts.length > 0 ? hookContacts : propContacts;
+  // Use contacts from props consistently
+  const contacts = propContacts;
 
   const handleDelete = async (contactId: string) => {
     await onDeleteContact(contactId);
@@ -39,6 +39,14 @@ export const ClientContactsList = ({
 
   const handleSetPrimary = async (contactId: string) => {
     await setPrimaryContact(contactId);
+  };
+
+  const handleAddContact = async (contactData: any) => {
+    await onAddContact(contactData);
+  };
+
+  const handleUpdateContact = async (contactData: any) => {
+    await onUpdateContact(contactData);
   };
 
   return (
@@ -155,14 +163,14 @@ export const ClientContactsList = ({
       <AddClientContactDialog
         open={isAddDialogOpen}
         onOpenChange={setIsAddDialogOpen}
-        onAddContact={onAddContact}
+        onAddContact={handleAddContact}
       />
 
       <EditClientContactDialog
         contact={editingContact}
         open={!!editingContact}
         onOpenChange={(open) => !open && setEditingContact(null)}
-        onUpdateContact={onUpdateContact}
+        onUpdateContact={handleUpdateContact}
       />
     </div>
   );

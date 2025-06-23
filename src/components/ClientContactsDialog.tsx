@@ -17,6 +17,18 @@ export const ClientContactsDialog = ({
 }: ClientContactsDialogProps) => {
   const { contacts, addContact, updateContact, deleteContact } = useClientContacts(clientId);
 
+  const handleAddContact = async (contactData: any) => {
+    await addContact(contactData);
+  };
+
+  const handleUpdateContact = async (contactData: any) => {
+    await updateContact(contactData);
+  };
+
+  const handleDeleteContact = async (contactId: string) => {
+    await deleteContact(contactId);
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
@@ -31,9 +43,9 @@ export const ClientContactsDialog = ({
           <ClientContactsList
             contacts={contacts}
             clientInfoId={clientId}
-            onAddContact={addContact}
-            onUpdateContact={updateContact}
-            onDeleteContact={deleteContact}
+            onAddContact={handleAddContact}
+            onUpdateContact={handleUpdateContact}
+            onDeleteContact={handleDeleteContact}
           />
         </div>
       </DialogContent>
