@@ -6,8 +6,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, DialogFooter, AlertDialogDescription, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger, AlertDialogFooter } from "@/components/ui/alert-dialog";
 import { Plus, Pencil, Trash2, Mail } from "lucide-react";
 import { useEmailTemplates, EmailTemplate } from "@/hooks/useEmailTemplates";
 
@@ -263,7 +263,7 @@ export const EmailTemplatesManagement = () => {
                             Are you sure you want to delete "{template.name}"? This action cannot be undone.
                           </AlertDialogDescription>
                         </AlertDialogHeader>
-                        <DialogFooter>
+                        <AlertDialogFooter>
                           <AlertDialogCancel>Cancel</AlertDialogCancel>
                           <AlertDialogAction
                             onClick={() => handleDelete(template.id)}
@@ -271,7 +271,7 @@ export const EmailTemplatesManagement = () => {
                           >
                             Delete
                           </AlertDialogAction>
-                        </DialogFooter>
+                        </AlertDialogFooter>
                       </AlertDialogContent>
                     </AlertDialog>
                   </div>
