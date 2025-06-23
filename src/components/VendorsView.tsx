@@ -1,22 +1,25 @@
-
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Building2, Mail, Phone, User, FileText, ExternalLink, AlertCircle, Trash2, Plus } from "lucide-react";
+import { Building2, Mail, Phone, User, FileText, ExternalLink, AlertCircle, Trash2, Plus, Edit } from "lucide-react";
 import { useVendors } from "@/hooks/useVendors";
 import { useVendorPriceSheets } from "@/hooks/useVendorPriceSheets";
 import { useAuth } from "@/context/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { AddVendorDialog } from "@/components/AddVendorDialog";
+import { EditVendorDialog } from "@/components/EditVendorDialog";
 import { useState } from "react";
+import { Vendor } from "@/types/vendors";
 
 export const VendorsView = () => {
-  const { vendors, isLoading, addVendor } = useVendors();
+  const { vendors, isLoading, addVendor, updateVendor } = useVendors();
   const { priceSheets, cleanupOrphanedRecords, verifyFileExists } = useVendorPriceSheets();
   const { isAdmin } = useAuth();
   const { toast } = useToast();
   const [isAddVendorOpen, setIsAddVendorOpen] = useState(false);
+  const [isEditVendorOpen, setIsEditVendorOpen] = useState(false);
+  const [selectedVendor, setSelectedVendor] = useState<Vendor | null>(null);
 
   console.log('VendorsView - Total price sheets:', priceSheets.length);
   console.log('VendorsView - Public price sheets:', priceSheets.filter(sheet => sheet.is_public).length);
@@ -109,6 +112,16 @@ export const VendorsView = () => {
         variant: "destructive"
       });
     }
+  };
+
+  const handleEditVendor = (vendor: Vendor) => {
+    setSelectedVendor(vendor);
+    setIsEditVendorOpen(true);
+  };
+
+  const handleUpdateVendor = (vendorId: string, updates: Partial<Vendor>) => {
+    updateVendor(vendorId, updates);
+    setSelectedVendor(null);
   };
 
   if (isLoading) {
@@ -238,6 +251,16 @@ export const VendorsView = () => {
                         )}
                       </div>
                     </div>
+                    <div className="flex items-center gap-2">
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        onClick={() => handleEditVendor(vendor)}
+                        className="text-gray-600 hover:text-gray-700"
+                      >
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                    </div>
                   </div>
                 );
               })}
@@ -250,6 +273,13 @@ export const VendorsView = () => {
         open={isAddVendorOpen}
         onOpenChange={setIsAddVendorOpen}
         onAddVendor={addVendor}
+      />
+
+      <EditVendorDialog
+        open={isEditVendorOpen}
+        onOpenChange={setIsEditVendorOpen}
+        onUpdateVendor={handleUpdateVendor}
+        vendor={selectedVendor}
       />
     </>
   );
