@@ -6,7 +6,7 @@ export const permanentlyDeleteQuoteFromDatabase = async (quoteId: string): Promi
 
   // Use the database function that handles permanent deletion
   const { error } = await supabase.rpc('permanently_delete_quote', {
-    quote_id: quoteId
+    p_quote_id: quoteId
   });
 
   if (error) {
