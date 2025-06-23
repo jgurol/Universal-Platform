@@ -46,7 +46,17 @@ export const QuoteTableCells = ({
 }: QuoteTableCellsProps) => {
   const mrcTotal = getMRCTotal(quote);
   const nrcTotal = getNRCTotal(quote);
-  const approvedDate = formatDate(quote.acceptedAt);
+  
+  // For approved quotes, show the accepted_at date (when customer accepted)
+  // For accepted quotes that aren't approved yet, show acceptance date
+  const getStatusDate = () => {
+    if (quote.status === 'approved' && quote.acceptedAt) {
+      return formatDate(quote.acceptedAt);
+    }
+    return '';
+  };
+
+  const statusDate = getStatusDate();
 
   // Debug logging to see what we're getting
   console.log('QuoteTableCells - Quote ID:', quote.id);
@@ -88,9 +98,9 @@ export const QuoteTableCells = ({
             status={quote.status || 'pending'}
             onStatusUpdate={onStatusUpdate}
           />
-          {approvedDate && (
+          {statusDate && (
             <span className="text-xs text-gray-500">
-              {approvedDate}
+              {statusDate}
             </span>
           )}
         </div>
