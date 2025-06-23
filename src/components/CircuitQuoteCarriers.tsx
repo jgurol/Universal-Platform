@@ -1,73 +1,80 @@
 
-import { Button } from "@/components/ui/button";
-import { Plus } from "lucide-react";
-import type { CarrierQuote } from "@/hooks/useCircuitQuotes";
 import { CarrierCard } from "./CircuitQuoteCarriers/CarrierCard";
 import { CarrierTags } from "./CircuitQuoteCarriers/CarrierTags";
-import { useAuth } from "@/context/AuthContext";
+import type { CarrierQuote } from "@/hooks/useCircuitQuotes";
 
 interface CircuitQuoteCarriersProps {
   carriers: CarrierQuote[];
-  isMinimized?: boolean;
   onAddCarrier?: () => void;
   onEditCarrier?: (carrier: CarrierQuote) => void;
   onDeleteCarrier?: (carrierId: string) => void;
   onCopyCarrier?: (carrier: CarrierQuote) => void;
+  isMinimized?: boolean;
   staticIp?: boolean;
   slash29?: boolean;
   mikrotikRequired?: boolean;
 }
 
 export const CircuitQuoteCarriers = ({ 
-  carriers, 
-  isMinimized = false, 
-  onAddCarrier, 
-  onEditCarrier, 
+  carriers,
+  onAddCarrier,
+  onEditCarrier,
   onDeleteCarrier,
   onCopyCarrier,
-  staticIp = false,
-  slash29 = false,
-  mikrotikRequired = false
+  isMinimized = false,
+  staticIp,
+  slash29,
+  mikrotikRequired
 }: CircuitQuoteCarriersProps) => {
-  const { isAdmin } = useAuth();
-
   if (isMinimized) {
-    return <CarrierTags carriers={carriers} />;
+    return (
+      <div className="space-y-4">
+        <CarrierTags 
+          staticIp={staticIp}
+          slash29={slash29}
+          mikrotikRequired={mikrotikRequired}
+        />
+        <div className="space-y-2">
+          {carriers.map((carrier) => (
+            <CarrierCard
+              key={carrier.id}
+              carrier={carrier}
+              onEdit={onEditCarrier}
+              onDelete={onDeleteCarrier}
+              onCopy={onCopyCarrier}
+            />
+          ))}
+        </div>
+      </div>
+    );
   }
-
-  // Sort carriers by carrier name first, then by speed
-  const sortedCarriers = [...carriers].sort((a, b) => {
-    const carrierComparison = a.carrier.localeCompare(b.carrier);
-    if (carrierComparison !== 0) {
-      return carrierComparison;
-    }
-    return a.speed.localeCompare(b.speed);
-  });
 
   return (
     <div className="space-y-4">
-      <div className="flex justify-between items-center">
-        <h4 className="font-medium text-gray-900">Carrier Quotes</h4>
-        {isAdmin && onAddCarrier && (
-          <Button
-            size="sm"
-            onClick={onAddCarrier}
-            className="bg-purple-600 hover:bg-purple-700"
-          >
-            <Plus className="h-4 w-4 mr-1" />
-            Add Carrier
-          </Button>
-        )}
-      </div>
+      <CarrierTags 
+        staticIp={staticIp}
+        slash29={slash29}
+        mikrotikRequired={mikrotikRequired}
+      />
       
-      <div className="grid gap-3">
-        {sortedCarriers.map((carrier) => (
+      <div className="space-y-2">
+        {carriers.length > 0 && (
+          <CarrierCard
+            key={carriers[0].id}
+            carrier={carriers[0]}
+            onEdit={onEditCarrier}
+            onDelete={onDeleteCarrier}
+            onCopy={onCopyCarrier}
+            showHeader={true}
+          />
+        )}
+        {carriers.slice(1).map((carrier) => (
           <CarrierCard
             key={carrier.id}
             carrier={carrier}
-            onEdit={isAdmin ? onEditCarrier : undefined}
-            onDelete={isAdmin ? onDeleteCarrier : undefined}
-            onCopy={isAdmin ? onCopyCarrier : undefined}
+            onEdit={onEditCarrier}
+            onDelete={onDeleteCarrier}
+            onCopy={onCopyCarrier}
           />
         ))}
       </div>
