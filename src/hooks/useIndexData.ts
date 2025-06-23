@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
@@ -56,13 +55,14 @@ export const useIndexData = () => {
     if (!user) return;
 
     try {
-      // Make sure to include user_id in the select statement
+      // Include profiles join to get salesperson information upfront
       let query = supabase
         .from('quotes')
         .select(`
           *,
           user_id,
-          client_info:client_info_id(*)
+          client_info:client_info_id(*),
+          profiles:user_id(full_name, email)
         `)
         .eq('archived', false);
 
@@ -80,7 +80,11 @@ export const useIndexData = () => {
           variant: "destructive"
         });
       } else {
-        console.log('Fetched quotes with user_id:', data?.map(q => ({ id: q.id, user_id: q.user_id })));
+        console.log('Fetched quotes with user_id and profiles:', data?.map(q => ({ 
+          id: q.id, 
+          user_id: q.user_id, 
+          profile: q.profiles 
+        })));
         const quotesData = (data || []).map(quote => ({
           id: quote.id,
           clientId: quote.client_id || "", // Ensure clientId is included
@@ -92,6 +96,8 @@ export const useIndexData = () => {
           description: quote.description || "",
           status: quote.status || 'pending',
           user_id: quote.user_id, // Ensure user_id is explicitly included
+          // Include salesperson information from the join
+          salespersonName: quote.profiles?.full_name || quote.profiles?.email || 'Sales Team',
           quoteNumber: quote.quote_number,
           quoteMonth: quote.quote_month,
           quoteYear: quote.quote_year,
