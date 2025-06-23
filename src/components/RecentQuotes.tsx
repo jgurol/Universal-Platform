@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -195,6 +196,7 @@ export const RecentQuotes = ({
               onUpdateQuote={onUpdateQuote}
               onCopyQuote={handleCopyQuote}
               onUnarchiveQuote={onUnarchiveQuote}
+              onPermanentlyDeleteQuote={onPermanentlyDeleteQuote}
             />
           )}
         </CardContent>
