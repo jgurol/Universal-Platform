@@ -1,5 +1,5 @@
 
-import { ClientInfo } from "@/pages/Index";
+import { ClientInfo } from "@/types/index";
 import { ClientInfoList } from "@/components/ClientInfoList";
 
 interface ClientManagementContentProps {

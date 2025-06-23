@@ -3,7 +3,7 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { Client, ClientInfo } from "@/pages/Index";
+import { Client, ClientInfo } from "@/types/index";
 
 interface BasicInfoTabProps {
   clientId: string;

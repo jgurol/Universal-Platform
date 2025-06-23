@@ -1,6 +1,6 @@
 
 import { useState } from "react";
-import { Quote, ClientInfo } from "@/pages/Index";
+import { Quote, ClientInfo } from "@/types/index";
 import { TableRow } from "@/components/ui/table";
 import { EmailQuoteDialog } from "@/components/EmailQuoteDialog";
 import { QuoteTableCells } from "./QuoteTableCells";

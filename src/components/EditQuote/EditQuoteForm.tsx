@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { Quote, Client, ClientInfo } from "@/pages/Index";
+import { Quote, Client, ClientInfo } from "@/types/index";
 import { AddressSelector } from "@/components/AddressSelector";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";

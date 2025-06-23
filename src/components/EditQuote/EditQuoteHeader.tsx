@@ -1,7 +1,7 @@
 
 import { DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { QuoteDetailsSection } from "@/components/QuoteDetailsSection";
-import { Client } from "@/pages/Index";
+import { Client } from "@/types/index";
 
 interface EditQuoteHeaderProps {
   quoteNumber: string;

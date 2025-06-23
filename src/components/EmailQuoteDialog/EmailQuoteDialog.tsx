@@ -1,7 +1,7 @@
 
 import { useState } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Quote, ClientInfo } from "@/pages/Index";
+import { Quote, ClientInfo } from "@/types/index";
 import { EmailStatusIndicator } from "./EmailStatusIndicator";
 import { EmailQuoteForm } from "./EmailQuoteForm";
 

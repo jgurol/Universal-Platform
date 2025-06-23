@@ -4,7 +4,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { AlertTriangle } from "lucide-react";
-import { Client } from "@/pages/Index";
+import { Client } from "@/types/index";
 
 interface DeleteAgentDialogProps {
   open: boolean;

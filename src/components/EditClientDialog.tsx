@@ -1,9 +1,10 @@
+
 import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Client, Transaction } from "@/pages/Index";
+import { Client, Transaction } from "@/types/index";
 import { useToast } from "@/hooks/use-toast";
 
 interface EditClientDialogProps {

@@ -1,7 +1,8 @@
+
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Quote, Client, ClientInfo } from "@/pages/Index";
+import { Quote, Client, ClientInfo } from "@/types/index";
 import { AddQuoteDialog } from "@/components/AddQuoteDialog";
 import { EditQuoteDialog } from "@/components/EditQuoteDialog";
 import { QuoteHeader } from "@/components/QuoteHeader";

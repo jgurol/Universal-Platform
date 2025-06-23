@@ -1,6 +1,6 @@
 
 import { useState } from "react";
-import { ClientInfo } from "@/pages/Index";
+import { ClientInfo } from "@/types/index";
 import { ClientAddressList } from "@/components/ClientAddressList";
 import { useClientAddresses } from "@/hooks/useClientAddresses";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
