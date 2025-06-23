@@ -8,6 +8,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
 import { Mail } from "lucide-react";
 import { EmailFormFields } from "./EmailFormFields";
+import { EmailTemplateSelector } from "./EmailTemplateSelector";
+import { EmailTemplate } from "@/hooks/useEmailTemplates";
 
 interface EmailQuoteFormProps {
   quote: Quote;
@@ -37,6 +39,8 @@ export const EmailQuoteForm = ({
   const [quoteOwnerEmail, setQuoteOwnerEmail] = useState('');
   const [ownerNameLoaded, setOwnerNameLoaded] = useState(false);
   const [messageTemplateSet, setMessageTemplateSet] = useState(false);
+  const [selectedTemplateId, setSelectedTemplateId] = useState("none");
+  const [isUsingTemplate, setIsUsingTemplate] = useState(false);
   const { toast } = useToast();
   const { user, isAdmin } = useAuth();
 
@@ -129,7 +133,7 @@ export const EmailQuoteForm = ({
 
   // Set the message template with the quote owner's name and primary contact name - ONLY ONCE
   useEffect(() => {
-    if (!ownerNameLoaded || messageTemplateSet) {
+    if (!ownerNameLoaded || messageTemplateSet || isUsingTemplate) {
       return;
     }
 
@@ -161,7 +165,26 @@ ${quoteOwnerName}`;
     console.log('EmailQuoteForm - Setting message template with greeting:', greeting);
     setMessage(messageTemplate);
     setMessageTemplateSet(true);
-  }, [ownerNameLoaded, quoteOwnerName, messageTemplateSet, transformedContacts]);
+  }, [ownerNameLoaded, quoteOwnerName, messageTemplateSet, transformedContacts, isUsingTemplate]);
+
+  const handleTemplateSelect = (template: EmailTemplate | null) => {
+    if (template) {
+      console.log('EmailQuoteForm - Applying template:', template.name);
+      setSelectedTemplateId(template.id);
+      setSubject(template.subject);
+      setMessage(template.content);
+      setIsUsingTemplate(true);
+      setMessageTemplateSet(true);
+    } else {
+      console.log('EmailQuoteForm - Clearing template, using default');
+      setSelectedTemplateId("none");
+      setIsUsingTemplate(false);
+      setMessageTemplateSet(false);
+      // Reset to default subject and clear message so the default template gets applied
+      setSubject(`Quote #${quote.quoteNumber || quote.id.slice(0, 8)} - ${quote.description || 'Service Agreement'}`);
+      setMessage('');
+    }
+  };
 
   // Handle direct recipient email changes
   const handleRecipientEmailChange = (value: string) => {
@@ -354,6 +377,11 @@ ${quoteOwnerName}`;
 
   return (
     <div className="space-y-4">
+      <EmailTemplateSelector
+        selectedTemplateId={selectedTemplateId}
+        onTemplateSelect={handleTemplateSelect}
+      />
+      
       <EmailFormFields
         subject={subject}
         onSubjectChange={setSubject}
