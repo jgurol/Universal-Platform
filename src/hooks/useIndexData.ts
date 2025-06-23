@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
@@ -86,7 +87,7 @@ export const useIndexData = () => {
           clientName: quote.client_info?.company_name || 'Unknown Client',
           companyName: quote.client_info?.company_name || '',
           clientInfoId: quote.client_info_id,
-          amount: parseFloat(quote.amount || "0"),
+          amount: parseFloat(String(quote.amount || 0)),
           date: quote.date,
           description: quote.description || "",
           status: quote.status || 'pending',
@@ -94,11 +95,11 @@ export const useIndexData = () => {
           quoteNumber: quote.quote_number,
           quoteMonth: quote.quote_month,
           quoteYear: quote.quote_year,
-          commission: parseFloat(quote.commission || "0"),
-          commissionOverride: quote.commission_override ? parseFloat(quote.commission_override) : undefined,
+          commission: parseFloat(String(quote.commission || 0)),
+          commissionOverride: quote.commission_override ? parseFloat(String(quote.commission_override)) : undefined,
           expiresAt: quote.expires_at,
           notes: quote.notes,
-          quoteItems: quote.quote_items || [],
+          quoteItems: [], // Initialize as empty array since quote_items doesn't exist on the base quote object
           billingAddress: quote.billing_address,
           serviceAddress: quote.service_address,
           templateId: quote.template_id,
