@@ -1,7 +1,6 @@
-
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
-import { Client } from "@/pages/Index";
+import { Client } from "@/types/index";
 
 interface QuoteDetailsSectionProps {
   quoteNumber: string;

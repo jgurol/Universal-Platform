@@ -1,7 +1,7 @@
 
 import { useState } from "react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { Transaction, Client, ClientInfo } from "@/pages/Index";
+import { Transaction, Client, ClientInfo } from "@/types/index";
 import { AddTransactionDialog } from "@/components/AddTransactionDialog";
 import { EditTransactionDialog } from "@/components/EditTransactionDialog";
 import { TransactionHeader } from "@/components/TransactionHeader";

@@ -1,10 +1,9 @@
-
 import { useState } from "react";
 import { Table, TableBody, TableHeader, TableRow } from "@/components/ui/table";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { QuoteTableHeader } from "./QuoteTable/QuoteTableHeader";
 import { QuoteTableRow } from "./QuoteTable/QuoteTableRow";
-import { Quote, Client, ClientInfo } from "@/pages/Index";
+import { Quote, Client, ClientInfo } from "@/types/index";
 
 type SortField = 'salesperson' | 'quoteNumber' | 'customerName' | 'status';
 type SortDirection = 'asc' | 'desc';

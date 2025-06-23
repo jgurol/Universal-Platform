@@ -1,295 +1,241 @@
 import { useState, useEffect } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useForm } from "react-hook-form";
+import { Textarea } from "@/components/ui/textarea";
+import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { DealRegistration } from "@/services/dealRegistrationService";
-import { ClientInfo } from "@/pages/Index";
+import { ClientInfo } from "@/types/index";
+
+interface DealRegistration {
+  id: string;
+  client_name: string;
+  client_info_id: string | null;
+  location: string;
+  deal_value: number;
+  status: string;
+  notes: string | null;
+  created_at: string;
+  updated_at: string;
+  user_id: string;
+}
 
 interface EditDealDialogProps {
+  deal: DealRegistration | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onUpdateDeal: (deal: DealRegistration) => void;
-  deal: DealRegistration | null;
+  onDealUpdated: () => void;
   clientInfos: ClientInfo[];
 }
 
-interface Agent {
-  id: string;
-  first_name: string;
-  last_name: string;
-  company_name: string;
-}
-
-const dealStages = [
-  'prospecting',
-  'qualification',
-  'proposal',
-  'negotiation',
-  'closed-won',
-  'closed-lost'
-];
-
-const dealStatuses = [
-  'active',
-  'inactive',
-  'completed'
-];
-
-export const EditDealDialog = ({ 
-  open, 
-  onOpenChange, 
-  onUpdateDeal,
+export const EditDealDialog = ({
   deal,
-  clientInfos 
+  open,
+  onOpenChange,
+  onDealUpdated,
+  clientInfos
 }: EditDealDialogProps) => {
-  const [agents, setAgents] = useState<Agent[]>([]);
+  const [clientName, setClientName] = useState("");
+  const [clientInfoId, setClientInfoId] = useState<string>("");
+  const [location, setLocation] = useState("");
+  const [dealValue, setDealValue] = useState("");
+  const [status, setStatus] = useState("pending");
+  const [notes, setNotes] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const { toast } = useToast();
 
-  const { register, handleSubmit, reset, setValue, watch, formState: { errors } } = useForm<DealRegistration>();
-
-  const selectedStage = watch('stage');
-  const selectedStatus = watch('status');
-
+  // Reset form when dialog opens/closes or deal changes
   useEffect(() => {
-    if (deal && open) {
-      reset({
-        ...deal,
-        expected_close_date: deal.expected_close_date || null
+    if (open && deal) {
+      setClientName(deal.client_name || "");
+      setClientInfoId(deal.client_info_id || "");
+      setLocation(deal.location || "");
+      setDealValue(deal.deal_value?.toString() || "");
+      setStatus(deal.status || "pending");
+      setNotes(deal.notes || "");
+    } else if (!open) {
+      // Reset form when dialog closes
+      setClientName("");
+      setClientInfoId("");
+      setLocation("");
+      setDealValue("");
+      setStatus("pending");
+      setNotes("");
+    }
+  }, [open, deal]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!deal) return;
+    
+    if (!clientName.trim()) {
+      toast({
+        title: "Error",
+        description: "Client name is required",
+        variant: "destructive",
       });
+      return;
     }
-  }, [deal, open, reset]);
 
-  useEffect(() => {
-    if (open) {
-      fetchAgents();
+    if (!location.trim()) {
+      toast({
+        title: "Error", 
+        description: "Location is required",
+        variant: "destructive",
+      });
+      return;
     }
-  }, [open]);
 
-  const fetchAgents = async () => {
+    if (!dealValue || isNaN(Number(dealValue)) || Number(dealValue) <= 0) {
+      toast({
+        title: "Error",
+        description: "Please enter a valid deal value",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setIsLoading(true);
+
     try {
-      const { data, error } = await supabase
-        .from('agents')
-        .select('id, first_name, last_name, company_name')
-        .order('last_name', { ascending: true });
-      
-      if (error) {
-        console.error('Error fetching agents:', error);
-        setAgents([]);
-      } else {
-        setAgents(data || []);
-      }
-    } catch (err) {
-      console.error('Exception in fetchAgents:', err);
-      setAgents([]);
+      const { error } = await supabase
+        .from('deal_registrations')
+        .update({
+          client_name: clientName.trim(),
+          client_info_id: clientInfoId || null,
+          location: location.trim(),
+          deal_value: Number(dealValue),
+          status,
+          notes: notes.trim() || null,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', deal.id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: "Deal registration updated successfully",
+      });
+
+      onDealUpdated();
+      onOpenChange(false);
+    } catch (error) {
+      console.error('Error updating deal registration:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update deal registration. Please try again.",
+        variant: "destructive",
+      });
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleOpenChange = (newOpen: boolean) => {
-    if (!newOpen) {
-      reset();
-    }
-    onOpenChange(newOpen);
-  };
-
-  const onSubmit = (data: DealRegistration) => {
-    if (deal) {
-      onUpdateDeal({
-        ...deal,
-        ...data
-      });
-      onOpenChange(false);
-    }
-  };
-
-  if (!deal) return null;
-
   return (
-    <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
-          <DialogTitle>Edit Deal</DialogTitle>
+          <DialogTitle>Edit Deal Registration</DialogTitle>
           <DialogDescription>
-            Update the deal registration details.
+            Update the deal registration details below.
           </DialogDescription>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="deal_name" className="required">Deal Name</Label>
-              <Input
-                id="deal_name"
-                {...register("deal_name", { required: "Deal name is required" })}
-                placeholder="Enter deal name"
-              />
-              {errors.deal_name && (
-                <p className="text-sm text-red-500">{errors.deal_name.message}</p>
-              )}
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="deal_value" className="required">Deal Value ($)</Label>
-              <Input
-                id="deal_value"
-                type="number"
-                step="0.01"
-                min="0"
-                {...register("deal_value", { 
-                  required: "Deal value is required",
-                  min: { value: 0, message: "Deal value must be positive" }
-                })}
-                placeholder="0.00"
-              />
-              {errors.deal_value && (
-                <p className="text-sm text-red-500">{errors.deal_value.message}</p>
-              )}
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="stage">Deal Stage</Label>
-              <Select value={selectedStage} onValueChange={(value) => setValue("stage", value)}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select stage" />
-                </SelectTrigger>
-                <SelectContent>
-                  {dealStages.map((stage) => (
-                    <SelectItem key={stage} value={stage}>
-                      {stage.charAt(0).toUpperCase() + stage.slice(1).replace('-', ' ')}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="probability">Probability (%)</Label>
-              <Input
-                id="probability"
-                type="number"
-                min="0"
-                max="100"
-                {...register("probability", {
-                  min: { value: 0, message: "Probability must be between 0 and 100" },
-                  max: { value: 100, message: "Probability must be between 0 and 100" }
-                })}
-                placeholder="50"
-              />
-              {errors.probability && (
-                <p className="text-sm text-red-500">{errors.probability.message}</p>
-              )}
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="status">Status</Label>
-              <Select value={selectedStatus} onValueChange={(value) => setValue("status", value)}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select status" />
-                </SelectTrigger>
-                <SelectContent>
-                  {dealStatuses.map((status) => (
-                    <SelectItem key={status} value={status}>
-                      {status.charAt(0).toUpperCase() + status.slice(1)}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-
+        <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="expected_close_date">Expected Close Date</Label>
+            <Label htmlFor="clientName">Client Name *</Label>
             <Input
-              id="expected_close_date"
-              type="date"
-              {...register("expected_close_date")}
-            />
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="client_info_id">Client</Label>
-              <Select 
-                value={deal.client_info_id || "none"} 
-                onValueChange={(value) => setValue("client_info_id", value === "none" ? null : value)}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select client" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">None</SelectItem>
-                  {clientInfos.map((client) => (
-                    <SelectItem key={client.id} value={client.id}>
-                      {client.company_name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="agent_id">Associated Agent</Label>
-              <Select 
-                value={deal.agent_id || "none"} 
-                onValueChange={(value) => setValue("agent_id", value === "none" ? null : value)}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder={isLoading ? "Loading agents..." : "Select agent"} />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">None</SelectItem>
-                  {agents.map((agent) => (
-                    <SelectItem key={agent.id} value={agent.id}>
-                      {`${agent.first_name} ${agent.last_name}${agent.company_name ? ` (${agent.company_name})` : ''}`}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="description">Description of customer intention</Label>
-            <Textarea
-              id="description"
-              {...register("description")}
-              placeholder="Example: Customer looking for both internet and phone service"
-              rows={3}
+              id="clientName"
+              value={clientName}
+              onChange={(e) => setClientName(e.target.value)}
+              placeholder="Enter client name"
+              required
             />
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="notes">Agent notes for California Telecom</Label>
+            <Label htmlFor="clientInfo">Client Company (Optional)</Label>
+            <Select value={clientInfoId} onValueChange={setClientInfoId}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select a client company" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="">No client company</SelectItem>
+                {clientInfos.map((clientInfo) => (
+                  <SelectItem key={clientInfo.id} value={clientInfo.id}>
+                    {clientInfo.company_name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="location">Location *</Label>
+            <Input
+              id="location"
+              value={location}
+              onChange={(e) => setLocation(e.target.value)}
+              placeholder="Enter location"
+              required
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="dealValue">Deal Value ($) *</Label>
+            <Input
+              id="dealValue"
+              type="number"
+              step="0.01"
+              min="0"
+              value={dealValue}
+              onChange={(e) => setDealValue(e.target.value)}
+              placeholder="Enter deal value"
+              required
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="status">Status</Label>
+            <Select value={status} onValueChange={setStatus}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="pending">Pending</SelectItem>
+                <SelectItem value="approved">Approved</SelectItem>
+                <SelectItem value="rejected">Rejected</SelectItem>
+                <SelectItem value="completed">Completed</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="notes">Notes</Label>
             <Textarea
               id="notes"
-              {...register("notes")}
-              placeholder="Example: Customer currently has AT&T and does not want AT&T"
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              placeholder="Additional notes about the deal"
               rows={3}
             />
           </div>
 
-          <div className="flex justify-end space-x-2">
-            <Button 
-              type="button" 
-              variant="outline" 
-              onClick={() => handleOpenChange(false)}
+          <div className="flex justify-end space-x-2 pt-4">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => onOpenChange(false)}
+              disabled={isLoading}
             >
               Cancel
             </Button>
-            <Button 
-              type="submit" 
-              className="bg-blue-600 hover:bg-blue-700"
-            >
-              Update Deal
+            <Button type="submit" disabled={isLoading}>
+              {isLoading ? "Updating..." : "Update Deal"}
             </Button>
           </div>
         </form>

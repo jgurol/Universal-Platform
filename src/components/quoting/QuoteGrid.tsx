@@ -1,6 +1,6 @@
 
 import { useState } from "react";
-import { Quote, ClientInfo } from "@/pages/Index";
+import { Quote, ClientInfo } from "@/types/index";
 import { QuoteCard } from "@/components/QuoteCard";
 import { QuoteTable } from "@/components/QuoteTable";
 import { Button } from "@/components/ui/button";

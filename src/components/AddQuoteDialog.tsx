@@ -5,16 +5,12 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Quote, Client, ClientInfo } from "@/pages/Index";
-import { getTodayInTimezone } from "@/utils/dateUtils";
+import { Quote, Client, ClientInfo } from "@/types/index";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { QuoteItemsTab } from "@/components/QuoteItemsTab";
+import { AddressSelector } from "@/components/AddressSelector";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
-import { QuoteItemsManager } from "@/components/QuoteItemsManager";
-import { QuoteItemData } from "@/types/quoteItems";
-import { AddressSelector } from "@/components/AddressSelector";
-import { useToast } from "@/hooks/use-toast";
-import { DealRegistration } from "@/services/dealRegistrationService";
 import type { Database } from "@/integrations/supabase/types";
 
 type QuoteTemplate = Database['public']['Tables']['quote_templates']['Row'];
@@ -633,7 +629,7 @@ export const AddQuoteDialog = ({ open, onOpenChange, onAddQuote, clients, client
 
           <div className="space-y-2">
             <Label className="text-sm font-medium">Quote Items *</Label>
-            <QuoteItemsManager 
+            <QuoteItemsTab 
               items={quoteItems}
               onItemsChange={setQuoteItems}
               clientInfoId={clientInfoId !== "none" ? clientInfoId : undefined}

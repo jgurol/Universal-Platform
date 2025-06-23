@@ -1,5 +1,5 @@
 
-import { Transaction, ClientInfo } from "@/pages/Index";
+import { Transaction, ClientInfo } from "@/types/index";
 import { TransactionTable } from "@/components/TransactionTable";
 
 interface TransactionListProps {

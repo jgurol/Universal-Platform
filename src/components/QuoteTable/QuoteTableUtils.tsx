@@ -1,20 +1,43 @@
+import { Badge } from "@/components/ui/badge";
+import { Quote } from "@/types/index";
+import { Clock, CheckCircle, XCircle, FileText, Archive } from "lucide-react";
 
-import { Quote } from "@/pages/Index";
-
-export const getMRCTotal = (quote: Quote) => {
-  if (!quote.quoteItems || quote.quoteItems.length === 0) {
-    return 0;
+export const getStatusBadge = (quote: Quote) => {
+  switch (quote.status) {
+    case 'pending':
+      return (
+        <Badge variant="outline">
+          <Clock className="mr-2 h-4 w-4" />
+          Pending
+        </Badge>
+      );
+    case 'approved':
+      return (
+        <Badge variant="outline">
+          <CheckCircle className="mr-2 h-4 w-4" />
+          Approved
+        </Badge>
+      );
+    case 'rejected':
+      return (
+        <Badge variant="outline">
+          <XCircle className="mr-2 h-4 w-4" />
+          Rejected
+        </Badge>
+      );
+    case 'archived':
+      return (
+        <Badge variant="outline">
+          <Archive className="mr-2 h-4 w-4" />
+          Archived
+        </Badge>
+      );
+    default:
+      return (
+        <Badge variant="outline">
+          <FileText className="mr-2 h-4 w-4" />
+          {quote.status}
+        </Badge>
+      );
   }
-  return quote.quoteItems
-    .filter(item => item.charge_type === 'MRC')
-    .reduce((total, item) => total + (Number(item.total_price) || 0), 0);
-};
-
-export const getNRCTotal = (quote: Quote) => {
-  if (!quote.quoteItems || quote.quoteItems.length === 0) {
-    return 0;
-  }
-  return quote.quoteItems
-    .filter(item => item.charge_type === 'NRC')
-    .reduce((total, item) => total + (Number(item.total_price) || 0), 0);
 };

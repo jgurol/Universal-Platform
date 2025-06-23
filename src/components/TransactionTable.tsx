@@ -2,7 +2,7 @@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { CheckCircle, Clock, DollarSign, Pencil, Trash2 } from "lucide-react";
-import { Transaction, ClientInfo } from "@/pages/Index";
+import { Transaction, ClientInfo } from "@/types/index";
 import {
   Table,
   TableBody,

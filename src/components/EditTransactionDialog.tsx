@@ -1,14 +1,13 @@
 import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Transaction, Client, ClientInfo } from "@/pages/Index";
-import { BasicInfoTab } from "./BasicInfoTab";
-import { InvoiceDetailsTab } from "./InvoiceDetailsTab";
-import { PaymentTab } from "./PaymentTab";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { formatDateForInput, createDateString } from "@/utils/dateUtils";
+import { Transaction, Client, ClientInfo } from "@/types/index";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { BasicInfoTab } from "@/components/BasicInfoTab";
+import { PaymentDetailsTab } from "@/components/PaymentDetailsTab";
+import { CommissionDetailsTab } from "@/components/CommissionDetailsTab";
 
 interface EditTransactionDialogProps {
   transaction: Transaction | null;
@@ -19,268 +18,156 @@ interface EditTransactionDialogProps {
   clientInfos: ClientInfo[];
 }
 
-export const EditTransactionDialog = ({ transaction, open, onOpenChange, onUpdateTransaction, clients, clientInfos }: EditTransactionDialogProps) => {
-  const [clientId, setClientId] = useState("");
-  const [clientInfoId, setClientInfoId] = useState("");
-  const [amount, setAmount] = useState("");
-  const [date, setDate] = useState(""); // Main transaction date
-  const [description, setDescription] = useState("");
-  const [datePaid, setDatePaid] = useState(""); // Invoice paid date - separate from transaction date
-  const [paymentMethod, setPaymentMethod] = useState("check");
-  const [referenceNumber, setReferenceNumber] = useState("");
-  const [invoiceMonth, setInvoiceMonth] = useState("");
-  const [invoiceYear, setInvoiceYear] = useState("");
-  const [invoiceNumber, setInvoiceNumber] = useState("");
-  const [isPaid, setIsPaid] = useState(false);
-  const [commissionPaidDate, setCommissionPaidDate] = useState("");
-  const [isApproved, setIsApproved] = useState(false);
-  const [commissionOverride, setCommissionOverride] = useState("");
+export const EditTransactionDialog = ({
+  transaction,
+  open,
+  onOpenChange,
+  onUpdateTransaction,
+  clients,
+  clientInfos
+}: EditTransactionDialogProps) => {
+  const [clientId, setClientId] = useState(transaction?.clientId || "");
+  const [clientInfoId, setClientInfoId] = useState(transaction?.clientInfoId || "none");
+  const [amount, setAmount] = useState(transaction?.amount.toString() || "");
+  const [date, setDate] = useState(transaction?.date || "");
+  const [description, setDescription] = useState(transaction?.description || "");
+  const [isPaid, setIsPaid] = useState(transaction?.isPaid || false);
+  const [paidDate, setPaidDate] = useState(transaction?.paidDate || "");
+  const [paymentMethod, setPaymentMethod] = useState(transaction?.paymentMethod || "unpaid");
+  const [referenceNumber, setReferenceNumber] = useState(transaction?.referenceNumber || "");
+  const [commissionRate, setCommissionRate] = useState(transaction?.commissionRate?.toString() || "");
+  const [commissionAmount, setCommissionAmount] = useState(transaction?.commissionAmount?.toString() || "");
+  const [isApproved, setIsApproved] = useState(transaction?.isApproved || false);
+  const [commissionOverride, setCommissionOverride] = useState(transaction?.commissionOverride?.toString() || "");
+  const [invoiceMonth, setInvoiceMonth] = useState(transaction?.invoiceMonth || "");
+  const [invoiceYear, setInvoiceYear] = useState(transaction?.invoiceYear || "");
+  const [invoiceNumber, setInvoiceNumber] = useState(transaction?.invoiceNumber || "");
 
-  // Filter client infos based on selected agent
-  const [filteredClientInfos, setFilteredClientInfos] = useState<ClientInfo[]>(clientInfos);
-
-  // Update form values when transaction changes
   useEffect(() => {
     if (transaction) {
-      console.log("[EditTransactionDialog] Loading transaction:", transaction);
-      console.log("[EditTransactionDialog] Original transaction date:", transaction.date);
-      console.log("[EditTransactionDialog] Original date paid:", transaction.datePaid);
-      
-      setClientId(transaction.clientId);
+      setClientId(transaction.clientId || "");
       setClientInfoId(transaction.clientInfoId || "none");
-      setAmount(transaction.amount.toString());
-      
-      // Format the transaction date for input using timezone-aware utilities
-      const formattedDate = formatDateForInput(transaction.date);
-      console.log("[EditTransactionDialog] Setting transaction date to:", formattedDate);
-      setDate(formattedDate);
-      
-      setDescription(transaction.description);
-      
-      // Format the date paid for input using timezone-aware utilities
-      const formattedDatePaid = formatDateForInput(transaction.datePaid);
-      console.log("[EditTransactionDialog] Setting date paid to:", formattedDatePaid);
-      setDatePaid(formattedDatePaid);
-      
+      setAmount(transaction.amount.toString() || "");
+      setDate(transaction.date || "");
+      setDescription(transaction.description || "");
+      setIsPaid(transaction.isPaid || false);
+      setPaidDate(transaction.paidDate || "");
       setPaymentMethod(transaction.paymentMethod || "unpaid");
       setReferenceNumber(transaction.referenceNumber || "");
+      setCommissionRate(transaction.commissionRate?.toString() || "");
+      setCommissionAmount(transaction.commissionAmount?.toString() || "");
+      setIsApproved(transaction.isApproved || false);
+      setCommissionOverride(transaction.commissionOverride?.toString() || "");
       setInvoiceMonth(transaction.invoiceMonth || "");
       setInvoiceYear(transaction.invoiceYear || "");
       setInvoiceNumber(transaction.invoiceNumber || "");
-      setIsPaid(transaction.isPaid || false);
-      setCommissionPaidDate(formatDateForInput(transaction.commissionPaidDate));
-      setIsApproved(transaction.isApproved || false);
-      setCommissionOverride(transaction.commissionOverride?.toString() || "");
     }
   }, [transaction]);
 
-  // Handle client info selection - auto-select agent
-  useEffect(() => {
-    if (clientInfoId && clientInfoId !== "none") {
-      const selectedClientInfo = clientInfos.find(info => info.id === clientInfoId);
-      if (selectedClientInfo && selectedClientInfo.agent_id) {
-        setClientId(selectedClientInfo.agent_id);
-      }
-    }
-  }, [clientInfoId, clientInfos]);
-
-  // Update filtered client infos when agent changes
-  useEffect(() => {
-    if (clientId) {
-      setFilteredClientInfos(clientInfos.filter(info => !info.agent_id || info.agent_id === clientId));
-    } else {
-      setFilteredClientInfos(clientInfos);
-    }
-  }, [clientId, clientInfos]);
-
-  const handleImmediateUpdate = () => {
-    // Immediately save the current state to database when "unpaid" is selected
-    if (transaction && clientId && amount && date) {
-      const selectedClient = clients.find(client => client.id === clientId);
-      const selectedClientInfo = clientInfoId && clientInfoId !== "none" ? clientInfos.find(info => info.id === clientInfoId) : null;
-      
-      console.log("[EditTransactionDialog] Immediate update - sending transaction date:", date);
-      console.log("[EditTransactionDialog] Immediate update - sending date paid:", datePaid);
-      
-      if (selectedClient) {
-        onUpdateTransaction({
-          id: transaction.id,
-          clientId,
-          clientName: selectedClient.name,
-          companyName: selectedClient.companyName || selectedClient.name,
-          amount: parseFloat(amount),
-          date: createDateString(date), // Main transaction date
-          description: description || "",
-          datePaid: isPaid && datePaid ? createDateString(datePaid) : undefined, // Invoice paid date
-          paymentMethod,
-          referenceNumber: referenceNumber || undefined,
-          invoiceMonth: invoiceMonth || undefined,
-          invoiceYear: invoiceYear || undefined,
-          invoiceNumber: invoiceNumber || undefined,
-          isPaid,
-          clientInfoId: clientInfoId !== "none" ? clientInfoId : undefined,
-          clientCompanyName: selectedClientInfo?.company_name,
-          commission: transaction.commission,
-          isApproved,
-          commissionPaidDate: commissionPaidDate ? createDateString(commissionPaidDate) : undefined,
-          commissionOverride: commissionOverride ? parseFloat(commissionOverride) : undefined
-        });
-      }
-    }
-  };
-
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (transaction && clientId && amount && date) {
-      const selectedClient = clients.find(client => client.id === clientId);
-      const selectedClientInfo = clientInfoId && clientInfoId !== "none" ? clientInfos.find(info => info.id === clientInfoId) : null;
-      
-      console.log("[EditTransactionDialog] Submit - sending transaction date:", date);
-      console.log("[EditTransactionDialog] Submit - sending date paid:", datePaid);
-      
-      if (selectedClient) {
-        onUpdateTransaction({
-          id: transaction.id,
-          clientId,
-          clientName: selectedClient.name,
-          companyName: selectedClient.companyName || selectedClient.name,
-          amount: parseFloat(amount),
-          date: createDateString(date), // Main transaction date
-          description: description || "",
-          datePaid: isPaid && datePaid ? createDateString(datePaid) : undefined, // Invoice paid date
-          paymentMethod,
-          referenceNumber: referenceNumber || undefined,
-          invoiceMonth: invoiceMonth || undefined,
-          invoiceYear: invoiceYear || undefined,
-          invoiceNumber: invoiceNumber || undefined,
-          isPaid,
-          clientInfoId: clientInfoId !== "none" ? clientInfoId : undefined,
-          clientCompanyName: selectedClientInfo?.company_name,
-          commission: transaction.commission,
-          isApproved,
-          commissionPaidDate: commissionPaidDate ? createDateString(commissionPaidDate) : undefined,
-          commissionOverride: commissionOverride ? parseFloat(commissionOverride) : undefined
-        });
-        onOpenChange(false);
-      }
-    }
+
+    if (!transaction) return;
+
+    const updatedTransaction: Transaction = {
+      ...transaction,
+      clientId,
+      clientName: clients.find(client => client.id === clientId)?.name || "No Agent Assigned",
+      companyName: clients.find(client => client.id === clientId)?.companyName || undefined,
+      amount: parseFloat(amount),
+      date,
+      description,
+      isPaid,
+      paidDate,
+      paymentMethod,
+      referenceNumber,
+      commissionRate: parseFloat(commissionRate),
+      commissionAmount: parseFloat(commissionAmount),
+      isApproved,
+      clientInfoId: clientInfoId !== "none" ? clientInfoId : undefined,
+      clientCompanyName: clientInfos.find(ci => ci.id === clientInfoId)?.company_name,
+      commissionOverride: commissionOverride ? parseFloat(commissionOverride) : undefined,
+      invoiceMonth,
+      invoiceYear,
+      invoiceNumber
+    };
+
+    onUpdateTransaction(updatedTransaction);
+    onOpenChange(false);
   };
 
-  const selectedAgent = clientId ? clients.find(c => c.id === clientId) : null;
-  const selectedClientInfo = clientInfoId && clientInfoId !== "none" ? clientInfos.find(info => info.id === clientInfoId) : null;
-
-  // Calculate effective commission rate for display
-  const getEffectiveCommissionRate = () => {
-    if (commissionOverride) return parseFloat(commissionOverride);
-    if (selectedClientInfo?.commission_override) return selectedClientInfo.commission_override;
-    if (selectedAgent) return selectedAgent.commissionRate;
-    return null;
-  };
-
-  const effectiveRate = getEffectiveCommissionRate();
+  const filteredClientInfos = clientInfos.filter(clientInfo =>
+    clients.some(client => client.companyName === clientInfo.company_name)
+  );
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[550px] max-h-[90vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-[825px]">
         <DialogHeader>
           <DialogTitle>Edit Transaction</DialogTitle>
           <DialogDescription>
-            Update transaction details.
+            Make changes to the transaction details.
           </DialogDescription>
         </DialogHeader>
-        {transaction && (
-          <form onSubmit={handleSubmit}>
-            <Tabs defaultValue="basic" className="w-full">
-              <TabsList className="grid grid-cols-3 mb-4">
-                <TabsTrigger value="basic">Basic Info</TabsTrigger>
-                <TabsTrigger value="invoice">Invoice Details</TabsTrigger>
-                <TabsTrigger value="payment">Commission</TabsTrigger>
-              </TabsList>
-              
-              <TabsContent value="basic">
-                <div className="space-y-4">
-                  <BasicInfoTab
-                    clientId={clientId}
-                    setClientId={setClientId}
-                    clientInfoId={clientInfoId}
-                    setClientInfoId={setClientInfoId}
-                    amount={amount}
-                    setAmount={setAmount}
-                    date={date}
-                    setDate={setDate}
-                    description={description}
-                    setDescription={setDescription}
-                    clients={clients}
-                    clientInfos={clientInfos}
-                    filteredClientInfos={filteredClientInfos}
-                  />
-                  
-                  {/* Commission Override */}
-                  <div className="space-y-2">
-                    <Label htmlFor="edit-commissionOverride">Transaction Commission Override (%)</Label>
-                    <Input
-                      id="edit-commissionOverride"
-                      type="number"
-                      step="0.01"
-                      min="0"
-                      max="100"
-                      value={commissionOverride}
-                      onChange={(e) => setCommissionOverride(e.target.value)}
-                      placeholder="Enter commission rate override (optional)"
-                    />
-                    <div className="text-xs text-gray-500">
-                      Optional. This will override both client and agent commission rates for this transaction.
-                      {effectiveRate && (
-                        <div className="mt-1 font-medium text-blue-600">
-                          Effective rate: {effectiveRate}%
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              </TabsContent>
-              
-              <TabsContent value="invoice">
-                <InvoiceDetailsTab
-                  invoiceMonth={invoiceMonth}
-                  setInvoiceMonth={setInvoiceMonth}
-                  invoiceYear={invoiceYear}
-                  setInvoiceYear={setInvoiceYear}
-                  invoiceNumber={invoiceNumber}
-                  setInvoiceNumber={setInvoiceNumber}
-                  isPaid={isPaid}
-                  setIsPaid={setIsPaid}
-                  datePaid={datePaid}
-                  setDatePaid={setDatePaid}
-                />
-              </TabsContent>
-              
-              <TabsContent value="payment">
-                <PaymentTab
-                  isPaid={isPaid}
-                  paymentMethod={paymentMethod}
-                  setPaymentMethod={setPaymentMethod}
-                  referenceNumber={referenceNumber}
-                  setReferenceNumber={setReferenceNumber}
-                  commissionPaidDate={commissionPaidDate}
-                  setCommissionPaidDate={setCommissionPaidDate}
-                  isApproved={isApproved}
-                  setIsApproved={setIsApproved}
-                  onImmediateUpdate={handleImmediateUpdate}
-                />
-              </TabsContent>
-            </Tabs>
-            
-            <div className="flex justify-end space-x-2 mt-6">
-              <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-                Cancel
-              </Button>
-              <Button type="submit" className="bg-blue-600 hover:bg-blue-700">
-                Update Transaction
-              </Button>
-            </div>
-          </form>
-        )}
+        <form onSubmit={handleSubmit}>
+          <Tabs defaultValue="basic" className="space-y-4">
+            <TabsList>
+              <TabsTrigger value="basic">Basic Info</TabsTrigger>
+              <TabsTrigger value="payment">Payment Details</TabsTrigger>
+              <TabsTrigger value="commission">Commission Details</TabsTrigger>
+            </TabsList>
+            <TabsContent value="basic">
+              <BasicInfoTab
+                clientId={clientId}
+                setClientId={setClientId}
+                clientInfoId={clientInfoId}
+                setClientInfoId={setClientInfoId}
+                amount={amount}
+                setAmount={setAmount}
+                date={date}
+                setDate={setDate}
+                description={description}
+                setDescription={setDescription}
+                clients={clients}
+                clientInfos={clientInfos}
+                filteredClientInfos={filteredClientInfos}
+              />
+            </TabsContent>
+            <TabsContent value="payment">
+              <PaymentDetailsTab
+                isPaid={isPaid}
+                setIsPaid={setIsPaid}
+                paidDate={paidDate}
+                setPaidDate={setPaidDate}
+                paymentMethod={paymentMethod}
+                setPaymentMethod={setPaymentMethod}
+                referenceNumber={referenceNumber}
+                setReferenceNumber={setReferenceNumber}
+              />
+            </TabsContent>
+            <TabsContent value="commission">
+              <CommissionDetailsTab
+                commissionRate={commissionRate}
+                setCommissionRate={setCommissionRate}
+                commissionAmount={commissionAmount}
+                setCommissionAmount={setCommissionAmount}
+                isApproved={isApproved}
+                setIsApproved={setIsApproved}
+                commissionOverride={commissionOverride}
+                setCommissionOverride={setCommissionOverride}
+                invoiceMonth={invoiceMonth}
+                setInvoiceMonth={setInvoiceMonth}
+                invoiceYear={invoiceYear}
+                setInvoiceYear={setInvoiceYear}
+                invoiceNumber={invoiceNumber}
+                setInvoiceNumber={setInvoiceNumber}
+              />
+            </TabsContent>
+          </Tabs>
+          <div className="flex justify-end">
+            <Button type="submit">Update Transaction</Button>
+          </div>
+        </form>
       </DialogContent>
     </Dialog>
   );

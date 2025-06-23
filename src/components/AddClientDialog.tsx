@@ -1,151 +1,121 @@
-
-import React from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { useState } from "react";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Client } from "@/pages/Index";
-import { useForm } from "react-hook-form";
+import { Client } from "@/types/index";
+import { Plus } from "lucide-react";
 
 interface AddClientDialogProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  onAddClient: (newClient: Omit<Client, "id" | "totalEarnings" | "lastPayment">) => Promise<void>;
-  onFetchClients: () => Promise<void>;
+  onAddClient: (client: Omit<Client, "id">) => void;
 }
 
-export const AddClientDialog = ({
-  open,
-  onOpenChange,
-  onAddClient,
-  onFetchClients
-}: AddClientDialogProps) => {
-  const { register, handleSubmit, reset, formState: { errors } } = useForm({
-    defaultValues: {
-      firstName: "",
-      lastName: "",
-      email: "",
-      companyName: "",
-      commissionRate: 10,
-    }
-  });
-  
-  const onSubmit = async (data: {
-    firstName: string;
-    lastName: string;
-    email: string;
-    companyName: string;
-    commissionRate: number;
-  }) => {
-    await onAddClient({
-      firstName: data.firstName,
-      lastName: data.lastName,
-      email: data.email,
-      companyName: data.companyName || null,
-      commissionRate: Number(data.commissionRate),
-      name: `${data.firstName} ${data.lastName}`,
+export const AddClientDialog = ({ onAddClient }: AddClientDialogProps) => {
+  const [open, setOpen] = useState(false);
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
+  const [email, setEmail] = useState("");
+  const [companyName, setCompanyName] = useState("");
+  const [commissionRate, setCommissionRate] = useState("0");
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    onAddClient({
+      firstName,
+      lastName,
+      name: `${firstName} ${lastName}`,
+      email,
+      companyName,
+      commissionRate: parseFloat(commissionRate),
+      totalEarnings: 0,
+      lastPayment: new Date().toISOString().split('T')[0],
     });
-    reset();
-    onOpenChange(false);
-    onFetchClients();
+    setOpen(false);
+    setFirstName("");
+    setLastName("");
+    setEmail("");
+    setCompanyName("");
+    setCommissionRate("0");
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button variant="outline">
+          <Plus className="mr-2 h-4 w-4" />
+          Add Agent
+        </Button>
+      </DialogTrigger>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>Add New Salesperson</DialogTitle>
+          <DialogTitle>Add New Agent</DialogTitle>
           <DialogDescription>
-            Add a new salesperson to receive commission payments
+            Create a new agent profile.
           </DialogDescription>
         </DialogHeader>
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="firstName">First Name</Label>
-              <Input 
-                id="firstName"
-                {...register("firstName", { required: "First name is required" })}
-              />
-              {errors.firstName && (
-                <p className="text-sm text-red-500">{errors.firstName.message}</p>
-              )}
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="lastName">Last Name</Label>
-              <Input 
-                id="lastName"
-                {...register("lastName", { required: "Last name is required" })}
-              />
-              {errors.lastName && (
-                <p className="text-sm text-red-500">{errors.lastName.message}</p>
-              )}
-            </div>
+        <form onSubmit={handleSubmit} className="grid gap-4 py-4">
+          <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="firstName" className="text-right">
+              First Name
+            </Label>
+            <Input
+              type="text"
+              id="firstName"
+              value={firstName}
+              onChange={(e) => setFirstName(e.target.value)}
+              className="col-span-3"
+            />
           </div>
-          
-          <div className="space-y-2">
-            <Label htmlFor="email">Email</Label>
-            <Input 
-              id="email"
+          <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="lastName" className="text-right">
+              Last Name
+            </Label>
+            <Input
+              type="text"
+              id="lastName"
+              value={lastName}
+              onChange={(e) => setLastName(e.target.value)}
+              className="col-span-3"
+            />
+          </div>
+          <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="email" className="text-right">
+              Email
+            </Label>
+            <Input
               type="email"
-              {...register("email", { 
-                required: "Email is required",
-                pattern: {
-                  value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
-                  message: "Invalid email address"
-                }
-              })}
+              id="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="col-span-3"
             />
-            {errors.email && (
-              <p className="text-sm text-red-500">{errors.email.message}</p>
-            )}
           </div>
-          
-          <div className="space-y-2">
-            <Label htmlFor="companyName">Company Name (Optional)</Label>
-            <Input 
+          <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="companyName" className="text-right">
+              Company Name
+            </Label>
+            <Input
+              type="text"
               id="companyName"
-              {...register("companyName")}
+              value={companyName}
+              onChange={(e) => setCompanyName(e.target.value)}
+              className="col-span-3"
             />
           </div>
-          
-          <div className="space-y-2">
-            <Label htmlFor="commissionRate">Commission Rate (%)</Label>
-            <Input 
-              id="commissionRate"
+          <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="commissionRate" className="text-right">
+              Commission Rate
+            </Label>
+            <Input
               type="number"
-              min="0"
-              max="100"
-              step="0.1"
-              {...register("commissionRate", { 
-                required: "Commission rate is required",
-                min: {
-                  value: 0,
-                  message: "Commission rate cannot be negative"
-                },
-                max: {
-                  value: 100,
-                  message: "Commission rate cannot exceed 100%"
-                }
-              })}
+              id="commissionRate"
+              value={commissionRate}
+              onChange={(e) => setCommissionRate(e.target.value)}
+              className="col-span-3"
             />
-            {errors.commissionRate && (
-              <p className="text-sm text-red-500">{errors.commissionRate.message}</p>
-            )}
           </div>
-          
-          <div className="flex justify-end space-x-2 pt-4">
-            <Button 
-              type="button" 
-              variant="outline"
-              onClick={() => {
-                reset();
-                onOpenChange(false);
-              }}
-            >
-              Cancel
-            </Button>
-            <Button type="submit">Add Salesperson</Button>
+          <div className="flex justify-end">
+            <Button type="submit">Create Agent</Button>
           </div>
         </form>
       </DialogContent>

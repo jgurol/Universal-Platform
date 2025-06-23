@@ -1,7 +1,6 @@
-
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { DollarSign, Users, FileText, Clock } from "lucide-react";
-import { Client, Quote, ClientInfo } from "@/pages/Index";
+import { Client, Quote, ClientInfo } from "@/types/index";
 
 interface StatsCardsProps {
   clients: Client[];

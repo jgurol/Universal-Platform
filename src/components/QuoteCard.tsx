@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Clock, Building, FileText, Users, Pencil, Trash2, Calendar, Copy, Mail } from "lucide-react";
-import { Quote, ClientInfo } from "@/pages/Index";
+import { Quote, ClientInfo } from "@/types/index";
 import { formatDateForDisplay } from "@/utils/dateUtils";
 import { EmailQuoteDialog } from "@/components/EmailQuoteDialog";
 import { supabase } from "@/integrations/supabase/client";
