@@ -68,12 +68,12 @@ export const useQuotes = (
       }
 
       console.info('[fetchQuotes] Raw quotesData from database:', quotesData);
-      console.info('[fetchQuotes] Quote numbers in result:', quotesData?.map(q => q.quote_number));
+      console.info('[fetchQuotes] Quote user_ids in result:', quotesData?.map(q => ({ id: q.id, user_id: q.user_id })));
       
       if (quotesData) {
         // Get unique user IDs from quotes to fetch profiles separately
         const userIds = [...new Set(quotesData.map(quote => quote.user_id).filter(Boolean))];
-        console.info('[fetchQuotes] User IDs found in quotes:', userIds);
+        console.info('[fetchQuotes] Unique user IDs found in quotes:', userIds);
         
         // Fetch user profiles separately
         const { data: profiles, error: profilesError } = await supabase
@@ -93,22 +93,25 @@ export const useQuotes = (
           return acc;
         }, {} as Record<string, any>) : {};
         
+        console.info('[fetchQuotes] Profile map created:', profileMap);
+        
         const mappedQuotes = quotesData.map(quote => {
-          // Add profile data to quote for mapping
+          // Add profile data to quote for mapping - ensure we use the correct profile for each quote
+          const userProfile = profileMap[quote.user_id] || null;
+          console.log(`[fetchQuotes] Quote ${quote.id} user_id: ${quote.user_id}, found profile:`, userProfile);
+          
           const quoteWithProfile = {
             ...quote,
-            user_profile: profileMap[quote.user_id] || null
+            user_profile: userProfile
           };
           
           const mapped = mapQuoteData(quoteWithProfile, clients, clientInfos);
-          console.log(`[fetchQuotes] Mapped quote ${quote.id} - Number: "${quote.quote_number}", Status: "${mapped.status}", Description: "${mapped.description}"`);
-          console.log(`[fetchQuotes] Quote user profile:`, quoteWithProfile.user_profile);
+          console.log(`[fetchQuotes] Mapped quote ${quote.id} - Number: "${quote.quote_number}", User ID: "${quote.user_id}", Profile: "${userProfile?.full_name || 'Unknown'}"`);
           return mapped;
         });
         
         setQuotes(mappedQuotes);
         console.info('[fetchQuotes] Final mapped quotes count:', mappedQuotes.length);
-        console.info('[fetchQuotes] Final quote numbers:', mappedQuotes.map(q => q.quoteNumber));
       }
     } catch (err) {
       console.error('Error in fetchQuotes:', err);
