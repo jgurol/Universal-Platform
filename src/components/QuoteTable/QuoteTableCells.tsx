@@ -1,9 +1,11 @@
 
+import { useState, useEffect } from "react";
 import { Quote, ClientInfo } from "@/pages/Index";
 import { TableCell } from "@/components/ui/table";
 import { QuoteStatusBadge } from "./QuoteStatusBadge";
 import { QuoteActions } from "./QuoteActions";
 import { getMRCTotal, getNRCTotal } from "./QuoteTableUtils";
+import { supabase } from "@/integrations/supabase/client";
 
 interface QuoteTableCellsProps {
   quote: Quote;
@@ -85,22 +87,59 @@ export const QuoteTableCells = ({
   onStatusUpdate,
   onUnarchiveQuote
 }: QuoteTableCellsProps) => {
+  const [quoteCreatorName, setQuoteCreatorName] = useState<string>('Loading...');
+
+  // Fetch the quote creator's name from the profiles table
+  useEffect(() => {
+    const fetchQuoteCreatorName = async () => {
+      if (!quote.user_id) {
+        console.log('QuoteTableCells - No user_id found, using fallback');
+        setQuoteCreatorName('Sales Team');
+        return;
+      }
+
+      try {
+        const { data: profile, error } = await supabase
+          .from('profiles')
+          .select('full_name, email')
+          .eq('id', quote.user_id)
+          .maybeSingle();
+        
+        if (!error && profile?.full_name && profile.full_name.trim() !== '') {
+          console.log('QuoteTableCells - Found quote creator name:', profile.full_name);
+          setQuoteCreatorName(profile.full_name);
+        } else if (!error && profile?.email) {
+          console.log('QuoteTableCells - Using email as creator name:', profile.email);
+          setQuoteCreatorName(profile.email);
+        } else {
+          console.log('QuoteTableCells - Could not fetch quote creator name, using fallback');
+          setQuoteCreatorName('Sales Team');
+        }
+      } catch (error) {
+        console.error('QuoteTableCells - Error fetching quote creator name:', error);
+        setQuoteCreatorName('Sales Team');
+      }
+    };
+
+    fetchQuoteCreatorName();
+  }, [quote.user_id]);
+
   const mrcTotal = getMRCTotal(quote);
   const nrcTotal = getNRCTotal(quote);
   const approvedDate = formatDate(quote.acceptedAt);
-  const initials = getInitials(salespersonName);
+  const initials = getInitials(quoteCreatorName);
 
   // Debug logging to see what we're getting
   console.log('QuoteTableCells - Quote ID:', quote.id);
   console.log('QuoteTableCells - Quote user_id:', quote.user_id);
-  console.log('QuoteTableCells - Salesperson name:', salespersonName);
+  console.log('QuoteTableCells - Quote creator name:', quoteCreatorName);
   console.log('QuoteTableCells - Generated initials:', initials);
 
   return (
     <>
       <TableCell className="font-medium">
         <div className="flex items-center">
-          <span className="text-sm font-semibold text-gray-700" title={salespersonName}>
+          <span className="text-sm font-semibold text-gray-700" title={quoteCreatorName}>
             {initials}
           </span>
         </div>
@@ -142,7 +181,7 @@ export const QuoteTableCells = ({
         <QuoteActions
           quote={quote}
           clientInfo={clientInfo}
-          salespersonName={salespersonName}
+          salespersonName={quoteCreatorName}
           onEditClick={onEditClick}
           onDeleteQuote={onDeleteQuote}
           onCopyQuote={onCopyQuote}
