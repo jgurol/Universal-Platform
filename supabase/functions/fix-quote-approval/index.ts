@@ -107,63 +107,88 @@ const handler = async (req: Request): Promise<Response> => {
 
     console.log(`Creating order for quote ${quoteId} with user_id: ${quote.user_id} and order number: ${orderNumber}`);
 
-    // Create single order for the entire quote using the service role client
-    // This should bypass RLS since we're using SUPABASE_SERVICE_ROLE_KEY
-    const orderData = {
-      quote_id: quoteId,
-      order_number: orderNumber,
-      user_id: quote.user_id,
-      client_id: quote.client_id,
-      client_info_id: quote.client_info_id,
-      amount: quote.amount,
-      status: 'pending',
-      billing_address: quote.billing_address,
-      service_address: quote.service_address,
-      notes: quote.notes || `Order for quote ${quote.quote_number || quoteId}`,
-      commission: quote.commission || 0,
-      commission_override: quote.commission_override
-    };
-
-    console.log('Order data to insert:', orderData);
-
-    // Insert the order using service role which should bypass RLS
+    // Create single order for the entire quote
+    // Use RPC call to bypass RLS entirely
     const { data: newOrder, error: orderError } = await supabase
-      .from('orders')
-      .insert(orderData)
-      .select()
-      .single();
+      .rpc('create_order_bypass_rls', {
+        p_quote_id: quoteId,
+        p_order_number: orderNumber,
+        p_user_id: quote.user_id,
+        p_client_id: quote.client_id,
+        p_client_info_id: quote.client_info_id,
+        p_amount: quote.amount,
+        p_status: 'pending',
+        p_billing_address: quote.billing_address,
+        p_service_address: quote.service_address,
+        p_notes: quote.notes || `Order for quote ${quote.quote_number || quoteId}`,
+        p_commission: quote.commission || 0,
+        p_commission_override: quote.commission_override
+      });
 
     if (orderError) {
-      console.error(`Failed to create order:`, orderError);
+      console.error(`Failed to create order via RPC:`, orderError);
       
-      // If it's a duplicate key error, try to fetch the existing order
-      if (orderError.code === '23505') {
-        console.log('Duplicate order detected, fetching existing order');
-        const { data: existingOrder } = await supabase
-          .from('orders')
-          .select('*')
-          .eq('quote_id', quoteId)
-          .single();
+      // Fallback to direct insert if RPC fails
+      console.log('Attempting direct insert as fallback...');
+      
+      const orderData = {
+        quote_id: quoteId,
+        order_number: orderNumber,
+        user_id: quote.user_id,
+        client_id: quote.client_id,
+        client_info_id: quote.client_info_id,
+        amount: quote.amount,
+        status: 'pending',
+        billing_address: quote.billing_address,
+        service_address: quote.service_address,
+        notes: quote.notes || `Order for quote ${quote.quote_number || quoteId}`,
+        commission: quote.commission || 0,
+        commission_override: quote.commission_override
+      };
+
+      console.log('Order data to insert:', orderData);
+
+      const { data: fallbackOrder, error: fallbackError } = await supabase
+        .from('orders')
+        .insert(orderData)
+        .select()
+        .single();
+
+      if (fallbackError) {
+        console.error(`Fallback insert also failed:`, fallbackError);
         
-        if (existingOrder) {
-          console.log('Found existing order:', existingOrder.id);
-          return new Response(JSON.stringify({ 
-            success: true, 
-            orderIds: [existingOrder.id],
-            orderNumbers: [existingOrder.order_number],
-            ordersCount: 1,
-            message: 'Order already exists for this quote'
-          }), {
-            status: 200,
-            headers: { "Content-Type": "application/json", ...corsHeaders },
-          });
+        // If it's a duplicate key error, try to fetch the existing order
+        if (fallbackError.code === '23505') {
+          console.log('Duplicate order detected, fetching existing order');
+          const { data: existingOrder } = await supabase
+            .from('orders')
+            .select('*')
+            .eq('quote_id', quoteId)
+            .single();
+          
+          if (existingOrder) {
+            console.log('Found existing order:', existingOrder.id);
+            return new Response(JSON.stringify({ 
+              success: true, 
+              orderIds: [existingOrder.id],
+              orderNumbers: [existingOrder.order_number],
+              ordersCount: 1,
+              message: 'Order already exists for this quote'
+            }), {
+              status: 200,
+              headers: { "Content-Type": "application/json", ...corsHeaders },
+            });
+          }
         }
+        
+        throw new Error(`Failed to create order: ${fallbackError.message}`);
       }
-      
-      throw new Error(`Failed to create order: ${orderError.message}`);
+
+      console.log(`Created order via fallback ${fallbackOrder.id} with number ${orderNumber}`);
+      newOrder = fallbackOrder;
     }
 
-    console.log(`Created order ${newOrder.id} with number ${orderNumber}`);
+    const orderId = newOrder?.id || newOrder;
 
     // Now fetch quote items with circuit category types and create circuit tracking for each
     const { data: quoteItems, error: quoteItemsError } = await supabase
@@ -225,7 +250,7 @@ const handler = async (req: Request): Promise<Response> => {
       for (let i = 0; i < circuitItems.length; i++) {
         const circuitItem = circuitItems[i];
         const circuitTrackingData = {
-          order_id: newOrder.id,
+          order_id: orderId,
           quote_item_id: circuitItem.id,
           circuit_type: circuitItem.item?.category?.name || 'Circuit',
           status: 'ordered',
@@ -259,8 +284,8 @@ const handler = async (req: Request): Promise<Response> => {
 
     return new Response(JSON.stringify({ 
       success: true, 
-      orderIds: [newOrder.id],
-      orderNumbers: [newOrder.order_number],
+      orderIds: [orderId],
+      orderNumbers: [orderNumber],
       ordersCount: 1
     }), {
       status: 200,
