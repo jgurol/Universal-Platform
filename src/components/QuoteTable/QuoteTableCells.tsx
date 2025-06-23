@@ -1,3 +1,4 @@
+
 import { TableCell } from "@/components/ui/table";
 import { Quote, ClientInfo } from "@/types/index";
 import { QuoteActions } from "./QuoteActions";
@@ -26,8 +27,6 @@ export const QuoteTableCells = ({
   onStatusUpdate,
   onUnarchiveQuote
 }: QuoteTableCellsProps) => {
-  const isExpired = quote.expiresAt ? new Date(quote.expiresAt) < new Date() : false;
-
   return (
     <>
       <TableCell className="max-w-[200px] truncate" title={quote.description}>
@@ -49,7 +48,6 @@ export const QuoteTableCells = ({
           onEmailClick={onEmailClick}
           onStatusUpdate={onStatusUpdate}
           onUnarchiveQuote={onUnarchiveQuote}
-          isExpired={isExpired}
         />
       </TableCell>
     </>
