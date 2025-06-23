@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -6,13 +7,14 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { AddressAutocomplete } from "@/components/AddressAutocomplete";
-import { useClients } from "@/hooks/useClients";
+import { useClientInfos } from "@/hooks/useClientInfos";
 import { useAuth } from "@/context/AuthContext";
 import { useCategories } from "@/hooks/useCategories";
 import { CircuitQuote } from "@/hooks/useCircuitQuotes";
 import { supabase } from "@/integrations/supabase/client";
 import { DealRegistration } from "@/services/dealRegistrationService";
 import { Info } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 
 interface AddCircuitQuoteDialogProps {
   open: boolean;
@@ -103,9 +105,9 @@ const DealDetailsDialog = ({ open, onOpenChange, deal }: {
 
 export const AddCircuitQuoteDialog = ({ open, onOpenChange, onAddQuote }: AddCircuitQuoteDialogProps) => {
   const { user, isAdmin } = useAuth();
-  const [associatedAgentId, setAssociatedAgentId] = useState<string | null>(null);
-  const { clients, fetchClients } = useClients();
+  const { clientInfos, isLoading: clientsLoading } = useClientInfos();
   const { categories } = useCategories();
+  const { toast } = useToast();
   const [clientId, setClientId] = useState("");
   const [selectedDealId, setSelectedDealId] = useState("");
   const [location, setLocation] = useState("");
@@ -136,42 +138,6 @@ export const AddCircuitQuoteDialog = ({ open, onOpenChange, onAddQuote }: AddCir
     }
   }, [open, categories]);
 
-  // Fetch the associated agent ID for the current user
-  React.useEffect(() => {
-    const fetchAssociatedAgentId = async () => {
-      if (!user || isAdmin) {
-        setAssociatedAgentId(null);
-        return;
-      }
-      
-      try {
-        const { data, error } = await supabase
-          .from('profiles')
-          .select('associated_agent_id')
-          .eq('id', user.id)
-          .single();
-        
-        if (error) {
-          console.error('Error fetching user profile:', error);
-          return;
-        }
-        
-        setAssociatedAgentId(data?.associated_agent_id || null);
-      } catch (err) {
-        console.error('Exception fetching associated agent:', err);
-      }
-    };
-
-    fetchAssociatedAgentId();
-  }, [user, isAdmin]);
-
-  // Fetch clients when dialog opens or when associatedAgentId changes
-  React.useEffect(() => {
-    if (open && (isAdmin || associatedAgentId !== null)) {
-      fetchClients();
-    }
-  }, [open, isAdmin, associatedAgentId, fetchClients]);
-
   // Fetch deals associated with the selected client
   React.useEffect(() => {
     const fetchAssociatedDeals = async () => {
@@ -182,18 +148,11 @@ export const AddCircuitQuoteDialog = ({ open, onOpenChange, onAddQuote }: AddCir
       }
 
       try {
-        // Get client_info_id from the selected client
-        const selectedClient = clients.find(client => client.id === clientId);
-        if (!selectedClient) {
-          setAssociatedDeals([]);
-          setSelectedDealId("");
-          return;
-        }
-
+        // Use the client_info_id directly since clientId is already the client_info.id
         const { data: deals, error } = await supabase
           .from('deal_registrations')
           .select('*')
-          .eq('client_info_id', selectedClient.id)
+          .eq('client_info_id', clientId)
           .eq('status', 'active')
           .order('created_at', { ascending: false });
 
@@ -210,21 +169,13 @@ export const AddCircuitQuoteDialog = ({ open, onOpenChange, onAddQuote }: AddCir
     };
 
     fetchAssociatedDeals();
-  }, [clientId, clients]);
+  }, [clientId]);
 
   // Get the selected deal for showing details
   const selectedDeal = associatedDeals.find(deal => deal.id === selectedDealId) || null;
 
   // Check if a valid deal is selected (not empty and not "no-deal")
   const isDealSelected = selectedDealId && selectedDealId !== "" && selectedDealId !== "no-deal";
-
-  // Debug logging for deal button visibility
-  console.log('Deal button debug:', {
-    selectedDealId,
-    isDealSelected,
-    selectedDeal: selectedDeal ? selectedDeal.deal_name : null,
-    associatedDealsCount: associatedDeals.length
-  });
 
   const handleAddressSelect = (address: AddressData) => {
     const fullAddress = `${address.street_address}, ${address.city}, ${address.state} ${address.zip_code}`;
@@ -239,45 +190,87 @@ export const AddCircuitQuoteDialog = ({ open, onOpenChange, onAddQuote }: AddCir
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    const selectedClient = clients.find(client => client.id === clientId);
-    const clientName = selectedClient ? selectedClient.name : "";
+    const selectedClient = clientInfos.find(client => client.id === clientId);
+    const clientName = selectedClient ? selectedClient.company_name : "";
     
     if (!clientName || !location) {
+      toast({
+        title: "Error",
+        description: "Please select a client and enter a location",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    // Validate that the selected client exists and is accessible
+    if (!selectedClient) {
+      toast({
+        title: "Error",
+        description: "Selected client is not valid or accessible",
+        variant: "destructive"
+      });
       return;
     }
     
     // Determine the deal_registration_id to save
     const dealRegistrationId = (selectedDealId && selectedDealId !== "no-deal") ? selectedDealId : null;
     
-    onAddQuote({
-      client_name: clientName,
-      client_info_id: selectedClient?.id || null,
-      deal_registration_id: dealRegistrationId, // Save the selected deal ID
-      location,
-      suite,
-      status: 'new_pricing',
-      static_ip: staticIp,
-      slash_29: slash29,
-      dhcp: dhcp,
-      mikrotik_required: mikrotikRequired
-    }, circuitCategories);
-    
-    // Reset form
-    setClientId("");
-    setSelectedDealId("");
-    setLocation("");
-    setSuite("");
-    setStaticIp(false);
-    setSlash29(false);
-    setDhcp(false);
-    setMikrotikRequired(true);
-    setCircuitCategories([]);
-    setAssociatedDeals([]);
-    onOpenChange(false);
+    try {
+      await onAddQuote({
+        client_name: clientName,
+        client_info_id: selectedClient.id, // Use the validated client ID
+        deal_registration_id: dealRegistrationId,
+        location,
+        suite,
+        status: 'new_pricing',
+        static_ip: staticIp,
+        slash_29: slash29,
+        dhcp: dhcp,
+        mikrotik_required: mikrotikRequired
+      }, circuitCategories);
+      
+      // Reset form
+      setClientId("");
+      setSelectedDealId("");
+      setLocation("");
+      setSuite("");
+      setStaticIp(false);
+      setSlash29(false);
+      setDhcp(false);
+      setMikrotikRequired(true);
+      setCircuitCategories([]);
+      setAssociatedDeals([]);
+      onOpenChange(false);
+    } catch (error) {
+      console.error('Error creating circuit quote:', error);
+      toast({
+        title: "Error",
+        description: "Failed to create circuit quote. Please try again.",
+        variant: "destructive"
+      });
+    }
   };
+
+  if (clientsLoading) {
+    return (
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle>Create Circuit Quote</DialogTitle>
+            <DialogDescription>
+              Loading clients...
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex items-center justify-center py-8">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600"></div>
+          </div>
+        </DialogContent>
+      </Dialog>
+    );
+  }
 
   return (
     <>
@@ -298,13 +291,16 @@ export const AddCircuitQuoteDialog = ({ open, onOpenChange, onAddQuote }: AddCir
                   <SelectValue placeholder="Select a client" />
                 </SelectTrigger>
                 <SelectContent className="bg-white">
-                  {clients.map((client) => (
+                  {clientInfos.map((client) => (
                     <SelectItem key={client.id} value={client.id}>
-                      {client.name}
+                      {client.company_name}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
+              {clientInfos.length === 0 && (
+                <p className="text-sm text-red-500">No clients available. Please add a client first.</p>
+              )}
             </div>
 
             <div className="space-y-2">
@@ -334,10 +330,7 @@ export const AddCircuitQuoteDialog = ({ open, onOpenChange, onAddQuote }: AddCir
                     type="button"
                     variant="outline"
                     size="icon"
-                    onClick={() => {
-                      console.log('Opening deal details for:', selectedDeal.deal_name);
-                      setIsDealDetailsOpen(true);
-                    }}
+                    onClick={() => setIsDealDetailsOpen(true)}
                     title="View deal details"
                     className="shrink-0"
                   >
@@ -445,7 +438,7 @@ export const AddCircuitQuoteDialog = ({ open, onOpenChange, onAddQuote }: AddCir
               <Button 
                 type="submit" 
                 className="bg-purple-600 hover:bg-purple-700"
-                disabled={!clientId || !location}
+                disabled={!clientId || !location || clientInfos.length === 0}
               >
                 Create Quote
               </Button>

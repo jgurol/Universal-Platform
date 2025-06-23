@@ -9,13 +9,32 @@ export const useCircuitQuoteService = () => {
 
   const addQuote = async (newQuote: Omit<CircuitQuote, "id" | "created_at" | "carriers" | "categories">, userId: string, categories: string[] = []) => {
     try {
+      // Validate that the client_info_id exists and is accessible before creating the quote
+      if (newQuote.client_info_id) {
+        const { data: clientExists, error: clientCheckError } = await supabase
+          .from('client_info')
+          .select('id')
+          .eq('id', newQuote.client_info_id)
+          .single();
+
+        if (clientCheckError || !clientExists) {
+          console.error('Client validation error:', clientCheckError);
+          toast({
+            title: "Error",
+            description: "Selected client is not accessible or does not exist",
+            variant: "destructive"
+          });
+          return null;
+        }
+      }
+
       const { data, error } = await supabase
         .from('circuit_quotes')
         .insert({
           user_id: userId,
           client_name: newQuote.client_name,
           client_info_id: newQuote.client_info_id,
-          deal_registration_id: newQuote.deal_registration_id, // Include deal registration ID
+          deal_registration_id: newQuote.deal_registration_id,
           location: newQuote.location,
           suite: newQuote.suite,
           status: newQuote.status,
@@ -29,11 +48,19 @@ export const useCircuitQuoteService = () => {
 
       if (error) {
         console.error('Error adding circuit quote:', error);
-        toast({
-          title: "Error",
-          description: error.message,
-          variant: "destructive"
-        });
+        if (error.code === '23503') {
+          toast({
+            title: "Error",
+            description: "Selected client or deal registration is not valid. Please refresh and try again.",
+            variant: "destructive"
+          });
+        } else {
+          toast({
+            title: "Error",
+            description: error.message,
+            variant: "destructive"
+          });
+        }
         return null;
       }
 
@@ -66,7 +93,7 @@ export const useCircuitQuoteService = () => {
         .update({
           client_name: updatedQuote.client_name,
           client_info_id: updatedQuote.client_info_id,
-          deal_registration_id: updatedQuote.deal_registration_id, // Include deal registration ID in updates
+          deal_registration_id: updatedQuote.deal_registration_id,
           location: updatedQuote.location,
           suite: updatedQuote.suite,
           status: updatedQuote.status,
