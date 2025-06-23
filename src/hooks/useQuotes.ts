@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
-import { Quote, Client, ClientInfo } from "@/types/index";
+import { Quote, Client, ClientInfo } from "@/pages/Index";
 import { mapQuoteData } from "@/utils/quoteUtils";
 
 export const useQuotes = (
@@ -20,31 +20,12 @@ export const useQuotes = (
       console.info('[fetchQuotes] Starting quote fetch - isAdmin:', isAdmin, 'associatedAgentId:', associatedAgentId);
       console.info('[fetchQuotes] Current user ID:', user.id);
       
-      // First, let's test if we can fetch quote_items directly
-      const { data: testQuoteItems, error: testError } = await supabase
-        .from('quote_items')
-        .select('*')
-        .limit(5);
-      
-      console.info('[fetchQuotes] Direct quote_items test:', { testQuoteItems, testError });
-      
       let query = supabase
         .from('quotes')
         .select(`
           *,
           quote_items (
-            id,
-            quote_id,
-            item_id,
-            quantity,
-            unit_price,
-            total_price,
-            charge_type,
-            address_id,
-            created_at,
-            updated_at,
-            image_url,
-            image_name,
+            *,
             item:items(*),
             address:client_addresses(*)
           )
@@ -79,7 +60,7 @@ export const useQuotes = (
         console.info('[fetchQuotes] Admin user - no filtering applied');
       }
       
-      const { data: quotesData, error } = await query.order('created_at', { ascending: false });
+      const { data: quotesData, error } = await query;
       
       if (error) {
         console.error('Error fetching quotes:', error);
@@ -89,88 +70,16 @@ export const useQuotes = (
       console.info('[fetchQuotes] Raw quotesData from database:', quotesData);
       console.info('[fetchQuotes] Quote numbers in result:', quotesData?.map(q => q.quote_number));
       
-      // Let's also check if quote_items exist separately for the first quote
-      if (quotesData && quotesData.length > 0) {
-        const firstQuoteId = quotesData[0].id;
-        console.info('[fetchQuotes] Testing separate quote_items query for quote:', firstQuoteId);
-        
-        const { data: separateQuoteItems, error: separateError } = await supabase
-          .from('quote_items')
-          .select(`
-            *,
-            item:items(*),
-            address:client_addresses(*)
-          `)
-          .eq('quote_id', firstQuoteId);
-        
-        console.info('[fetchQuotes] Separate quote_items query result:', { separateQuoteItems, separateError });
-      }
-      
       if (quotesData) {
         const mappedQuotes = quotesData.map(quote => {
-          console.log(`[fetchQuotes] Processing quote ${quote.id} with quote_items:`, quote.quote_items?.length || 0, 'items');
-          console.log(`[fetchQuotes] Raw quote_items for ${quote.id}:`, quote.quote_items);
-          
           const mapped = mapQuoteData(quote, clients, clientInfos);
-          
-          // Process quote items properly - ensure we have the data we need
-          if (quote.quote_items && Array.isArray(quote.quote_items)) {
-            mapped.quoteItems = quote.quote_items.map((item: any) => {
-              console.log(`[fetchQuotes] Processing quote item:`, {
-                id: item.id,
-                name: item.item?.name,
-                total_price: item.total_price,
-                charge_type: item.charge_type
-              });
-              
-              const mappedItem = {
-                id: item.id,
-                quote_id: item.quote_id,
-                item_id: item.item_id,
-                name: item.item?.name || 'Unknown Item',
-                description: item.item?.description || '',
-                quantity: item.quantity || 1,
-                unit_price: parseFloat(item.unit_price) || 0,
-                total_price: parseFloat(item.total_price) || 0,
-                charge_type: item.charge_type || 'NRC',
-                address_id: item.address_id,
-                item: item.item,
-                address: item.address,
-                image_url: item.image_url,
-                image_name: item.image_name
-              };
-              
-              console.log(`[fetchQuotes] Mapped quote item for quote ${quote.id}:`, {
-                id: mappedItem.id,
-                name: mappedItem.name,
-                total_price: mappedItem.total_price,
-                charge_type: mappedItem.charge_type
-              });
-              return mappedItem;
-            });
-            
-            console.log(`[fetchQuotes] Mapped quote ${quote.id} with ${mapped.quoteItems.length} items`);
-          } else {
-            mapped.quoteItems = [];
-            console.log(`[fetchQuotes] No quote items found for quote ${quote.id}`);
-          }
-          
-          console.log(`[fetchQuotes] Final mapped quote ${quote.id} - Number: "${quote.quote_number}", Status: "${mapped.status}", Description: "${mapped.description}", Items: ${mapped.quoteItems?.length || 0}`);
+          console.log(`[fetchQuotes] Mapped quote ${quote.id} - Number: "${quote.quote_number}", Status: "${mapped.status}", Description: "${mapped.description}"`);
           return mapped;
         });
         
         setQuotes(mappedQuotes);
         console.info('[fetchQuotes] Final mapped quotes count:', mappedQuotes.length);
         console.info('[fetchQuotes] Final quote numbers:', mappedQuotes.map(q => q.quoteNumber));
-        console.info('[fetchQuotes] Quote items summary:', mappedQuotes.map(q => ({ 
-          id: q.id, 
-          itemCount: q.quoteItems?.length || 0,
-          items: q.quoteItems?.map(item => ({ 
-            name: item.name, 
-            price: item.total_price,
-            charge_type: item.charge_type 
-          })) || []
-        })));
       }
     } catch (err) {
       console.error('Error in fetchQuotes:', err);

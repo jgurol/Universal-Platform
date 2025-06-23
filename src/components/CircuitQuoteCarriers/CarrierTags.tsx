@@ -2,13 +2,10 @@
 import type { CarrierQuote } from "@/hooks/useCircuitQuotes";
 
 interface CarrierTagsProps {
-  carriers?: CarrierQuote[];
-  staticIp?: boolean;
-  slash29?: boolean;
-  mikrotikRequired?: boolean;
+  carriers: CarrierQuote[];
 }
 
-export const CarrierTags = ({ carriers = [], staticIp, slash29, mikrotikRequired }: CarrierTagsProps) => {
+export const CarrierTags = ({ carriers }: CarrierTagsProps) => {
   const getTickedCheckboxes = (carrier: CarrierQuote) => {
     const ticked = [];
     if (carrier.install_fee) ticked.push("Install Fee");

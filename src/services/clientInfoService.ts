@@ -5,21 +5,9 @@ import { AddClientInfoData, UpdateClientInfoData } from "@/types/clientManagemen
 
 export const clientInfoService = {
   async fetchClientInfos(userId?: string, associatedAgentId?: string | null, isAdmin?: boolean): Promise<ClientInfo[]> {
-    console.log('clientInfoService - fetchClientInfos called with:', { userId, associatedAgentId, isAdmin });
-    
     let query = supabase
       .from('client_info')
-      .select(`
-        id,
-        user_id,
-        company_name,
-        notes,
-        revio_id,
-        agent_id,
-        created_at,
-        updated_at,
-        commission_override
-      `);
+      .select('*');
     
     // If not admin and has associated agent, filter by that agent
     if (!isAdmin && associatedAgentId) {
@@ -27,8 +15,6 @@ export const clientInfoService = {
     }
     
     const { data, error } = await query.order('company_name', { ascending: true });
-    
-    console.log('clientInfoService - Query result:', { data: data?.length || 0, error });
     
     if (error) {
       console.error('Error fetching client info:', error);

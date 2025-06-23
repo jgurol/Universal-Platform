@@ -12,27 +12,14 @@ export const useClientInfos = () => {
   const fetchClientInfos = async (userId?: string, associatedAgentId?: string | null, isAdmin?: boolean) => {
     const currentUserId = userId || user?.id;
     if (!currentUserId) {
-      console.log('useClientInfos - No user ID available');
       setIsLoading(false);
       return;
     }
 
-    console.log('useClientInfos - fetchClientInfos called with:', { currentUserId, associatedAgentId, isAdmin });
-
     try {
       let query = supabase
         .from('client_info')
-        .select(`
-          id,
-          user_id,
-          company_name,
-          notes,
-          revio_id,
-          agent_id,
-          created_at,
-          updated_at,
-          commission_override
-        `);
+        .select('*');
       
       // If not admin and has associated agent, filter by that agent
       if (!isAdmin && associatedAgentId) {
@@ -43,8 +30,6 @@ export const useClientInfos = () => {
       }
 
       const { data, error } = await query.order('company_name');
-
-      console.log('useClientInfos - Query result:', { count: data?.length || 0, error });
 
       if (error) {
         console.error('Error fetching client infos:', error);
@@ -66,7 +51,6 @@ export const useClientInfos = () => {
           commission_override: info.commission_override
         }));
 
-        console.log('useClientInfos - Setting client infos:', formattedClientInfos.length);
         setClientInfos(formattedClientInfos);
       }
     } catch (err) {
@@ -78,10 +62,8 @@ export const useClientInfos = () => {
   };
 
   useEffect(() => {
-    if (user?.id) {
-      fetchClientInfos();
-    }
-  }, [user?.id]);
+    fetchClientInfos();
+  }, [user]);
 
   return {
     clientInfos,

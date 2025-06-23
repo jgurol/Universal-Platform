@@ -56,7 +56,7 @@ export const updateQuoteItems = async (quoteId: string, quoteItems: QuoteItemDat
     
     if (!hasAccess) {
       console.error('[updateQuoteItems] Access denied - user does not own quote and is not admin');
-      throw new Error('Access denied - you do not have permission to edit this quote');
+      throw new Error('Access denied - you do not own this quote');
     }
 
     console.log('[updateQuoteItems] Access granted for user:', user.id, 'Admin:', isAdmin);
