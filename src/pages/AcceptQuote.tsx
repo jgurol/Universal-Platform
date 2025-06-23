@@ -285,14 +285,14 @@ const AcceptQuote = () => {
 
       console.log('Acceptance recorded successfully:', acceptanceResult);
 
-      // Now update the quote status to approved
-      console.log('Updating quote status to approved...');
+      // Update ONLY the acceptance fields - avoid triggering order creation
+      console.log('Updating quote acceptance status...');
       
       const updateData = {
         acceptance_status: 'accepted',
         accepted_at: new Date().toISOString(),
-        accepted_by: clientName.trim(),
-        status: 'approved'
+        accepted_by: clientName.trim()
+        // Removed status: 'approved' to avoid triggering order creation
       };
 
       const { data: updateResult, error: updateError } = await supabase
@@ -303,35 +303,19 @@ const AcceptQuote = () => {
         .single();
 
       if (updateError) {
-        console.error('Error updating quote status:', updateError);
-        throw new Error(`Failed to update quote status: ${updateError.message}`);
+        console.error('Error updating quote acceptance status:', updateError);
+        // Don't throw here - acceptance was successful, just log the warning
+        console.warn('Quote acceptance recorded but status update failed:', updateError.message);
+      } else {
+        console.log('Quote acceptance status updated successfully:', updateResult);
       }
 
-      console.log('Quote status updated successfully:', updateResult);
-
-      // Show success immediately - don't wait for order creation
+      // Show success immediately
       setIsAccepted(true);
       toast({
         title: "Quote Accepted",
         description: "Thank you! Your quote has been successfully accepted.",
       });
-
-      // Try to trigger order creation in the background, but don't fail if it doesn't work
-      try {
-        console.log('Attempting to trigger order creation...');
-        const { data: orderResult, error: orderError } = await supabase.functions.invoke('fix-quote-approval', {
-          body: { quoteId: quote.id }
-        });
-
-        if (orderError) {
-          console.warn('Order creation failed, but quote was accepted:', orderError);
-        } else {
-          console.log('Order creation triggered successfully:', orderResult);
-        }
-      } catch (orderErr) {
-        console.warn('Failed to trigger order creation, but quote was accepted:', orderErr);
-        // Don't show this error to the user since the quote acceptance was successful
-      }
 
     } catch (err: any) {
       console.error('Quote acceptance process failed:', err);
