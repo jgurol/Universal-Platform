@@ -10,6 +10,7 @@ export const mapQuoteData = (
   console.log(`[mapQuoteData] Processing quote ${quoteData.id} with description: "${quoteData.description}"`);
   console.log(`[mapQuoteData] Raw addresses from DB - billing: "${quoteData.billing_address}", service: "${quoteData.service_address}"`);
   console.log(`[mapQuoteData] User ID from database: "${quoteData.user_id}"`);
+  console.log(`[mapQuoteData] Accepted at from database: "${quoteData.accepted_at}"`);
   
   const client = clients.find(c => c.id === quoteData.client_id);
   const clientInfo = clientInfos.find(ci => ci.id === quoteData.client_info_id);
@@ -41,7 +42,7 @@ export const mapQuoteData = (
     serviceAddress: serviceAddress, // Properly handle null/undefined service address
     templateId: quoteData.template_id,
     acceptanceStatus: quoteData.acceptance_status,
-    acceptedAt: quoteData.accepted_at,
+    acceptedAt: quoteData.accepted_at, // Map accepted_at to acceptedAt
     acceptedBy: quoteData.accepted_by,
     archived: quoteData.archived || false,
     user_profile: quoteData.user_profile // Preserve the attached user profile data
@@ -50,6 +51,7 @@ export const mapQuoteData = (
   console.log(`[mapQuoteData] Mapped quote ${quoteData.id} final description: "${mapped.description}"`);
   console.log(`[mapQuoteData] Mapped addresses - billing: "${mapped.billingAddress}", service: "${mapped.serviceAddress}"`);
   console.log(`[mapQuoteData] Mapped user_id: "${mapped.user_id}"`);
+  console.log(`[mapQuoteData] Mapped acceptedAt: "${mapped.acceptedAt}"`);
   
   return mapped;
 };
