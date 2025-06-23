@@ -20,6 +20,14 @@ export const useQuotes = (
       console.info('[fetchQuotes] Starting quote fetch - isAdmin:', isAdmin, 'associatedAgentId:', associatedAgentId);
       console.info('[fetchQuotes] Current user ID:', user.id);
       
+      // First, let's test if we can fetch quote_items directly
+      const { data: testQuoteItems, error: testError } = await supabase
+        .from('quote_items')
+        .select('*')
+        .limit(5);
+      
+      console.info('[fetchQuotes] Direct quote_items test:', { testQuoteItems, testError });
+      
       let query = supabase
         .from('quotes')
         .select(`
@@ -81,9 +89,27 @@ export const useQuotes = (
       console.info('[fetchQuotes] Raw quotesData from database:', quotesData);
       console.info('[fetchQuotes] Quote numbers in result:', quotesData?.map(q => q.quote_number));
       
+      // Let's also check if quote_items exist separately for the first quote
+      if (quotesData && quotesData.length > 0) {
+        const firstQuoteId = quotesData[0].id;
+        console.info('[fetchQuotes] Testing separate quote_items query for quote:', firstQuoteId);
+        
+        const { data: separateQuoteItems, error: separateError } = await supabase
+          .from('quote_items')
+          .select(`
+            *,
+            item:items(*),
+            address:client_addresses(*)
+          `)
+          .eq('quote_id', firstQuoteId);
+        
+        console.info('[fetchQuotes] Separate quote_items query result:', { separateQuoteItems, separateError });
+      }
+      
       if (quotesData) {
         const mappedQuotes = quotesData.map(quote => {
           console.log(`[fetchQuotes] Processing quote ${quote.id} with quote_items:`, quote.quote_items?.length || 0, 'items');
+          console.log(`[fetchQuotes] Raw quote_items for ${quote.id}:`, quote.quote_items);
           
           const mapped = mapQuoteData(quote, clients, clientInfos);
           
@@ -124,11 +150,6 @@ export const useQuotes = (
             });
             
             console.log(`[fetchQuotes] Mapped quote ${quote.id} with ${mapped.quoteItems.length} items`);
-            console.log(`[fetchQuotes] Quote ${quote.id} items breakdown:`, mapped.quoteItems.map(item => ({
-              name: item.name,
-              charge_type: item.charge_type,
-              total_price: item.total_price
-            })));
           } else {
             mapped.quoteItems = [];
             console.log(`[fetchQuotes] No quote items found for quote ${quote.id}`);
