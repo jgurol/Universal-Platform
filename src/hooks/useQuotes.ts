@@ -83,14 +83,19 @@ export const useQuotes = (
       
       if (quotesData) {
         const mappedQuotes = quotesData.map(quote => {
-          console.log(`[fetchQuotes] Processing quote ${quote.id} with quote_items:`, quote.quote_items);
+          console.log(`[fetchQuotes] Processing quote ${quote.id} with quote_items:`, quote.quote_items?.length || 0, 'items');
           
           const mapped = mapQuoteData(quote, clients, clientInfos);
           
           // Process quote items properly - ensure we have the data we need
           if (quote.quote_items && Array.isArray(quote.quote_items)) {
             mapped.quoteItems = quote.quote_items.map((item: any) => {
-              console.log(`[fetchQuotes] Processing quote item:`, item);
+              console.log(`[fetchQuotes] Processing quote item:`, {
+                id: item.id,
+                name: item.item?.name,
+                total_price: item.total_price,
+                charge_type: item.charge_type
+              });
               
               const mappedItem = {
                 id: item.id,
@@ -109,11 +114,21 @@ export const useQuotes = (
                 image_name: item.image_name
               };
               
-              console.log(`[fetchQuotes] Mapped quote item for quote ${quote.id}:`, mappedItem);
+              console.log(`[fetchQuotes] Mapped quote item for quote ${quote.id}:`, {
+                id: mappedItem.id,
+                name: mappedItem.name,
+                total_price: mappedItem.total_price,
+                charge_type: mappedItem.charge_type
+              });
               return mappedItem;
             });
             
             console.log(`[fetchQuotes] Mapped quote ${quote.id} with ${mapped.quoteItems.length} items`);
+            console.log(`[fetchQuotes] Quote ${quote.id} items breakdown:`, mapped.quoteItems.map(item => ({
+              name: item.name,
+              charge_type: item.charge_type,
+              total_price: item.total_price
+            })));
           } else {
             mapped.quoteItems = [];
             console.log(`[fetchQuotes] No quote items found for quote ${quote.id}`);

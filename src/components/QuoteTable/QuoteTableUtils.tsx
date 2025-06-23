@@ -3,6 +3,11 @@ import { Quote } from "@/types/index";
 
 export const getMRCTotal = (quote: Quote) => {
   console.log(`[getMRCTotal] Processing quote ${quote.id} with ${quote.quoteItems?.length || 0} items`);
+  console.log(`[getMRCTotal] Quote items for ${quote.id}:`, quote.quoteItems?.map(item => ({
+    name: item.name,
+    charge_type: item.charge_type,
+    total_price: item.total_price
+  })));
   
   if (!quote.quoteItems || quote.quoteItems.length === 0) {
     console.log(`[getMRCTotal] No quote items found for quote ${quote.id}`);
@@ -11,7 +16,7 @@ export const getMRCTotal = (quote: Quote) => {
   
   const mrcItems = quote.quoteItems.filter(item => {
     const isMRC = item.charge_type === 'MRC';
-    console.log(`[getMRCTotal] Item "${item.name}" charge_type: "${item.charge_type}", is MRC: ${isMRC}`);
+    console.log(`[getMRCTotal] Item "${item.name}" charge_type: "${item.charge_type}", is MRC: ${isMRC}, total_price: ${item.total_price}`);
     return isMRC;
   });
   
@@ -27,6 +32,11 @@ export const getMRCTotal = (quote: Quote) => {
 
 export const getNRCTotal = (quote: Quote) => {
   console.log(`[getNRCTotal] Processing quote ${quote.id} with ${quote.quoteItems?.length || 0} items`);
+  console.log(`[getNRCTotal] Quote items for ${quote.id}:`, quote.quoteItems?.map(item => ({
+    name: item.name,
+    charge_type: item.charge_type,
+    total_price: item.total_price
+  })));
   
   if (!quote.quoteItems || quote.quoteItems.length === 0) {
     console.log(`[getNRCTotal] No quote items found for quote ${quote.id}`);
@@ -35,7 +45,7 @@ export const getNRCTotal = (quote: Quote) => {
   
   const nrcItems = quote.quoteItems.filter(item => {
     const isNRC = item.charge_type === 'NRC';
-    console.log(`[getNRCTotal] Item "${item.name}" charge_type: "${item.charge_type}", is NRC: ${isNRC}`);
+    console.log(`[getNRCTotal] Item "${item.name}" charge_type: "${item.charge_type}", is NRC: ${isNRC}, total_price: ${item.total_price}`);
     return isNRC;
   });
   
