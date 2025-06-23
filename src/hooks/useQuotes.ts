@@ -28,11 +28,6 @@ export const useQuotes = (
             *,
             item:items(*),
             address:client_addresses(*)
-          ),
-          user_profile:profiles!quotes_user_id_fkey(
-            id,
-            full_name,
-            email
           )
         `);
       
@@ -76,10 +71,38 @@ export const useQuotes = (
       console.info('[fetchQuotes] Quote numbers in result:', quotesData?.map(q => q.quote_number));
       
       if (quotesData) {
+        // Get unique user IDs from quotes to fetch profiles separately
+        const userIds = [...new Set(quotesData.map(quote => quote.user_id).filter(Boolean))];
+        console.info('[fetchQuotes] User IDs found in quotes:', userIds);
+        
+        // Fetch user profiles separately
+        const { data: profiles, error: profilesError } = await supabase
+          .from('profiles')
+          .select('id, full_name, email')
+          .in('id', userIds);
+        
+        if (profilesError) {
+          console.error('Error fetching profiles:', profilesError);
+        }
+        
+        console.info('[fetchQuotes] Profiles fetched:', profiles);
+        
+        // Create a map of user_id to profile data
+        const profileMap = profiles ? profiles.reduce((acc, profile) => {
+          acc[profile.id] = profile;
+          return acc;
+        }, {} as Record<string, any>) : {};
+        
         const mappedQuotes = quotesData.map(quote => {
-          const mapped = mapQuoteData(quote, clients, clientInfos);
+          // Add profile data to quote for mapping
+          const quoteWithProfile = {
+            ...quote,
+            user_profile: profileMap[quote.user_id] || null
+          };
+          
+          const mapped = mapQuoteData(quoteWithProfile, clients, clientInfos);
           console.log(`[fetchQuotes] Mapped quote ${quote.id} - Number: "${quote.quote_number}", Status: "${mapped.status}", Description: "${mapped.description}"`);
-          console.log(`[fetchQuotes] Quote user profile:`, quote.user_profile);
+          console.log(`[fetchQuotes] Quote user profile:`, quoteWithProfile.user_profile);
           return mapped;
         });
         
