@@ -1,673 +1,223 @@
+import { processRichTextContent } from './utils.ts';
 
-import { processRichTextContent, processTemplateContent } from './contentProcessor.ts';
-import { BusinessSettings } from './types.ts';
-
-// Enhanced HTML generation function with template content support
 export const generateHTML = (
-  quote: any, 
-  clientInfo?: any, 
-  accountManagerName?: string, 
-  logoUrl?: string, 
-  companyName?: string, 
-  templateContent?: string,
-  primaryContact?: {
-    first_name: string;
-    last_name: string;
-    email: string | null;
-    phone: string | null;
-    title: string | null;
+  quote: any,
+  clientInfo: any,
+  accountManagerName: string,
+  logoUrl: string,
+  companyName: string,
+  templateContent: string,
+  primaryContact?: any,
+  acceptanceDetails?: any
+) => {
+  console.log('PDFShift Function - Final account manager name in HTML generation:', accountManagerName);
+  console.log('PDFShift Function - Acceptance details in HTML generation:', !!acceptanceDetails);
+  
+  // Company Contact Information
+  let contactSection = '';
+  if (clientInfo) {
+    let contactInfo = '';
+    if (primaryContact) {
+      contactInfo = `
+        <div class="client-info">
+          <h3>Contact Information</h3>
+          <p><strong>Company:</strong> ${clientInfo.company_name}</p>
+          <p><strong>Contact Name:</strong> ${primaryContact.first_name} ${primaryContact.last_name}</p>
+          ${primaryContact.email ? `<p><strong>Email:</strong> ${primaryContact.email}</p>` : ''}
+          ${primaryContact.phone ? `<p><strong>Phone:</strong> ${primaryContact.phone}</p>` : ''}
+        </div>
+      `;
+    } else {
+      contactInfo = `
+        <div class="client-info">
+          <h3>Client Information</h3>
+          <p><strong>Company:</strong> ${clientInfo.company_name}</p>
+        </div>
+      `;
+    }
+    contactSection = contactInfo;
   }
-): string => {
-  // Extract data safely
-  const quoteId = quote?.id || '';
-  const quoteNumber = quote?.quoteNumber || quoteId.slice(0, 4);
-  const description = quote?.description || 'Service Agreement';
-  const status = quote?.status || 'pending';
-  const date = quote?.date || new Date().toISOString();
-  const expiresAt = quote?.expiresAt || '';
-  const billingAddress = quote?.billingAddress || '';
-  const serviceAddress = quote?.serviceAddress || '';
-  // Extract the initial term from the quote
-  const initialTerm = quote?.term || '36 Months';
-  
-  const clientCompanyName = clientInfo?.company_name || 'Company Name';
-  
-  // Use primary contact if available, with detailed logging
-  let contactName = 'Contact Name';
-  let contactEmail = '';
-  let contactPhone = '';
-  
-  console.log('PDFShift Function - Processing contact info');
-  console.log('PDFShift Function - Primary contact received:', primaryContact);
-  console.log('PDFShift Function - Client info received:', clientInfo);
-  
-  if (primaryContact) {
-    contactName = `${primaryContact.first_name} ${primaryContact.last_name}`;
-    contactEmail = primaryContact.email || '';
-    contactPhone = primaryContact.phone || '';
-    console.log('PDFShift Function - Using primary contact:', contactName, 'email:', contactEmail, 'phone:', contactPhone);
-  } else if (clientInfo) {
-    // Only use clientInfo if no primary contact found
-    contactName = clientInfo.contact_name || 'Contact Name';
-    contactEmail = clientInfo.email || '';
-    contactPhone = clientInfo.phone || '';
-    console.log('PDFShift Function - Using clientInfo contact (fallback):', contactName, 'email:', contactEmail, 'phone:', contactPhone);
-  } else {
-    console.log('PDFShift Function - No contact information available');
-  }
-  
-  const isApproved = status === 'approved' || status === 'accepted';
-  
-  // Use the account manager name passed from the main function
-  const finalAccountManagerName = accountManagerName || 'N/A';
-  
-  console.log('PDFShift Function - Final account manager name in HTML generation:', finalAccountManagerName);
-  
-  // Process quote items with enhanced description and image handling
-  let mrcItems = [];
-  let nrcItems = [];
+
+  // Process quote items
+  let quoteItemsHtml = '';
   let mrcTotal = 0;
   let nrcTotal = 0;
-  
-  if (Array.isArray(quote?.quoteItems)) {
-    console.log('PDFShift Function - Processing', quote.quoteItems.length, 'quote items');
-    
-    for (const item of quote.quoteItems) {
-      // Process description content
-      const itemDescription = item?.description || item?.item?.description || '';
-      const { html: processedDescription, images } = processRichTextContent(itemDescription);
-      
-      console.log('PDFShift Function - Item:', item?.item?.name || item?.name, 'has description length:', itemDescription.length, 'images:', images.length);
-      
-      const itemData = {
-        name: item?.item?.name || item?.name || 'Service',
-        description: itemDescription,
-        processedDescription,
-        images,
-        quantity: item?.quantity || 1,
-        unit_price: parseFloat(item?.unit_price) || 0,
-        total_price: parseFloat(item?.total_price) || 0,
-        charge_type: item?.charge_type || 'MRC',
-        address: item?.address
-      };
-      
-      if (itemData.charge_type === 'MRC') {
-        mrcItems.push(itemData);
-        mrcTotal += itemData.total_price;
+
+  if (quote?.quoteItems && quote.quoteItems.length > 0) {
+    quoteItemsHtml = quote.quoteItems.map(item => {
+      const itemTotal = item.quantity * item.unit_price;
+      if (item.charge_type === 'MRC') {
+        mrcTotal += itemTotal;
       } else {
-        nrcItems.push(itemData);
-        nrcTotal += itemData.total_price;
+        nrcTotal += itemTotal;
       }
-    }
+
+      return `
+        <tr>
+          <td>${item.item?.name || 'N/A'} - ${item.item?.description || ''}</td>
+          <td>${item.quantity}</td>
+          <td>$${item.unit_price.toFixed(2)}</td>
+          <td>${item.charge_type}</td>
+          <td>$${itemTotal.toFixed(2)}</td>
+        </tr>
+      `;
+    }).join('');
+  } else {
+    quoteItemsHtml = '<tr><td colspan="5">No items in this quote.</td></tr>';
   }
+
+  // Process template content
+  const processedTemplateContent = templateContent ? processRichTextContent(templateContent) : '';
+
+  // Generate digital signature section if quote is approved and has acceptance details
+  let digitalSignatureSection = '';
+  const isApproved = quote?.status === 'approved' || quote?.status === 'accepted' || !!quote?.acceptedAt;
   
-  console.log('PDFShift Function - Processed items - MRC:', mrcItems.length, 'NRC:', nrcItems.length);
-  
-  // Generate logo HTML if available
-  const logoHtml = logoUrl ? `<img src="${logoUrl}" alt="Company Logo" style="max-width: 120px; max-height: 60px; object-fit: contain;">` : `<div class="company-logo-text">${companyName || 'California Telecom, Inc.'}</div>`;
-  
-  // Process template content for display with enhanced formatting
-  const processedTemplateContent = templateContent ? processTemplateContent(templateContent) : '';
-  
-  // Check if service address is provided and different from billing
-  const hasServiceAddress = serviceAddress && serviceAddress.trim() !== '' && serviceAddress !== billingAddress;
-  
-  // Generate items HTML with proper formatting matching the interface and page break prevention
-  const generateItemsHTML = (items: any[], sectionTitle: string) => {
-    if (items.length === 0) return '';
+  if (isApproved && acceptanceDetails) {
+    console.log('PDFShift Function - Adding digital signature section to HTML');
     
-    return `
-    <div class="items-section">
-        <div class="section-title">${sectionTitle}</div>
-        <table class="items-table">
-            <thead>
-                <tr>
-                    <th class="description-cell">Description</th>
-                    <th class="qty-cell">Qty</th>
-                    <th class="price-cell">Price</th>
-                    <th class="total-cell">Total</th>
-                </tr>
-            </thead>
-            <tbody>
-                ${items.map(item => {
-                  const hasDescriptionContent = (item.processedDescription && item.processedDescription.trim()) || item.images.length > 0;
-                  
-                  return `
-                <tr class="item-row">
-                    <td class="description-cell">
-                        <div class="item-content">
-                            <div class="item-header${hasDescriptionContent ? ' with-content' : ''}">
-                                <div class="item-name">${item.name}</div>
-                                ${item.address ? `<div class="item-location">Location: ${item.address.street_address}, ${item.address.city}, ${item.address.state} ${item.address.zip_code}</div>` : ''}
-                            </div>
-                            ${hasDescriptionContent ? `
-                            <div class="item-details">
-                                ${item.images.length > 0 ? item.images.map(imgSrc => `
-                                <div class="item-image-container">
-                                    <img src="${imgSrc}" alt="Product Image" class="item-image">
-                                </div>
-                                `).join('') : ''}
-                                ${item.processedDescription && item.processedDescription.trim() ? `<div class="item-description">${item.processedDescription}</div>` : ''}
-                            </div>
-                            ` : ''}
-                        </div>
-                    </td>
-                    <td class="qty-cell">${item.quantity}</td>
-                    <td class="price-cell">$${item.unit_price.toFixed(2)}</td>
-                    <td class="total-cell">$${item.total_price.toFixed(2)}</td>
-                </tr>
-                `;
-                }).join('')}
-            </tbody>
-        </table>
-    </div>
+    digitalSignatureSection = `
+      <div class="signature-section" style="margin-top: 40px; page-break-inside: avoid;">
+        <h2 style="font-size: 18px; font-weight: bold; margin-bottom: 20px; color: #1f2937; border-bottom: 2px solid #e5e7eb; padding-bottom: 10px;">
+          Digital Signature & Acceptance Evidence
+        </h2>
+        
+        <p style="margin-bottom: 20px; color: #374151; font-size: 14px;">
+          This document serves as evidence of digital acceptance of the above agreement.
+        </p>
+        
+        <div style="margin-bottom: 20px;">
+          <table style="width: 100%; border-collapse: collapse;">
+            <tr>
+              <td style="padding: 8px 0; font-weight: bold; width: 120px; color: #374151;">Accepted by:</td>
+              <td style="padding: 8px 0; color: #1f2937;">${acceptanceDetails.clientName || 'N/A'}</td>
+            </tr>
+            <tr>
+              <td style="padding: 8px 0; font-weight: bold; color: #374151;">Email:</td>
+              <td style="padding: 8px 0; color: #1f2937;">${acceptanceDetails.clientEmail || 'Not provided'}</td>
+            </tr>
+            <tr>
+              <td style="padding: 8px 0; font-weight: bold; color: #374151;">Date & Time:</td>
+              <td style="padding: 8px 0; color: #1f2937;">${new Date(acceptanceDetails.acceptedAt).toLocaleString()}</td>
+            </tr>
+          </table>
+        </div>
+        
+        ${acceptanceDetails.signatureData ? `
+          <div style="margin-bottom: 20px;">
+            <h3 style="font-size: 16px; font-weight: bold; margin-bottom: 10px; color: #374151;">Digital Signature:</h3>
+            <div style="border: 1px solid #d1d5db; padding: 20px; background-color: #f9fafb; text-align: center;">
+              <img src="${acceptanceDetails.signatureData}" alt="Digital Signature" style="max-width: 300px; max-height: 150px; border: 1px solid #e5e7eb;" />
+            </div>
+          </div>
+        ` : ''}
+        
+        ${(acceptanceDetails.ipAddress || acceptanceDetails.userAgent) ? `
+          <div style="margin-bottom: 20px;">
+            <h3 style="font-size: 14px; font-weight: bold; margin-bottom: 10px; color: #374151;">Technical Authentication Details:</h3>
+            <div style="font-size: 12px; color: #6b7280;">
+              ${acceptanceDetails.ipAddress ? `<p style="margin: 4px 0;">IP Address: ${acceptanceDetails.ipAddress}</p>` : ''}
+              ${acceptanceDetails.userAgent ? `<p style="margin: 4px 0;">Browser: ${acceptanceDetails.userAgent.length > 80 ? acceptanceDetails.userAgent.substring(0, 80) + '...' : acceptanceDetails.userAgent}</p>` : ''}
+            </div>
+          </div>
+        ` : ''}
+        
+        <div style="margin-top: 30px; padding: 15px; background-color: #f3f4f6; border-left: 4px solid #3b82f6;">
+          <h3 style="font-size: 14px; font-weight: bold; margin-bottom: 8px; color: #374151;">Legal Notice:</h3>
+          <p style="font-size: 12px; color: #6b7280; margin: 0; line-height: 1.5;">
+            This digital acceptance is legally binding and constitutes an agreement to the terms and conditions outlined in the above quote. 
+            The digital signature and associated metadata provide authentication of the acceptance.
+          </p>
+        </div>
+      </div>
     `;
-  };
-  
+  }
+
   return `
-<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="UTF-8">
-    <title>Agreement ${quoteNumber}</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-        
-        body {
-            font-family: Arial, sans-serif;
-            font-size: 11px;
-            line-height: 1.4;
-            color: #333;
-            background: white;
-            padding: 20px;
-        }
-        
-        .header {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            margin-bottom: 20px;
-            padding-bottom: 10px;
-        }
-        
-        .company-logo-text {
-            font-size: 11px;
-            font-weight: bold;
-            color: #1f4e79;
-            display: flex;
-            align-items: center;
-        }
-        
-        .company-logo-text::before {
-            content: "CALIFORNIA";
-            margin-right: 8px;
-        }
-        
-        .company-logo-text::after {
-            content: "TELECOM";
-            color: #1f4e79;
-        }
-        
-        .company-info {
-            font-size: 11px;
-            color: #666;
-            margin-top: 5px;
-        }
-        
-        .agreement-title {
-            font-size: 11px;
-            font-weight: normal;
-            color: #999;
-            text-align: right;
-        }
-        
-        .company-details {
-            margin-bottom: 20px;
-        }
-        
-        .company-details div {
-            margin-bottom: 2px;
-        }
-        
-        .agreement-box {
-            position: absolute;
-            right: 20px;
-            top: 80px;
-            width: 180px;
-            border: 1px solid #ddd;
-            background: #f9f9f9;
-            padding: 8px;
-            font-size: 11px;
-        }
-        
-        .agreement-box table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-        
-        .agreement-box td {
-            padding: 2px 4px;
-            border-bottom: 1px solid #eee;
-        }
-        
-        .agreement-box td:first-child {
-            font-weight: bold;
-            width: 50%;
-        }
-        
-        .accept-button {
-            background: #28a745;
-            color: white;
-            text-align: center;
-            padding: 8px;
-            margin-top: 10px;
-            font-weight: normal;
-            border-radius: 3px;
-        }
-        
-        .addresses-section {
-            display: flex;
-            justify-content: space-between;
-            margin: 30px 0;
-            gap: 20px;
-        }
-        
-        .addresses-section.single-address {
-            justify-content: flex-start;
-        }
-        
-        .address-block {
-            flex: 1;
-        }
-        
-        .address-block.single {
-            flex: none;
-            max-width: 300px;
-        }
-        
-        .address-title {
-            font-weight: bold;
-            margin-bottom: 8px;
-            font-size: 11px;
-        }
-        
-        .address-content {
-            font-size: 11px;
-            line-height: 1.5;
-        }
-        
-        .quote-title {
-            font-size: 11px;
-            font-weight: bold;
-            margin: 30px 0 20px 0;
-            color: #333;
-        }
-        
-        .items-section {
-            margin: 20px 0;
-            page-break-inside: avoid;
-        }
-        
-        .section-title {
-            font-weight: bold;
-            margin-bottom: 10px;
-            font-size: 11px;
-        }
-        
-        .items-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-bottom: 15px;
-        }
-        
-        .items-table th,
-        .items-table td {
-            border: 1px solid #ddd;
-            padding: 12px 8px;
-            text-align: left;
-            font-size: 11px;
-            vertical-align: top;
-        }
-        
-        .items-table th {
-            background: #f8f9fa;
-            font-weight: bold;
-        }
-        
-        .item-row {
-            page-break-inside: avoid;
-            break-inside: avoid;
-        }
-        
-        .description-cell {
-            width: 60%;
-        }
-        
-        .qty-cell {
-            width: 8%;
-            text-align: center;
-        }
-        
-        .price-cell {
-            width: 16%;
-            text-align: right;
-        }
-        
-        .total-cell {
-            width: 16%;
-            text-align: right;
-        }
-        
-        .item-content {
-            display: flex;
-            flex-direction: column;
-        }
-        
-        .item-header {
-            /* No default spacing */
-        }
-        
-        .item-header.with-content {
-            border-bottom: 1px solid #eee;
-            padding-bottom: 6px;
-            margin-bottom: 8px;
-        }
-        
-        .item-name {
-            font-weight: bold;
-            font-size: 11px;
-            color: #333;
-            margin-bottom: 3px;
-        }
-        
-        .item-location {
-            font-size: 11px;
-            color: #666;
-        }
-        
-        .item-details {
-            display: flex;
-            gap: 10px;
-            align-items: flex-start;
-        }
-        
-        .item-image-container {
-            flex-shrink: 0;
-        }
-        
-        .item-image {
-            max-width: 80px;
-            max-height: 80px;
-            object-fit: contain;
-            border-radius: 4px;
-            background: white;
-        }
-        
-        .item-description {
-            flex: 1;
-            font-size: 11px !important;
-            color: #555;
-            line-height: 1.4;
-            word-break: normal;
-            overflow-wrap: break-word;
-            white-space: normal;
-        }
-        
-        .item-description * {
-            font-size: 11px !important;
-            font-family: Arial, sans-serif !important;
-            word-break: normal !important;
-            overflow-wrap: break-word !important;
-        }
-        
-        .item-description p {
-            margin: 4px 0;
-            font-size: 11px !important;
-            word-break: normal;
-            overflow-wrap: break-word;
-        }
-        
-        .item-description strong, .item-description b {
-            font-weight: bold;
-            font-size: 11px !important;
-        }
-        
-        .item-description em, .item-description i {
-            font-style: italic;
-            font-size: 11px !important;
-        }
-        
-        .item-description div {
-            font-size: 11px !important;
-            word-break: normal;
-            overflow-wrap: break-word;
-        }
-        
-        .item-description span {
-            font-size: 11px !important;
-            word-break: normal;
-            overflow-wrap: break-word;
-        }
-        
-        .item-description ul, .item-description ol {
-            font-size: 11px !important;
-            margin: 4px 0;
-            padding-left: 20px;
-        }
-        
-        .item-description li {
-            font-size: 11px !important;
-            margin: 2px 0;
-        }
-        
-        .item-description h1, .item-description h2, .item-description h3, 
-        .item-description h4, .item-description h5, .item-description h6 {
-            font-size: 11px !important;
-            font-weight: bold;
-            margin: 4px 0;
-        }
-        
-        .initial-term-section {
-            margin: 30px 0 20px 0;
-            padding: 12px;
-            border: 1px solid #ddd;
-            background: #f8f9fa;
-        }
-        
-        .initial-term-title {
-            font-weight: bold;
-            margin-bottom: 6px;
-            font-size: 11px;
-            color: #333;
-        }
-        
-        .initial-term-value {
-            font-size: 11px;
-            color: #555;
-        }
-        
-        .template-content {
-            margin: 20px 0;
-            padding: 15px;
-            border: 1px solid #ddd;
-            background: #f9f9f9;
-        }
-        
-        .template-title {
-            font-weight: bold;
-            margin-bottom: 10px;
-            font-size: 12px;
-            color: #333;
-        }
-        
-        .template-text {
-            font-size: 10px !important;
-            line-height: 1.5;
-            color: #555;
-            font-family: Arial, sans-serif !important;
-        }
-        
-        .template-text * {
-            font-size: 10px !important;
-            font-family: Arial, sans-serif !important;
-            line-height: 1.4 !important;
-        }
-        
-        .template-text div {
-            margin: 6px 0 !important;
-            font-size: 10px !important;
-        }
-        
-        .template-text p {
-            margin: 6px 0 !important;
-            font-size: 10px !important;
-        }
-        
-        .template-text ul, .template-text ol {
-            font-size: 10px !important;
-            margin: 6px 0 !important;
-            padding-left: 16px !important;
-        }
-        
-        .template-text li {
-            font-size: 10px !important;
-            margin: 2px 0 !important;
-        }
-        
-        .template-text span {
-            font-size: 10px !important;
-        }
-        
-        .template-text b, .template-text strong {
-            font-weight: bold !important;
-            font-size: 10px !important;
-        }
-        
-        .template-text i, .template-text em {
-            font-style: italic !important;
-            font-size: 10px !important;
-        }
-        
-        .template-text br {
-            line-height: 1.4 !important;
-        }
-        
-        .total-amount {
-            text-align: right;
-            font-weight: bold;
-            margin-top: 10px;
-            font-size: 11px;
-        }
-        
-        .status-approved {
-            background: #28a745;
-            color: white;
-            text-align: center;
-            padding: 8px;
-            font-weight: normal;
-            border-radius: 3px;
-        }
-    </style>
-</head>
-<body>
-    <div class="header">
-        <div>
-            ${logoHtml}
-            <div class="company-details">
-                <div>${companyName || 'California Telecom, Inc.'}</div>
-                <div>14538 Central Ave</div>
-                <div>Chino, CA 91710</div>
-                <div>United States</div>
-                <div style="margin-top: 8px;">
-                    <div>Tel: 213-270-1349</div>
-                    <div>Fax: 213-232-3304</div>
-                </div>
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <meta charset="utf-8">
+        <title>Quote ${quote?.quote_number || quote?.id}</title>
+        <style>
+            body { font-family: Arial, sans-serif; margin: 0; padding: 20px; color: #333; }
+            .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
+            .logo { max-width: 200px; max-height: 80px; }
+            .company-info { text-align: right; }
+            .quote-details { background: #f8f9fa; padding: 20px; margin-bottom: 30px; border-radius: 8px; }
+            .client-info { margin-bottom: 30px; }
+            .items-table { width: 100%; border-collapse: collapse; margin-bottom: 30px; }
+            .items-table th, .items-table td { border: 1px solid #ddd; padding: 12px; text-align: left; }
+            .items-table th { background-color: #f8f9fa; font-weight: bold; }
+            .total-row { font-weight: bold; background-color: #f8f9fa; }
+            .terms { margin-top: 30px; }
+            .signature-section { margin-top: 40px; page-break-inside: avoid; }
+        </style>
+    </head>
+    <body>
+        <div class="header">
+            <div>
+                ${logoUrl ? `<img src="${logoUrl}" alt="Company Logo" class="logo">` : ''}
+            </div>
+            <div class="company-info">
+                <h1>${companyName}</h1>
             </div>
         </div>
-        <div class="agreement-title">Agreement</div>
-    </div>
-    
-    <div class="agreement-box">
-        <table>
-            <tr>
-                <td>Agreement</td>
-                <td>${quoteNumber} v2</td>
-            </tr>
-            <tr>
-                <td>Date:</td>
-                <td>${new Date(date).toLocaleDateString('en-US', { month: '2-digit', day: '2-digit', year: 'numeric' })}</td>
-            </tr>
-            <tr>
-                <td>Expires</td>
-                <td>${expiresAt ? new Date(expiresAt).toLocaleDateString('en-US', { month: '2-digit', day: '2-digit', year: 'numeric' }) : 'N/A'}</td>
-            </tr>
-            <tr>
-                <td>Account Manager</td>
-                <td>${finalAccountManagerName}</td>
-            </tr>
-        </table>
-        
-        ${isApproved ? 
-          '<div class="status-approved">APPROVED</div>' : 
-          '<div class="accept-button">ACCEPT AGREEMENT</div>'
-        }
-    </div>
-    
-    <div class="addresses-section${hasServiceAddress ? '' : ' single-address'}">
-        <div class="address-block${hasServiceAddress ? '' : ' single'}">
-            <div class="address-title">Billing Information</div>
-            <div class="address-content">
-                <div><strong>${clientCompanyName}</strong></div>
-                <div>${contactName}</div>
-                <div>${billingAddress || 'Address not specified'}</div>
-                ${contactPhone ? `<div>Tel: ${contactPhone}</div>` : ''}
-                ${contactEmail ? `<div>Email: ${contactEmail}</div>` : ''}
-            </div>
+
+        <div class="quote-details">
+            <h2>Quote #${quote?.quote_number || quote?.id}</h2>
+            <p><strong>Date:</strong> ${new Date(quote?.date || Date.now()).toLocaleDateString()}</p>
+            <p><strong>Account Manager:</strong> ${accountManagerName}</p>
+            ${quote?.expires_at ? `<p><strong>Expires:</strong> ${new Date(quote.expires_at).toLocaleDateString()}</p>` : ''}
         </div>
-        ${hasServiceAddress ? `
-        <div class="address-block">
-            <div class="address-title">Service Address</div>
-            <div class="address-content">
-                <div><strong>${clientCompanyName}</strong></div>
-                <div>${contactName}</div>
-                <div>${serviceAddress}</div>
-                ${contactPhone ? `<div>Tel: ${contactPhone}</div>` : ''}
-                ${contactEmail ? `<div>Email: ${contactEmail}</div>` : ''}
-            </div>
+
+        ${contactSection}
+
+        <div class="items-section">
+            <h3>Quote Items</h3>
+            <table class="items-table">
+                <thead>
+                    <tr>
+                        <th>Description</th>
+                        <th>Quantity</th>
+                        <th>Unit Price</th>
+                        <th>Type</th>
+                        <th>Total</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${quoteItemsHtml}
+                </tbody>
+                <tfoot>
+                    ${mrcTotal > 0 ? `
+                    <tr>
+                        <td colspan="4" style="text-align: right; font-weight: bold;">MRC Subtotal:</td>
+                        <td style="font-weight: bold;">$${mrcTotal.toFixed(2)}</td>
+                    </tr>
+                    ` : ''}
+                    ${nrcTotal > 0 ? `
+                    <tr>
+                        <td colspan="4" style="text-align: right; font-weight: bold;">NRC Subtotal:</td>
+                        <td style="font-weight: bold;">$${nrcTotal.toFixed(2)}</td>
+                    </tr>
+                    ` : ''}
+                    <tr class="total-row">
+                        <td colspan="4" style="text-align: right; font-weight: bold; font-size: 16px;">Total:</td>
+                        <td style="font-weight: bold; font-size: 16px;">$${(mrcTotal + nrcTotal).toFixed(2)}</td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+
+        ${templateContent ? `
+        <div class="terms">
+            <h3>Terms and Conditions</h3>
+            ${processedTemplateContent}
         </div>
         ` : ''}
-    </div>
-    
-    <div class="quote-title">${description}</div>
-    
-    ${generateItemsHTML(mrcItems, 'Monthly Fees')}
-    ${mrcItems.length > 0 ? `<div class="total-amount">Total Monthly: $${mrcTotal.toFixed(2)} USD</div>` : ''}
-    
-    ${generateItemsHTML(nrcItems, 'One-Time Fees')}
-    ${nrcItems.length > 0 ? `<div class="total-amount">Total One-Time: $${nrcTotal.toFixed(2)} USD</div>` : ''}
-    
-    <div class="initial-term-section">
-        <div class="initial-term-title">Initial Term</div>
-        <div class="initial-term-value">${initialTerm}</div>
-    </div>
-    
-    ${processedTemplateContent ? `
-    <div class="template-content">
-        <div class="template-title">Terms & Conditions</div>
-        <div class="template-text">${processedTemplateContent}</div>
-    </div>
-    ` : ''}
-    
-    ${isApproved ? '' : `
-    <div style="margin-top: 30px; text-align: center;">
-        <div class="accept-button">ACCEPT AGREEMENT</div>
-    </div>
-    `}
-</body>
-</html>
+
+        ${digitalSignatureSection}
+    </body>
+    </html>
   `;
 };
