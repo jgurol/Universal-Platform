@@ -157,6 +157,7 @@ export type Database = {
           circuit_quote_id: string
           color: string
           created_at: string
+          display_order: number | null
           id: string
           install_fee: boolean | null
           no_service: boolean | null
@@ -175,6 +176,7 @@ export type Database = {
           circuit_quote_id: string
           color?: string
           created_at?: string
+          display_order?: number | null
           id?: string
           install_fee?: boolean | null
           no_service?: boolean | null
@@ -193,6 +195,7 @@ export type Database = {
           circuit_quote_id?: string
           color?: string
           created_at?: string
+          display_order?: number | null
           id?: string
           install_fee?: boolean | null
           no_service?: boolean | null

@@ -1,19 +1,20 @@
-
 import { Button } from "@/components/ui/button";
-import { Edit, Trash2, Copy } from "lucide-react";
+import { Edit, Trash2, Copy, GripVertical } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { useCategories } from "@/hooks/useCategories";
 import { useClients } from "@/hooks/useClients";
 import type { CarrierQuote } from "@/hooks/useCircuitQuotes";
+import { DraggableProvidedDragHandleProps } from "react-beautiful-dnd";
 
 interface CarrierCardProps {
   carrier: CarrierQuote;
   onEdit?: (carrier: CarrierQuote) => void;
   onDelete?: (carrierId: string) => void;
   onCopy?: (carrier: CarrierQuote) => void;
+  dragHandleProps?: DraggableProvidedDragHandleProps | null;
 }
 
-export const CarrierCard = ({ carrier, onEdit, onDelete, onCopy }: CarrierCardProps) => {
+export const CarrierCard = ({ carrier, onEdit, onDelete, onCopy, dragHandleProps }: CarrierCardProps) => {
   const { isAdmin, user } = useAuth();
   const { categories } = useCategories();
   const { clients } = useClients();
@@ -117,7 +118,17 @@ export const CarrierCard = ({ carrier, onEdit, onDelete, onCopy }: CarrierCardPr
       }`}
     >
       <div className="grid grid-cols-1 md:grid-cols-8 gap-4 items-center">
-        <div>
+        {/* Drag handle for admins */}
+        {isAdmin && dragHandleProps && (
+          <div 
+            {...dragHandleProps}
+            className="flex items-center justify-center w-6 h-6 cursor-grab active:cursor-grabbing text-gray-400 hover:text-gray-600"
+          >
+            <GripVertical className="h-4 w-4" />
+          </div>
+        )}
+        
+        <div className={isAdmin && dragHandleProps ? "md:col-start-2" : ""}>
           <div 
             className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium text-white shadow-sm ${
               isPending && !isNoService ? 'animate-pulse' : ''

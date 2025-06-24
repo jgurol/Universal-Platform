@@ -67,6 +67,14 @@ export const CircuitQuoteCard = ({
     setIsExpanded(true);
   };
 
+  const handleReorderCarriers = (reorderedCarriers: CarrierQuote[]) => {
+    const updatedQuote = {
+      ...quote,
+      carriers: reorderedCarriers
+    };
+    onUpdate(updatedQuote);
+  };
+
   const actions = CircuitQuoteCardActions({
     onAddCarrier,
     onUpdateCarrier: handleUpdateCarrier
@@ -108,6 +116,7 @@ export const CircuitQuoteCard = ({
             onEditCarrier={actions.handleEditCarrier}
             onDeleteCarrier={deleteCarrierQuote}
             onCopyCarrier={actions.copyCarrierQuote}
+            onReorderCarriers={handleReorderCarriers}
             staticIp={quote.static_ip}
             slash29={quote.slash_29}
             mikrotikRequired={quote.mikrotik_required}
