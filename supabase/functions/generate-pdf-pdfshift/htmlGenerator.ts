@@ -1,4 +1,5 @@
-import { processRichTextContent } from './utils.ts';
+
+import { processTemplateContent } from './contentProcessor.ts';
 
 export const generateHTML = (
   quote: any,
@@ -67,7 +68,7 @@ export const generateHTML = (
   }
 
   // Process template content
-  const processedTemplateContent = templateContent ? processRichTextContent(templateContent) : '';
+  const processedTemplateContent = templateContent ? processTemplateContent(templateContent) : '';
 
   // Generate digital signature section if quote is approved and has acceptance details
   let digitalSignatureSection = '';
