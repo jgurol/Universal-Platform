@@ -1,3 +1,4 @@
+
 import { Button } from "@/components/ui/button";
 import { Edit, Trash2, Copy, GripVertical } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
@@ -117,91 +118,99 @@ export const CarrierCard = ({ carrier, onEdit, onDelete, onCopy, dragHandleProps
         isNoService ? 'bg-red-50 border-red-200' : 'bg-gray-50'
       }`}
     >
-      <div className="grid grid-cols-1 md:grid-cols-8 gap-4 items-center">
+      <div className="flex items-center gap-4">
         {/* Drag handle for admins */}
         {isAdmin && dragHandleProps && (
           <div 
             {...dragHandleProps}
-            className="flex items-center justify-center w-6 h-6 cursor-grab active:cursor-grabbing text-gray-400 hover:text-gray-600"
+            className="flex items-center justify-center w-6 h-6 cursor-grab active:cursor-grabbing text-gray-400 hover:text-gray-600 flex-shrink-0"
           >
             <GripVertical className="h-4 w-4" />
           </div>
         )}
         
-        <div className={isAdmin && dragHandleProps ? "md:col-start-2" : ""}>
-          <div 
-            className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium text-white shadow-sm ${
-              isPending && !isNoService ? 'animate-pulse' : ''
-            }`}
-            style={{ backgroundColor: carrier.color || '#3B82F6' }}
-          >
-            {carrier.carrier}
+        {/* Main content in a flexible grid */}
+        <div className="flex-1 grid grid-cols-1 md:grid-cols-8 gap-4 items-center">
+          <div>
+            <div 
+              className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium text-white shadow-sm ${
+                isPending && !isNoService ? 'animate-pulse' : ''
+              }`}
+              style={{ backgroundColor: carrier.color || '#3B82F6' }}
+            >
+              {carrier.carrier}
+            </div>
           </div>
-        </div>
-        
-        <div>
-          <div className="font-medium">{carrier.type}</div>
-        </div>
-        
-        <div>
-          <div className="font-medium">{carrier.speed}</div>
-        </div>
-        
-        <div>
-          <div className={`font-semibold text-lg ${isNoService ? 'text-red-600' : ''}`}>
-            {isNoService ? 'No Service' : (
-              displayPrice > 0 ? `$${displayPrice}` : (
-                <span className="text-orange-600 text-sm">Pending</span>
-              )
-            )}
+          
+          <div>
+            <div className="font-medium">{carrier.type}</div>
           </div>
-        </div>
-        
-        <div>
-          <div className="text-sm">
-            {carrier.term && <div className="font-medium">{carrier.term}</div>}
+          
+          <div>
+            <div className="font-medium">{carrier.speed}</div>
           </div>
-        </div>
-        
-        <div className="md:col-span-2">
-          <div className="text-sm text-gray-600">
-            {tickedOptions.length > 0 && (
-              <div className="flex flex-wrap gap-1 mb-1">
-                {tickedOptions.map((option, index) => {
-                  let badgeClass = "bg-blue-100 text-blue-800";
-                  
-                  if (option === 'No Service') {
-                    badgeClass = "bg-red-100 text-red-800";
-                  } else if (option === 'Includes Static IP') {
-                    badgeClass = "bg-green-100 text-green-800";
-                  } else if (option.includes('Site Survey')) {
-                    if (option.includes('RED')) {
+          
+          <div>
+            <div className={`font-semibold text-lg ${isNoService ? 'text-red-600' : ''}`}>
+              {isNoService ? 'No Service' : (
+                displayPrice > 0 ? `$${displayPrice}` : (
+                  <span className="text-orange-600 text-sm">Pending</span>
+                )
+              )}
+            </div>
+          </div>
+          
+          <div>
+            <div className="text-sm">
+              {carrier.term && <div className="font-medium">{carrier.term}</div>}
+            </div>
+          </div>
+          
+          <div className="md:col-span-2">
+            <div className="text-sm text-gray-600">
+              {tickedOptions.length > 0 && (
+                <div className="flex flex-wrap gap-1 mb-1">
+                  {tickedOptions.map((option, index) => {
+                    let badgeClass = "bg-blue-100 text-blue-800";
+                    
+                    if (option === 'No Service') {
                       badgeClass = "bg-red-100 text-red-800";
-                    } else if (option.includes('YELLOW')) {
-                      badgeClass = "bg-yellow-100 text-yellow-800";
-                    } else if (option.includes('ORANGE')) {
-                      badgeClass = "bg-orange-100 text-orange-800";
-                    } else if (option.includes('GREEN')) {
+                    } else if (option === 'Includes Static IP') {
                       badgeClass = "bg-green-100 text-green-800";
+                    } else if (option.includes('Site Survey')) {
+                      if (option.includes('RED')) {
+                        badgeClass = "bg-red-100 text-red-800";
+                      } else if (option.includes('YELLOW')) {
+                        badgeClass = "bg-yellow-100 text-yellow-800";
+                      } else if (option.includes('ORANGE')) {
+                        badgeClass = "bg-orange-100 text-orange-800";
+                      } else if (option.includes('GREEN')) {
+                        badgeClass = "bg-green-100 text-green-800";
+                      }
                     }
-                  }
-                  
-                  return (
-                    <span 
-                      key={index} 
-                      className={`inline-flex items-center px-2 py-1 rounded-full text-xs ${badgeClass}`}
-                    >
-                      {option}
-                    </span>
-                  );
-                })}
-              </div>
-            )}
-            {latestNote}
+                    
+                    return (
+                      <span 
+                        key={index} 
+                        className={`inline-flex items-center px-2 py-1 rounded-full text-xs ${badgeClass}`}
+                      >
+                        {option}
+                      </span>
+                    );
+                  })}
+                </div>
+              )}
+              {latestNote}
+            </div>
+          </div>
+          
+          <div>
+            {/* This column is intentionally empty to balance the grid */}
           </div>
         </div>
         
-        <div className="flex items-center gap-2">
+        {/* Action buttons - always on the right */}
+        <div className="flex items-center gap-2 flex-shrink-0">
           {isAdmin && onCopy && (
             <Button
               variant="ghost"
