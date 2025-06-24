@@ -1,8 +1,7 @@
-
 import { processRichTextContent, processTemplateContent } from './contentProcessor.ts';
-import { BusinessSettings } from './types.ts';
+import { BusinessSettings, AcceptanceDetails } from './types.ts';
 
-// Enhanced HTML generation function with template content support
+// Enhanced HTML generation function with template content support and digital signature evidence
 export const generateHTML = (
   quote: any, 
   clientInfo?: any, 
@@ -16,7 +15,8 @@ export const generateHTML = (
     email: string | null;
     phone: string | null;
     title: string | null;
-  }
+  },
+  acceptanceDetails?: AcceptanceDetails | null
 ): string => {
   // Extract data safely
   const quoteId = quote?.id || '';
@@ -111,6 +111,67 @@ export const generateHTML = (
   
   // Check if service address is provided and different from billing
   const hasServiceAddress = serviceAddress && serviceAddress.trim() !== '' && serviceAddress !== billingAddress;
+  
+  // Generate digital signature evidence section if acceptance details are available
+  const generateDigitalSignatureSection = () => {
+    if (!isApproved || !acceptanceDetails) {
+      return '';
+    }
+
+    console.log('PDFShift Function - Adding digital signature evidence section');
+
+    return `
+    <div style="page-break-before: always;">
+      <div class="digital-evidence-section">
+        <div class="evidence-title">Digital Acceptance Evidence</div>
+        <div class="evidence-content">
+          <p>This document serves as evidence of digital acceptance of the above agreement.</p>
+          
+          <div class="evidence-details">
+            <div class="evidence-row">
+              <span class="evidence-label">Accepted by:</span>
+              <span class="evidence-value">${acceptanceDetails.clientName}</span>
+            </div>
+            <div class="evidence-row">
+              <span class="evidence-label">Email:</span>
+              <span class="evidence-value">${acceptanceDetails.clientEmail}</span>
+            </div>
+            <div class="evidence-row">
+              <span class="evidence-label">Date & Time:</span>
+              <span class="evidence-value">${new Date(acceptanceDetails.acceptedAt).toLocaleString()}</span>
+            </div>
+            ${acceptanceDetails.ipAddress ? `
+            <div class="evidence-row">
+              <span class="evidence-label">IP Address:</span>
+              <span class="evidence-value">${acceptanceDetails.ipAddress}</span>
+            </div>
+            ` : ''}
+            ${acceptanceDetails.userAgent ? `
+            <div class="evidence-row">
+              <span class="evidence-label">Browser:</span>
+              <span class="evidence-value">${acceptanceDetails.userAgent.length > 100 ? acceptanceDetails.userAgent.substring(0, 100) + '...' : acceptanceDetails.userAgent}</span>
+            </div>
+            ` : ''}
+          </div>
+          
+          ${acceptanceDetails.signatureData ? `
+          <div class="signature-section">
+            <div class="signature-label">Digital Signature:</div>
+            <div class="signature-container">
+              <img src="${acceptanceDetails.signatureData}" alt="Digital Signature" class="signature-image">
+            </div>
+          </div>
+          ` : ''}
+          
+          <div class="legal-notice">
+            <div class="legal-title">Legal Notice:</div>
+            <p class="legal-text">This digital acceptance is legally binding and constitutes an agreement to the terms and conditions outlined in the above quote. The digital signature and associated metadata provide authentication of the acceptance.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+    `;
+  };
   
   // Generate items HTML with proper formatting matching the interface and page break prevention
   const generateItemsHTML = (items: any[], sectionTitle: string) => {
@@ -571,6 +632,98 @@ export const generateHTML = (
             font-weight: normal;
             border-radius: 3px;
         }
+        
+        .digital-evidence-section {
+            margin-top: 40px;
+            padding: 20px;
+            border: 2px solid #333;
+            background: #f9f9f9;
+        }
+        
+        .evidence-title {
+            font-size: 16px;
+            font-weight: bold;
+            text-align: center;
+            margin-bottom: 20px;
+            color: #333;
+        }
+        
+        .evidence-content {
+            font-size: 11px;
+            line-height: 1.5;
+        }
+        
+        .evidence-content p {
+            margin-bottom: 15px;
+            color: #555;
+        }
+        
+        .evidence-details {
+            margin: 20px 0;
+        }
+        
+        .evidence-row {
+            display: flex;
+            margin-bottom: 8px;
+            padding: 4px 0;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .evidence-label {
+            font-weight: bold;
+            width: 120px;
+            color: #333;
+        }
+        
+        .evidence-value {
+            flex: 1;
+            color: #555;
+        }
+        
+        .signature-section {
+            margin: 25px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            background: white;
+        }
+        
+        .signature-label {
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: #333;
+        }
+        
+        .signature-container {
+            text-align: center;
+            padding: 10px;
+        }
+        
+        .signature-image {
+            max-width: 200px;
+            max-height: 100px;
+            border: 1px solid #ccc;
+            background: white;
+        }
+        
+        .legal-notice {
+            margin-top: 25px;
+            padding: 15px;
+            background: #fff3cd;
+            border: 1px solid #ffeeba;
+            border-radius: 4px;
+        }
+        
+        .legal-title {
+            font-weight: bold;
+            margin-bottom: 8px;
+            color: #856404;
+        }
+        
+        .legal-text {
+            font-size: 10px;
+            color: #856404;
+            line-height: 1.4;
+        }
     </style>
 </head>
 <body>
@@ -667,6 +820,8 @@ export const generateHTML = (
         <div class="accept-button">ACCEPT AGREEMENT</div>
     </div>
     `}
+    
+    ${generateDigitalSignatureSection()}
 </body>
 </html>
   `;
