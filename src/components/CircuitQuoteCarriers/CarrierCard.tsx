@@ -1,3 +1,4 @@
+
 import { Button } from "@/components/ui/button";
 import { Edit, Trash2, Copy } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
@@ -67,6 +68,8 @@ export const CarrierCard = ({ carrier, onEdit, onDelete, onCopy }: CarrierCardPr
             surveyText = "Site Survey (YELLOW)";
           } else if (colorPart.startsWith("orange")) {
             surveyText = "Site Survey (ORANGE)";
+          } else if (colorPart.startsWith("green")) {
+            surveyText = "Site Survey (GREEN)";
           }
         }
       }
@@ -167,6 +170,8 @@ export const CarrierCard = ({ carrier, onEdit, onDelete, onCopy }: CarrierCardPr
                       badgeClass = "bg-yellow-100 text-yellow-800";
                     } else if (option.includes('ORANGE')) {
                       badgeClass = "bg-orange-100 text-orange-800";
+                    } else if (option.includes('GREEN')) {
+                      badgeClass = "bg-green-100 text-green-800";
                     }
                   }
                   

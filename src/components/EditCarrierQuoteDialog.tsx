@@ -115,7 +115,7 @@ export const EditCarrierQuoteDialog = ({ open, onOpenChange, carrier, onUpdateCa
         const parts = carrier.notes.split("Site Survey:");
         if (parts.length > 1) {
           const colorPart = parts[1].trim().toLowerCase();
-          if (colorPart.startsWith("red") || colorPart.startsWith("yellow") || colorPart.startsWith("orange")) {
+          if (colorPart.startsWith("red") || colorPart.startsWith("yellow") || colorPart.startsWith("orange") || colorPart.startsWith("green")) {
             surveyColor = colorPart.split(" ")[0];
           }
           cleanNotes = parts[0].replace(" | ", "").trim();
@@ -377,6 +377,15 @@ export const EditCarrierQuoteDialog = ({ open, onOpenChange, carrier, onUpdateCa
                       className={siteSurveyColor === "orange" ? "bg-orange-500 hover:bg-orange-600" : "border-orange-500 text-orange-600 hover:bg-orange-50"}
                     >
                       Orange
+                    </Button>
+                    <Button
+                      type="button"
+                      variant={siteSurveyColor === "green" ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => setSiteSurveyColor("green")}
+                      className={siteSurveyColor === "green" ? "bg-green-500 hover:bg-green-600" : "border-green-500 text-green-600 hover:bg-green-50"}
+                    >
+                      Green
                     </Button>
                   </div>
                 </div>

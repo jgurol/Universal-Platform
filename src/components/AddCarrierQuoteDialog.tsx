@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -339,6 +338,15 @@ export const AddCarrierQuoteDialog = ({ open, onOpenChange, onAddCarrier }: AddC
                     className={siteSurveyColor === "orange" ? "bg-orange-500 hover:bg-orange-600" : "border-orange-500 text-orange-600 hover:bg-orange-50"}
                   >
                     Orange
+                  </Button>
+                  <Button
+                    type="button"
+                    variant={siteSurveyColor === "green" ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setSiteSurveyColor("green")}
+                    className={siteSurveyColor === "green" ? "bg-green-500 hover:bg-green-600" : "border-green-500 text-green-600 hover:bg-green-50"}
+                  >
+                    Green
                   </Button>
                 </div>
               </div>
