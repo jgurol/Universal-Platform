@@ -160,6 +160,7 @@ export type Database = {
           display_order: number | null
           id: string
           install_fee: boolean | null
+          install_fee_amount: number | null
           no_service: boolean | null
           notes: string | null
           price: number
@@ -167,6 +168,7 @@ export type Database = {
           slash_29: boolean | null
           speed: string
           static_ip: boolean | null
+          static_ip_fee_amount: number | null
           term: string | null
           type: string
           updated_at: string
@@ -179,6 +181,7 @@ export type Database = {
           display_order?: number | null
           id?: string
           install_fee?: boolean | null
+          install_fee_amount?: number | null
           no_service?: boolean | null
           notes?: string | null
           price: number
@@ -186,6 +189,7 @@ export type Database = {
           slash_29?: boolean | null
           speed: string
           static_ip?: boolean | null
+          static_ip_fee_amount?: number | null
           term?: string | null
           type: string
           updated_at?: string
@@ -198,6 +202,7 @@ export type Database = {
           display_order?: number | null
           id?: string
           install_fee?: boolean | null
+          install_fee_amount?: number | null
           no_service?: boolean | null
           notes?: string | null
           price?: number
@@ -205,6 +210,7 @@ export type Database = {
           slash_29?: boolean | null
           speed?: string
           static_ip?: boolean | null
+          static_ip_fee_amount?: number | null
           term?: string | null
           type?: string
           updated_at?: string

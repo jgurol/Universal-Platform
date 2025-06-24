@@ -70,9 +70,11 @@ export const useCarrierQuoteService = () => {
           term: carrierQuote.term,
           color: carrierQuote.color,
           install_fee: carrierQuote.install_fee,
+          install_fee_amount: carrierQuote.install_fee_amount,
           site_survey_needed: carrierQuote.site_survey_needed,
           no_service: carrierQuote.no_service,
-          static_ip: carrierQuote.static_ip
+          static_ip: carrierQuote.static_ip,
+          static_ip_fee_amount: carrierQuote.static_ip_fee_amount
         })
         .eq('id', carrierQuote.id);
 

@@ -28,7 +28,9 @@ export interface CarrierQuote {
   term: string;
   color: string;
   install_fee: boolean;
+  install_fee_amount: number;
   site_survey_needed: boolean;
   no_service: boolean;
   static_ip: boolean;
+  static_ip_fee_amount: number;
 }

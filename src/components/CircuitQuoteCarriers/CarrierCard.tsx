@@ -56,7 +56,13 @@ export const CarrierCard = ({ carrier, onEdit, onDelete, onCopy, dragHandleProps
   
   const getTickedCheckboxes = () => {
     const ticked = [];
-    if (carrier.install_fee) ticked.push("Install Fee");
+    if (carrier.install_fee) {
+      let installText = "Install Fee";
+      if (carrier.install_fee_amount && carrier.install_fee_amount > 0) {
+        installText += ` ($${carrier.install_fee_amount})`;
+      }
+      ticked.push(installText);
+    }
     if (carrier.site_survey_needed) {
       // Extract color from notes if present
       let surveyText = "Site Survey";
@@ -78,7 +84,13 @@ export const CarrierCard = ({ carrier, onEdit, onDelete, onCopy, dragHandleProps
       ticked.push(surveyText);
     }
     if (carrier.no_service) ticked.push("No Service");
-    if (carrier.static_ip) ticked.push("Includes Static IP");
+    if (carrier.static_ip) {
+      let staticIpText = "Includes Static IP";
+      if (carrier.static_ip_fee_amount && carrier.static_ip_fee_amount > 0) {
+        staticIpText += ` ($${carrier.static_ip_fee_amount})`;
+      }
+      ticked.push(staticIpText);
+    }
     return ticked;
   };
 
@@ -175,7 +187,7 @@ export const CarrierCard = ({ carrier, onEdit, onDelete, onCopy, dragHandleProps
                     
                     if (option === 'No Service') {
                       badgeClass = "bg-red-100 text-red-800";
-                    } else if (option === 'Includes Static IP') {
+                    } else if (option.includes('Static IP')) {
                       badgeClass = "bg-green-100 text-green-800";
                     } else if (option.includes('Site Survey')) {
                       if (option.includes('RED')) {

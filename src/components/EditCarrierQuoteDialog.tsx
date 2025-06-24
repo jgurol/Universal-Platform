@@ -31,10 +31,12 @@ export const EditCarrierQuoteDialog = ({ open, onOpenChange, carrier, onUpdateCa
   const [term, setTerm] = useState("");
   const [notes, setNotes] = useState("");
   const [installFee, setInstallFee] = useState(false);
+  const [installFeeAmount, setInstallFeeAmount] = useState("");
   const [siteSurveyNeeded, setSiteSurveyNeeded] = useState(false);
   const [siteSurveyColor, setSiteSurveyColor] = useState("red");
   const [noService, setNoService] = useState(false);
   const [includesStaticIp, setIncludesStaticIp] = useState(false);
+  const [staticIpFeeAmount, setStaticIpFeeAmount] = useState("");
   const [isNotesDialogOpen, setIsNotesDialogOpen] = useState(false);
 
   const { vendors, categories, loading } = useCarrierOptions();
@@ -125,9 +127,11 @@ export const EditCarrierQuoteDialog = ({ open, onOpenChange, carrier, onUpdateCa
       setNotes(cleanNotes);
       setSiteSurveyColor(surveyColor);
       setInstallFee(carrier.install_fee || false);
+      setInstallFeeAmount(carrier.install_fee_amount > 0 ? carrier.install_fee_amount.toString() : "");
       setSiteSurveyNeeded(carrier.site_survey_needed || false);
       setNoService(carrier.no_service || false);
       setIncludesStaticIp(carrier.static_ip || false);
+      setStaticIpFeeAmount(carrier.static_ip_fee_amount > 0 ? carrier.static_ip_fee_amount.toString() : "");
     }
   }, [carrier, vendors, categories, speeds]);
 
@@ -153,9 +157,11 @@ export const EditCarrierQuoteDialog = ({ open, onOpenChange, carrier, onUpdateCa
         notes: siteSurveyNeeded ? `${notes}${notes ? ' | ' : ''}Site Survey: ${siteSurveyColor.toUpperCase()}` : notes,
         color: vendorColor,
         install_fee: installFee,
+        install_fee_amount: installFeeAmount ? parseFloat(installFeeAmount) : 0,
         site_survey_needed: siteSurveyNeeded,
         no_service: noService,
-        static_ip: includesStaticIp
+        static_ip: includesStaticIp,
+        static_ip_fee_amount: staticIpFeeAmount ? parseFloat(staticIpFeeAmount) : 0
       });
       
       onOpenChange(false);
@@ -301,16 +307,35 @@ export const EditCarrierQuoteDialog = ({ open, onOpenChange, carrier, onUpdateCa
 
             <div className="space-y-4">
               <Label>Options</Label>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="flex items-center space-x-2">
-                  <Checkbox
-                    id="install-fee"
-                    checked={installFee}
-                    onCheckedChange={(checked) => setInstallFee(checked as boolean)}
-                  />
-                  <Label htmlFor="install-fee" className="text-sm font-normal">
-                    Install Fee
-                  </Label>
+              <div className="grid grid-cols-1 gap-4">
+                <div className="space-y-3">
+                  <div className="flex items-center space-x-2">
+                    <Checkbox
+                      id="install-fee"
+                      checked={installFee}
+                      onCheckedChange={(checked) => setInstallFee(checked as boolean)}
+                    />
+                    <Label htmlFor="install-fee" className="text-sm font-normal">
+                      Install Fee
+                    </Label>
+                  </div>
+                  
+                  {installFee && (
+                    <div className="ml-6">
+                      <Label htmlFor="install-fee-amount" className="text-xs text-gray-600">
+                        Install Fee Amount
+                      </Label>
+                      <Input
+                        id="install-fee-amount"
+                        type="number"
+                        step="0.01"
+                        value={installFeeAmount}
+                        onChange={(e) => setInstallFeeAmount(e.target.value)}
+                        placeholder="Enter fee amount"
+                        className="mt-1"
+                      />
+                    </div>
+                  )}
                 </div>
                 
                 <div className="flex items-center space-x-2">
@@ -335,15 +360,34 @@ export const EditCarrierQuoteDialog = ({ open, onOpenChange, carrier, onUpdateCa
                   </Label>
                 </div>
                 
-                <div className="flex items-center space-x-2">
-                  <Checkbox
-                    id="includes-static-ip"
-                    checked={includesStaticIp}
-                    onCheckedChange={(checked) => setIncludesStaticIp(checked as boolean)}
-                  />
-                  <Label htmlFor="includes-static-ip" className="text-sm font-normal">
-                    Includes Static IP
-                  </Label>
+                <div className="space-y-3">
+                  <div className="flex items-center space-x-2">
+                    <Checkbox
+                      id="includes-static-ip"
+                      checked={includesStaticIp}
+                      onCheckedChange={(checked) => setIncludesStaticIp(checked as boolean)}
+                    />
+                    <Label htmlFor="includes-static-ip" className="text-sm font-normal">
+                      Includes Static IP
+                    </Label>
+                  </div>
+                  
+                  {includesStaticIp && (
+                    <div className="ml-6">
+                      <Label htmlFor="static-ip-fee-amount" className="text-xs text-gray-600">
+                        Static IP Fee Amount
+                      </Label>
+                      <Input
+                        id="static-ip-fee-amount"
+                        type="number"
+                        step="0.01"
+                        value={staticIpFeeAmount}
+                        onChange={(e) => setStaticIpFeeAmount(e.target.value)}
+                        placeholder="Enter fee amount"
+                        className="mt-1"
+                      />
+                    </div>
+                  )}
                 </div>
               </div>
 
