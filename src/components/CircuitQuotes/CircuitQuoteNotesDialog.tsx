@@ -5,7 +5,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { FileText, Upload, Download, Trash2, Calendar, User } from "lucide-react";
+import { FileText, Upload, Download, Trash2, Calendar, User, Image } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
 
@@ -302,6 +302,10 @@ export const CircuitQuoteNotesDialog = ({
     return new Date(dateString).toLocaleString();
   };
 
+  const isImageFile = (fileType: string) => {
+    return fileType.startsWith('image/');
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[700px] max-h-[80vh] overflow-y-auto">
@@ -425,29 +429,68 @@ export const CircuitQuoteNotesDialog = ({
                         <h4 className="text-sm font-medium text-gray-700">Attachments:</h4>
                         <div className="grid gap-2">
                           {note.files.map((file) => (
-                            <div key={file.id} className="flex items-center justify-between bg-gray-50 p-2 rounded">
-                              <div className="flex items-center gap-2">
-                                <FileText className="h-4 w-4" />
-                                <span className="text-sm">{file.file_name}</span>
-                                <span className="text-xs text-gray-500">({formatFileSize(file.file_size)})</span>
-                              </div>
-                              <div className="flex items-center gap-1">
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => window.open(file.file_path, '_blank')}
-                                >
-                                  <Download className="h-4 w-4" />
-                                </Button>
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => deleteFile(file.id)}
-                                  className="text-red-600 hover:text-red-700"
-                                >
-                                  <Trash2 className="h-4 w-4" />
-                                </Button>
-                              </div>
+                            <div key={file.id} className="bg-gray-50 p-2 rounded">
+                              {isImageFile(file.file_type) ? (
+                                <div className="space-y-2">
+                                  <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-2">
+                                      <Image className="h-4 w-4" />
+                                      <span className="text-sm">{file.file_name}</span>
+                                      <span className="text-xs text-gray-500">({formatFileSize(file.file_size)})</span>
+                                    </div>
+                                    <div className="flex items-center gap-1">
+                                      <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        onClick={() => window.open(file.file_path, '_blank')}
+                                      >
+                                        <Download className="h-4 w-4" />
+                                      </Button>
+                                      <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        onClick={() => deleteFile(file.id)}
+                                        className="text-red-600 hover:text-red-700"
+                                      >
+                                        <Trash2 className="h-4 w-4" />
+                                      </Button>
+                                    </div>
+                                  </div>
+                                  <div className="mt-2">
+                                    <img 
+                                      src={file.file_path} 
+                                      alt={file.file_name}
+                                      className="max-w-full h-auto max-h-48 rounded border cursor-pointer hover:opacity-80 transition-opacity"
+                                      onClick={() => window.open(file.file_path, '_blank')}
+                                    />
+                                  </div>
+                                </div>
+                              ) : (
+                                <div className="flex items-center justify-between">
+                                  <div className="flex items-center gap-2">
+                                    <FileText className="h-4 w-4" />
+                                    <span className="text-sm">{file.file_name}</span>
+                                    <span className="text-xs text-gray-500">({formatFileSize(file.file_size)})</span>
+                                  </div>
+                                  <div className="flex items-center gap-1">
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      onClick={() => window.open(file.file_path, '_blank')}
+                                    >
+                                      <Download className="h-4 w-4" />
+                                    </Button>
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      onClick={() => deleteFile(file.id)}
+                                      className="text-red-600 hover:text-red-700"
+                                    >
+                                      <Trash2 className="h-4 w-4" />
+                                    </Button>
+                                  </div>
+                                </div>
+                              )}
                             </div>
                           ))}
                         </div>
