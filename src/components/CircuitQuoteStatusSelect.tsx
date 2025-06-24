@@ -2,21 +2,29 @@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 interface CircuitQuoteStatusSelectProps {
-  status: string;
-  onStatusChange: (status: string) => void;
+  value: string;
+  onValueChange: (value: string) => void;
 }
 
-export const CircuitQuoteStatusSelect = ({ status, onStatusChange }: CircuitQuoteStatusSelectProps) => {
+export const CircuitQuoteStatusSelect = ({ value, onValueChange }: CircuitQuoteStatusSelectProps) => {
+  const statusOptions = [
+    { value: 'new_pricing', label: 'New Pricing' },
+    { value: 'researching', label: 'Researching' },
+    { value: 'completed', label: 'Completed' },
+    { value: 'sent_to_customer', label: 'Sent to Customer' }
+  ];
+
   return (
-    <Select value={status} onValueChange={onStatusChange}>
-      <SelectTrigger className="w-[140px] h-8 text-xs">
-        <SelectValue />
+    <Select value={value} onValueChange={onValueChange}>
+      <SelectTrigger className="w-[180px]">
+        <SelectValue placeholder="Select status" />
       </SelectTrigger>
-      <SelectContent className="bg-white z-50">
-        <SelectItem value="new_pricing">New Pricing</SelectItem>
-        <SelectItem value="researching">Researching</SelectItem>
-        <SelectItem value="completed">Completed</SelectItem>
-        <SelectItem value="sent_to_customer">Sent to Customer</SelectItem>
+      <SelectContent>
+        {statusOptions.map((option) => (
+          <SelectItem key={option.value} value={option.value}>
+            {option.label}
+          </SelectItem>
+        ))}
       </SelectContent>
     </Select>
   );
