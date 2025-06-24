@@ -1,3 +1,4 @@
+
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
@@ -43,6 +44,49 @@ const generateOrderNumber = async (): Promise<string> => {
   return nextNumber.toString();
 };
 
+const createQuoteAcceptanceRecord = async (quoteId: string, quote: any) => {
+  console.log('Creating quote acceptance record for manual approval:', quoteId);
+  
+  // Check if acceptance record already exists
+  const { data: existingAcceptance, error: checkError } = await supabase
+    .from('quote_acceptances')
+    .select('id')
+    .eq('quote_id', quoteId)
+    .maybeSingle();
+
+  if (checkError) {
+    console.error('Error checking existing acceptance:', checkError);
+    return false;
+  }
+
+  if (existingAcceptance) {
+    console.log('Acceptance record already exists for quote:', quoteId);
+    return true;
+  }
+
+  // Create acceptance record for manual approval
+  const acceptanceData = {
+    quote_id: quoteId,
+    client_name: 'Manual Approval',
+    client_email: 'admin@system.com',
+    signature_data: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==', // 1x1 transparent pixel
+    ip_address: null,
+    user_agent: 'Manual Admin Approval'
+  };
+
+  const { error: insertError } = await supabase
+    .from('quote_acceptances')
+    .insert(acceptanceData);
+
+  if (insertError) {
+    console.error('Error creating acceptance record:', insertError);
+    return false;
+  }
+
+  console.log('Successfully created acceptance record for manual approval');
+  return true;
+};
+
 const handler = async (req: Request): Promise<Response> => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -56,6 +100,27 @@ const handler = async (req: Request): Promise<Response> => {
     // Handle status-only update using the new RPC function
     if (action === 'update_status_only') {
       console.log('Updating quote status only for:', quoteId);
+      
+      // Get quote details first for acceptance record creation
+      const { data: quote, error: quoteError } = await supabase
+        .from('quotes')
+        .select('*')
+        .eq('id', quoteId)
+        .single();
+
+      if (quoteError || !quote) {
+        console.error('Failed to fetch quote for status update:', quoteError);
+        return new Response(JSON.stringify({ 
+          success: false, 
+          error: `Failed to fetch quote: ${quoteError?.message}`
+        }), {
+          status: 500,
+          headers: { "Content-Type": "application/json", ...corsHeaders },
+        });
+      }
+
+      // Create acceptance record if it doesn't exist
+      const acceptanceCreated = await createQuoteAcceptanceRecord(quoteId, quote);
       
       const { error: rpcError } = await supabase.rpc('update_quote_status', {
         quote_id: quoteId,
@@ -77,7 +142,8 @@ const handler = async (req: Request): Promise<Response> => {
       
       return new Response(JSON.stringify({ 
         success: true, 
-        message: 'Quote status updated successfully'
+        message: 'Quote status updated successfully',
+        acceptanceRecordCreated: acceptanceCreated
       }), {
         status: 200,
         headers: { "Content-Type": "application/json", ...corsHeaders },
@@ -100,6 +166,18 @@ const handler = async (req: Request): Promise<Response> => {
 
     if (existingOrders && existingOrders.length > 0) {
       console.log('Orders already exist for quote:', quoteId, 'Count:', existingOrders.length);
+      
+      // Get quote details for acceptance record creation
+      const { data: quote, error: quoteError } = await supabase
+        .from('quotes')
+        .select('*')
+        .eq('id', quoteId)
+        .single();
+
+      if (!quoteError && quote) {
+        // Create acceptance record if it doesn't exist
+        await createQuoteAcceptanceRecord(quoteId, quote);
+      }
       
       // Since orders exist, just update the quote status using RPC
       console.log('Attempting to update quote status for existing orders...');
@@ -137,6 +215,9 @@ const handler = async (req: Request): Promise<Response> => {
     if (quoteError || !quote) {
       throw new Error(`Failed to fetch quote: ${quoteError?.message}`);
     }
+
+    // Create acceptance record for manual approval
+    await createQuoteAcceptanceRecord(quoteId, quote);
 
     const orderNumber = await generateOrderNumber();
 
