@@ -47,11 +47,7 @@ export const generateQuotePDF = async (quote: Quote, clientInfo?: ClientInfo, sa
     isApproved
   };
   
-  console.log('PDF Generation - Context created with addresses:', {
-    billingAddress: context.quote.billingAddress,
-    serviceAddress: context.quote.serviceAddress,
-    contextQuote: context.quote
-  });
+  console.log('PDF Generation - Context created with acceptance details:', acceptanceDetails ? 'Yes' : 'No');
   
   // Setup document
   const { doc } = await setupDocument(context);
@@ -67,7 +63,9 @@ export const generateQuotePDF = async (quote: Quote, clientInfo?: ClientInfo, sa
   const notesEndY = addNotes(doc, context, templateEndY);
   
   // Add digital acceptance evidence if approved
-  addDigitalAcceptanceEvidence(doc, context, notesEndY);
+  const finalY = addDigitalAcceptanceEvidence(doc, context, notesEndY);
+  
+  console.log('PDF Generation - Digital signature evidence added:', context.acceptanceDetails ? 'Yes' : 'No');
   
   return doc;
 };
