@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
@@ -54,41 +53,27 @@ const handler = async (req: Request): Promise<Response> => {
 
     console.log('Processing request for quote:', quoteId, 'action:', action);
 
-    // Handle status-only update - Use service role client to bypass RLS
+    // Handle status-only update using the new RPC function
     if (action === 'update_status_only') {
       console.log('Updating quote status only for:', quoteId);
       
-      // Use service role client with bypassing RLS by updating directly
-      const { error: updateError } = await supabase
-        .from('quotes')
-        .update({ 
-          status: 'approved',
-          accepted_at: new Date().toISOString()
-        })
-        .eq('id', quoteId);
+      const { error: rpcError } = await supabase.rpc('update_quote_status', {
+        quote_id: quoteId,
+        new_status: 'approved'
+      });
 
-      if (updateError) {
-        console.error('Error updating quote status:', updateError);
-        
-        // Try alternative approach using RPC function
-        const { error: rpcError } = await supabase.rpc('update_quote_status', {
-          quote_id: quoteId,
-          new_status: 'approved'
+      if (rpcError) {
+        console.error('RPC update failed:', rpcError);
+        return new Response(JSON.stringify({ 
+          success: false, 
+          error: `Failed to update quote status: ${rpcError.message}`
+        }), {
+          status: 500,
+          headers: { "Content-Type": "application/json", ...corsHeaders },
         });
-
-        if (rpcError) {
-          console.error('RPC update also failed:', rpcError);
-          return new Response(JSON.stringify({ 
-            success: false, 
-            error: `Failed to update quote status: ${updateError.message}`
-          }), {
-            status: 500,
-            headers: { "Content-Type": "application/json", ...corsHeaders },
-          });
-        }
       }
 
-      console.log('Quote status updated successfully');
+      console.log('Quote status updated successfully via RPC');
       
       return new Response(JSON.stringify({ 
         success: true, 
@@ -116,29 +101,16 @@ const handler = async (req: Request): Promise<Response> => {
     if (existingOrders && existingOrders.length > 0) {
       console.log('Orders already exist for quote:', quoteId, 'Count:', existingOrders.length);
       
-      // Since orders exist, just update the quote status using service role
+      // Since orders exist, just update the quote status using RPC
       console.log('Attempting to update quote status for existing orders...');
       
-      const { error: statusUpdateError } = await supabase
-        .from('quotes')
-        .update({ 
-          status: 'approved',
-          accepted_at: new Date().toISOString()
-        })
-        .eq('id', quoteId);
+      const { error: rpcError } = await supabase.rpc('update_quote_status', {
+        quote_id: quoteId,
+        new_status: 'approved'
+      });
 
-      if (statusUpdateError) {
-        console.error('Error updating quote status for existing orders:', statusUpdateError);
-        
-        // Try RPC fallback
-        const { error: rpcError } = await supabase.rpc('update_quote_status', {
-          quote_id: quoteId,
-          new_status: 'approved'
-        });
-
-        if (rpcError) {
-          console.error('RPC fallback also failed:', rpcError);
-        }
+      if (rpcError) {
+        console.error('RPC fallback also failed:', rpcError);
       }
 
       return new Response(JSON.stringify({ 
@@ -147,7 +119,7 @@ const handler = async (req: Request): Promise<Response> => {
         orderNumbers: existingOrders.map(o => o.order_number),
         message: 'Orders already exist and quote status updated',
         ordersCount: existingOrders.length,
-        statusUpdateSuccess: !statusUpdateError,
+        statusUpdateSuccess: !rpcError,
         requiresRefresh: false
       }), {
         status: 200,
@@ -211,40 +183,20 @@ const handler = async (req: Request): Promise<Response> => {
       throw new Error('Order creation failed or returned no ID');
     }
 
-    // Now try to update quote status using service role
+    // Now update quote status using the new RPC function
     console.log('Order created successfully, now updating quote status...');
     
     let statusUpdateSuccess = false;
-    try {
-      const { error: quoteUpdateError } = await supabase
-        .from('quotes')
-        .update({ 
-          status: 'approved',
-          accepted_at: new Date().toISOString()
-        })
-        .eq('id', quoteId);
+    const { error: rpcError } = await supabase.rpc('update_quote_status', {
+      quote_id: quoteId,
+      new_status: 'approved'
+    });
 
-      if (quoteUpdateError) {
-        console.error('Error updating quote status after order creation:', quoteUpdateError);
-        
-        // Try RPC fallback
-        const { error: rpcError } = await supabase.rpc('update_quote_status', {
-          quote_id: quoteId,
-          new_status: 'approved'
-        });
-
-        if (rpcError) {
-          console.error('RPC fallback failed:', rpcError);
-        } else {
-          statusUpdateSuccess = true;
-          console.log('Successfully updated quote status via RPC');
-        }
-      } else {
-        console.log('Successfully updated quote status to approved');
-        statusUpdateSuccess = true;
-      }
-    } catch (err) {
-      console.error('Exception updating quote status:', err);
+    if (rpcError) {
+      console.error('RPC status update failed:', rpcError);
+    } else {
+      statusUpdateSuccess = true;
+      console.log('Successfully updated quote status via RPC');
     }
 
     // Handle circuit tracking creation

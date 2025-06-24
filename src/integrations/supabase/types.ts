@@ -1394,6 +1394,10 @@ export type Database = {
         Args: { p_quote_id: string }
         Returns: undefined
       }
+      update_quote_status: {
+        Args: { quote_id: string; new_status: string }
+        Returns: undefined
+      }
       update_user_profile: {
         Args: {
           _user_id: string
