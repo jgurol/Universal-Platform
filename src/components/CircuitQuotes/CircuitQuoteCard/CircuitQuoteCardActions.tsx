@@ -35,9 +35,11 @@ export const CircuitQuoteCardActions = ({
       notes: `Copied from ${carrier.carrier} quote`,
       color: carrier.color,
       install_fee: carrier.install_fee || false,
+      install_fee_amount: carrier.install_fee_amount || 0,
       site_survey_needed: carrier.site_survey_needed || false,
       no_service: carrier.no_service || false,
-      static_ip: carrier.static_ip || false
+      static_ip: carrier.static_ip || false,
+      static_ip_fee_amount: carrier.static_ip_fee_amount || 0
     };
 
     if (onAddCarrier) {
