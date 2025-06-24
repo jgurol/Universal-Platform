@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -63,9 +62,6 @@ export const CircuitQuoteNotesDialog = ({
         .from('circuit_quote_notes')
         .select(`
           *,
-          profiles!circuit_quote_notes_user_id_fkey (
-            full_name
-          ),
           circuit_quote_note_files (*)
         `)
         .eq('circuit_quote_id', circuitQuoteId)
@@ -81,11 +77,20 @@ export const CircuitQuoteNotesDialog = ({
         return;
       }
 
+      // Get user profiles for the notes
+      const userIds = [...new Set(notesData?.map(note => note.user_id) || [])];
+      const { data: profilesData } = await supabase
+        .from('profiles')
+        .select('id, full_name')
+        .in('id', userIds);
+
+      const profilesMap = new Map(profilesData?.map(p => [p.id, p.full_name]) || []);
+
       const formattedNotes: NoteEntry[] = (notesData || []).map(note => ({
         id: note.id,
         content: note.content,
         created_at: note.created_at,
-        user_name: note.profiles?.full_name || 'Unknown User',
+        user_name: profilesMap.get(note.user_id) || 'Unknown User',
         files: (note.circuit_quote_note_files || []).map((file: any) => ({
           id: file.id,
           file_name: file.file_name,
