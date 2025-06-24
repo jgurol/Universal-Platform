@@ -103,11 +103,26 @@ const handler = async (req: Request): Promise<Response> => {
 
     if (existingOrders && existingOrders.length > 0) {
       console.log('Orders already exist for quote:', quoteId, 'Count:', existingOrders.length);
+      
+      // Update quote status to approved since orders already exist
+      const { error: statusUpdateError } = await supabase
+        .from('quotes')
+        .update({ 
+          status: 'approved',
+          accepted_at: new Date().toISOString()
+        })
+        .eq('id', quoteId);
+
+      if (statusUpdateError) {
+        console.error('Error updating quote status:', statusUpdateError);
+        throw new Error(`Failed to update quote status: ${statusUpdateError.message}`);
+      }
+
       return new Response(JSON.stringify({ 
         success: true, 
         orderIds: existingOrders.map(o => o.id),
         orderNumbers: existingOrders.map(o => o.order_number),
-        message: 'Orders already exist for this quote',
+        message: 'Orders already exist for this quote, status updated to approved',
         ordersCount: existingOrders.length
       }), {
         status: 200,
@@ -158,6 +173,46 @@ const handler = async (req: Request): Promise<Response> => {
 
     if (orderError) {
       console.error(`Failed to create order via RPC:`, orderError);
+      
+      // Check if this is a duplicate key error
+      if (orderError.message?.includes('duplicate key value violates unique constraint "orders_quote_id_key"')) {
+        console.log('Duplicate order detected, checking existing orders again...');
+        
+        // Re-check for existing orders
+        const { data: reCheckOrders, error: reCheckError } = await supabase
+          .from('orders')
+          .select('id, order_number')
+          .eq('quote_id', quoteId);
+
+        if (!reCheckError && reCheckOrders && reCheckOrders.length > 0) {
+          console.log('Found existing orders on re-check:', reCheckOrders);
+          
+          // Update quote status since orders exist
+          const { error: statusUpdateError } = await supabase
+            .from('quotes')
+            .update({ 
+              status: 'approved',
+              accepted_at: new Date().toISOString()
+            })
+            .eq('id', quoteId);
+
+          if (statusUpdateError) {
+            console.error('Error updating quote status after duplicate detection:', statusUpdateError);
+          }
+
+          return new Response(JSON.stringify({ 
+            success: true, 
+            orderIds: reCheckOrders.map(o => o.id),
+            orderNumbers: reCheckOrders.map(o => o.order_number),
+            message: 'Orders already existed for this quote, status updated to approved',
+            ordersCount: reCheckOrders.length
+          }), {
+            status: 200,
+            headers: { "Content-Type": "application/json", ...corsHeaders },
+          });
+        }
+      }
+      
       throw new Error(`Failed to create order: ${orderError.message}`);
     }
 
@@ -166,6 +221,20 @@ const handler = async (req: Request): Promise<Response> => {
     }
 
     console.log(`Created order ${newOrderId} with number ${orderNumber}`);
+
+    // Update quote status to approved
+    const { error: quoteUpdateError } = await supabase
+      .from('quotes')
+      .update({ 
+        status: 'approved',
+        accepted_at: new Date().toISOString()
+      })
+      .eq('id', quoteId);
+
+    if (quoteUpdateError) {
+      console.error('Error updating quote status after order creation:', quoteUpdateError);
+      // Don't throw here as the order was created successfully
+    }
 
     // Now fetch quote items with circuit category types and create circuit tracking for each
     const { data: quoteItems, error: quoteItemsError } = await supabase
@@ -263,7 +332,8 @@ const handler = async (req: Request): Promise<Response> => {
       success: true, 
       orderIds: [newOrderId],
       orderNumbers: [orderNumber],
-      ordersCount: 1
+      ordersCount: 1,
+      message: 'Order created successfully and quote status updated to approved'
     }), {
       status: 200,
       headers: { "Content-Type": "application/json", ...corsHeaders },

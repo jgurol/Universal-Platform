@@ -1,4 +1,3 @@
-
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
@@ -111,37 +110,83 @@ export const QuoteStatusBadge = ({ quoteId, status, onStatusUpdate }: QuoteStatu
 
           if (approvalError) {
             console.error('Error in quote approval function:', approvalError);
-            toast({
-              title: "Failed to approve quote",
-              description: approvalError.message,
-              variant: "destructive"
-            });
-            return;
-          }
+            
+            // Check if this is a duplicate key error
+            if (approvalError.message?.includes('duplicate key') || approvalError.message?.includes('orders_quote_id_key')) {
+              console.log('Duplicate order error detected, checking if orders now exist...');
+              
+              // Re-check for existing orders
+              const { data: reCheckOrders, error: reCheckError } = await supabase
+                .from('orders')
+                .select('id')
+                .eq('quote_id', quoteId);
 
-          console.log('Quote approval completed:', approvalResult);
-          
-          // Update the quote status to approved
-          const { error: updateError } = await supabase
-            .from('quotes')
-            .update({ 
-              status: 'approved',
-              accepted_at: new Date().toISOString()
-            })
-            .eq('id', quoteId);
+              if (!reCheckError && reCheckOrders && reCheckOrders.length > 0) {
+                console.log('Orders found after duplicate error, updating quote status');
+                
+                // Update the quote status to approved
+                const { error: statusUpdateError } = await supabase
+                  .from('quotes')
+                  .update({ 
+                    status: 'approved',
+                    accepted_at: new Date().toISOString()
+                  })
+                  .eq('id', quoteId);
 
-          if (updateError) {
-            console.error('Error updating quote status after approval:', updateError);
-            toast({
-              title: "Warning",
-              description: "Order was created but quote status update failed. Please refresh the page.",
-              variant: "destructive"
-            });
+                if (statusUpdateError) {
+                  console.error('Error updating quote status after duplicate detection:', statusUpdateError);
+                  toast({
+                    title: "Warning",
+                    description: "Order exists but quote status update failed. Please refresh the page.",
+                    variant: "destructive"
+                  });
+                } else {
+                  toast({
+                    title: "Quote approved successfully",
+                    description: "Quote status has been updated to approved (order already existed).",
+                  });
+                }
+              } else {
+                toast({
+                  title: "Failed to approve quote",
+                  description: "Duplicate order error occurred. Please try again.",
+                  variant: "destructive"
+                });
+                return;
+              }
+            } else {
+              toast({
+                title: "Failed to approve quote",
+                description: approvalError.message,
+                variant: "destructive"
+              });
+              return;
+            }
           } else {
-            toast({
-              title: "Quote approved successfully",
-              description: "Quote status has been updated to approved and order has been created.",
-            });
+            console.log('Quote approval completed:', approvalResult);
+            
+            // Update the quote status to approved
+            const { error: updateError } = await supabase
+              .from('quotes')
+              .update({ 
+                status: 'approved',
+                accepted_at: new Date().toISOString()
+              })
+              .eq('id', quoteId);
+
+            if (updateError) {
+              console.error('Error updating quote status after approval:', updateError);
+              toast({
+                title: "Warning",
+                description: "Order was created but quote status update failed. Please refresh the page.",
+                variant: "destructive"
+              });
+            } else {
+              toast({
+                title: "Quote approved successfully",
+                description: "Quote status has been updated to approved and order has been created.",
+              });
+            }
           }
         }
 
