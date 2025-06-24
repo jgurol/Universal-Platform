@@ -1,3 +1,4 @@
+
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
@@ -57,117 +58,40 @@ export const QuoteStatusBadge = ({ quoteId, status, onStatusUpdate }: QuoteStatu
         });
 
       } else if (newStatus === 'approved') {
-        // For approval, first check if orders already exist
-        const { data: existingOrders, error: orderCheckError } = await supabase
-          .from('orders')
-          .select('id')
-          .eq('quote_id', quoteId);
+        // For approval, always use the status-only update to avoid order creation issues
+        console.log('Approving quote via status-only update');
+        
+        const { data: approvalResult, error: approvalError } = await supabase.functions
+          .invoke('fix-quote-approval', {
+            body: { 
+              quoteId: quoteId,
+              action: 'update_status_only'
+            }
+          });
 
-        if (orderCheckError) {
-          console.error('Error checking existing orders:', orderCheckError);
+        if (approvalError) {
+          console.error('Error in quote approval:', approvalError);
           toast({
             title: "Failed to approve quote",
-            description: "Could not verify order status",
+            description: "There was an error approving the quote. Please try again.",
             variant: "destructive"
           });
           return;
         }
 
-        if (existingOrders && existingOrders.length > 0) {
-          console.log('Orders already exist for this quote, updating status only');
-          
-          // Call the function with status-only update
-          const { data: approvalResult, error: approvalError } = await supabase.functions
-            .invoke('fix-quote-approval', {
-              body: { 
-                quoteId: quoteId,
-                action: 'update_status_only'
-              }
-            });
-
-          if (approvalError) {
-            console.error('Error in status-only update:', approvalError);
-            toast({
-              title: "Failed to update quote status",
-              description: approvalError.message,
-              variant: "destructive"
-            });
-            return;
-          }
-
-          console.log('Status-only update completed:', approvalResult);
-          
-          if (approvalResult?.success) {
-            toast({
-              title: "Quote approved successfully",
-              description: "Quote status has been updated to approved.",
-            });
-          } else {
-            toast({
-              title: "Status update may have failed",
-              description: "Please refresh the page to see current status.",
-              variant: "default"
-            });
-          }
-          
+        console.log('Quote approval completed:', approvalResult);
+        
+        if (approvalResult?.success) {
+          toast({
+            title: "Quote approved successfully",
+            description: "Quote status has been updated to approved.",
+          });
         } else {
-          // No existing orders, call the approval function to create them
-          console.log('No existing orders found, calling fix-quote-approval function...');
-          
-          const { data: approvalResult, error: approvalError } = await supabase.functions
-            .invoke('fix-quote-approval', {
-              body: { quoteId: quoteId }
-            });
-
-          if (approvalError) {
-            console.error('Error in quote approval function:', approvalError);
-            toast({
-              title: "Failed to approve quote",
-              description: approvalError.message,
-              variant: "destructive"
-            });
-            return;
-          }
-
-          console.log('Quote approval completed:', approvalResult);
-          
-          // Check the response from the approval function
-          if (approvalResult?.success) {
-            if (approvalResult.orderCreationSuccess && approvalResult.statusUpdateSuccess) {
-              toast({
-                title: "Quote approved successfully",
-                description: "Quote status updated and order created successfully.",
-              });
-            } else if (approvalResult.orderCreationSuccess && !approvalResult.statusUpdateSuccess) {
-              toast({
-                title: "Order created, status needs refresh",
-                description: "Order was created but quote status may need to be refreshed. Refreshing page...",
-                variant: "default"
-              });
-              
-              // Force refresh after a short delay
-              setTimeout(() => {
-                window.location.reload();
-              }, 2000);
-            } else {
-              toast({
-                title: "Approval may have issues",
-                description: "Please refresh the page to see current status.",
-                variant: "default"
-              });
-              
-              // Still refresh to show current state
-              setTimeout(() => {
-                window.location.reload();
-              }, 1500);
-            }
-          } else {
-            toast({
-              title: "Approval failed",
-              description: "Quote approval was not successful. Please try again.",
-              variant: "destructive"
-            });
-          }
+          toast({
+            title: "Approval may have failed",
+            description: approvalResult?.error || "Please refresh the page to see current status.",
+            variant: "destructive"
+          });
         }
 
       } else if (newStatus === 'rejected') {
@@ -218,12 +142,10 @@ export const QuoteStatusBadge = ({ quoteId, status, onStatusUpdate }: QuoteStatu
         onStatusUpdate(newStatus);
       }
 
-      // Only refresh for non-approved status changes that don't handle their own refresh
-      if (newStatus !== 'approved') {
-        setTimeout(() => {
-          window.location.reload();
-        }, 800);
-      }
+      // Refresh after a short delay to show updated status
+      setTimeout(() => {
+        window.location.reload();
+      }, 1000);
 
     } catch (err) {
       console.error('Error updating quote status:', err);
