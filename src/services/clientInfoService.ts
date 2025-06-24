@@ -9,9 +9,17 @@ export const clientInfoService = {
       .from('client_info')
       .select('*');
     
-    // If not admin and has associated agent, filter by that agent
-    if (!isAdmin && associatedAgentId) {
+    // Admin users can see all clients - no filtering needed
+    if (isAdmin) {
+      console.log('[clientInfoService] Admin user - fetching all clients');
+    } else if (associatedAgentId) {
+      // Non-admin users with associated agent - filter by that agent
+      console.log('[clientInfoService] Non-admin user with agent - filtering by agent:', associatedAgentId);
       query = query.eq('agent_id', associatedAgentId);
+    } else if (userId) {
+      // Non-admin users without agent - show only their own clients
+      console.log('[clientInfoService] Non-admin user without agent - filtering by user_id:', userId);
+      query = query.eq('user_id', userId);
     }
     
     const { data, error } = await query.order('company_name', { ascending: true });
@@ -20,6 +28,8 @@ export const clientInfoService = {
       console.error('Error fetching client info:', error);
       throw error;
     }
+    
+    console.log('[clientInfoService] Fetched clients count:', data?.length || 0);
     
     // Transform the data to match ClientInfo interface
     return (data || []).map(info => ({

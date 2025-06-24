@@ -7,25 +7,35 @@ import { ClientInfo } from "@/types/index";
 export const useClientInfos = () => {
   const [clientInfos, setClientInfos] = useState<ClientInfo[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const { user } = useAuth();
+  const { user, isAdmin } = useAuth();
 
-  const fetchClientInfos = async (userId?: string, associatedAgentId?: string | null, isAdmin?: boolean) => {
+  const fetchClientInfos = async (userId?: string, associatedAgentId?: string | null, adminOverride?: boolean) => {
     const currentUserId = userId || user?.id;
+    const currentIsAdmin = adminOverride !== undefined ? adminOverride : isAdmin;
+    
     if (!currentUserId) {
+      console.log('[useClientInfos] No user ID available');
       setIsLoading(false);
       return;
     }
 
     try {
+      console.log('[useClientInfos] Fetching client infos - userId:', currentUserId, 'isAdmin:', currentIsAdmin, 'associatedAgentId:', associatedAgentId);
+      
       let query = supabase
         .from('client_info')
         .select('*');
       
-      // If not admin and has associated agent, filter by that agent
-      if (!isAdmin && associatedAgentId) {
+      // Admin users can see all clients
+      if (currentIsAdmin) {
+        console.log('[useClientInfos] Admin user - no filtering applied');
+      } else if (associatedAgentId) {
+        // Non-admin users with associated agent - filter by that agent
+        console.log('[useClientInfos] Non-admin user with agent - filtering by agent:', associatedAgentId);
         query = query.eq('agent_id', associatedAgentId);
-      } else if (!isAdmin) {
-        // If user is not admin but has no associated agent, show only their own client infos
+      } else {
+        // Non-admin users without agent - show only their own clients
+        console.log('[useClientInfos] Non-admin user without agent - filtering by user_id:', currentUserId);
         query = query.eq('user_id', currentUserId);
       }
 
@@ -38,6 +48,7 @@ export const useClientInfos = () => {
       }
 
       if (data) {
+        console.log('[useClientInfos] Successfully fetched', data.length, 'client infos');
         // Transform the data to match ClientInfo interface
         const formattedClientInfos: ClientInfo[] = data.map(info => ({
           id: info.id,
@@ -62,8 +73,11 @@ export const useClientInfos = () => {
   };
 
   useEffect(() => {
-    fetchClientInfos();
-  }, [user]);
+    console.log('[useClientInfos] useEffect triggered - user:', !!user, 'isAdmin:', isAdmin);
+    if (user && isAdmin !== undefined) {
+      fetchClientInfos();
+    }
+  }, [user, isAdmin]);
 
   return {
     clientInfos,
