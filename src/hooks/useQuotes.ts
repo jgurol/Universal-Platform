@@ -95,8 +95,7 @@ export const useQuotes = (
         
         console.info('[fetchQuotes] Profile map created:', profileMap);
         
-        // Process all quotes with async mapping and await all promises
-        const mappedQuotesPromises = quotesData.map(async (quote) => {
+        const mappedQuotes = quotesData.map(quote => {
           // Add profile data to quote for mapping - ensure we use the correct profile for each quote
           const userProfile = profileMap[quote.user_id] || null;
           console.log(`[fetchQuotes] Quote ${quote.id} user_id: ${quote.user_id}, found profile:`, userProfile);
@@ -106,13 +105,10 @@ export const useQuotes = (
             user_profile: userProfile
           };
           
-          const mapped = await mapQuoteData(quoteWithProfile, clients, clientInfos);
+          const mapped = mapQuoteData(quoteWithProfile, clients, clientInfos);
           console.log(`[fetchQuotes] Mapped quote ${quote.id} - Number: "${quote.quote_number}", User ID: "${quote.user_id}", Profile: "${userProfile?.full_name || 'Unknown'}"`);
           return mapped;
         });
-        
-        // Wait for all mapping to complete
-        const mappedQuotes = await Promise.all(mappedQuotesPromises);
         
         setQuotes(mappedQuotes);
         console.info('[fetchQuotes] Final mapped quotes count:', mappedQuotes.length);

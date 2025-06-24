@@ -1,3 +1,4 @@
+
 export interface PDFRequest {
   quote: any;
   clientInfo?: any;
@@ -19,13 +20,4 @@ export interface BusinessSettings {
   address?: string;
   phone?: string;
   email?: string;
-}
-
-export interface AcceptanceDetails {
-  clientName: string;
-  clientEmail: string | null;
-  signatureData: string;
-  acceptedAt: string;
-  ipAddress?: string;
-  userAgent?: string;
 }

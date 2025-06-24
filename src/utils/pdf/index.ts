@@ -14,29 +14,27 @@ export const generateQuotePDF = async (quote: Quote, clientInfo?: ClientInfo, sa
   // Enhanced debugging for approval status
   console.log('PDF Generation - Starting PDF generation for quote:', quote.id);
   console.log('PDF Generation - Quote status:', quote.status);
-  console.log('PDF Generation - Quote acceptedAt:', quote.acceptedAt);
+  console.log('PDF Generation - Quote addresses DEBUG:', {
+    billingAddress: quote.billingAddress,
+    serviceAddress: quote.serviceAddress,
+    quoteObject: quote
+  });
   
-  // More comprehensive approval check - check both status and acceptedAt
+  // Log the entire quote object to see what's actually there
+  console.log('PDF Generation - Full quote object:', JSON.stringify(quote, null, 2));
+  
+  // More comprehensive approval check
   const isApproved = quote.status === 'approved' || 
                      quote.status === 'accepted' ||
-                     !!(quote.acceptedAt);
+                     (quote as any).acceptanceStatus === 'accepted' ||
+                     !!(quote as any).accepted_at ||
+                     !!(quote as any).acceptedBy;
   
   console.log('PDF Generation - Is quote approved?', isApproved);
   
   // Load business information and acceptance details
   const businessSettings = await loadSettingsFromDatabase();
-  let acceptanceDetails = null;
-  
-  // Only fetch acceptance details if quote is approved
-  if (isApproved) {
-    console.log('PDF Generation - Fetching acceptance details for approved quote');
-    acceptanceDetails = await fetchAcceptanceDetails(quote.id);
-    console.log('PDF Generation - Acceptance details fetched:', !!acceptanceDetails);
-    if (acceptanceDetails) {
-      console.log('PDF Generation - Acceptance client name:', acceptanceDetails.clientName);
-      console.log('PDF Generation - Acceptance has signature:', !!acceptanceDetails.signatureData);
-    }
-  }
+  const acceptanceDetails = isApproved ? await fetchAcceptanceDetails(quote.id) : null;
   
   // Create PDF generation context
   const context: PDFGenerationContext = {
@@ -48,6 +46,12 @@ export const generateQuotePDF = async (quote: Quote, clientInfo?: ClientInfo, sa
     acceptanceDetails: acceptanceDetails || undefined,
     isApproved
   };
+  
+  console.log('PDF Generation - Context created with addresses:', {
+    billingAddress: context.quote.billingAddress,
+    serviceAddress: context.quote.serviceAddress,
+    contextQuote: context.quote
+  });
   
   // Setup document
   const { doc } = await setupDocument(context);
@@ -63,9 +67,7 @@ export const generateQuotePDF = async (quote: Quote, clientInfo?: ClientInfo, sa
   const notesEndY = addNotes(doc, context, templateEndY);
   
   // Add digital acceptance evidence if approved
-  const finalY = addDigitalAcceptanceEvidence(doc, context, notesEndY);
-  
-  console.log('PDF Generation - Final PDF generation completed, final Y position:', finalY);
+  addDigitalAcceptanceEvidence(doc, context, notesEndY);
   
   return doc;
 };

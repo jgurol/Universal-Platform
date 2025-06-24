@@ -43,115 +43,108 @@ export const addDigitalAcceptanceEvidence = (
 
   // Only add acceptance evidence if the quote is approved and we have acceptance details
   if (!context.isApproved || !context.acceptanceDetails) {
-    console.log('PDF Generation - No acceptance details to add');
     return currentY;
   }
 
   const acceptance = context.acceptanceDetails;
 
-  // Add some space before the signature section
-  currentY += 30;
-
-  // Check if we need a new page
-  if (currentY > 200) {
-    doc.addPage();
-    currentY = 30;
-  }
-
-  console.log('PDF Generation - Adding digital signature evidence at Y:', currentY);
+  // Add a new page for acceptance evidence
+  doc.addPage();
+  currentY = 30;
 
   // Title
-  doc.setFontSize(14);
+  doc.setFontSize(16);
   doc.setFont('helvetica', 'bold');
-  doc.text('Digital Signature & Acceptance Evidence', 20, currentY);
-  currentY += 15;
+  doc.text('Digital Acceptance Evidence', 20, currentY);
+  currentY += 20;
 
   // Reset font
   doc.setFontSize(10);
   doc.setFont('helvetica', 'normal');
 
   // Acceptance information
-  doc.text('This document serves as evidence of digital acceptance of the above agreement.', 20, currentY);
-  currentY += 15;
+  doc.text('This document serves as evidence of digital acceptance of the above quote.', 20, currentY);
+  currentY += 10;
 
-  // Acceptance details in a structured format
+  // Acceptance details
   doc.setFont('helvetica', 'bold');
   doc.text('Accepted by:', 20, currentY);
   doc.setFont('helvetica', 'normal');
-  doc.text(acceptance.clientName, 80, currentY);
+  doc.text(acceptance.clientName, 60, currentY);
   currentY += 8;
 
   doc.setFont('helvetica', 'bold');
   doc.text('Email:', 20, currentY);
   doc.setFont('helvetica', 'normal');
-  doc.text(acceptance.clientEmail || 'Not provided', 80, currentY);
+  doc.text(acceptance.clientEmail || 'Not provided', 60, currentY);
   currentY += 8;
 
   doc.setFont('helvetica', 'bold');
   doc.text('Date & Time:', 20, currentY);
   doc.setFont('helvetica', 'normal');
   const acceptedDate = new Date(acceptance.acceptedAt);
-  doc.text(acceptedDate.toLocaleString(), 80, currentY);
-  currentY += 15;
+  doc.text(acceptedDate.toLocaleString(), 60, currentY);
+  currentY += 8;
 
-  // Digital signature section
+  // Technical details (if available)
+  if (acceptance.ipAddress) {
+    doc.setFont('helvetica', 'bold');
+    doc.text('IP Address:', 20, currentY);
+    doc.setFont('helvetica', 'normal');
+    doc.text(acceptance.ipAddress, 60, currentY);
+    currentY += 8;
+  }
+
+  if (acceptance.userAgent) {
+    doc.setFont('helvetica', 'bold');
+    doc.text('Browser:', 20, currentY);
+    doc.setFont('helvetica', 'normal');
+    // Truncate user agent if too long
+    const userAgent = acceptance.userAgent.length > 80 ? 
+      acceptance.userAgent.substring(0, 80) + '...' : 
+      acceptance.userAgent;
+    doc.text(userAgent, 60, currentY);
+    currentY += 8;
+  }
+
+  currentY += 10;
+
+  // Digital signature
   if (acceptance.signatureData) {
     doc.setFont('helvetica', 'bold');
     doc.text('Digital Signature:', 20, currentY);
     currentY += 10;
 
     try {
-      // Add signature image directly from base64 data
-      console.log('PDF Generation - Adding signature image');
-      doc.addImage(acceptance.signatureData, 'PNG', 20, currentY, 120, 48);
-      currentY += 55;
+      // Add signature image
+      const signatureImg = new Image();
+      signatureImg.src = acceptance.signatureData;
+      
+      // Wait for image to load before adding to PDF
+      signatureImg.onload = () => {
+        doc.addImage(signatureImg, 'PNG', 20, currentY, 100, 40);
+      };
+      
+      currentY += 50;
     } catch (error) {
       console.error('Error adding signature to PDF:', error);
-      // Add signature placeholder box
-      doc.rect(20, currentY, 120, 48);
       doc.setFont('helvetica', 'italic');
-      doc.text('Digital signature captured', 25, currentY + 25);
-      currentY += 55;
-    }
-  }
-
-  // Technical details (if available)
-  if (acceptance.ipAddress || acceptance.userAgent) {
-    currentY += 10;
-    doc.setFontSize(8);
-    doc.setFont('helvetica', 'bold');
-    doc.text('Technical Authentication Details:', 20, currentY);
-    currentY += 8;
-    
-    doc.setFont('helvetica', 'normal');
-    if (acceptance.ipAddress) {
-      doc.text(`IP Address: ${acceptance.ipAddress}`, 20, currentY);
-      currentY += 6;
-    }
-    
-    if (acceptance.userAgent) {
-      // Truncate user agent if too long
-      const userAgent = acceptance.userAgent.length > 80 ? 
-        acceptance.userAgent.substring(0, 80) + '...' : 
-        acceptance.userAgent;
-      doc.text(`Browser: ${userAgent}`, 20, currentY);
-      currentY += 6;
+      doc.text('Signature image could not be displayed', 20, currentY);
+      currentY += 10;
     }
   }
 
   // Legal notice
-  currentY += 15;
-  doc.setFontSize(8);
+  currentY += 20;
   doc.setFont('helvetica', 'bold');
   doc.text('Legal Notice:', 20, currentY);
   currentY += 8;
   
   doc.setFont('helvetica', 'normal');
+  doc.setFontSize(8);
   const legalText = 'This digital acceptance is legally binding and constitutes an agreement to the terms and conditions outlined in the above quote. The digital signature and associated metadata provide authentication of the acceptance.';
   const legalLines = doc.splitTextToSize(legalText, 170);
   doc.text(legalLines, 20, currentY);
-  currentY += legalLines.length * 5;
 
-  console.log('PDF Generation - Digital signature evidence section completed at Y:', currentY);
   return currentY;
 };

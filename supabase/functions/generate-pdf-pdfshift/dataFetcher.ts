@@ -1,3 +1,4 @@
+
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.50.0';
 import { BusinessSettings } from './types.ts';
 
@@ -88,44 +89,4 @@ export const fetchUserProfile = async (userId: string): Promise<string> => {
   
   console.log('PDFShift Function - Profile found but no full_name set');
   return 'N/A';
-};
-
-export const fetchAcceptanceDetails = async (quoteId: string) => {
-  console.log('PDFShift Function - Fetching acceptance details for quote:', quoteId);
-  
-  try {
-    const { data, error } = await supabase
-      .from('quote_acceptances')
-      .select('*')
-      .eq('quote_id', quoteId)
-      .single();
-
-    if (error) {
-      console.error('PDFShift Function - Error fetching acceptance details:', error);
-      return null;
-    }
-
-    if (!data) {
-      console.log('PDFShift Function - No acceptance details found');
-      return null;
-    }
-
-    console.log('PDFShift Function - Acceptance details found:', {
-      clientName: data.client_name,
-      hasSignature: !!data.signature_data,
-      acceptedAt: data.accepted_at
-    });
-
-    return {
-      clientName: data.client_name,
-      clientEmail: data.client_email,
-      signatureData: data.signature_data,
-      acceptedAt: data.accepted_at,
-      ipAddress: data.ip_address?.toString() || undefined,
-      userAgent: data.user_agent || undefined
-    };
-  } catch (error) {
-    console.error('PDFShift Function - Exception fetching acceptance details:', error);
-    return null;
-  }
 };
