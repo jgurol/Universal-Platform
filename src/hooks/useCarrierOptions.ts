@@ -42,11 +42,12 @@ export const useCarrierOptions = () => {
         return;
       }
 
-      // Fetch categories (circuit types)
+      // Fetch categories (circuit types) - only show Circuit type categories
       let categoryQuery = supabase
         .from('categories')
         .select('id, name, description, type, is_active, user_id, created_at, updated_at')
-        .eq('is_active', true);
+        .eq('is_active', true)
+        .eq('type', 'Circuit');
 
       // Only filter by user_id if not admin
       if (!isAdmin) {
