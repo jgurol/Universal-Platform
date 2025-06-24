@@ -59,38 +59,41 @@ const handler = async (req: Request): Promise<Response> => {
 
     console.log('Processing request for quote:', quoteId, 'action:', action);
 
-    // Handle status-only update
+    // Handle status-only update - ONLY update the quote status, no order operations
     if (action === 'update_status_only') {
       console.log('Updating quote status only for:', quoteId);
       
-      const { data: updateResult, error: updateError } = await supabase
+      const { error: updateError } = await supabase
         .from('quotes')
         .update({ 
           status: 'approved',
           accepted_at: new Date().toISOString()
         })
-        .eq('id', quoteId)
-        .select('*')
-        .single();
+        .eq('id', quoteId);
 
       if (updateError) {
         console.error('Error updating quote status:', updateError);
-        throw new Error(`Failed to update quote status: ${updateError.message}`);
+        return new Response(JSON.stringify({ 
+          success: false, 
+          error: `Failed to update quote status: ${updateError.message}`
+        }), {
+          status: 500,
+          headers: { "Content-Type": "application/json", ...corsHeaders },
+        });
       }
 
-      console.log('Quote status updated successfully:', updateResult);
+      console.log('Quote status updated successfully');
       
       return new Response(JSON.stringify({ 
         success: true, 
-        message: 'Quote status updated successfully',
-        quote: updateResult
+        message: 'Quote status updated successfully'
       }), {
         status: 200,
         headers: { "Content-Type": "application/json", ...corsHeaders },
       });
     }
 
-    // Original order creation logic
+    // Original order creation logic for new approvals
     console.log('Processing quote approval for:', quoteId);
 
     // First, check if orders already exist for this quote
@@ -110,30 +113,21 @@ const handler = async (req: Request): Promise<Response> => {
       // Since orders exist, let's just try to update the quote status directly
       console.log('Attempting to update quote status for existing orders...');
       
-      const { data: statusUpdate, error: statusUpdateError } = await supabase
+      const { error: statusUpdateError } = await supabase
         .from('quotes')
         .update({ 
           status: 'approved',
           accepted_at: new Date().toISOString()
         })
-        .eq('id', quoteId)
-        .select('*')
-        .single();
+        .eq('id', quoteId);
 
       if (statusUpdateError) {
         console.error('Error updating quote status for existing orders:', statusUpdateError);
-        
-        // Even if status update fails, the orders exist, so return success but note the issue
         return new Response(JSON.stringify({ 
-          success: true, 
-          orderIds: existingOrders.map(o => o.id),
-          orderNumbers: existingOrders.map(o => o.order_number),
-          message: 'Orders already exist, but status update failed. Orders are valid.',
-          ordersCount: existingOrders.length,
-          statusUpdateSuccess: false,
-          requiresRefresh: true
+          success: false, 
+          error: `Failed to update quote status: ${statusUpdateError.message}`
         }), {
-          status: 200,
+          status: 500,
           headers: { "Content-Type": "application/json", ...corsHeaders },
         });
       }
@@ -198,27 +192,7 @@ const handler = async (req: Request): Promise<Response> => {
 
       if (orderError) {
         console.error(`Failed to create order via RPC:`, orderError);
-        
-        // Check if this is a duplicate key error
-        if (orderError.message?.includes('duplicate key value violates unique constraint "orders_quote_id_key"')) {
-          console.log('Duplicate order detected during creation, checking if order now exists...');
-          
-          // Re-check for existing orders
-          const { data: reCheckOrders, error: reCheckError } = await supabase
-            .from('orders')
-            .select('id, order_number')
-            .eq('quote_id', quoteId);
-
-          if (!reCheckError && reCheckOrders && reCheckOrders.length > 0) {
-            console.log('Found existing orders after duplicate creation error:', reCheckOrders);
-            newOrderId = reCheckOrders[0].id;
-            orderCreationSuccess = true;
-          }
-        }
-        
-        if (!orderCreationSuccess) {
-          throw new Error(`Failed to create order: ${orderError.message}`);
-        }
+        throw new Error(`Failed to create order: ${orderError.message}`);
       } else {
         newOrderId = createdOrderId;
         orderCreationSuccess = true;
@@ -238,32 +212,16 @@ const handler = async (req: Request): Promise<Response> => {
     
     let statusUpdateSuccess = false;
     try {
-      const { data: statusUpdate, error: quoteUpdateError } = await supabase
+      const { error: quoteUpdateError } = await supabase
         .from('quotes')
         .update({ 
           status: 'approved',
           accepted_at: new Date().toISOString()
         })
-        .eq('id', quoteId)
-        .select('*')
-        .single();
+        .eq('id', quoteId);
 
       if (quoteUpdateError) {
         console.error('Error updating quote status after order creation:', quoteUpdateError);
-        console.log('Will attempt alternative status update approach...');
-        
-        // Try a more direct approach
-        const { error: directUpdateError } = await supabase
-          .from('quotes')
-          .update({ status: 'approved' })
-          .eq('id', quoteId);
-          
-        if (directUpdateError) {
-          console.error('Direct status update also failed:', directUpdateError);
-        } else {
-          console.log('Direct status update succeeded');
-          statusUpdateSuccess = true;
-        }
       } else {
         console.log('Successfully updated quote status to approved');
         statusUpdateSuccess = true;
