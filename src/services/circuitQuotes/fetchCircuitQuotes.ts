@@ -5,7 +5,7 @@ import type { CircuitQuote } from "@/hooks/useCircuitQuotes/types";
 export const fetchCircuitQuotes = async (userId: string | undefined, isAdmin: boolean | undefined) => {
   console.log('[fetchCircuitQuotes] Starting fetch with user:', userId, 'isAdmin:', isAdmin);
   
-  // Build the query - admins see all quotes, non-admins see only their own
+  // Build the query - admins see all quotes, non-admins see only their own or their agent's clients
   let query = supabase
     .from('circuit_quotes')
     .select(`
@@ -15,16 +15,45 @@ export const fetchCircuitQuotes = async (userId: string | undefined, isAdmin: bo
     `)
     .order('created_at', { ascending: false });
 
-  // Only filter by user_id for non-admin users
-  if (!isAdmin) {
+  // Apply filtering based on user role
+  if (isAdmin) {
+    console.log('[fetchCircuitQuotes] Admin user - fetching all quotes');
+    // No filtering needed for admins
+  } else {
     if (!userId) {
       console.log('[fetchCircuitQuotes] Non-admin user without user_id - no quotes to fetch');
       return [];
     }
-    query = query.eq('user_id', userId);
-    console.log('[fetchCircuitQuotes] Non-admin user - filtering by user_id:', userId);
-  } else {
-    console.log('[fetchCircuitQuotes] Admin user - fetching all quotes');
+
+    // Check if user is associated with an agent
+    const { data: userProfile } = await supabase
+      .from('profiles')
+      .select('associated_agent_id')
+      .eq('id', userId)
+      .single();
+
+    if (userProfile?.associated_agent_id) {
+      console.log('[fetchCircuitQuotes] User is associated with agent:', userProfile.associated_agent_id);
+      
+      // Get client_info_ids for this agent
+      const { data: clientInfos } = await supabase
+        .from('client_info')
+        .select('id')
+        .eq('agent_id', userProfile.associated_agent_id);
+
+      if (clientInfos && clientInfos.length > 0) {
+        const clientIds = clientInfos.map(ci => ci.id);
+        console.log('[fetchCircuitQuotes] Filtering by agent client_info_ids:', clientIds);
+        query = query.in('client_info_id', clientIds);
+      } else {
+        console.log('[fetchCircuitQuotes] No clients found for agent - returning empty');
+        return [];
+      }
+    } else {
+      // Non-admin user without agent - show only their own quotes
+      console.log('[fetchCircuitQuotes] Non-admin user without agent - filtering by user_id:', userId);
+      query = query.eq('user_id', userId);
+    }
   }
 
   console.log('[fetchCircuitQuotes] Executing query...');
