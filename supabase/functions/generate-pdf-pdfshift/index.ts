@@ -1,7 +1,7 @@
 
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { PDFRequest } from './types.ts';
-import { fetchSystemSettings, fetchTemplate, fetchUserProfile } from './dataFetcher.ts';
+import { fetchSystemSettings, fetchTemplate, fetchUserProfile, fetchAcceptanceDetails } from './dataFetcher.ts';
 import { generateHTML } from './htmlGenerator.ts';
 import { generatePDFWithShift, convertToBase64 } from './pdfService.ts';
 
@@ -28,6 +28,17 @@ const handler = async (req: Request): Promise<Response> => {
     console.log('PDFShift Function - Quote items count:', quote?.quoteItems?.length || 0);
     console.log('PDFShift Function - Primary contact:', primaryContact ? `${primaryContact.first_name} ${primaryContact.last_name}` : 'None');
     
+    // Check if quote is approved/accepted
+    const isApproved = quote?.status === 'approved' || quote?.status === 'accepted';
+    console.log('PDFShift Function - Quote is approved:', isApproved);
+    
+    // Fetch acceptance details if quote is approved
+    let acceptanceDetails = null;
+    if (isApproved && quote?.id) {
+      acceptanceDetails = await fetchAcceptanceDetails(quote.id);
+      console.log('PDFShift Function - Acceptance details found:', !!acceptanceDetails);
+    }
+    
     // Fetch system settings and template
     const businessSettings = await fetchSystemSettings();
     
@@ -37,7 +48,7 @@ const handler = async (req: Request): Promise<Response> => {
       templateContent = await fetchTemplate(quote.templateId);
     }
     
-    // Fetch the quote creator's name from profiles table - this is the main fix
+    // Fetch the quote creator's name from profiles table
     let accountManagerName = 'N/A';
     
     if (quote?.user_id) {
@@ -48,7 +59,7 @@ const handler = async (req: Request): Promise<Response> => {
     
     console.log('PDFShift Function - Final account manager name:', accountManagerName);
     
-    // Create HTML template with logo, settings, template content, and primary contact
+    // Create HTML template with logo, settings, template content, primary contact, and acceptance details
     const html = generateHTML(
       quote, 
       clientInfo, 
@@ -56,7 +67,8 @@ const handler = async (req: Request): Promise<Response> => {
       businessSettings.logoUrl, 
       businessSettings.companyName, 
       templateContent,
-      primaryContact
+      primaryContact,
+      acceptanceDetails
     );
     console.log('PDFShift Function - HTML generated, length:', html.length);
     

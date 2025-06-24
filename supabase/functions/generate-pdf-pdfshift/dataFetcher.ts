@@ -90,3 +90,43 @@ export const fetchUserProfile = async (userId: string): Promise<string> => {
   console.log('PDFShift Function - Profile found but no full_name set');
   return 'N/A';
 };
+
+export const fetchAcceptanceDetails = async (quoteId: string) => {
+  const supabase = createClient(
+    Deno.env.get('SUPABASE_URL') ?? '',
+    Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+  );
+  
+  console.log('PDFShift Function - Fetching acceptance details for quote:', quoteId);
+  
+  try {
+    const { data, error } = await supabase
+      .from('quote_acceptances')
+      .select('*')
+      .eq('quote_id', quoteId)
+      .single();
+
+    if (error) {
+      console.error('PDFShift Function - Error fetching acceptance details:', error);
+      return null;
+    }
+
+    if (!data) {
+      console.log('PDFShift Function - No acceptance details found for quote:', quoteId);
+      return null;
+    }
+
+    console.log('PDFShift Function - Found acceptance details for quote:', quoteId);
+    return {
+      clientName: data.client_name,
+      clientEmail: data.client_email,
+      signatureData: data.signature_data,
+      acceptedAt: data.accepted_at,
+      ipAddress: data.ip_address?.toString() || undefined,
+      userAgent: data.user_agent || undefined
+    };
+  } catch (error) {
+    console.error('PDFShift Function - Exception fetching acceptance details:', error);
+    return null;
+  }
+};

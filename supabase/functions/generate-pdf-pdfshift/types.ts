@@ -21,3 +21,12 @@ export interface BusinessSettings {
   phone?: string;
   email?: string;
 }
+
+export interface AcceptanceDetails {
+  clientName: string;
+  clientEmail: string;
+  signatureData: string;
+  acceptedAt: string;
+  ipAddress?: string;
+  userAgent?: string;
+}
