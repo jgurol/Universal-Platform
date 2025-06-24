@@ -1,6 +1,6 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { FileText, Zap, Search, DollarSign, Target } from "lucide-react";
+import { FileText, Zap, Search, DollarSign, Target, Users } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 
@@ -15,6 +15,14 @@ interface Program {
 }
 
 const programs: Program[] = [
+  {
+    id: "client-management",
+    title: "Client Management",
+    description: "Manage your clients and their information",
+    icon: Users,
+    route: "/client-management",
+    color: "bg-indigo-500 hover:bg-indigo-600"
+  },
   {
     id: "deal-registration",
     title: "Deal Registration",
@@ -64,7 +72,7 @@ export const ProgramsGrid = () => {
 
   return (
     <div className="mb-8">
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-6">
         {programs.map((program) => {
           const IconComponent = program.icon;
           const isDisabled = program.adminOnly && !isAdmin;

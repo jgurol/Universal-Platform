@@ -11,6 +11,7 @@ import Auth from "./pages/Auth";
 import Admin from "./pages/Admin";
 import QuotingSystem from "./pages/QuotingSystem";
 import AgentManagement from "./pages/AgentManagement";
+import ClientManagement from "./pages/ClientManagement";
 import DealRegistration from "./pages/DealRegistration";
 import SystemSettings from "./pages/SystemSettings";
 import ProfileSettings from "./pages/ProfileSettings";
@@ -54,6 +55,11 @@ const App = () => (
             <Route path="/agent-management" element={
               <ProtectedRoute requireAdmin>
                 <AgentManagement />
+              </ProtectedRoute>
+            } />
+            <Route path="/client-management" element={
+              <ProtectedRoute>
+                <ClientManagement />
               </ProtectedRoute>
             } />
             <Route path="/deal-registration" element={
