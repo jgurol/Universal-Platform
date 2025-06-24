@@ -37,7 +37,6 @@ export const QuoteStatusBadge = ({ quoteId, status, onStatusUpdate }: QuoteStatu
           .from('quotes')
           .update({ 
             status: newStatus,
-            acceptance_status: 'pending',
             accepted_at: null,
             accepted_by: null
           })
@@ -59,55 +58,114 @@ export const QuoteStatusBadge = ({ quoteId, status, onStatusUpdate }: QuoteStatu
         });
 
       } else if (newStatus === 'approved') {
-        // For approval, call the fix-quote-approval function instead of handle-quote-approval
-        console.log('Calling fix-quote-approval function to handle quote approval...');
-        
-        const { data: approvalResult, error: approvalError } = await supabase.functions
-          .invoke('fix-quote-approval', {
-            body: { quoteId: quoteId }
-          });
+        // For approval, first check if orders already exist
+        const { data: existingOrders, error: orderCheckError } = await supabase
+          .from('orders')
+          .select('id')
+          .eq('quote_id', quoteId);
 
-        if (approvalError) {
-          console.error('Error in quote approval:', approvalError);
+        if (orderCheckError) {
+          console.error('Error checking existing orders:', orderCheckError);
           toast({
             title: "Failed to approve quote",
-            description: approvalError.message,
+            description: "Could not verify order status",
             variant: "destructive"
           });
           return;
         }
 
-        console.log('Quote approval completed:', approvalResult);
-        
-        // Update the quote status to approved
-        const { error: updateError } = await supabase
-          .from('quotes')
-          .update({ 
-            status: 'approved',
-            acceptance_status: 'accepted',
-            accepted_at: new Date().toISOString()
-          })
-          .eq('id', quoteId);
+        if (existingOrders && existingOrders.length > 0) {
+          console.log('Orders already exist for this quote, just updating status');
+          
+          // Just update the quote status since orders already exist
+          const { error: updateError } = await supabase
+            .from('quotes')
+            .update({ 
+              status: 'approved',
+              accepted_at: new Date().toISOString()
+            })
+            .eq('id', quoteId);
 
-        if (updateError) {
-          console.error('Error updating quote status after approval:', updateError);
-          toast({
-            title: "Warning",
-            description: "Order was created but quote status update failed. Please refresh the page.",
-            variant: "destructive"
-          });
-        } else {
+          if (updateError) {
+            console.error('Error updating quote status:', updateError);
+            toast({
+              title: "Failed to approve quote",
+              description: updateError.message,
+              variant: "destructive"
+            });
+            return;
+          }
+
           toast({
             title: "Quote approved successfully",
-            description: "Quote status has been updated to approved and order has been created.",
+            description: "Quote status has been updated to approved.",
           });
+        } else {
+          // No existing orders, call the approval function to create them
+          console.log('No existing orders found, calling fix-quote-approval function...');
+          
+          const { data: approvalResult, error: approvalError } = await supabase.functions
+            .invoke('fix-quote-approval', {
+              body: { quoteId: quoteId }
+            });
+
+          if (approvalError) {
+            console.error('Error in quote approval function:', approvalError);
+            toast({
+              title: "Failed to approve quote",
+              description: approvalError.message,
+              variant: "destructive"
+            });
+            return;
+          }
+
+          console.log('Quote approval completed:', approvalResult);
+          
+          // Update the quote status to approved
+          const { error: updateError } = await supabase
+            .from('quotes')
+            .update({ 
+              status: 'approved',
+              accepted_at: new Date().toISOString()
+            })
+            .eq('id', quoteId);
+
+          if (updateError) {
+            console.error('Error updating quote status after approval:', updateError);
+            toast({
+              title: "Warning",
+              description: "Order was created but quote status update failed. Please refresh the page.",
+              variant: "destructive"
+            });
+          } else {
+            toast({
+              title: "Quote approved successfully",
+              description: "Quote status has been updated to approved and order has been created.",
+            });
+          }
         }
 
-        // Force a page refresh to ensure all data is up to date
-        setTimeout(() => {
-          window.location.reload();
-        }, 1000);
+      } else if (newStatus === 'rejected') {
+        // For rejection, just update the status
+        const { error } = await supabase
+          .from('quotes')
+          .update({ status: newStatus })
+          .eq('id', quoteId);
 
+        if (error) {
+          console.error('Error updating quote status:', error);
+          toast({
+            title: "Failed to update status",
+            description: error.message,
+            variant: "destructive"
+          });
+          return;
+        }
+
+        toast({
+          title: "Status updated",
+          description: `Quote status changed to ${newStatus}`,
+        });
       } else {
         // For other status changes, just update the status
         const { error } = await supabase
@@ -134,6 +192,11 @@ export const QuoteStatusBadge = ({ quoteId, status, onStatusUpdate }: QuoteStatu
       if (onStatusUpdate) {
         onStatusUpdate(newStatus);
       }
+
+      // Refresh the page to ensure all data is up to date
+      setTimeout(() => {
+        window.location.reload();
+      }, 1000);
 
     } catch (err) {
       console.error('Error updating quote status:', err);
