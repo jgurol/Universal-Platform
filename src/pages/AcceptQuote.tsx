@@ -27,7 +27,6 @@ interface Quote {
   status: string;
   notes?: string;
   expires_at?: string;
-  accepted_at?: string;
   billing_address?: string;
   service_address?: string;
   template_id?: string;
@@ -88,6 +87,7 @@ const AcceptQuote = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isAccepted, setIsAccepted] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [acceptedAt, setAcceptedAt] = useState<string | null>(null);
   
   // Form data
   const [clientName, setClientName] = useState('');
@@ -129,10 +129,21 @@ const AcceptQuote = () => {
       console.log('Quote data fetched:', quoteData);
       setQuote(quoteData);
 
-      // Check if quote is already accepted by checking the status
-      if (quoteData.status === 'approved') {
-        console.log('Quote already accepted');
+      // Check if quote is already accepted by checking quote_acceptances table
+      const { data: acceptanceData, error: acceptanceError } = await supabase
+        .from('quote_acceptances')
+        .select('accepted_at')
+        .eq('quote_id', quoteId)
+        .maybeSingle();
+
+      if (acceptanceError) {
+        console.error('Error checking acceptance:', acceptanceError);
+      }
+
+      if (acceptanceData) {
+        console.log('Quote already accepted at:', acceptanceData.accepted_at);
         setIsAccepted(true);
+        setAcceptedAt(acceptanceData.accepted_at);
         setIsLoading(false);
         return;
       }
@@ -240,7 +251,7 @@ const AcceptQuote = () => {
       // First check if quote acceptance already exists
       const { data: existingAcceptance, error: checkError } = await supabase
         .from('quote_acceptances')
-        .select('id')
+        .select('id, accepted_at')
         .eq('quote_id', quote.id)
         .maybeSingle();
 
@@ -252,6 +263,7 @@ const AcceptQuote = () => {
       if (existingAcceptance) {
         console.log('Quote already accepted, showing success state');
         setIsAccepted(true);
+        setAcceptedAt(existingAcceptance.accepted_at);
         toast({
           title: "Already Accepted",
           description: "This quote has already been accepted.",
@@ -284,11 +296,10 @@ const AcceptQuote = () => {
 
       console.log('Acceptance recorded successfully:', acceptanceResult);
 
-      // Update the quote with accepted fields AND status
+      // Update the quote with accepted fields AND status (but not accepted_at since that's in quote_acceptances)
       console.log('Updating quote status...');
       
       const updateData = {
-        accepted_at: new Date().toISOString(),
         accepted_by: clientName.trim(),
         status: 'approved' // Update the main status to approved
       };
@@ -330,6 +341,7 @@ const AcceptQuote = () => {
 
       // Show success immediately
       setIsAccepted(true);
+      setAcceptedAt(acceptanceResult.accepted_at);
       toast({
         title: "Quote Accepted",
         description: "Thank you! Your quote has been successfully accepted.",
@@ -397,6 +409,11 @@ const AcceptQuote = () => {
             <div className="text-center">
               <CheckCircle className="h-12 w-12 text-green-500 mx-auto mb-4" />
               <h2 className="text-xl font-semibold text-gray-900 mb-2">Quote Accepted</h2>
+              {acceptedAt && (
+                <p className="text-sm text-gray-500 mb-2">
+                  Accepted on: {new Date(acceptedAt).toLocaleString()}
+                </p>
+              )}
               <p className="text-gray-600">This quote has already been accepted. Thank you!</p>
             </div>
           </CardContent>
