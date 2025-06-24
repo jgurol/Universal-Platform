@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -33,6 +32,7 @@ export const EditCarrierQuoteDialog = ({ open, onOpenChange, carrier, onUpdateCa
   const [notes, setNotes] = useState("");
   const [installFee, setInstallFee] = useState(false);
   const [siteSurveyNeeded, setSiteSurveyNeeded] = useState(false);
+  const [siteSurveyColor, setSiteSurveyColor] = useState("red");
   const [noService, setNoService] = useState(false);
   const [includesStaticIp, setIncludesStaticIp] = useState(false);
   const [isNotesDialogOpen, setIsNotesDialogOpen] = useState(false);
@@ -106,7 +106,24 @@ export const EditCarrierQuoteDialog = ({ open, onOpenChange, carrier, onUpdateCa
       
       setPrice(carrier.price > 0 ? carrier.price.toString() : "");
       setTerm(carrier.term);
-      setNotes(carrier.notes);
+      
+      // Extract site survey color from notes if present
+      let cleanNotes = carrier.notes;
+      let surveyColor = "red";
+      
+      if (carrier.notes && carrier.notes.includes("Site Survey:")) {
+        const parts = carrier.notes.split("Site Survey:");
+        if (parts.length > 1) {
+          const colorPart = parts[1].trim().toLowerCase();
+          if (colorPart.startsWith("red") || colorPart.startsWith("yellow") || colorPart.startsWith("orange")) {
+            surveyColor = colorPart.split(" ")[0];
+          }
+          cleanNotes = parts[0].replace(" | ", "").trim();
+        }
+      }
+      
+      setNotes(cleanNotes);
+      setSiteSurveyColor(surveyColor);
       setInstallFee(carrier.install_fee || false);
       setSiteSurveyNeeded(carrier.site_survey_needed || false);
       setNoService(carrier.no_service || false);
@@ -133,7 +150,7 @@ export const EditCarrierQuoteDialog = ({ open, onOpenChange, carrier, onUpdateCa
         speed: selectedSpeed,
         price: price ? parseFloat(price) : 0,
         term,
-        notes,
+        notes: siteSurveyNeeded ? `${notes}${notes ? ' | ' : ''}Site Survey: ${siteSurveyColor.toUpperCase()}` : notes,
         color: vendorColor,
         install_fee: installFee,
         site_survey_needed: siteSurveyNeeded,
@@ -329,6 +346,41 @@ export const EditCarrierQuoteDialog = ({ open, onOpenChange, carrier, onUpdateCa
                   </Label>
                 </div>
               </div>
+
+              {siteSurveyNeeded && (
+                <div className="space-y-2 mt-4">
+                  <Label>Site Survey Priority</Label>
+                  <div className="flex gap-2">
+                    <Button
+                      type="button"
+                      variant={siteSurveyColor === "red" ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => setSiteSurveyColor("red")}
+                      className={siteSurveyColor === "red" ? "bg-red-500 hover:bg-red-600" : "border-red-500 text-red-500 hover:bg-red-50"}
+                    >
+                      Red
+                    </Button>
+                    <Button
+                      type="button"
+                      variant={siteSurveyColor === "yellow" ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => setSiteSurveyColor("yellow")}
+                      className={siteSurveyColor === "yellow" ? "bg-yellow-500 hover:bg-yellow-600" : "border-yellow-500 text-yellow-600 hover:bg-yellow-50"}
+                    >
+                      Yellow
+                    </Button>
+                    <Button
+                      type="button"
+                      variant={siteSurveyColor === "orange" ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => setSiteSurveyColor("orange")}
+                      className={siteSurveyColor === "orange" ? "bg-orange-500 hover:bg-orange-600" : "border-orange-500 text-orange-600 hover:bg-orange-50"}
+                    >
+                      Orange
+                    </Button>
+                  </div>
+                </div>
+              )}
             </div>
 
             <div className="space-y-2">

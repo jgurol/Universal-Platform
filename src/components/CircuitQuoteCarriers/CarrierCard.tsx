@@ -54,7 +54,24 @@ export const CarrierCard = ({ carrier, onEdit, onDelete, onCopy }: CarrierCardPr
   const getTickedCheckboxes = () => {
     const ticked = [];
     if (carrier.install_fee) ticked.push("Install Fee");
-    if (carrier.site_survey_needed) ticked.push("Site Survey");
+    if (carrier.site_survey_needed) {
+      // Extract color from notes if present
+      let surveyText = "Site Survey";
+      if (carrier.notes && carrier.notes.includes("Site Survey:")) {
+        const parts = carrier.notes.split("Site Survey:");
+        if (parts.length > 1) {
+          const colorPart = parts[1].trim().toLowerCase();
+          if (colorPart.startsWith("red")) {
+            surveyText = "Site Survey (RED)";
+          } else if (colorPart.startsWith("yellow")) {
+            surveyText = "Site Survey (YELLOW)";
+          } else if (colorPart.startsWith("orange")) {
+            surveyText = "Site Survey (ORANGE)";
+          }
+        }
+      }
+      ticked.push(surveyText);
+    }
     if (carrier.no_service) ticked.push("No Service");
     if (carrier.static_ip) ticked.push("Includes Static IP");
     return ticked;
@@ -63,7 +80,23 @@ export const CarrierCard = ({ carrier, onEdit, onDelete, onCopy }: CarrierCardPr
   const getLatestNote = (): string => {
     if (!carrier.notes) return '';
     
-    const noteEntries = carrier.notes.split('\n\n').filter(note => note.trim());
+    // Remove site survey color coding from displayed notes
+    let cleanNotes = carrier.notes;
+    if (cleanNotes.includes("Site Survey:")) {
+      const parts = cleanNotes.split(" | Site Survey:");
+      if (parts.length > 1) {
+        cleanNotes = parts[0];
+      } else {
+        const siteSurveyIndex = cleanNotes.indexOf("Site Survey:");
+        if (siteSurveyIndex === 0) {
+          cleanNotes = "";
+        } else {
+          cleanNotes = cleanNotes.substring(0, siteSurveyIndex).replace(" | ", "").trim();
+        }
+      }
+    }
+    
+    const noteEntries = cleanNotes.split('\n\n').filter(note => note.trim());
     if (noteEntries.length === 0) return '';
     
     const latestNoteEntry = noteEntries[0];
@@ -120,18 +153,32 @@ export const CarrierCard = ({ carrier, onEdit, onDelete, onCopy }: CarrierCardPr
           <div className="text-sm text-gray-600">
             {tickedOptions.length > 0 && (
               <div className="flex flex-wrap gap-1 mb-1">
-                {tickedOptions.map((option, index) => (
-                  <span 
-                    key={index} 
-                    className={`inline-flex items-center px-2 py-1 rounded-full text-xs ${
-                      option === 'No Service' ? 'bg-red-100 text-red-800' : 
-                      option === 'Includes Static IP' ? 'bg-green-100 text-green-800' :
-                      'bg-blue-100 text-blue-800'
-                    }`}
-                  >
-                    {option}
-                  </span>
-                ))}
+                {tickedOptions.map((option, index) => {
+                  let badgeClass = "bg-blue-100 text-blue-800";
+                  
+                  if (option === 'No Service') {
+                    badgeClass = "bg-red-100 text-red-800";
+                  } else if (option === 'Includes Static IP') {
+                    badgeClass = "bg-green-100 text-green-800";
+                  } else if (option.includes('Site Survey')) {
+                    if (option.includes('RED')) {
+                      badgeClass = "bg-red-100 text-red-800";
+                    } else if (option.includes('YELLOW')) {
+                      badgeClass = "bg-yellow-100 text-yellow-800";
+                    } else if (option.includes('ORANGE')) {
+                      badgeClass = "bg-orange-100 text-orange-800";
+                    }
+                  }
+                  
+                  return (
+                    <span 
+                      key={index} 
+                      className={`inline-flex items-center px-2 py-1 rounded-full text-xs ${badgeClass}`}
+                    >
+                      {option}
+                    </span>
+                  );
+                })}
               </div>
             )}
             {latestNote}

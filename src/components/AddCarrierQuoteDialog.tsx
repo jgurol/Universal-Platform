@@ -1,15 +1,14 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Checkbox } from "@/components/ui/checkbox";
 import { FileText, ExternalLink } from "lucide-react";
-import type { CarrierQuote } from "@/hooks/useCircuitQuotes";
+import { CarrierQuote } from "@/hooks/useCircuitQuotes";
 import { useCarrierOptions } from "@/hooks/useCarrierOptions";
 import { useVendorPriceSheets } from "@/hooks/useVendorPriceSheets";
 import { useSpeeds } from "@/hooks/useSpeeds";
@@ -32,6 +31,7 @@ export const AddCarrierQuoteDialog = ({ open, onOpenChange, onAddCarrier }: AddC
   const [notes, setNotes] = useState("");
   const [installFee, setInstallFee] = useState(false);
   const [siteSurveyNeeded, setSiteSurveyNeeded] = useState(false);
+  const [siteSurveyColor, setSiteSurveyColor] = useState("red");
   const [noService, setNoService] = useState(false);
   const [includesStaticIp, setIncludesStaticIp] = useState(false);
 
@@ -39,8 +39,6 @@ export const AddCarrierQuoteDialog = ({ open, onOpenChange, onAddCarrier }: AddC
   const { priceSheets } = useVendorPriceSheets();
   const { speeds, loading: speedsLoading } = useSpeeds();
   const { toast } = useToast();
-
-  console.log('Speeds data:', speeds, 'Loading:', speedsLoading);
 
   // Filter price sheets for the selected vendor
   const vendorPriceSheets = priceSheets.filter(sheet => sheet.vendor_id === vendorId);
@@ -95,6 +93,7 @@ export const AddCarrierQuoteDialog = ({ open, onOpenChange, onAddCarrier }: AddC
     setNotes("");
     setInstallFee(false);
     setSiteSurveyNeeded(false);
+    setSiteSurveyColor("red");
     setNoService(false);
     setIncludesStaticIp(false);
   };
@@ -117,7 +116,7 @@ export const AddCarrierQuoteDialog = ({ open, onOpenChange, onAddCarrier }: AddC
         speed: selectedSpeed,
         price: price ? parseFloat(price) : 0,
         term,
-        notes,
+        notes: siteSurveyNeeded ? `${notes}${notes ? ' | ' : ''}Site Survey: ${siteSurveyColor.toUpperCase()}` : notes,
         color: vendorColor,
         install_fee: installFee,
         site_survey_needed: siteSurveyNeeded,
@@ -136,7 +135,7 @@ export const AddCarrierQuoteDialog = ({ open, onOpenChange, onAddCarrier }: AddC
         <DialogHeader>
           <DialogTitle>Add Carrier Quote</DialogTitle>
           <DialogDescription>
-            Add a new carrier quote for comparison. Leave cost and term blank if waiting for vendor response.
+            Add a new carrier quote. Leave cost and term blank if waiting for vendor response.
           </DialogDescription>
         </DialogHeader>
         
@@ -309,20 +308,51 @@ export const AddCarrierQuoteDialog = ({ open, onOpenChange, onAddCarrier }: AddC
                 </Label>
               </div>
             </div>
+
+            {siteSurveyNeeded && (
+              <div className="space-y-2 mt-4">
+                <Label>Site Survey Priority</Label>
+                <div className="flex gap-2">
+                  <Button
+                    type="button"
+                    variant={siteSurveyColor === "red" ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setSiteSurveyColor("red")}
+                    className={siteSurveyColor === "red" ? "bg-red-500 hover:bg-red-600" : "border-red-500 text-red-500 hover:bg-red-50"}
+                  >
+                    Red
+                  </Button>
+                  <Button
+                    type="button"
+                    variant={siteSurveyColor === "yellow" ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setSiteSurveyColor("yellow")}
+                    className={siteSurveyColor === "yellow" ? "bg-yellow-500 hover:bg-yellow-600" : "border-yellow-500 text-yellow-600 hover:bg-yellow-50"}
+                  >
+                    Yellow
+                  </Button>
+                  <Button
+                    type="button"
+                    variant={siteSurveyColor === "orange" ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setSiteSurveyColor("orange")}
+                    className={siteSurveyColor === "orange" ? "bg-orange-500 hover:bg-orange-600" : "border-orange-500 text-orange-600 hover:bg-orange-50"}
+                  >
+                    Orange
+                  </Button>
+                </div>
+              </div>
+            )}
           </div>
 
           <div className="space-y-2">
             <Label htmlFor="notes">Notes</Label>
-            <Textarea
+            <Input
               id="notes"
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
-              placeholder="Additional notes about this quote (e.g., includes static IPs, installation fees, etc.)"
-              rows={3}
+              placeholder="Additional notes or comments"
             />
-            <div className="text-xs text-gray-500">
-              Note: After creating the quote, you can use the edit dialog to add detailed notes with file attachments.
-            </div>
           </div>
           
           <div className="flex justify-end space-x-2 mt-6">
