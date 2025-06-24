@@ -1396,7 +1396,7 @@ export type Database = {
         Returns: string
       }
       get_next_quote_number: {
-        Args: { p_user_id: string }
+        Args: Record<PropertyKey, never>
         Returns: number
       }
       get_user_profile: {

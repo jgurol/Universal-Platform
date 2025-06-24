@@ -204,16 +204,14 @@ export const AddQuoteDialog = ({ open, onOpenChange, onAddQuote, clients, client
     }
   }, [open]);
 
-  // Generate next quote number using the new database function
+  // Generate next quote number using the new global database function
   useEffect(() => {
     const generateNextQuoteNumber = async () => {
       if (open && user) {
         try {
-          console.log('[AddQuoteDialog] Generating next quote number for user:', user.id);
+          console.log('[AddQuoteDialog] Generating next global quote number');
           
-          const { data, error } = await supabase.rpc('get_next_quote_number', {
-            p_user_id: user.id
-          });
+          const { data, error } = await supabase.rpc('get_next_quote_number');
 
           if (error) {
             console.error('[AddQuoteDialog] Error generating quote number:', error);
@@ -226,7 +224,7 @@ export const AddQuoteDialog = ({ open, onOpenChange, onAddQuote, clients, client
             return;
           }
 
-          console.log('[AddQuoteDialog] Generated quote number:', data);
+          console.log('[AddQuoteDialog] Generated global quote number:', data);
           setQuoteNumber(data.toString());
         } catch (err) {
           console.error('[AddQuoteDialog] Exception generating quote number:', err);
