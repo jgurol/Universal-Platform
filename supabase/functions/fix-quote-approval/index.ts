@@ -27,21 +27,16 @@ const generateOrderNumber = async (): Promise<string> => {
 
   if (error) {
     console.error('Error fetching last order number:', error);
-    // If we can't get the last order, start from 15000
     return '15000';
   }
 
   if (!lastOrder || lastOrder.length === 0) {
-    // No orders exist yet, start from 15000
     return '15000';
   }
 
   const lastOrderNumber = lastOrder[0].order_number;
-  
-  // Extract the numeric part and increment
   const numericPart = parseInt(lastOrderNumber);
   if (isNaN(numericPart)) {
-    // If the last order number isn't numeric, start from 15000
     return '15000';
   }
 
@@ -59,10 +54,11 @@ const handler = async (req: Request): Promise<Response> => {
 
     console.log('Processing request for quote:', quoteId, 'action:', action);
 
-    // Handle status-only update - ONLY update the quote status, no order operations
+    // Handle status-only update - Use service role client to bypass RLS
     if (action === 'update_status_only') {
       console.log('Updating quote status only for:', quoteId);
       
+      // Use service role client with bypassing RLS by updating directly
       const { error: updateError } = await supabase
         .from('quotes')
         .update({ 
@@ -73,13 +69,23 @@ const handler = async (req: Request): Promise<Response> => {
 
       if (updateError) {
         console.error('Error updating quote status:', updateError);
-        return new Response(JSON.stringify({ 
-          success: false, 
-          error: `Failed to update quote status: ${updateError.message}`
-        }), {
-          status: 500,
-          headers: { "Content-Type": "application/json", ...corsHeaders },
+        
+        // Try alternative approach using RPC function
+        const { error: rpcError } = await supabase.rpc('update_quote_status', {
+          quote_id: quoteId,
+          new_status: 'approved'
         });
+
+        if (rpcError) {
+          console.error('RPC update also failed:', rpcError);
+          return new Response(JSON.stringify({ 
+            success: false, 
+            error: `Failed to update quote status: ${updateError.message}`
+          }), {
+            status: 500,
+            headers: { "Content-Type": "application/json", ...corsHeaders },
+          });
+        }
       }
 
       console.log('Quote status updated successfully');
@@ -110,7 +116,7 @@ const handler = async (req: Request): Promise<Response> => {
     if (existingOrders && existingOrders.length > 0) {
       console.log('Orders already exist for quote:', quoteId, 'Count:', existingOrders.length);
       
-      // Since orders exist, let's just try to update the quote status directly
+      // Since orders exist, just update the quote status using service role
       console.log('Attempting to update quote status for existing orders...');
       
       const { error: statusUpdateError } = await supabase
@@ -123,24 +129,25 @@ const handler = async (req: Request): Promise<Response> => {
 
       if (statusUpdateError) {
         console.error('Error updating quote status for existing orders:', statusUpdateError);
-        return new Response(JSON.stringify({ 
-          success: false, 
-          error: `Failed to update quote status: ${statusUpdateError.message}`
-        }), {
-          status: 500,
-          headers: { "Content-Type": "application/json", ...corsHeaders },
+        
+        // Try RPC fallback
+        const { error: rpcError } = await supabase.rpc('update_quote_status', {
+          quote_id: quoteId,
+          new_status: 'approved'
         });
+
+        if (rpcError) {
+          console.error('RPC fallback also failed:', rpcError);
+        }
       }
 
-      console.log('Successfully updated quote status for existing orders');
-      
       return new Response(JSON.stringify({ 
         success: true, 
         orderIds: existingOrders.map(o => o.id),
         orderNumbers: existingOrders.map(o => o.order_number),
-        message: 'Orders already exist and quote status updated successfully',
+        message: 'Orders already exist and quote status updated',
         ordersCount: existingOrders.length,
-        statusUpdateSuccess: true,
+        statusUpdateSuccess: !statusUpdateError,
         requiresRefresh: false
       }), {
         status: 200,
@@ -159,10 +166,8 @@ const handler = async (req: Request): Promise<Response> => {
       throw new Error(`Failed to fetch quote: ${quoteError?.message}`);
     }
 
-    // Generate sequential order number
     const orderNumber = await generateOrderNumber();
 
-    // Ensure user_id is properly set
     if (!quote.user_id) {
       throw new Error('Quote user_id is missing - cannot create order');
     }
@@ -172,7 +177,6 @@ const handler = async (req: Request): Promise<Response> => {
     let newOrderId: string | null = null;
     let orderCreationSuccess = false;
 
-    // Try to create the order
     try {
       const { data: createdOrderId, error: orderError } = await supabase
         .rpc('create_order_bypass_rls', {
@@ -207,7 +211,7 @@ const handler = async (req: Request): Promise<Response> => {
       throw new Error('Order creation failed or returned no ID');
     }
 
-    // Now try to update quote status - but make this a separate operation
+    // Now try to update quote status using service role
     console.log('Order created successfully, now updating quote status...');
     
     let statusUpdateSuccess = false;
@@ -222,6 +226,19 @@ const handler = async (req: Request): Promise<Response> => {
 
       if (quoteUpdateError) {
         console.error('Error updating quote status after order creation:', quoteUpdateError);
+        
+        // Try RPC fallback
+        const { error: rpcError } = await supabase.rpc('update_quote_status', {
+          quote_id: quoteId,
+          new_status: 'approved'
+        });
+
+        if (rpcError) {
+          console.error('RPC fallback failed:', rpcError);
+        } else {
+          statusUpdateSuccess = true;
+          console.log('Successfully updated quote status via RPC');
+        }
       } else {
         console.log('Successfully updated quote status to approved');
         statusUpdateSuccess = true;
@@ -247,7 +264,6 @@ const handler = async (req: Request): Promise<Response> => {
     } else if (quoteItems) {
       console.log(`Total quote items fetched: ${quoteItems.length}`);
       
-      // Log all items and their categories for debugging
       quoteItems.forEach((item, index) => {
         console.log(`Item ${index + 1}:`, {
           id: item.id,
@@ -257,7 +273,6 @@ const handler = async (req: Request): Promise<Response> => {
         });
       });
 
-      // Filter items that have Circuit category type
       const circuitItems = quoteItems.filter(item => {
         const isCircuit = item.item?.category?.type === 'Circuit';
         console.log(`Item ${item.item?.name} - Category type: ${item.item?.category?.type}, Is Circuit: ${isCircuit}`);
@@ -268,7 +283,6 @@ const handler = async (req: Request): Promise<Response> => {
 
       if (circuitItems.length === 0) {
         console.log('No circuit items found - checking for legacy circuit categories');
-        // Also check for legacy circuit categories by name
         const legacyCircuitItems = quoteItems.filter(item => {
           const categoryName = item.item?.category?.name?.toLowerCase();
           const isLegacyCircuit = categoryName && ['broadband', 'dedicated fiber', 'fixed wireless', '4g/5g', 'circuit'].includes(categoryName);
@@ -280,13 +294,11 @@ const handler = async (req: Request): Promise<Response> => {
         
         console.log(`Found ${legacyCircuitItems.length} legacy circuit items`);
         
-        // Use legacy circuit items if no Circuit type items found
         if (legacyCircuitItems.length > 0) {
           circuitItems.push(...legacyCircuitItems);
         }
       }
 
-      // Create circuit tracking records for each circuit item using service role client
       for (let i = 0; i < circuitItems.length; i++) {
         const circuitItem = circuitItems[i];
         const circuitTrackingData = {
@@ -313,7 +325,6 @@ const handler = async (req: Request): Promise<Response> => {
 
         if (circuitTrackingError) {
           console.error(`Error creating circuit tracking for item ${circuitItem.id}:`, circuitTrackingError);
-          // Don't throw here - continue with other items
         } else {
           console.log(`Successfully created circuit tracking ${newCircuitTracking.id} for quote item ${circuitItem.id}`);
         }
@@ -322,7 +333,6 @@ const handler = async (req: Request): Promise<Response> => {
       console.log(`Circuit tracking creation completed. Created ${circuitItems.length} tracking records.`);
     }
 
-    // Return success with detailed information about what happened
     const responseMessage = statusUpdateSuccess 
       ? 'Order created successfully and quote status updated to approved'
       : 'Order created successfully but quote status update needs manual refresh';
