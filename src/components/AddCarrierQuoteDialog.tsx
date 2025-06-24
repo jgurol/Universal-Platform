@@ -329,7 +329,7 @@ export const AddCarrierQuoteDialog = ({ open, onOpenChange, onAddCarrier }: AddC
                     onCheckedChange={(checked) => setIncludesStaticIp(checked as boolean)}
                   />
                   <Label htmlFor="includes-static-ip" className="text-sm font-normal">
-                    Includes Static IP
+                    1 Static IP (/30)
                   </Label>
                 </div>
                 
