@@ -104,19 +104,23 @@ const handler = async (req: Request): Promise<Response> => {
     if (existingOrders && existingOrders.length > 0) {
       console.log('Orders already exist for quote:', quoteId, 'Count:', existingOrders.length);
       
-      // Update quote status to approved since orders already exist
-      const { error: statusUpdateError } = await supabase
-        .from('quotes')
-        .update({ 
-          status: 'approved',
-          accepted_at: new Date().toISOString()
-        })
-        .eq('id', quoteId);
+      // Try to update quote status, but don't fail if it doesn't work
+      try {
+        const { error: statusUpdateError } = await supabase
+          .from('quotes')
+          .update({ 
+            status: 'approved',
+            accepted_at: new Date().toISOString()
+          })
+          .eq('id', quoteId);
 
-      if (statusUpdateError) {
-        console.error('Error updating quote status for existing orders:', statusUpdateError);
-        // Don't throw here - orders exist, that's what matters
-        console.log('Status update failed but orders exist, considering this a success');
+        if (statusUpdateError) {
+          console.error('Warning: Could not update quote status for existing orders:', statusUpdateError);
+        } else {
+          console.log('Successfully updated quote status for existing orders');
+        }
+      } catch (statusError) {
+        console.error('Exception updating quote status for existing orders:', statusError);
       }
 
       return new Response(JSON.stringify({ 
@@ -125,7 +129,7 @@ const handler = async (req: Request): Promise<Response> => {
         orderNumbers: existingOrders.map(o => o.order_number),
         message: 'Orders already exist for this quote, approval confirmed',
         ordersCount: existingOrders.length,
-        statusUpdateFailed: !!statusUpdateError
+        statusUpdateAttempted: true
       }), {
         status: 200,
         headers: { "Content-Type": "application/json", ...corsHeaders },
@@ -154,7 +158,6 @@ const handler = async (req: Request): Promise<Response> => {
     console.log(`Creating order for quote ${quoteId} with user_id: ${quote.user_id} and order number: ${orderNumber}`);
 
     let newOrderId: string | null = null;
-    let orderCreationError: any = null;
 
     // Try to create the order
     try {
@@ -175,7 +178,6 @@ const handler = async (req: Request): Promise<Response> => {
         });
 
       if (orderError) {
-        orderCreationError = orderError;
         console.error(`Failed to create order via RPC:`, orderError);
         
         // Check if this is a duplicate key error
@@ -210,9 +212,10 @@ const handler = async (req: Request): Promise<Response> => {
       throw new Error('Order creation returned no ID');
     }
 
-    // Now try to update quote status - but don't fail if this doesn't work
-    let statusUpdateError: any = null;
+    // Now try to update quote status - but don't fail the whole operation if this doesn't work
+    let statusUpdateSuccess = false;
     try {
+      console.log('Attempting to update quote status to approved...');
       const { error: quoteUpdateError } = await supabase
         .from('quotes')
         .update({ 
@@ -222,14 +225,13 @@ const handler = async (req: Request): Promise<Response> => {
         .eq('id', quoteId);
 
       if (quoteUpdateError) {
-        statusUpdateError = quoteUpdateError;
         console.error('Error updating quote status after order creation:', quoteUpdateError);
-        // Don't throw - the order was created successfully
+      } else {
+        console.log('Successfully updated quote status to approved');
+        statusUpdateSuccess = true;
       }
     } catch (err) {
-      statusUpdateError = err;
       console.error('Exception updating quote status:', err);
-      // Don't throw - the order was created successfully
     }
 
     // Handle circuit tracking creation
@@ -324,16 +326,19 @@ const handler = async (req: Request): Promise<Response> => {
       console.log(`Circuit tracking creation completed. Created ${circuitItems.length} tracking records.`);
     }
 
+    // Return success with detailed information about what happened
+    const responseMessage = statusUpdateSuccess 
+      ? 'Order created successfully and quote status updated to approved'
+      : 'Order created successfully but quote status update may need manual refresh';
+
     return new Response(JSON.stringify({ 
       success: true, 
       orderIds: [newOrderId],
       orderNumbers: [orderNumber],
       ordersCount: 1,
-      message: statusUpdateError 
-        ? 'Order created successfully but quote status update failed' 
-        : 'Order created successfully and quote status updated to approved',
-      statusUpdateFailed: !!statusUpdateError,
-      statusUpdateError: statusUpdateError?.message
+      message: responseMessage,
+      statusUpdateSuccess: statusUpdateSuccess,
+      requiresRefresh: !statusUpdateSuccess
     }), {
       status: 200,
       headers: { "Content-Type": "application/json", ...corsHeaders },

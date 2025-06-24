@@ -1,4 +1,3 @@
-
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
@@ -89,17 +88,17 @@ export const QuoteStatusBadge = ({ quoteId, status, onStatusUpdate }: QuoteStatu
           if (updateError) {
             console.error('Error updating quote status:', updateError);
             toast({
-              title: "Status update failed",
+              title: "Status update may have failed",
               description: "Order exists but quote status update failed. Please refresh the page.",
-              variant: "destructive"
+              variant: "default"
             });
-            return;
+          } else {
+            toast({
+              title: "Quote approved successfully",
+              description: "Quote status has been updated to approved.",
+            });
           }
-
-          toast({
-            title: "Quote approved successfully",
-            description: "Quote status has been updated to approved.",
-          });
+          
         } else {
           // No existing orders, call the approval function to create them
           console.log('No existing orders found, calling fix-quote-approval function...');
@@ -123,24 +122,34 @@ export const QuoteStatusBadge = ({ quoteId, status, onStatusUpdate }: QuoteStatu
           
           // Check the response from the approval function
           if (approvalResult?.success) {
-            if (approvalResult.statusUpdateFailed) {
+            if (approvalResult.statusUpdateSuccess === false || approvalResult.requiresRefresh) {
               toast({
-                title: "Quote approved with warning",
-                description: "Order was created but quote status may need to be refreshed. Please refresh the page.",
+                title: "Quote approved with status issue",
+                description: "Order was created successfully but quote status may need to be refreshed. The page will refresh automatically.",
                 variant: "default"
               });
+              
+              // Force refresh after a short delay
+              setTimeout(() => {
+                window.location.reload();
+              }, 2000);
             } else {
               toast({
                 title: "Quote approved successfully",
-                description: approvalResult.message || "Quote status has been updated to approved and order has been created.",
+                description: "Quote status has been updated to approved and order has been created.",
               });
             }
           } else {
             toast({
-              title: "Approval completed with issues",
-              description: "Order may have been created. Please refresh the page to see current status.",
+              title: "Approval may have issues",
+              description: "Please refresh the page to see current status.",
               variant: "default"
             });
+            
+            // Still refresh to show current state
+            setTimeout(() => {
+              window.location.reload();
+            }, 1500);
           }
         }
 
@@ -192,10 +201,12 @@ export const QuoteStatusBadge = ({ quoteId, status, onStatusUpdate }: QuoteStatu
         onStatusUpdate(newStatus);
       }
 
-      // Refresh the page to ensure all data is up to date, but with a shorter delay
-      setTimeout(() => {
-        window.location.reload();
-      }, 800);
+      // Only refresh for non-approved status changes (approved handles its own refresh logic)
+      if (newStatus !== 'approved') {
+        setTimeout(() => {
+          window.location.reload();
+        }, 800);
+      }
 
     } catch (err) {
       console.error('Error updating quote status:', err);
