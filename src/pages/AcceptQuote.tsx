@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import { ClientInfo } from "@/types/index";
@@ -33,7 +32,6 @@ interface Quote {
   service_address?: string;
   template_id?: string;
   email_status?: string;
-  acceptance_status?: string;
   accepted_by?: string;
   email_sent_at?: string;
   email_opened?: boolean;
@@ -131,8 +129,8 @@ const AcceptQuote = () => {
       console.log('Quote data fetched:', quoteData);
       setQuote(quoteData);
 
-      // Check if quote is already accepted
-      if (quoteData.acceptance_status === 'accepted') {
+      // Check if quote is already accepted by checking the status
+      if (quoteData.status === 'approved') {
         console.log('Quote already accepted');
         setIsAccepted(true);
         setIsLoading(false);
@@ -145,7 +143,7 @@ const AcceptQuote = () => {
         setIsLoading(false);
         return;
       }
-
+      
       // Fetch quote items with type assertion for charge_type
       const { data: itemsData, error: itemsError } = await supabase
         .from('quote_items')
@@ -286,14 +284,13 @@ const AcceptQuote = () => {
 
       console.log('Acceptance recorded successfully:', acceptanceResult);
 
-      // Update the quote with both acceptance fields AND status
-      console.log('Updating quote acceptance status and main status...');
+      // Update the quote with accepted fields AND status
+      console.log('Updating quote status...');
       
       const updateData = {
-        acceptance_status: 'accepted',
         accepted_at: new Date().toISOString(),
         accepted_by: clientName.trim(),
-        status: 'approved' // Add this back to update the main status
+        status: 'approved' // Update the main status to approved
       };
 
       const { data: updateResult, error: updateError } = await supabase

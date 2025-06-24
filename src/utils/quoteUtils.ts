@@ -41,7 +41,6 @@ export const mapQuoteData = (
     billingAddress: quoteData.billing_address,
     serviceAddress: serviceAddress, // Properly handle null/undefined service address
     templateId: quoteData.template_id,
-    acceptanceStatus: quoteData.acceptance_status,
     acceptedAt: quoteData.accepted_at, // Map accepted_at to acceptedAt
     acceptedBy: quoteData.accepted_by,
     archived: quoteData.archived || false,

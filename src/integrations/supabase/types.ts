@@ -1072,7 +1072,6 @@ export type Database = {
       }
       quotes: {
         Row: {
-          acceptance_status: string | null
           accepted_at: string | null
           accepted_by: string | null
           amount: number
@@ -1103,7 +1102,6 @@ export type Database = {
           user_id: string
         }
         Insert: {
-          acceptance_status?: string | null
           accepted_at?: string | null
           accepted_by?: string | null
           amount: number
@@ -1134,7 +1132,6 @@ export type Database = {
           user_id: string
         }
         Update: {
-          acceptance_status?: string | null
           accepted_at?: string | null
           accepted_by?: string | null
           amount?: number

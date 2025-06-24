@@ -1,4 +1,3 @@
-
 export interface Client {
   id: string;
   firstName: string;
@@ -37,7 +36,6 @@ export interface Quote {
   serviceAddress?: string;
   templateId?: string;
   emailStatus?: string;
-  acceptanceStatus?: string;
   acceptedBy?: string;
   emailSentAt?: string;
   emailOpened?: boolean;
