@@ -1,11 +1,14 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { FileText } from "lucide-react";
+import { FileText, Upload, Download, Trash2, Calendar, User } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/context/AuthContext";
 
 interface CircuitQuoteNotesDialogProps {
   open: boolean;
@@ -14,30 +17,203 @@ interface CircuitQuoteNotesDialogProps {
   clientName: string;
 }
 
+interface NoteEntry {
+  id: string;
+  content: string;
+  created_at: string;
+  user_name: string;
+  files: NoteFile[];
+}
+
+interface NoteFile {
+  id: string;
+  file_name: string;
+  file_type: string;
+  file_path: string;
+  file_size: number;
+}
+
 export const CircuitQuoteNotesDialog = ({ 
   open, 
   onOpenChange, 
   circuitQuoteId, 
   clientName 
 }: CircuitQuoteNotesDialogProps) => {
+  const [notes, setNotes] = useState<NoteEntry[]>([]);
   const [newNote, setNewNote] = useState("");
+  const [uploadingFiles, setUploadingFiles] = useState<File[]>([]);
   const [loading, setLoading] = useState(false);
+  const [loadingNotes, setLoadingNotes] = useState(true);
   const { toast } = useToast();
+  const { user } = useAuth();
+
+  // Load notes when dialog opens
+  useEffect(() => {
+    if (open && circuitQuoteId) {
+      loadNotes();
+    }
+  }, [open, circuitQuoteId]);
+
+  const loadNotes = async () => {
+    try {
+      setLoadingNotes(true);
+      
+      // Fetch notes with user profile information and files
+      const { data: notesData, error } = await supabase
+        .from('circuit_quote_notes')
+        .select(`
+          *,
+          profiles!circuit_quote_notes_user_id_fkey (
+            full_name
+          ),
+          circuit_quote_note_files (*)
+        `)
+        .eq('circuit_quote_id', circuitQuoteId)
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('Error loading notes:', error);
+        toast({
+          title: "Error",
+          description: "Failed to load notes",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      const formattedNotes: NoteEntry[] = (notesData || []).map(note => ({
+        id: note.id,
+        content: note.content,
+        created_at: note.created_at,
+        user_name: note.profiles?.full_name || 'Unknown User',
+        files: (note.circuit_quote_note_files || []).map((file: any) => ({
+          id: file.id,
+          file_name: file.file_name,
+          file_type: file.file_type,
+          file_path: file.file_path,
+          file_size: file.file_size || 0
+        }))
+      }));
+
+      setNotes(formattedNotes);
+    } catch (error) {
+      console.error('Error loading notes:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load notes",
+        variant: "destructive"
+      });
+    } finally {
+      setLoadingNotes(false);
+    }
+  };
+
+  const uploadFile = async (file: File, noteId: string): Promise<NoteFile | null> => {
+    try {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
+      const filePath = `circuit-quote-notes/${circuitQuoteId}/${fileName}`;
+
+      // Upload file to storage
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from('circuit-quote-files')
+        .upload(filePath, file);
+
+      if (uploadError) {
+        console.error('Upload error:', uploadError);
+        throw uploadError;
+      }
+
+      // Get the public URL for the uploaded file
+      const { data: urlData } = supabase.storage
+        .from('circuit-quote-files')
+        .getPublicUrl(filePath);
+
+      // Save file reference to database
+      const { data: fileData, error: fileError } = await supabase
+        .from('circuit_quote_note_files')
+        .insert({
+          circuit_quote_note_id: noteId,
+          file_name: file.name,
+          file_type: file.type,
+          file_path: urlData.publicUrl,
+          file_size: file.size
+        })
+        .select()
+        .single();
+
+      if (fileError) {
+        console.error('File record error:', fileError);
+        throw fileError;
+      }
+
+      return {
+        id: fileData.id,
+        file_name: file.name,
+        file_type: file.type,
+        file_path: urlData.publicUrl,
+        file_size: file.size
+      };
+    } catch (error) {
+      console.error('Error uploading file:', error);
+      toast({
+        title: "Upload failed",
+        description: `Failed to upload ${file.name}`,
+        variant: "destructive"
+      });
+      return null;
+    }
+  };
 
   const saveNote = async () => {
-    if (!newNote.trim()) return;
-
-    try {
-      setLoading(true);
-      
-      // For now, just show a success message since the database tables don't exist yet
+    if (!newNote.trim() && uploadingFiles.length === 0) {
       toast({
-        title: "Note functionality coming soon",
-        description: "The database tables for notes need to be created first. Please run the SQL migration.",
-        variant: "default"
+        title: "Error",
+        description: "Please enter a note or select files to upload",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setLoading(true);
+    try {
+      // Save note to database
+      const { data: noteData, error: noteError } = await supabase
+        .from('circuit_quote_notes')
+        .insert({
+          circuit_quote_id: circuitQuoteId,
+          content: newNote.trim() || "File upload",
+          user_id: user?.id
+        })
+        .select()
+        .single();
+
+      if (noteError) {
+        console.error('Note error:', noteError);
+        throw noteError;
+      }
+
+      // Upload files if any
+      const uploadedFiles: NoteFile[] = [];
+      for (const file of uploadingFiles) {
+        const uploadedFile = await uploadFile(file, noteData.id);
+        if (uploadedFile) {
+          uploadedFiles.push(uploadedFile);
+        }
+      }
+
+      toast({
+        title: "Success",
+        description: "Note saved successfully"
       });
 
+      // Reset form
       setNewNote("");
+      setUploadingFiles([]);
+      
+      // Reload notes
+      await loadNotes();
+
     } catch (error) {
       console.error('Error saving note:', error);
       toast({
@@ -50,9 +226,80 @@ export const CircuitQuoteNotesDialog = ({
     }
   };
 
+  const deleteNote = async (noteId: string) => {
+    try {
+      const { error } = await supabase
+        .from('circuit_quote_notes')
+        .delete()
+        .eq('id', noteId);
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: "Note deleted successfully"
+      });
+
+      await loadNotes();
+    } catch (error) {
+      console.error('Error deleting note:', error);
+      toast({
+        title: "Error",
+        description: "Failed to delete note",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const deleteFile = async (fileId: string) => {
+    try {
+      const { error } = await supabase
+        .from('circuit_quote_note_files')
+        .delete()
+        .eq('id', fileId);
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: "File deleted successfully"
+      });
+
+      await loadNotes();
+    } catch (error) {
+      console.error('Error deleting file:', error);
+      toast({
+        title: "Error",
+        description: "Failed to delete file",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(event.target.files || []);
+    setUploadingFiles(prev => [...prev, ...files]);
+  };
+
+  const removeUploadingFile = (index: number) => {
+    setUploadingFiles(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const formatFileSize = (bytes: number) => {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+  };
+
+  const formatDateTime = (dateString: string) => {
+    return new Date(dateString).toLocaleString();
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[600px]">
+      <DialogContent className="sm:max-w-[700px] max-h-[80vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Notes - {clientName}</DialogTitle>
         </DialogHeader>
@@ -72,10 +319,53 @@ export const CircuitQuoteNotesDialog = ({
               rows={3}
             />
 
+            {/* File Upload Section */}
+            <div className="space-y-3">
+              <div className="flex items-center gap-2">
+                <Input
+                  type="file"
+                  multiple
+                  onChange={handleFileSelect}
+                  className="hidden"
+                  id="file-upload"
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => document.getElementById('file-upload')?.click()}
+                >
+                  <Upload className="h-4 w-4 mr-1" />
+                  Attach Files
+                </Button>
+                <span className="text-sm text-gray-500">
+                  {uploadingFiles.length > 0 && `${uploadingFiles.length} file(s) selected`}
+                </span>
+              </div>
+
+              {uploadingFiles.length > 0 && (
+                <div className="space-y-2">
+                  {uploadingFiles.map((file, index) => (
+                    <div key={index} className="flex items-center justify-between bg-white p-2 rounded border">
+                      <span className="text-sm truncate">{file.name}</span>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => removeUploadingFile(index)}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
             <div className="flex justify-end mt-4">
               <Button 
                 onClick={saveNote}
-                disabled={!newNote.trim() || loading}
+                disabled={(!newNote.trim() && uploadingFiles.length === 0) || loading}
                 className="bg-purple-600 hover:bg-purple-700"
               >
                 {loading ? "Saving..." : "Save Note"}
@@ -83,11 +373,85 @@ export const CircuitQuoteNotesDialog = ({
             </div>
           </div>
 
-          {/* Info Message */}
-          <div className="text-center py-8 text-gray-500 border rounded-lg bg-blue-50">
-            <FileText className="h-8 w-8 mx-auto mb-2 text-blue-500" />
-            <p className="font-medium">Notes functionality is ready</p>
-            <p className="text-sm">Run the SQL migration to enable full notes and file upload features</p>
+          {/* Notes List */}
+          <div className="space-y-4">
+            <h3 className="font-medium text-gray-900">Previous Notes</h3>
+            
+            {loadingNotes ? (
+              <div className="text-center py-4">
+                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-purple-600 mx-auto"></div>
+                <p className="text-sm text-gray-500 mt-2">Loading notes...</p>
+              </div>
+            ) : notes.length === 0 ? (
+              <div className="text-center py-8 text-gray-500 border rounded-lg bg-blue-50">
+                <FileText className="h-8 w-8 mx-auto mb-2 text-blue-500" />
+                <p className="font-medium">No notes yet</p>
+                <p className="text-sm">Add your first note above</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {notes.map((note) => (
+                  <div key={note.id} className="border rounded-lg p-4 bg-white">
+                    <div className="flex items-start justify-between mb-2">
+                      <div className="flex items-center gap-4 text-sm text-gray-500">
+                        <div className="flex items-center gap-1">
+                          <User className="h-4 w-4" />
+                          <span>{note.user_name}</span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <Calendar className="h-4 w-4" />
+                          <span>{formatDateTime(note.created_at)}</span>
+                        </div>
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => deleteNote(note.id)}
+                        className="text-red-600 hover:text-red-700"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                    
+                    <p className="text-gray-900 mb-3">{note.content}</p>
+                    
+                    {note.files.length > 0 && (
+                      <div className="space-y-2">
+                        <h4 className="text-sm font-medium text-gray-700">Attachments:</h4>
+                        <div className="grid gap-2">
+                          {note.files.map((file) => (
+                            <div key={file.id} className="flex items-center justify-between bg-gray-50 p-2 rounded">
+                              <div className="flex items-center gap-2">
+                                <FileText className="h-4 w-4" />
+                                <span className="text-sm">{file.file_name}</span>
+                                <span className="text-xs text-gray-500">({formatFileSize(file.file_size)})</span>
+                              </div>
+                              <div className="flex items-center gap-1">
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => window.open(file.file_path, '_blank')}
+                                >
+                                  <Download className="h-4 w-4" />
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => deleteFile(file.id)}
+                                  className="text-red-600 hover:text-red-700"
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
 

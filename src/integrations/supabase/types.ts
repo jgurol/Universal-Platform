@@ -331,6 +331,79 @@ export type Database = {
           },
         ]
       }
+      circuit_quote_note_files: {
+        Row: {
+          circuit_quote_note_id: string
+          created_at: string
+          file_name: string
+          file_path: string
+          file_size: number | null
+          file_type: string
+          id: string
+        }
+        Insert: {
+          circuit_quote_note_id: string
+          created_at?: string
+          file_name: string
+          file_path: string
+          file_size?: number | null
+          file_type: string
+          id?: string
+        }
+        Update: {
+          circuit_quote_note_id?: string
+          created_at?: string
+          file_name?: string
+          file_path?: string
+          file_size?: number | null
+          file_type?: string
+          id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "circuit_quote_note_files_circuit_quote_note_id_fkey"
+            columns: ["circuit_quote_note_id"]
+            isOneToOne: false
+            referencedRelation: "circuit_quote_notes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      circuit_quote_notes: {
+        Row: {
+          circuit_quote_id: string
+          content: string
+          created_at: string
+          id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          circuit_quote_id: string
+          content: string
+          created_at?: string
+          id?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          circuit_quote_id?: string
+          content?: string
+          created_at?: string
+          id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "circuit_quote_notes_circuit_quote_id_fkey"
+            columns: ["circuit_quote_id"]
+            isOneToOne: false
+            referencedRelation: "circuit_quotes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       circuit_quotes: {
         Row: {
           client_info_id: string | null
