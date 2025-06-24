@@ -1040,6 +1040,30 @@ export type Database = {
           },
         ]
       }
+      quote_number_sequences: {
+        Row: {
+          created_at: string
+          id: string
+          last_quote_number: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          last_quote_number?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          last_quote_number?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       quote_templates: {
         Row: {
           content: string
@@ -1370,6 +1394,10 @@ export type Database = {
       get_current_user_role: {
         Args: Record<PropertyKey, never>
         Returns: string
+      }
+      get_next_quote_number: {
+        Args: { p_user_id: string }
+        Returns: number
       }
       get_user_profile: {
         Args: { user_id: string }

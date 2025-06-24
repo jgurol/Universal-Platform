@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -205,48 +204,44 @@ export const AddQuoteDialog = ({ open, onOpenChange, onAddQuote, clients, client
     }
   }, [open]);
 
-  // Generate next quote number when dialog opens - find highest number across ALL users and increment by 1
+  // Generate next quote number using the new database function
   useEffect(() => {
     const generateNextQuoteNumber = async () => {
       if (open && user) {
         try {
-          // Remove user_id filter to check ALL quotes in the system
-          const { data, error } = await supabase
-            .from('quotes')
-            .select('quote_number')
-            .not('quote_number', 'is', null);
+          console.log('[AddQuoteDialog] Generating next quote number for user:', user.id);
+          
+          const { data, error } = await supabase.rpc('get_next_quote_number', {
+            p_user_id: user.id
+          });
 
           if (error) {
-            console.error('Error fetching quote numbers:', error);
-            setQuoteNumber("3500");
+            console.error('[AddQuoteDialog] Error generating quote number:', error);
+            toast({
+              title: "Error",
+              description: "Failed to generate quote number. Please try again.",
+              variant: "destructive",
+            });
+            setQuoteNumber("3500"); // Fallback
             return;
           }
 
-          let nextNumber = 3500; // Start from 3500 instead of 1
-          if (data && data.length > 0) {
-            // Extract all numeric quote numbers and find the highest
-            const numericQuoteNumbers = data
-              .map(q => q.quote_number)
-              .filter(qn => qn && !qn.includes('.')) // Exclude revision numbers (those with dots)
-              .map(qn => parseInt(qn))
-              .filter(num => !isNaN(num));
-            
-            if (numericQuoteNumbers.length > 0) {
-              const highestNumber = Math.max(...numericQuoteNumbers);
-              nextNumber = Math.max(highestNumber + 1, 3500); // Ensure we never go below 3500
-            }
-          }
-          
-          setQuoteNumber(nextNumber.toString());
+          console.log('[AddQuoteDialog] Generated quote number:', data);
+          setQuoteNumber(data.toString());
         } catch (err) {
-          console.error('Error generating quote number:', err);
-          setQuoteNumber("3500");
+          console.error('[AddQuoteDialog] Exception generating quote number:', err);
+          setQuoteNumber("3500"); // Fallback
+          toast({
+            title: "Error",
+            description: "Failed to generate quote number. Using fallback number.",
+            variant: "destructive",
+          });
         }
       }
     };
 
     generateNextQuoteNumber();
-  }, [open, user]);
+  }, [open, user, toast]);
 
   // Load templates when dialog opens and auto-select default
   useEffect(() => {
