@@ -114,16 +114,18 @@ const handler = async (req: Request): Promise<Response> => {
         .eq('id', quoteId);
 
       if (statusUpdateError) {
-        console.error('Error updating quote status:', statusUpdateError);
-        throw new Error(`Failed to update quote status: ${statusUpdateError.message}`);
+        console.error('Error updating quote status for existing orders:', statusUpdateError);
+        // Don't throw here - orders exist, that's what matters
+        console.log('Status update failed but orders exist, considering this a success');
       }
 
       return new Response(JSON.stringify({ 
         success: true, 
         orderIds: existingOrders.map(o => o.id),
         orderNumbers: existingOrders.map(o => o.order_number),
-        message: 'Orders already exist for this quote, status updated to approved',
-        ordersCount: existingOrders.length
+        message: 'Orders already exist for this quote, approval confirmed',
+        ordersCount: existingOrders.length,
+        statusUpdateFailed: !!statusUpdateError
       }), {
         status: 200,
         headers: { "Content-Type": "application/json", ...corsHeaders },
@@ -141,8 +143,6 @@ const handler = async (req: Request): Promise<Response> => {
       throw new Error(`Failed to fetch quote: ${quoteError?.message}`);
     }
 
-    console.log(`Creating single order for quote ${quoteId}`);
-
     // Generate sequential order number
     const orderNumber = await generateOrderNumber();
 
@@ -153,90 +153,86 @@ const handler = async (req: Request): Promise<Response> => {
 
     console.log(`Creating order for quote ${quoteId} with user_id: ${quote.user_id} and order number: ${orderNumber}`);
 
-    // Create single order for the entire quote using RPC call to bypass RLS
-    // This is the ONLY way we create orders - no fallback direct inserts
-    const { data: newOrderId, error: orderError } = await supabase
-      .rpc('create_order_bypass_rls', {
-        p_quote_id: quoteId,
-        p_order_number: orderNumber,
-        p_user_id: quote.user_id,
-        p_amount: quote.amount,
-        p_status: 'pending',
-        p_commission: quote.commission || 0,
-        p_client_id: quote.client_id,
-        p_client_info_id: quote.client_info_id,
-        p_billing_address: quote.billing_address,
-        p_service_address: quote.service_address,
-        p_notes: quote.notes || `Order for quote ${quote.quote_number || quoteId}`,
-        p_commission_override: quote.commission_override
-      });
+    let newOrderId: string | null = null;
+    let orderCreationError: any = null;
 
-    if (orderError) {
-      console.error(`Failed to create order via RPC:`, orderError);
-      
-      // Check if this is a duplicate key error
-      if (orderError.message?.includes('duplicate key value violates unique constraint "orders_quote_id_key"')) {
-        console.log('Duplicate order detected, checking existing orders again...');
+    // Try to create the order
+    try {
+      const { data: createdOrderId, error: orderError } = await supabase
+        .rpc('create_order_bypass_rls', {
+          p_quote_id: quoteId,
+          p_order_number: orderNumber,
+          p_user_id: quote.user_id,
+          p_amount: quote.amount,
+          p_status: 'pending',
+          p_commission: quote.commission || 0,
+          p_client_id: quote.client_id,
+          p_client_info_id: quote.client_info_id,
+          p_billing_address: quote.billing_address,
+          p_service_address: quote.service_address,
+          p_notes: quote.notes || `Order for quote ${quote.quote_number || quoteId}`,
+          p_commission_override: quote.commission_override
+        });
+
+      if (orderError) {
+        orderCreationError = orderError;
+        console.error(`Failed to create order via RPC:`, orderError);
         
-        // Re-check for existing orders
-        const { data: reCheckOrders, error: reCheckError } = await supabase
-          .from('orders')
-          .select('id, order_number')
-          .eq('quote_id', quoteId);
-
-        if (!reCheckError && reCheckOrders && reCheckOrders.length > 0) {
-          console.log('Found existing orders on re-check:', reCheckOrders);
+        // Check if this is a duplicate key error
+        if (orderError.message?.includes('duplicate key value violates unique constraint "orders_quote_id_key"')) {
+          console.log('Duplicate order detected during creation, checking if order now exists...');
           
-          // Update quote status since orders exist
-          const { error: statusUpdateError } = await supabase
-            .from('quotes')
-            .update({ 
-              status: 'approved',
-              accepted_at: new Date().toISOString()
-            })
-            .eq('id', quoteId);
+          // Re-check for existing orders
+          const { data: reCheckOrders, error: reCheckError } = await supabase
+            .from('orders')
+            .select('id, order_number')
+            .eq('quote_id', quoteId);
 
-          if (statusUpdateError) {
-            console.error('Error updating quote status after duplicate detection:', statusUpdateError);
+          if (!reCheckError && reCheckOrders && reCheckOrders.length > 0) {
+            console.log('Found existing orders after duplicate creation error:', reCheckOrders);
+            newOrderId = reCheckOrders[0].id; // Use the existing order
           }
-
-          return new Response(JSON.stringify({ 
-            success: true, 
-            orderIds: reCheckOrders.map(o => o.id),
-            orderNumbers: reCheckOrders.map(o => o.order_number),
-            message: 'Orders already existed for this quote, status updated to approved',
-            ordersCount: reCheckOrders.length
-          }), {
-            status: 200,
-            headers: { "Content-Type": "application/json", ...corsHeaders },
-          });
         }
+        
+        if (!newOrderId) {
+          throw new Error(`Failed to create order: ${orderError.message}`);
+        }
+      } else {
+        newOrderId = createdOrderId;
+        console.log(`Created order ${newOrderId} with number ${orderNumber}`);
       }
-      
-      throw new Error(`Failed to create order: ${orderError.message}`);
+    } catch (err) {
+      console.error('Exception during order creation:', err);
+      throw err;
     }
 
     if (!newOrderId) {
       throw new Error('Order creation returned no ID');
     }
 
-    console.log(`Created order ${newOrderId} with number ${orderNumber}`);
+    // Now try to update quote status - but don't fail if this doesn't work
+    let statusUpdateError: any = null;
+    try {
+      const { error: quoteUpdateError } = await supabase
+        .from('quotes')
+        .update({ 
+          status: 'approved',
+          accepted_at: new Date().toISOString()
+        })
+        .eq('id', quoteId);
 
-    // Update quote status to approved
-    const { error: quoteUpdateError } = await supabase
-      .from('quotes')
-      .update({ 
-        status: 'approved',
-        accepted_at: new Date().toISOString()
-      })
-      .eq('id', quoteId);
-
-    if (quoteUpdateError) {
-      console.error('Error updating quote status after order creation:', quoteUpdateError);
-      // Don't throw here as the order was created successfully
+      if (quoteUpdateError) {
+        statusUpdateError = quoteUpdateError;
+        console.error('Error updating quote status after order creation:', quoteUpdateError);
+        // Don't throw - the order was created successfully
+      }
+    } catch (err) {
+      statusUpdateError = err;
+      console.error('Exception updating quote status:', err);
+      // Don't throw - the order was created successfully
     }
 
-    // Now fetch quote items with circuit category types and create circuit tracking for each
+    // Handle circuit tracking creation
     const { data: quoteItems, error: quoteItemsError } = await supabase
       .from('quote_items')
       .select(`
@@ -333,7 +329,11 @@ const handler = async (req: Request): Promise<Response> => {
       orderIds: [newOrderId],
       orderNumbers: [orderNumber],
       ordersCount: 1,
-      message: 'Order created successfully and quote status updated to approved'
+      message: statusUpdateError 
+        ? 'Order created successfully but quote status update failed' 
+        : 'Order created successfully and quote status updated to approved',
+      statusUpdateFailed: !!statusUpdateError,
+      statusUpdateError: statusUpdateError?.message
     }), {
       status: 200,
       headers: { "Content-Type": "application/json", ...corsHeaders },
