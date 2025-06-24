@@ -53,12 +53,59 @@ export const AddQuoteDialog = ({ open, onOpenChange, onAddQuote, clients, client
   const [associatedDeals, setAssociatedDeals] = useState<DealRegistration[]>([]);
   const [selectedDealIds, setSelectedDealIds] = useState<string[]>([]);
   const [isDataLoading, setIsDataLoading] = useState(true);
+  const [filteredClientInfos, setFilteredClientInfos] = useState<ClientInfo[]>([]);
   const { user } = useAuth();
+  
+  // Filter client infos based on user's agent association
+  useEffect(() => {
+    const filterClientInfos = async () => {
+      if (!user || !open) {
+        setFilteredClientInfos([]);
+        return;
+      }
+
+      try {
+        // Check if user is associated with an agent
+        const { data: userProfile } = await supabase
+          .from('profiles')
+          .select('associated_agent_id, role')
+          .eq('id', user.id)
+          .single();
+
+        const isUserAdmin = userProfile?.role === 'admin';
+        setIsAdmin(isUserAdmin);
+
+        if (isUserAdmin) {
+          // Admin sees all clients
+          console.log('[AddQuoteDialog] Admin user - showing all client infos');
+          setFilteredClientInfos(clientInfos);
+        } else if (userProfile?.associated_agent_id) {
+          // Non-admin user with agent - filter by agent's clients
+          console.log('[AddQuoteDialog] User associated with agent:', userProfile.associated_agent_id);
+          const agentClients = clientInfos.filter(client => 
+            client.agent_id === userProfile.associated_agent_id
+          );
+          console.log('[AddQuoteDialog] Filtered client infos for agent:', agentClients.length);
+          setFilteredClientInfos(agentClients);
+        } else {
+          // Non-admin user without agent - show only their own clients
+          console.log('[AddQuoteDialog] Non-admin user without agent - filtering by user_id:', user.id);
+          const userClients = clientInfos.filter(client => client.user_id === user.id);
+          setFilteredClientInfos(userClients);
+        }
+      } catch (error) {
+        console.error('[AddQuoteDialog] Error filtering client infos:', error);
+        setFilteredClientInfos(clientInfos); // Fallback to showing all
+      }
+    };
+
+    filterClientInfos();
+  }, [user, clientInfos, open]);
   
   // Monitor data loading state
   useEffect(() => {
     console.log('[AddQuoteDialog] Data loading check:', {
-      clientInfosLength: clientInfos.length,
+      filteredClientInfosLength: filteredClientInfos.length,
       templatesLength: templates.length,
       hasUser: !!user,
       isDataLoading
@@ -68,7 +115,7 @@ export const AddQuoteDialog = ({ open, onOpenChange, onAddQuote, clients, client
     if (user && templates.length >= 0) {
       setIsDataLoading(false);
     }
-  }, [clientInfos.length, templates.length, user]);
+  }, [filteredClientInfos.length, templates.length, user]);
   
   // Fetch current user's name and admin status from profile
   useEffect(() => {
@@ -300,7 +347,7 @@ export const AddQuoteDialog = ({ open, onOpenChange, onAddQuote, clients, client
   // Handle client selection - auto-select salesperson based on client's agent_id
   useEffect(() => {
     if (clientInfoId && clientInfoId !== "none") {
-      const selectedClient = clientInfos.find(info => info.id === clientInfoId);
+      const selectedClient = filteredClientInfos.find(info => info.id === clientInfoId);
       
       if (selectedClient && selectedClient.agent_id) {
         setClientId(selectedClient.agent_id);
@@ -310,7 +357,7 @@ export const AddQuoteDialog = ({ open, onOpenChange, onAddQuote, clients, client
     } else {
       setClientId("");
     }
-  }, [clientInfoId, clientInfos]);
+  }, [clientInfoId, filteredClientInfos]);
 
   const handleBillingAddressChange = (addressId: string | null, customAddr?: string) => {
     console.log('AddQuoteDialog - Billing address changed:', { addressId, customAddr });
@@ -352,7 +399,7 @@ export const AddQuoteDialog = ({ open, onOpenChange, onAddQuote, clients, client
       templatesLength: templates.length,
       selectedTemplateId,
       user: !!user,
-      clientInfosLength: clientInfos.length
+      filteredClientInfosLength: filteredClientInfos.length
     });
     
     // Enhanced validation with specific error messages
@@ -368,7 +415,7 @@ export const AddQuoteDialog = ({ open, onOpenChange, onAddQuote, clients, client
     if (!clientInfoId || clientInfoId === "none") {
       toast({
         title: "Client Required",
-        description: clientInfos.length === 0 
+        description: filteredClientInfos.length === 0 
           ? "No client companies available. Please add a client company first in Deal Registration."
           : "Please select a client company before creating the quote.",
         variant: "destructive",
@@ -410,7 +457,7 @@ export const AddQuoteDialog = ({ open, onOpenChange, onAddQuote, clients, client
     try {
       const totalAmount = calculateTotalAmount();
       const selectedClient = clientId ? clients.find(client => client.id === clientId) : null;
-      const selectedClientInfo = clientInfos.find(info => info.id === clientInfoId);
+      const selectedClientInfo = filteredClientInfos.find(info => info.id === clientInfoId);
       
       if (!selectedClientInfo) {
         throw new Error("Selected client company not found");
@@ -463,7 +510,7 @@ export const AddQuoteDialog = ({ open, onOpenChange, onAddQuote, clients, client
   };
 
   const selectedSalesperson = clientId ? clients.find(c => c.id === clientId) : null;
-  const selectedClientInfo = clientInfoId && clientInfoId !== "none" ? clientInfos.find(info => info.id === clientInfoId) : null;
+  const selectedClientInfo = clientInfoId && clientInfoId !== "none" ? filteredClientInfos.find(info => info.id === clientInfoId) : null;
 
   // Check if form is valid for submission
   const isFormValid = !!(
@@ -485,7 +532,7 @@ export const AddQuoteDialog = ({ open, onOpenChange, onAddQuote, clients, client
     hasTemplate: !!selectedTemplateId,
     isSubmitting,
     isDataLoading,
-    clientInfosLength: clientInfos.length,
+    filteredClientInfosLength: filteredClientInfos.length,
     isFormValid
   });
 
@@ -590,7 +637,7 @@ export const AddQuoteDialog = ({ open, onOpenChange, onAddQuote, clients, client
                 <SelectValue placeholder={
                   isDataLoading 
                     ? "Loading client companies..." 
-                    : clientInfos.length === 0 
+                    : filteredClientInfos.length === 0 
                       ? "No clients available - Add clients first" 
                       : "Select a client company"
                 } />
@@ -600,12 +647,12 @@ export const AddQuoteDialog = ({ open, onOpenChange, onAddQuote, clients, client
                   <SelectItem value="loading" disabled>
                     Loading...
                   </SelectItem>
-                ) : clientInfos.length === 0 ? (
+                ) : filteredClientInfos.length === 0 ? (
                   <SelectItem value="no-clients" disabled>
                     No clients available - Add clients first
                   </SelectItem>
                 ) : (
-                  clientInfos.map((clientInfo) => (
+                  filteredClientInfos.map((clientInfo) => (
                     <SelectItem key={clientInfo.id} value={clientInfo.id}>
                       {clientInfo.company_name}
                     </SelectItem>
@@ -613,7 +660,7 @@ export const AddQuoteDialog = ({ open, onOpenChange, onAddQuote, clients, client
                 )}
               </SelectContent>
             </Select>
-            {!isDataLoading && clientInfos.length === 0 && (
+            {!isDataLoading && filteredClientInfos.length === 0 && (
               <p className="text-sm text-amber-600">
                 No client companies found. Please add a client company in Deal Registration first.
               </p>
@@ -796,7 +843,7 @@ export const AddQuoteDialog = ({ open, onOpenChange, onAddQuote, clients, client
               Debug: Form valid = {isFormValid ? 'true' : 'false'} 
               (User: {!!user ? 'yes' : 'no'}, ClientInfo: {clientInfoId && clientInfoId !== "none" ? 'yes' : 'no'}, 
               Date: {!!date ? 'yes' : 'no'}, Items: {quoteItems.length}, Template: {!!selectedTemplateId ? 'yes' : 'no'}, 
-              DataLoading: {isDataLoading ? 'yes' : 'no'}, ClientInfos: {clientInfos.length})
+              DataLoading: {isDataLoading ? 'yes' : 'no'}, FilteredClients: {filteredClientInfos.length})
             </div>
           )}
         </form>
