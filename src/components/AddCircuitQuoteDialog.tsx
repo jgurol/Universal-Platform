@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -15,6 +14,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { DealRegistration } from "@/services/dealRegistrationService";
 import { Info } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { CircuitQuoteNotesDialog } from "@/components/CircuitQuotes/CircuitQuoteNotesDialog";
 
 interface AddCircuitQuoteDialogProps {
   open: boolean;
@@ -119,6 +119,8 @@ export const AddCircuitQuoteDialog = ({ open, onOpenChange, onAddQuote }: AddCir
   const [circuitCategories, setCircuitCategories] = useState<string[]>([]);
   const [associatedDeals, setAssociatedDeals] = useState<DealRegistration[]>([]);
   const [isDealDetailsOpen, setIsDealDetailsOpen] = useState(false);
+  const [createdQuoteId, setCreatedQuoteId] = useState<string | null>(null);
+  const [isNotesDialogOpen, setIsNotesDialogOpen] = useState(false);
 
   // Get circuit categories from the categories table where type is "Circuit"
   const circuitCategoryOptions = categories
@@ -219,9 +221,9 @@ export const AddCircuitQuoteDialog = ({ open, onOpenChange, onAddQuote }: AddCir
     const dealRegistrationId = (selectedDealId && selectedDealId !== "no-deal") ? selectedDealId : null;
     
     try {
-      await onAddQuote({
+      const result = await onAddQuote({
         client_name: clientName,
-        client_info_id: selectedClient.id, // Use the validated client ID
+        client_info_id: selectedClient.id,
         deal_registration_id: dealRegistrationId,
         location,
         suite,
@@ -231,6 +233,25 @@ export const AddCircuitQuoteDialog = ({ open, onOpenChange, onAddQuote }: AddCir
         dhcp: dhcp,
         mikrotik_required: mikrotikRequired
       }, circuitCategories);
+      
+      // If the quote was created successfully and we have the ID, offer to add notes
+      if (result && typeof result === 'object' && 'id' in result) {
+        setCreatedQuoteId(result.id);
+        
+        toast({
+          title: "Success",
+          description: "Circuit quote created successfully!",
+          action: (
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={() => setIsNotesDialogOpen(true)}
+            >
+              Add Notes
+            </Button>
+          )
+        });
+      }
       
       // Reset form
       setClientId("");
@@ -452,6 +473,21 @@ export const AddCircuitQuoteDialog = ({ open, onOpenChange, onAddQuote }: AddCir
         onOpenChange={setIsDealDetailsOpen}
         deal={selectedDeal}
       />
+
+      {/* Notes Dialog for newly created quote */}
+      {createdQuoteId && (
+        <CircuitQuoteNotesDialog
+          open={isNotesDialogOpen}
+          onOpenChange={(open) => {
+            setIsNotesDialogOpen(open);
+            if (!open) {
+              setCreatedQuoteId(null);
+            }
+          }}
+          circuitQuoteId={createdQuoteId}
+          clientName={clientInfos.find(c => c.id === clientId)?.company_name || ""}
+        />
+      )}
     </>
   );
 };
