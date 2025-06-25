@@ -91,10 +91,10 @@ export const CarrierCard = ({ carrier, onEdit, onDelete, onCopy, dragHandleProps
       }
       ticked.push(staticIpText);
     }
-    if (carrier.static_ip_5) {
+    if ((carrier as any).static_ip_5) {
       let staticIp5Text = "5 Static IP (/29)";
-      if (carrier.static_ip_5_fee_amount && carrier.static_ip_5_fee_amount > 0) {
-        staticIp5Text += ` ($${carrier.static_ip_5_fee_amount})`;
+      if ((carrier as any).static_ip_5_fee_amount && (carrier as any).static_ip_5_fee_amount > 0) {
+        staticIp5Text += ` ($${(carrier as any).static_ip_5_fee_amount})`;
       }
       ticked.push(staticIp5Text);
     }

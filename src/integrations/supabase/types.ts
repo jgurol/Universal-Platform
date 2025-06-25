@@ -168,6 +168,8 @@ export type Database = {
           slash_29: boolean | null
           speed: string
           static_ip: boolean | null
+          static_ip_5: boolean | null
+          static_ip_5_fee_amount: number | null
           static_ip_fee_amount: number | null
           term: string | null
           type: string
@@ -189,6 +191,8 @@ export type Database = {
           slash_29?: boolean | null
           speed: string
           static_ip?: boolean | null
+          static_ip_5?: boolean | null
+          static_ip_5_fee_amount?: number | null
           static_ip_fee_amount?: number | null
           term?: string | null
           type: string
@@ -210,6 +214,8 @@ export type Database = {
           slash_29?: boolean | null
           speed?: string
           static_ip?: boolean | null
+          static_ip_5?: boolean | null
+          static_ip_5_fee_amount?: number | null
           static_ip_fee_amount?: number | null
           term?: string | null
           type?: string

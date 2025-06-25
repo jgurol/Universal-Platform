@@ -134,8 +134,8 @@ export const EditCarrierQuoteDialog = ({ open, onOpenChange, carrier, onUpdateCa
       setNoService(carrier.no_service || false);
       setIncludesStaticIp(carrier.static_ip || false);
       setStaticIpFeeAmount(carrier.static_ip_fee_amount > 0 ? carrier.static_ip_fee_amount.toString() : "");
-      setIncludes5StaticIp(carrier.static_ip_5 || false);
-      setStaticIp5FeeAmount(carrier.static_ip_5_fee_amount > 0 ? carrier.static_ip_5_fee_amount.toString() : "");
+      setIncludes5StaticIp((carrier as any).static_ip_5 || false);
+      setStaticIp5FeeAmount((carrier as any).static_ip_5_fee_amount > 0 ? (carrier as any).static_ip_5_fee_amount.toString() : "");
     }
   }, [carrier, vendors, categories, speeds]);
 
@@ -168,7 +168,7 @@ export const EditCarrierQuoteDialog = ({ open, onOpenChange, carrier, onUpdateCa
         static_ip_fee_amount: staticIpFeeAmount ? parseFloat(staticIpFeeAmount) : 0,
         static_ip_5: includes5StaticIp,
         static_ip_5_fee_amount: staticIp5FeeAmount ? parseFloat(staticIp5FeeAmount) : 0
-      });
+      } as CarrierQuote);
       
       onOpenChange(false);
     }
