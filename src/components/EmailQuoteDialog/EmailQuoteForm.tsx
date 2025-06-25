@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Quote, ClientInfo } from "@/pages/Index";
@@ -44,6 +43,7 @@ export const EmailQuoteForm = ({
   const [selectedTemplateId, setSelectedTemplateId] = useState("none");
   const [isUsingTemplate, setIsUsingTemplate] = useState(false);
   const [primaryContactName, setPrimaryContactName] = useState('');
+  const [selectedTemplate, setSelectedTemplate] = useState<EmailTemplate | null>(null);
   const { toast } = useToast();
   const { user, isAdmin } = useAuth();
 
@@ -174,6 +174,19 @@ ${quoteOwnerName}`;
     setMessageTemplateSet(true);
   }, [ownerNameLoaded, quoteOwnerName, messageTemplateSet, transformedContacts, isUsingTemplate]);
 
+  // Apply template variables when all data is ready
+  useEffect(() => {
+    if (selectedTemplate && ownerNameLoaded && primaryContactName && !contactsLoading) {
+      console.log('EmailQuoteForm - Applying template variables for:', selectedTemplate.name);
+      const variables = createTemplateVariables();
+      const processedSubject = replaceTemplateVariables(selectedTemplate.subject, variables);
+      const processedContent = replaceTemplateVariables(selectedTemplate.content, variables);
+      
+      setSubject(processedSubject);
+      setMessage(processedContent);
+    }
+  }, [selectedTemplate, ownerNameLoaded, primaryContactName, contactsLoading]);
+
   const createTemplateVariables = (): TemplateVariables => {
     const clientFirstName = primaryContactName.split(' ')[0] || '';
     const clientLastName = primaryContactName.split(' ').slice(1).join(' ') || '';
@@ -191,21 +204,25 @@ ${quoteOwnerName}`;
 
   const handleTemplateSelect = (template: EmailTemplate | null) => {
     if (template) {
-      console.log('EmailQuoteForm - Applying template:', template.name);
+      console.log('EmailQuoteForm - Template selected:', template.name);
       setSelectedTemplateId(template.id);
-      
-      // Replace variables in template
-      const variables = createTemplateVariables();
-      const processedSubject = replaceTemplateVariables(template.subject, variables);
-      const processedContent = replaceTemplateVariables(template.content, variables);
-      
-      setSubject(processedSubject);
-      setMessage(processedContent);
+      setSelectedTemplate(template);
       setIsUsingTemplate(true);
       setMessageTemplateSet(true);
+      
+      // Apply variables immediately if data is ready
+      if (ownerNameLoaded && primaryContactName) {
+        const variables = createTemplateVariables();
+        const processedSubject = replaceTemplateVariables(template.subject, variables);
+        const processedContent = replaceTemplateVariables(template.content, variables);
+        
+        setSubject(processedSubject);
+        setMessage(processedContent);
+      }
     } else {
       console.log('EmailQuoteForm - Clearing template, using default');
       setSelectedTemplateId("none");
+      setSelectedTemplate(null);
       setIsUsingTemplate(false);
       setMessageTemplateSet(false);
       // Reset to default subject and clear message so the default template gets applied
