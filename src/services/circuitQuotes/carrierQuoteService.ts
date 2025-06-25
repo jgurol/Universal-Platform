@@ -25,6 +25,7 @@ export const useCarrierQuoteService = () => {
         .insert({
           circuit_quote_id: circuitQuoteId,
           ...carrierQuote,
+          other_costs: carrierQuote.other_costs || 0,
           display_order: nextDisplayOrder
         })
         .select()
