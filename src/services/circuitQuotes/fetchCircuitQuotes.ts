@@ -10,7 +10,7 @@ export const fetchCircuitQuotes = async (userId: string | undefined, isAdmin: bo
     .from('circuit_quotes')
     .select(`
       *,
-      carrier_quotes (*, display_order, install_fee_amount, static_ip_fee_amount),
+      carrier_quotes (*, display_order, install_fee_amount, static_ip_fee_amount, static_ip_5, static_ip_5_fee_amount),
       circuit_quote_categories (category_name)
     `)
     .order('created_at', { ascending: false });
@@ -103,6 +103,8 @@ export const fetchCircuitQuotes = async (userId: string | undefined, isAdmin: bo
       no_service: carrier.no_service || false,
       static_ip: carrier.static_ip || false,
       static_ip_fee_amount: carrier.static_ip_fee_amount || 0,
+      static_ip_5: carrier.static_ip_5 || false,
+      static_ip_5_fee_amount: carrier.static_ip_5_fee_amount || 0,
       display_order: carrier.display_order || 999 // Include display_order with fallback
     }))
   }));

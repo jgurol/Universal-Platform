@@ -39,7 +39,9 @@ export const CircuitQuoteCardActions = ({
       site_survey_needed: carrier.site_survey_needed || false,
       no_service: carrier.no_service || false,
       static_ip: carrier.static_ip || false,
-      static_ip_fee_amount: carrier.static_ip_fee_amount || 0
+      static_ip_fee_amount: carrier.static_ip_fee_amount || 0,
+      static_ip_5: carrier.static_ip_5 || false,
+      static_ip_5_fee_amount: carrier.static_ip_5_fee_amount || 0
     };
 
     if (onAddCarrier) {
