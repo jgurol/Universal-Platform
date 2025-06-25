@@ -1,4 +1,3 @@
-
 import { useEffect } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -27,6 +26,11 @@ interface AddQuoteDialogProps {
 export const AddQuoteDialog = ({ open, onOpenChange, onAddQuote, clients, clientInfos }: AddQuoteDialogProps) => {
   const { toast } = useToast();
   const { user } = useAuth();
+  
+  // Debug: Log the clientInfos prop when it changes
+  useEffect(() => {
+    console.log('[AddQuoteDialog] Received clientInfos prop:', clientInfos.length, 'items:', clientInfos.map(c => ({ id: c.id, name: c.company_name, agent_id: c.agent_id, user_id: c.user_id })));
+  }, [clientInfos]);
   
   // Use our custom hooks
   const formState = useAddQuoteForm(open);
@@ -209,6 +213,7 @@ export const AddQuoteDialog = ({ open, onOpenChange, onAddQuote, clients, client
     isSubmitting: formState.isSubmitting,
     isDataLoading: dialogData.isDataLoading,
     filteredClientInfosLength: dialogData.filteredClientInfos.length,
+    originalClientInfosLength: clientInfos.length,
     isFormValid
   });
 
@@ -325,7 +330,10 @@ export const AddQuoteDialog = ({ open, onOpenChange, onAddQuote, clients, client
                   </SelectItem>
                 ) : dialogData.filteredClientInfos.length === 0 ? (
                   <SelectItem value="no-clients" disabled>
-                    No clients available - Add clients first
+                    {clientInfos.length === 0 
+                      ? "No client companies found in the database. Please add a client company in Deal Registration first."
+                      : "No client companies available for your user role. Contact your administrator if this seems incorrect."
+                    }
                   </SelectItem>
                 ) : (
                   dialogData.filteredClientInfos.map((clientInfo) => (
@@ -338,7 +346,10 @@ export const AddQuoteDialog = ({ open, onOpenChange, onAddQuote, clients, client
             </Select>
             {!dialogData.isDataLoading && dialogData.filteredClientInfos.length === 0 && (
               <p className="text-sm text-amber-600">
-                No client companies found. Please add a client company in Deal Registration first.
+                {clientInfos.length === 0 
+                  ? "No client companies found in the database. Please add a client company in Deal Registration first."
+                  : "No client companies available for your user role. Contact your administrator if this seems incorrect."
+                }
               </p>
             )}
           </div>
@@ -519,7 +530,8 @@ export const AddQuoteDialog = ({ open, onOpenChange, onAddQuote, clients, client
               Debug: Form valid = {isFormValid ? 'true' : 'false'} 
               (User: {!!user ? 'yes' : 'no'}, ClientInfo: {formState.clientInfoId && formState.clientInfoId !== "none" ? 'yes' : 'no'}, 
               Date: {!!formState.date ? 'yes' : 'no'}, Items: {formState.quoteItems.length}, Template: {!!formState.selectedTemplateId ? 'yes' : 'no'}, 
-              DataLoading: {dialogData.isDataLoading ? 'yes' : 'no'}, FilteredClients: {dialogData.filteredClientInfos.length})
+              DataLoading: {dialogData.isDataLoading ? 'yes' : 'no'}, FilteredClients: {dialogData.filteredClientInfos.length}, 
+              OriginalClients: {clientInfos.length})
             </div>
           )}
         </form>
