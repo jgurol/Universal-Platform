@@ -104,14 +104,18 @@ export const AddQuoteDialog = ({ open, onOpenChange, onAddQuote, clients, client
       if (!open) {
         console.log('[AddQuoteDialog] Dialog closed, clearing filtered clients');
         setFilteredClientInfos([]);
+        setIsDataLoading(false);
         return;
       }
 
-      // Wait for both user profile and clientInfos to be available
-      if (!userProfile || clientInfos.length === 0) {
-        console.log('[AddQuoteDialog] Waiting for data - userProfile:', !!userProfile, 'clientInfos:', clientInfos.length);
+      // Wait for user profile to be available
+      if (!userProfile) {
+        console.log('[AddQuoteDialog] Waiting for user profile');
         return;
       }
+
+      // Set loading to false once we have user profile - regardless of client count
+      setIsDataLoading(false);
 
       const isUserAdmin = userProfile.role === 'admin';
       console.log('[AddQuoteDialog] Filtering clients - isAdmin:', isUserAdmin, 'associatedAgentId:', userProfile.associated_agent_id);
@@ -157,10 +161,9 @@ export const AddQuoteDialog = ({ open, onOpenChange, onAddQuote, clients, client
       }
     };
 
-    // Only filter when we have the necessary data
-    if (userProfile && clientInfos.length > 0) {
+    // Filter as soon as we have user profile - don't wait for clientInfos
+    if (userProfile) {
       filterClientInfos();
-      setIsDataLoading(false);
     }
   }, [userProfile, clientInfos, open, user?.id]);
   
