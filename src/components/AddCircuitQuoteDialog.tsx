@@ -15,6 +15,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { DealRegistration } from "@/services/dealRegistrationService";
 import { Info } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useUserProfile } from "@/hooks/useUserProfile";
 
 interface AddCircuitQuoteDialogProps {
   open: boolean;
@@ -105,7 +106,8 @@ const DealDetailsDialog = ({ open, onOpenChange, deal }: {
 
 export const AddCircuitQuoteDialog = ({ open, onOpenChange, onAddQuote }: AddCircuitQuoteDialogProps) => {
   const { user, isAdmin } = useAuth();
-  const { clientInfos, isLoading: clientsLoading } = useClientInfos();
+  const { associatedAgentId } = useUserProfile();
+  const { clientInfos, isLoading: clientsLoading, fetchClientInfos } = useClientInfos();
   const { categories } = useCategories();
   const { toast } = useToast();
   const [clientId, setClientId] = useState("");
@@ -119,6 +121,14 @@ export const AddCircuitQuoteDialog = ({ open, onOpenChange, onAddQuote }: AddCir
   const [circuitCategories, setCircuitCategories] = useState<string[]>([]);
   const [associatedDeals, setAssociatedDeals] = useState<DealRegistration[]>([]);
   const [isDealDetailsOpen, setIsDealDetailsOpen] = useState(false);
+
+  // Fetch client data when dialog opens
+  React.useEffect(() => {
+    if (open && user && associatedAgentId !== undefined) {
+      console.log('[AddCircuitQuoteDialog] Dialog opened, fetching client infos');
+      fetchClientInfos(user.id, associatedAgentId, isAdmin);
+    }
+  }, [open, user, associatedAgentId, isAdmin, fetchClientInfos]);
 
   // Get circuit categories from the categories table where type is "Circuit"
   const circuitCategoryOptions = categories
