@@ -85,7 +85,7 @@ export const CarrierCard = ({ carrier, onEdit, onDelete, onCopy, dragHandleProps
     }
     if (carrier.no_service) ticked.push("No Service");
     if (carrier.static_ip) {
-      let staticIpText = "Includes Static IP";
+      let staticIpText = "1 Static IP (/30)";
       if (carrier.static_ip_fee_amount && carrier.static_ip_fee_amount > 0) {
         staticIpText += ` ($${carrier.static_ip_fee_amount})`;
       }
