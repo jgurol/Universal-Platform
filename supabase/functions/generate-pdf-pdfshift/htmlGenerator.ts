@@ -63,6 +63,10 @@ export const generateHTML = (
   
   console.log('PDFShift Function - Final account manager name in HTML generation:', finalAccountManagerName);
   
+  // Create acceptance URL for the clickable button
+  const acceptanceUrl = `https://34d679df-b261-47ea-b136-e7aae591255b.lovableproject.com/accept-quote/${quoteId}`;
+  console.log('PDFShift Function - Generated acceptance URL:', acceptanceUrl);
+  
   // Process quote items with enhanced description and image handling
   let mrcItems = [];
   let nrcItems = [];
@@ -328,6 +332,15 @@ export const generateHTML = (
             margin-top: 10px;
             font-weight: normal;
             border-radius: 3px;
+            text-decoration: none;
+            display: block;
+            cursor: pointer;
+        }
+        
+        .accept-button:hover {
+            background: #218838;
+            color: white;
+            text-decoration: none;
         }
         
         .addresses-section {
@@ -766,7 +779,7 @@ export const generateHTML = (
         
         ${isApproved ? 
           '<div class="status-approved">APPROVED</div>' : 
-          '<div class="accept-button">ACCEPT AGREEMENT</div>'
+          `<a href="${acceptanceUrl}" class="accept-button" target="_blank">🖊️ ACCEPT AGREEMENT</a>`
         }
     </div>
     
@@ -817,7 +830,7 @@ export const generateHTML = (
     
     ${isApproved ? '' : `
     <div style="margin-top: 30px; text-align: center;">
-        <div class="accept-button">ACCEPT AGREEMENT</div>
+        <a href="${acceptanceUrl}" class="accept-button" target="_blank">🖊️ ACCEPT AGREEMENT</a>
     </div>
     `}
     
