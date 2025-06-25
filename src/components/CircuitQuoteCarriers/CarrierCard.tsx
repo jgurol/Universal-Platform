@@ -215,6 +215,9 @@ export const CarrierCard = ({ carrier, onEdit, onDelete, onCopy, dragHandleProps
       }
       ticked.push(staticIp5Text);
     }
+    if ((carrier as any).other_costs && (carrier as any).other_costs > 0) {
+      ticked.push(`Other MRC Cost ($${(carrier as any).other_costs})`);
+    }
     return ticked;
   };
 
@@ -320,6 +323,8 @@ export const CarrierCard = ({ carrier, onEdit, onDelete, onCopy, dragHandleProps
                       badgeClass = "bg-red-100 text-red-800";
                     } else if (option.includes('Static IP')) {
                       badgeClass = "bg-green-100 text-green-800";
+                    } else if (option.includes('Other MRC Cost')) {
+                      badgeClass = "bg-purple-100 text-purple-800";
                     } else if (option.includes('Site Survey')) {
                       if (option.includes('RED')) {
                         badgeClass = "bg-red-100 text-red-800";
