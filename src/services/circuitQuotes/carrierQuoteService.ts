@@ -6,6 +6,37 @@ import type { CarrierQuote } from "@/hooks/useCircuitQuotes";
 export const useCarrierQuoteService = () => {
   const { toast } = useToast();
 
+  const sendAgentNotification = async (carrierQuote: CarrierQuote, circuitQuoteId: string) => {
+    try {
+      // Get circuit quote details for the notification
+      const { data: circuitQuote } = await supabase
+        .from('circuit_quotes')
+        .select('client_name, location')
+        .eq('id', circuitQuoteId)
+        .single();
+
+      if (!circuitQuote) {
+        console.log('Circuit quote not found for notification');
+        return;
+      }
+
+      // Call the edge function to send agent notification
+      await supabase.functions.invoke('send-agent-notification', {
+        body: {
+          carrierQuoteId: carrierQuote.id,
+          circuitQuoteId: circuitQuoteId,
+          carrier: carrierQuote.carrier,
+          price: carrierQuote.price,
+          clientName: circuitQuote.client_name,
+          location: circuitQuote.location,
+        },
+      });
+    } catch (error) {
+      console.error('Error sending agent notification:', error);
+      // Don't throw error here as we don't want to block the main operation
+    }
+  };
+
   const addCarrierQuote = async (circuitQuoteId: string, carrierQuote: Omit<CarrierQuote, "id" | "circuit_quote_id">) => {
     try {
       // Get the current max display_order for this circuit quote
@@ -41,6 +72,11 @@ export const useCarrierQuoteService = () => {
         return null;
       }
 
+      // Send agent notification if price is provided
+      if (carrierQuote.price > 0) {
+        await sendAgentNotification(data as CarrierQuote, circuitQuoteId);
+      }
+
       toast({
         title: "Success",
         description: "Carrier quote added successfully",
@@ -60,6 +96,13 @@ export const useCarrierQuoteService = () => {
 
   const updateCarrierQuote = async (carrierQuote: CarrierQuote) => {
     try {
+      // Get the previous price to check if it was just added
+      const { data: previousData } = await supabase
+        .from('carrier_quotes')
+        .select('price')
+        .eq('id', carrierQuote.id)
+        .single();
+
       const { error } = await supabase
         .from('carrier_quotes')
         .update({
@@ -90,6 +133,12 @@ export const useCarrierQuoteService = () => {
           variant: "destructive"
         });
         return false;
+      }
+
+      // Send agent notification if price was just added (was 0 or null before, now has a value)
+      const previousPrice = previousData?.price || 0;
+      if (previousPrice === 0 && carrierQuote.price > 0) {
+        await sendAgentNotification(carrierQuote, carrierQuote.circuit_quote_id);
       }
 
       toast({
