@@ -5,7 +5,8 @@ import { Button } from "@/components/ui/button";
 import { CircuitQuoteStatusSelect } from "@/components/CircuitQuoteStatusSelect";
 import { EditCircuitQuoteDialog } from "@/components/EditCircuitQuoteDialog";
 import { CircuitQuoteNotesDialog } from "@/components/CircuitQuotes/CircuitQuoteNotesDialog";
-import { ChevronDown, ChevronUp, Edit, Trash2, FileText, MapPin, Building } from "lucide-react";
+import { ChevronDown, ChevronUp, Edit, Trash2, FileText, MapPin, Building, ExternalLink } from "lucide-react";
+import { useAuth } from "@/context/AuthContext";
 import type { CircuitQuote } from "@/hooks/useCircuitQuotes";
 
 interface CircuitQuoteCardHeaderProps {
@@ -30,6 +31,7 @@ export const CircuitQuoteCardHeader = ({
 }: CircuitQuoteCardHeaderProps) => {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isNotesDialogOpen, setIsNotesDialogOpen] = useState(false);
+  const { isAdmin } = useAuth();
 
   const statusColors = {
     'new_pricing': 'bg-blue-100 text-blue-800',
@@ -45,6 +47,12 @@ export const CircuitQuoteCardHeader = ({
     'sent_to_customer': 'Sent to Customer'
   };
 
+  const handleDealClick = () => {
+    // This could open a deal details dialog or navigate to the deal
+    console.log('Deal clicked:', quote.deal_registration_id);
+    // You could implement navigation or a modal here
+  };
+
   return (
     <>
       <div className="flex items-start justify-between">
@@ -54,6 +62,17 @@ export const CircuitQuoteCardHeader = ({
             <Badge className={statusColors[quote.status]}>
               {statusLabels[quote.status]}
             </Badge>
+            {quote.deal_registration_id && (
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={handleDealClick}
+                className="text-purple-600 hover:text-purple-700"
+              >
+                <ExternalLink className="h-3 w-3 mr-1" />
+                Deal
+              </Button>
+            )}
           </div>
           
           <div className="flex items-center gap-4 text-sm text-gray-600">
@@ -115,27 +134,31 @@ export const CircuitQuoteCardHeader = ({
             Notes
           </Button>
           
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setIsEditDialogOpen(true)}
-          >
-            <Edit className="h-4 w-4" />
-          </Button>
-          
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={onDeleteQuote}
-            className="text-red-600 hover:text-red-700"
-          >
-            <Trash2 className="h-4 w-4" />
-          </Button>
-          
-          <CircuitQuoteStatusSelect
-            value={quote.status}
-            onValueChange={onStatusChange}
-          />
+          {isAdmin && (
+            <>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setIsEditDialogOpen(true)}
+              >
+                <Edit className="h-4 w-4" />
+              </Button>
+              
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={onDeleteQuote}
+                className="text-red-600 hover:text-red-700"
+              >
+                <Trash2 className="h-4 w-4" />
+              </Button>
+              
+              <CircuitQuoteStatusSelect
+                value={quote.status}
+                onValueChange={onStatusChange}
+              />
+            </>
+          )}
           
           <Button
             variant="ghost"
@@ -151,12 +174,14 @@ export const CircuitQuoteCardHeader = ({
         </div>
       </div>
 
-      <EditCircuitQuoteDialog
-        open={isEditDialogOpen}
-        onOpenChange={setIsEditDialogOpen}
-        quote={quote}
-        onUpdateQuote={onUpdateQuote}
-      />
+      {isAdmin && (
+        <EditCircuitQuoteDialog
+          open={isEditDialogOpen}
+          onOpenChange={setIsEditDialogOpen}
+          quote={quote}
+          onUpdateQuote={onUpdateQuote}
+        />
+      )}
 
       <CircuitQuoteNotesDialog
         open={isNotesDialogOpen}
