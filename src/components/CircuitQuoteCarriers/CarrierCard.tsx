@@ -22,8 +22,27 @@ export const CarrierCard = ({ carrier, onEdit, onDelete, onCopy, dragHandleProps
   const isPending = !carrier.price || carrier.price === 0;
   const isNoService = carrier.no_service;
   
+  // Helper function to extract term months from term string
+  const getTermMonths = (term: string | undefined): number => {
+    if (!term) return 36; // Default to 36 months if no term specified
+    
+    const termLower = term.toLowerCase();
+    const monthMatch = termLower.match(/(\d+)\s*month/);
+    const yearMatch = termLower.match(/(\d+)\s*year/);
+    
+    if (monthMatch) {
+      return parseInt(monthMatch[1]);
+    } else if (yearMatch) {
+      return parseInt(yearMatch[1]) * 12;
+    }
+    
+    return 36; // Default fallback
+  };
+  
   // Calculate markup price for agents
   const getDisplayPrice = () => {
+    const termMonths = getTermMonths(carrier.term);
+    
     if (isAdmin || isPending || isNoService) {
       let basePrice = carrier.price;
       
@@ -35,9 +54,9 @@ export const CarrierCard = ({ carrier, onEdit, onDelete, onCopy, dragHandleProps
         basePrice += carrier.static_ip_5_fee_amount;
       }
       
-      // Add amortized install fee (divided by 36 months)
+      // Add amortized install fee (divided by contract term in months)
       if (carrier.install_fee && carrier.install_fee_amount) {
-        basePrice += carrier.install_fee_amount / 36;
+        basePrice += carrier.install_fee_amount / termMonths;
       }
       
       return basePrice;
@@ -68,9 +87,9 @@ export const CarrierCard = ({ carrier, onEdit, onDelete, onCopy, dragHandleProps
         basePrice += carrier.static_ip_5_fee_amount;
       }
       
-      // Add amortized install fee (divided by 36 months)
+      // Add amortized install fee (divided by contract term in months)
       if (carrier.install_fee && carrier.install_fee_amount) {
-        basePrice += carrier.install_fee_amount / 36;
+        basePrice += carrier.install_fee_amount / termMonths;
       }
       
       // Apply the markup: sell price = cost * (1 + markup/100)
@@ -88,9 +107,9 @@ export const CarrierCard = ({ carrier, onEdit, onDelete, onCopy, dragHandleProps
       basePrice += carrier.static_ip_5_fee_amount;
     }
     
-    // Add amortized install fee (divided by 36 months)
+    // Add amortized install fee (divided by contract term in months)
     if (carrier.install_fee && carrier.install_fee_amount) {
-      basePrice += carrier.install_fee_amount / 36;
+      basePrice += carrier.install_fee_amount / termMonths;
     }
     
     return basePrice;
@@ -98,6 +117,7 @@ export const CarrierCard = ({ carrier, onEdit, onDelete, onCopy, dragHandleProps
 
   const displayPrice = getDisplayPrice();
   
+  // Helper function to get ticked checkboxes based on carrier details
   const getTickedCheckboxes = () => {
     const ticked = [];
     if (carrier.install_fee) {
@@ -145,6 +165,7 @@ export const CarrierCard = ({ carrier, onEdit, onDelete, onCopy, dragHandleProps
     return ticked;
   };
 
+  // Helper function to get the latest note from carrier notes
   const getLatestNote = (): string => {
     if (!carrier.notes) return '';
     
