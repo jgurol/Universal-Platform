@@ -24,17 +24,33 @@ export const QuoteStatusBadge = ({ quoteId, status, onStatusUpdate }: QuoteStatu
       if (newStatus === 'pending') {
         console.log('Clearing acceptance data for quote being set to pending');
         
-        // Delete acceptance records from quote_acceptances table
-        const { error: acceptanceError } = await supabase
+        // First, check if there are any acceptance records to delete
+        const { data: existingAcceptances, error: checkError } = await supabase
           .from('quote_acceptances')
-          .delete()
+          .select('id')
+          .eq('quote_id', quoteId);
+
+        if (checkError) {
+          console.error('Error checking existing acceptances:', checkError);
+        } else {
+          console.log('Found acceptance records to delete:', existingAcceptances?.length || 0);
+        }
+
+        // Delete acceptance records from quote_acceptances table
+        const { error: acceptanceError, count } = await supabase
+          .from('quote_acceptances')
+          .delete({ count: 'exact' })
           .eq('quote_id', quoteId);
 
         if (acceptanceError) {
           console.error('Error deleting acceptance records:', acceptanceError);
-          // Don't fail the whole operation if this fails, but log it
+          toast({
+            title: "Warning",
+            description: "Failed to delete acceptance records, but continuing with status update",
+            variant: "destructive"
+          });
         } else {
-          console.log('Successfully deleted acceptance records for quote:', quoteId);
+          console.log(`Successfully deleted ${count || 0} acceptance records for quote:`, quoteId);
         }
 
         // Update quote with cleared acceptance fields and pending status
