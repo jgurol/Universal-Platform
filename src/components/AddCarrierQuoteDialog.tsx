@@ -35,6 +35,8 @@ export const AddCarrierQuoteDialog = ({ open, onOpenChange, onAddCarrier }: AddC
   const [noService, setNoService] = useState(false);
   const [includesStaticIp, setIncludesStaticIp] = useState(false);
   const [staticIpFeeAmount, setStaticIpFeeAmount] = useState("");
+  const [includes5StaticIp, setIncludes5StaticIp] = useState(false);
+  const [staticIp5FeeAmount, setStaticIp5FeeAmount] = useState("");
 
   const { vendors, categories, loading } = useCarrierOptions();
   const { priceSheets } = useVendorPriceSheets();
@@ -99,6 +101,8 @@ export const AddCarrierQuoteDialog = ({ open, onOpenChange, onAddCarrier }: AddC
     setNoService(false);
     setIncludesStaticIp(false);
     setStaticIpFeeAmount("");
+    setIncludes5StaticIp(false);
+    setStaticIp5FeeAmount("");
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -344,6 +348,36 @@ export const AddCarrierQuoteDialog = ({ open, onOpenChange, onAddCarrier }: AddC
                       step="0.01"
                       value={staticIpFeeAmount}
                       onChange={(e) => setStaticIpFeeAmount(e.target.value)}
+                      placeholder="Enter fee amount"
+                      className="mt-1"
+                    />
+                  </div>
+                )}
+              </div>
+
+              <div className="space-y-3">
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="includes-5-static-ip"
+                    checked={includes5StaticIp}
+                    onCheckedChange={(checked) => setIncludes5StaticIp(checked as boolean)}
+                  />
+                  <Label htmlFor="includes-5-static-ip" className="text-sm font-normal">
+                    5 Static IP (/29)
+                  </Label>
+                </div>
+                
+                {includes5StaticIp && (
+                  <div className="ml-6">
+                    <Label htmlFor="static-ip-5-fee-amount" className="text-xs text-gray-600">
+                      5 Static IP Fee Amount
+                    </Label>
+                    <Input
+                      id="static-ip-5-fee-amount"
+                      type="number"
+                      step="0.01"
+                      value={staticIp5FeeAmount}
+                      onChange={(e) => setStaticIp5FeeAmount(e.target.value)}
                       placeholder="Enter fee amount"
                       className="mt-1"
                     />
