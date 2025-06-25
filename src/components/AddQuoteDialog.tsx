@@ -98,12 +98,18 @@ export const AddQuoteDialog = ({ open, onOpenChange, onAddQuote, clients, client
     fetchUserProfile();
   }, [user, open]);
   
-  // Filter client infos based on user's agent association
+  // Filter client infos based on user's agent association - Fixed logic
   useEffect(() => {
     const filterClientInfos = () => {
-      if (!userProfile || !open) {
-        console.log('[AddQuoteDialog] No user profile or dialog closed');
+      if (!open) {
+        console.log('[AddQuoteDialog] Dialog closed, clearing filtered clients');
         setFilteredClientInfos([]);
+        return;
+      }
+
+      // Wait for both user profile and clientInfos to be available
+      if (!userProfile || clientInfos.length === 0) {
+        console.log('[AddQuoteDialog] Waiting for data - userProfile:', !!userProfile, 'clientInfos:', clientInfos.length);
         return;
       }
 
@@ -115,45 +121,48 @@ export const AddQuoteDialog = ({ open, onOpenChange, onAddQuote, clients, client
         // Admin sees all clients
         console.log('[AddQuoteDialog] Admin user - showing all client infos');
         setFilteredClientInfos(clientInfos);
-      } else if (userProfile.associated_agent_id) {
-        // Non-admin user with agent - filter by agent's clients
-        console.log('[AddQuoteDialog] User associated with agent:', userProfile.associated_agent_id);
-        const agentClients = clientInfos.filter(client => {
-          const matches = client.agent_id === userProfile.associated_agent_id;
-          console.log('[AddQuoteDialog] Client', client.company_name, 'agent_id:', client.agent_id, 'matches:', matches);
-          return matches;
-        });
-        console.log('[AddQuoteDialog] Filtered client infos for agent:', agentClients.length);
-        setFilteredClientInfos(agentClients);
       } else {
-        // Non-admin user without agent - show only their own clients
-        console.log('[AddQuoteDialog] Non-admin user without agent - filtering by user_id:', user?.id);
-        const userClients = clientInfos.filter(client => client.user_id === user?.id);
-        console.log('[AddQuoteDialog] Filtered client infos for user:', userClients.length);
-        setFilteredClientInfos(userClients);
+        // For non-admin users, we need to check if they are associated with an agent
+        // If they have an associated_agent_id, show clients for that agent
+        // If they don't have an associated_agent_id, it means they ARE the agent, so show clients where agent_id matches their user_id
+        
+        let filtered: ClientInfo[] = [];
+        
+        if (userProfile.associated_agent_id) {
+          // User is associated with an agent - show clients for that agent
+          console.log('[AddQuoteDialog] User associated with agent:', userProfile.associated_agent_id);
+          filtered = clientInfos.filter(client => {
+            const matches = client.agent_id === userProfile.associated_agent_id;
+            console.log('[AddQuoteDialog] Client', client.company_name, 'agent_id:', client.agent_id, 'matches:', matches);
+            return matches;
+          });
+        } else {
+          // User is not associated with an agent, so they might be an agent themselves
+          // Check if there are any clients where agent_id matches user_id
+          const agentClients = clientInfos.filter(client => client.agent_id === user?.id);
+          
+          if (agentClients.length > 0) {
+            // User is an agent - show their clients
+            console.log('[AddQuoteDialog] User is an agent - showing their clients');
+            filtered = agentClients;
+          } else {
+            // User is neither admin nor agent - show only their own clients
+            console.log('[AddQuoteDialog] Regular user - filtering by user_id:', user?.id);
+            filtered = clientInfos.filter(client => client.user_id === user?.id);
+          }
+        }
+        
+        console.log('[AddQuoteDialog] Filtered client infos:', filtered.length);
+        setFilteredClientInfos(filtered);
       }
     };
 
+    // Only filter when we have the necessary data
     if (userProfile && clientInfos.length > 0) {
       filterClientInfos();
-    }
-  }, [userProfile, clientInfos, open, user?.id]);
-  
-  // Monitor data loading state
-  useEffect(() => {
-    console.log('[AddQuoteDialog] Data loading check:', {
-      filteredClientInfosLength: filteredClientInfos.length,
-      templatesLength: templates.length,
-      hasUser: !!user,
-      hasUserProfile: !!userProfile,
-      isDataLoading
-    });
-    
-    // Consider data loaded when we have user profile and templates
-    if (userProfile && templates.length >= 0) {
       setIsDataLoading(false);
     }
-  }, [filteredClientInfos.length, templates.length, user, userProfile]);
+  }, [userProfile, clientInfos, open, user?.id]);
   
   // Fetch deals associated with the selected client
   useEffect(() => {
