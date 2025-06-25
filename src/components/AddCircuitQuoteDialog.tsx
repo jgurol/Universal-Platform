@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -122,13 +121,13 @@ export const AddCircuitQuoteDialog = ({ open, onOpenChange, onAddQuote }: AddCir
   const [associatedDeals, setAssociatedDeals] = useState<DealRegistration[]>([]);
   const [isDealDetailsOpen, setIsDealDetailsOpen] = useState(false);
 
-  // Fetch client data when dialog opens
+  // Fetch client data when dialog opens - removed fetchClientInfos from dependency array to prevent infinite loop
   React.useEffect(() => {
     if (open && user && associatedAgentId !== undefined) {
       console.log('[AddCircuitQuoteDialog] Dialog opened, fetching client infos');
       fetchClientInfos(user.id, associatedAgentId, isAdmin);
     }
-  }, [open, user, associatedAgentId, isAdmin, fetchClientInfos]);
+  }, [open, user, associatedAgentId, isAdmin]);
 
   // Get circuit categories from the categories table where type is "Circuit"
   const circuitCategoryOptions = categories
