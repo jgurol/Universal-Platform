@@ -1,4 +1,3 @@
-
 import { Button } from "@/components/ui/button";
 import { Edit, Trash2, Copy, GripVertical } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
@@ -171,8 +170,14 @@ export const CarrierCard = ({ carrier, onEdit, onDelete, onCopy, dragHandleProps
                    (carrier.install_fee && carrier.install_fee_amount) ||
                    ((carrier as any).other_costs && (carrier as any).other_costs > 0);
   
-  // Only show base price if there are add-ons AND other_costs is greater than 0
-  const shouldShowBasePrice = hasAddOns && ((carrier as any).other_costs && (carrier as any).other_costs > 0);
+  // Only show base price if there are meaningful add-ons that actually add cost
+  const hasSignificantAddOns = (carrier.static_ip && carrier.static_ip_fee_amount && carrier.static_ip_fee_amount > 0) || 
+                              (carrier.static_ip_5 && carrier.static_ip_5_fee_amount && carrier.static_ip_5_fee_amount > 0) || 
+                              (carrier.install_fee && carrier.install_fee_amount && carrier.install_fee_amount > 0) ||
+                              ((carrier as any).other_costs && (carrier as any).other_costs > 0);
+  
+  // Only show base price if there are significant add-ons AND the base price is different from display price
+  const shouldShowBasePrice = hasSignificantAddOns && basePriceWithoutAddOns !== displayPrice && basePriceWithoutAddOns > 0;
   
   // Helper function to get ticked checkboxes based on carrier details
   const getTickedCheckboxes = () => {
@@ -302,8 +307,8 @@ export const CarrierCard = ({ carrier, onEdit, onDelete, onCopy, dragHandleProps
                 )
               )}
             </div>
-            {/* Show base price without add-ons only if there are add-ons AND other_costs > 0 */}
-            {!isNoService && displayPrice > 0 && shouldShowBasePrice && basePriceWithoutAddOns !== displayPrice && (
+            {/* Show base price without add-ons only if there are significant add-ons */}
+            {!isNoService && displayPrice > 0 && shouldShowBasePrice && (
               <div className="text-xs text-gray-500 mt-1">
                 Base: {formatCurrency(basePriceWithoutAddOns)}
               </div>
