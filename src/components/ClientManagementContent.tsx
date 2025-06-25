@@ -37,20 +37,22 @@ export const ClientManagementContent = ({
 
   return (
     <div className="space-y-6">
-      {/* Search Bar */}
-      <div className="relative max-w-md">
-        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-        <Input
-          placeholder="Search clients by name, notes, or Revio ID..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="pl-10"
-        />
+      {/* Search Bar - Centered and Prominent */}
+      <div className="flex justify-center mb-8">
+        <div className="relative w-full max-w-lg">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+          <Input
+            placeholder="Search clients by name, notes, or Revio ID..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="pl-10 text-center"
+          />
+        </div>
       </div>
 
       {/* Results count */}
       {searchTerm && (
-        <div className="text-sm text-gray-600">
+        <div className="text-sm text-gray-600 text-center">
           {filteredClients.length === 1 
             ? "1 client found" 
             : `${filteredClients.length} clients found`}
