@@ -22,7 +22,9 @@ export const QuoteStatusBadge = ({ quoteId, status, onStatusUpdate }: QuoteStatu
       console.log(`Changing quote ${quoteId} status to ${newStatus}`);
 
       if (newStatus === 'pending') {
-        // If changing to pending, we need to clear acceptance data
+        console.log('Clearing acceptance data for quote being set to pending');
+        
+        // Delete acceptance records from quote_acceptances table
         const { error: acceptanceError } = await supabase
           .from('quote_acceptances')
           .delete()
@@ -30,20 +32,24 @@ export const QuoteStatusBadge = ({ quoteId, status, onStatusUpdate }: QuoteStatu
 
         if (acceptanceError) {
           console.error('Error deleting acceptance records:', acceptanceError);
+          // Don't fail the whole operation if this fails, but log it
+        } else {
+          console.log('Successfully deleted acceptance records for quote:', quoteId);
         }
 
-        // Update quote with cleared acceptance fields
+        // Update quote with cleared acceptance fields and pending status
         const { error } = await supabase
           .from('quotes')
           .update({ 
             status: newStatus,
             accepted_at: null,
-            accepted_by: null
+            accepted_by: null,
+            updated_at: new Date().toISOString()
           })
           .eq('id', quoteId);
 
         if (error) {
-          console.error('Error updating quote status:', error);
+          console.error('Error updating quote status to pending:', error);
           toast({
             title: "Failed to update status",
             description: error.message,
@@ -52,9 +58,10 @@ export const QuoteStatusBadge = ({ quoteId, status, onStatusUpdate }: QuoteStatu
           return;
         }
 
+        console.log('Successfully updated quote to pending and cleared acceptance data');
         toast({
           title: "Status updated",
-          description: `Quote status changed to ${newStatus}`,
+          description: "Quote status changed to pending and acceptance data cleared",
         });
 
       } else if (newStatus === 'approved') {
@@ -98,7 +105,10 @@ export const QuoteStatusBadge = ({ quoteId, status, onStatusUpdate }: QuoteStatu
         // For rejection, just update the status
         const { error } = await supabase
           .from('quotes')
-          .update({ status: newStatus })
+          .update({ 
+            status: newStatus,
+            updated_at: new Date().toISOString()
+          })
           .eq('id', quoteId);
 
         if (error) {
@@ -119,7 +129,10 @@ export const QuoteStatusBadge = ({ quoteId, status, onStatusUpdate }: QuoteStatu
         // For other status changes, just update the status
         const { error } = await supabase
           .from('quotes')
-          .update({ status: newStatus })
+          .update({ 
+            status: newStatus,
+            updated_at: new Date().toISOString()
+          })
           .eq('id', quoteId);
 
         if (error) {
