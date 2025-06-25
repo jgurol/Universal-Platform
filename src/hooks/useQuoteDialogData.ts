@@ -25,6 +25,7 @@ export const useQuoteDialogData = (open: boolean, clients: Client[], clientInfos
     const fetchUserProfile = async () => {
       if (!user || !open) {
         setUserProfile(null);
+        setIsDataLoading(false);
         return;
       }
 
@@ -71,17 +72,18 @@ export const useQuoteDialogData = (open: boolean, clients: Client[], clientInfos
         return;
       }
 
+      // Always set loading to false once we start filtering
+      setIsDataLoading(false);
+
       // Wait for user profile to be available
-      if (!userProfile) {
+      if (userProfile === null) {
         console.log('[useQuoteDialogData] Waiting for user profile');
+        setFilteredClientInfos([]);
         return;
       }
 
-      // Set loading to false once we have user profile - regardless of client count
-      setIsDataLoading(false);
-
-      const isUserAdmin = userProfile.role === 'admin';
-      console.log('[useQuoteDialogData] Filtering clients - isAdmin:', isUserAdmin, 'associatedAgentId:', userProfile.associated_agent_id);
+      const isUserAdmin = userProfile?.role === 'admin';
+      console.log('[useQuoteDialogData] Filtering clients - isAdmin:', isUserAdmin, 'associatedAgentId:', userProfile?.associated_agent_id);
       console.log('[useQuoteDialogData] Total clientInfos available:', clientInfos.length);
 
       if (isUserAdmin) {
@@ -95,7 +97,7 @@ export const useQuoteDialogData = (open: boolean, clients: Client[], clientInfos
         
         let filtered: ClientInfo[] = [];
         
-        if (userProfile.associated_agent_id) {
+        if (userProfile?.associated_agent_id) {
           // User is associated with an agent - show clients for that agent
           console.log('[useQuoteDialogData] User associated with agent:', userProfile.associated_agent_id);
           filtered = clientInfos.filter(client => {
@@ -113,19 +115,23 @@ export const useQuoteDialogData = (open: boolean, clients: Client[], clientInfos
             console.log('[useQuoteDialogData] User is an agent - showing their clients');
             filtered = agentClients;
           } else {
-            // User is neither admin nor agent - show only their own clients
+            // User is neither admin nor agent - show clients they created (user_id matches)
             console.log('[useQuoteDialogData] Regular user - filtering by user_id:', user?.id);
-            filtered = clientInfos.filter(client => client.user_id === user?.id);
+            filtered = clientInfos.filter(client => {
+              const matches = client.user_id === user?.id;
+              console.log('[useQuoteDialogData] Client', client.company_name, 'user_id:', client.user_id, 'current_user:', user?.id, 'matches:', matches);
+              return matches;
+            });
           }
         }
         
-        console.log('[useQuoteDialogData] Filtered client infos:', filtered.length);
+        console.log('[useQuoteDialogData] Filtered client infos:', filtered.length, 'clients:', filtered.map(c => c.company_name));
         setFilteredClientInfos(filtered);
       }
     };
 
-    // Filter as soon as we have user profile - don't wait for clientInfos
-    if (userProfile) {
+    // Always try to filter when dialog opens or clientInfos change
+    if (open) {
       filterClientInfos();
     }
   }, [userProfile, clientInfos, open, user?.id]);
