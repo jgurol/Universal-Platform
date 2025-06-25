@@ -1,3 +1,4 @@
+
 import { Button } from "@/components/ui/button";
 import { Edit, Trash2, Copy, GripVertical } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
@@ -170,6 +171,9 @@ export const CarrierCard = ({ carrier, onEdit, onDelete, onCopy, dragHandleProps
                    (carrier.install_fee && carrier.install_fee_amount) ||
                    ((carrier as any).other_costs && (carrier as any).other_costs > 0);
   
+  // Only show base price if there are add-ons AND other_costs is greater than 0
+  const shouldShowBasePrice = hasAddOns && ((carrier as any).other_costs && (carrier as any).other_costs > 0);
+  
   // Helper function to get ticked checkboxes based on carrier details
   const getTickedCheckboxes = () => {
     const ticked = [];
@@ -298,8 +302,8 @@ export const CarrierCard = ({ carrier, onEdit, onDelete, onCopy, dragHandleProps
                 )
               )}
             </div>
-            {/* Show base price without add-ons if there are add-ons and price is available */}
-            {!isNoService && displayPrice > 0 && hasAddOns && basePriceWithoutAddOns !== displayPrice && (
+            {/* Show base price without add-ons only if there are add-ons AND other_costs > 0 */}
+            {!isNoService && displayPrice > 0 && shouldShowBasePrice && basePriceWithoutAddOns !== displayPrice && (
               <div className="text-xs text-gray-500 mt-1">
                 Base: {formatCurrency(basePriceWithoutAddOns)}
               </div>
