@@ -125,7 +125,34 @@ export const CarrierCard = ({ carrier, onEdit, onDelete, onCopy, dragHandleProps
     return basePrice;
   };
 
+  // Get base price without add-ons for display
+  const getBasePriceWithoutAddOns = () => {
+    if (isAdmin || isPending || isNoService) {
+      return carrier.price;
+    }
+
+    // Find matching category for the carrier type
+    const matchingCategory = categories.find(cat => 
+      cat.type?.toLowerCase() === carrier.type.toLowerCase() ||
+      cat.name.toLowerCase().includes(carrier.type.toLowerCase())
+    );
+
+    if (matchingCategory && matchingCategory.minimum_markup && matchingCategory.minimum_markup > 0) {
+      const effectiveMinimumMarkup = Math.max(0, matchingCategory.minimum_markup);
+      const markup = effectiveMinimumMarkup / 100;
+      return Math.round(carrier.price * (1 + markup) * 100) / 100;
+    }
+
+    return carrier.price;
+  };
+
   const displayPrice = getDisplayPrice();
+  const basePriceWithoutAddOns = getBasePriceWithoutAddOns();
+  
+  // Check if there are any add-ons to show the base price
+  const hasAddOns = (carrier.static_ip && carrier.static_ip_fee_amount) || 
+                   (carrier.static_ip_5 && carrier.static_ip_5_fee_amount) || 
+                   (carrier.install_fee && carrier.install_fee_amount);
   
   // Helper function to get ticked checkboxes based on carrier details
   const getTickedCheckboxes = () => {
@@ -252,6 +279,12 @@ export const CarrierCard = ({ carrier, onEdit, onDelete, onCopy, dragHandleProps
                 )
               )}
             </div>
+            {/* Show base price without add-ons if there are add-ons and price is available */}
+            {!isNoService && displayPrice > 0 && hasAddOns && basePriceWithoutAddOns !== displayPrice && (
+              <div className="text-xs text-gray-500 mt-1">
+                Base: {formatCurrency(basePriceWithoutAddOns)}
+              </div>
+            )}
           </div>
           
           <div>
