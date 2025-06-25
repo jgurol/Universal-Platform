@@ -9,13 +9,15 @@ import { VendorPriceSheetsList } from "@/components/VendorPriceSheetsList";
 import { SpeedsManagement } from "@/components/SpeedsManagement";
 import { Badge } from "@/components/ui/badge";
 import { Vendor } from "@/types/vendors";
+import { useToast } from "@/hooks/use-toast";
 
 export const VendorsManagement = () => {
   const [isAddVendorOpen, setIsAddVendorOpen] = useState(false);
   const [isEditVendorOpen, setIsEditVendorOpen] = useState(false);
   const [showSpeedsManagement, setShowSpeedsManagement] = useState(false);
   const [selectedVendor, setSelectedVendor] = useState<Vendor | null>(null);
-  const { vendors, isLoading, addVendor, updateVendor } = useVendors();
+  const { vendors, isLoading, addVendor, updateVendor, deleteVendor } = useVendors();
+  const { toast } = useToast();
 
   const handleEditVendor = (vendor: Vendor) => {
     setSelectedVendor(vendor);
@@ -40,6 +42,12 @@ export const VendorsManagement = () => {
   const handleUpdateVendor = (vendorId: string, updates: Partial<Vendor>) => {
     updateVendor(vendorId, updates);
     setSelectedVendor(null);
+  };
+
+  const handleDeleteVendor = (vendor: Vendor) => {
+    if (window.confirm(`Are you sure you want to delete "${vendor.name}"? This action cannot be undone.`)) {
+      deleteVendor(vendor.id);
+    }
   };
 
   const getSalesModelBadgeColor = (salesModel?: string) => {
@@ -176,7 +184,13 @@ export const VendorsManagement = () => {
                     <Button variant="ghost" size="sm" onClick={() => handleEditVendor(vendor)}>
                       <Edit className="h-4 w-4" />
                     </Button>
-                    <Button variant="ghost" size="sm" className="text-red-600 hover:text-red-700">
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      className="text-red-600 hover:text-red-700"
+                      onClick={() => handleDeleteVendor(vendor)}
+                      title="Delete Vendor"
+                    >
                       <Trash2 className="h-4 w-4" />
                     </Button>
                   </div>

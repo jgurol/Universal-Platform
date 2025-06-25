@@ -119,6 +119,41 @@ export const useVendors = () => {
     }
   };
 
+  const deleteVendor = async (vendorId: string) => {
+    if (!user) return;
+
+    try {
+      // Soft delete by setting is_active to false
+      const { error } = await supabase
+        .from('vendors')
+        .update({ is_active: false })
+        .eq('id', vendorId);
+
+      if (error) {
+        console.error('Error deleting vendor:', error);
+        toast({
+          title: "Failed to delete vendor",
+          description: error.message,
+          variant: "destructive"
+        });
+      } else {
+        // Remove from local state
+        setVendors(prev => prev.filter(vendor => vendor.id !== vendorId));
+        toast({
+          title: "Vendor deleted",
+          description: "Vendor has been deleted successfully.",
+        });
+      }
+    } catch (err) {
+      console.error('Error in deleteVendor:', err);
+      toast({
+        title: "Error",
+        description: "Failed to delete vendor",
+        variant: "destructive"
+      });
+    }
+  };
+
   useEffect(() => {
     fetchVendors();
   }, [user]);
@@ -128,6 +163,7 @@ export const useVendors = () => {
     isLoading,
     fetchVendors,
     addVendor,
-    updateVendor
+    updateVendor,
+    deleteVendor
   };
 };
