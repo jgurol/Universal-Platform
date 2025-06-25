@@ -54,88 +54,30 @@ export const AddQuoteDialog = ({ open, onOpenChange, onAddQuote, clients, client
   const [selectedDealIds, setSelectedDealIds] = useState<string[]>([]);
   const [isDataLoading, setIsDataLoading] = useState(true);
   const [filteredClientInfos, setFilteredClientInfos] = useState<ClientInfo[]>([]);
+  const [userProfile, setUserProfile] = useState<any>(null);
   const { user } = useAuth();
   
-  // Filter client infos based on user's agent association
+  // Fetch user profile and determine access level
   useEffect(() => {
-    const filterClientInfos = async () => {
+    const fetchUserProfile = async () => {
       if (!user || !open) {
-        setFilteredClientInfos([]);
+        setUserProfile(null);
         return;
       }
 
       try {
-        // Check if user is associated with an agent
-        const { data: userProfile } = await supabase
+        console.log('[AddQuoteDialog] Fetching user profile for:', user.id);
+        const { data: profile } = await supabase
           .from('profiles')
-          .select('associated_agent_id, role')
+          .select('associated_agent_id, role, full_name, email')
           .eq('id', user.id)
           .single();
 
-        const isUserAdmin = userProfile?.role === 'admin';
-        setIsAdmin(isUserAdmin);
-
-        if (isUserAdmin) {
-          // Admin sees all clients
-          console.log('[AddQuoteDialog] Admin user - showing all client infos');
-          setFilteredClientInfos(clientInfos);
-        } else if (userProfile?.associated_agent_id) {
-          // Non-admin user with agent - filter by agent's clients
-          console.log('[AddQuoteDialog] User associated with agent:', userProfile.associated_agent_id);
-          const agentClients = clientInfos.filter(client => 
-            client.agent_id === userProfile.associated_agent_id
-          );
-          console.log('[AddQuoteDialog] Filtered client infos for agent:', agentClients.length);
-          setFilteredClientInfos(agentClients);
-        } else {
-          // Non-admin user without agent - show only their own clients
-          console.log('[AddQuoteDialog] Non-admin user without agent - filtering by user_id:', user.id);
-          const userClients = clientInfos.filter(client => client.user_id === user.id);
-          setFilteredClientInfos(userClients);
-        }
-      } catch (error) {
-        console.error('[AddQuoteDialog] Error filtering client infos:', error);
-        setFilteredClientInfos(clientInfos); // Fallback to showing all
-      }
-    };
-
-    filterClientInfos();
-  }, [user, clientInfos, open]);
-  
-  // Monitor data loading state
-  useEffect(() => {
-    console.log('[AddQuoteDialog] Data loading check:', {
-      filteredClientInfosLength: filteredClientInfos.length,
-      templatesLength: templates.length,
-      hasUser: !!user,
-      isDataLoading
-    });
-    
-    // Consider data loaded when we have user and either have clientInfos or confirmed they're empty
-    if (user && templates.length >= 0) {
-      setIsDataLoading(false);
-    }
-  }, [filteredClientInfos.length, templates.length, user]);
-  
-  // Fetch current user's name and admin status from profile
-  useEffect(() => {
-    const fetchCurrentUserData = async () => {
-      if (!user) return;
-      
-      try {
-        const { data: profile, error } = await supabase
-          .from('profiles')
-          .select('full_name, email, role')
-          .eq('id', user.id)
-          .maybeSingle();
+        console.log('[AddQuoteDialog] User profile:', profile);
+        setUserProfile(profile);
+        setIsAdmin(profile?.role === 'admin');
         
-        if (error) {
-          console.error('Error fetching user profile:', error);
-          setCurrentUserName(user.email?.split('@')[0] || 'Current User');
-          setIsAdmin(false);
-          return;
-        }
-        
+        // Set current user name
         if (profile?.full_name && profile.full_name.trim() !== '') {
           setCurrentUserName(profile.full_name);
         } else if (profile?.email) {
@@ -145,18 +87,74 @@ export const AddQuoteDialog = ({ open, onOpenChange, onAddQuote, clients, client
         } else {
           setCurrentUserName('Current User');
         }
-        
-        setIsAdmin(profile?.role === 'admin');
       } catch (error) {
-        console.error('Error fetching current user data:', error);
-        setCurrentUserName(user.email?.split('@')[0] || 'Current User');
+        console.error('[AddQuoteDialog] Error fetching user profile:', error);
+        setUserProfile(null);
         setIsAdmin(false);
+        setCurrentUserName(user.email?.split('@')[0] || 'Current User');
       }
     };
 
-    fetchCurrentUserData();
-  }, [user]);
+    fetchUserProfile();
+  }, [user, open]);
+  
+  // Filter client infos based on user's agent association
+  useEffect(() => {
+    const filterClientInfos = () => {
+      if (!userProfile || !open) {
+        console.log('[AddQuoteDialog] No user profile or dialog closed');
+        setFilteredClientInfos([]);
+        return;
+      }
 
+      const isUserAdmin = userProfile.role === 'admin';
+      console.log('[AddQuoteDialog] Filtering clients - isAdmin:', isUserAdmin, 'associatedAgentId:', userProfile.associated_agent_id);
+      console.log('[AddQuoteDialog] Total clientInfos available:', clientInfos.length);
+
+      if (isUserAdmin) {
+        // Admin sees all clients
+        console.log('[AddQuoteDialog] Admin user - showing all client infos');
+        setFilteredClientInfos(clientInfos);
+      } else if (userProfile.associated_agent_id) {
+        // Non-admin user with agent - filter by agent's clients
+        console.log('[AddQuoteDialog] User associated with agent:', userProfile.associated_agent_id);
+        const agentClients = clientInfos.filter(client => {
+          const matches = client.agent_id === userProfile.associated_agent_id;
+          console.log('[AddQuoteDialog] Client', client.company_name, 'agent_id:', client.agent_id, 'matches:', matches);
+          return matches;
+        });
+        console.log('[AddQuoteDialog] Filtered client infos for agent:', agentClients.length);
+        setFilteredClientInfos(agentClients);
+      } else {
+        // Non-admin user without agent - show only their own clients
+        console.log('[AddQuoteDialog] Non-admin user without agent - filtering by user_id:', user?.id);
+        const userClients = clientInfos.filter(client => client.user_id === user?.id);
+        console.log('[AddQuoteDialog] Filtered client infos for user:', userClients.length);
+        setFilteredClientInfos(userClients);
+      }
+    };
+
+    if (userProfile && clientInfos.length > 0) {
+      filterClientInfos();
+    }
+  }, [userProfile, clientInfos, open, user?.id]);
+  
+  // Monitor data loading state
+  useEffect(() => {
+    console.log('[AddQuoteDialog] Data loading check:', {
+      filteredClientInfosLength: filteredClientInfos.length,
+      templatesLength: templates.length,
+      hasUser: !!user,
+      hasUserProfile: !!userProfile,
+      isDataLoading
+    });
+    
+    // Consider data loaded when we have user profile and templates
+    if (userProfile && templates.length >= 0) {
+      setIsDataLoading(false);
+    }
+  }, [filteredClientInfos.length, templates.length, user, userProfile]);
+  
   // Fetch deals associated with the selected client
   useEffect(() => {
     const fetchAssociatedDeals = async () => {
