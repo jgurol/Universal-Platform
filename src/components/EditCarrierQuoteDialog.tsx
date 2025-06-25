@@ -185,7 +185,7 @@ export const EditCarrierQuoteDialog = ({ open, onOpenChange, carrier, onUpdateCa
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="sm:max-w-[500px]">
+        <DialogContent className="sm:max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Edit Carrier Quote</DialogTitle>
             <DialogDescription>
@@ -193,69 +193,73 @@ export const EditCarrierQuoteDialog = ({ open, onOpenChange, carrier, onUpdateCa
             </DialogDescription>
           </DialogHeader>
           
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <Label htmlFor="vendor">Carrier (Required)</Label>
-                {vendorId && vendorPriceSheets.length > 0 && (
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="outline" size="sm" type="button">
-                        <FileText className="h-4 w-4 mr-1" />
-                        Price Sheets ({vendorPriceSheets.length})
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent className="bg-white z-50">
-                      {vendorPriceSheets.map((sheet) => (
-                        <DropdownMenuItem 
-                          key={sheet.id}
-                          onClick={() => handleOpenPriceSheet(sheet)}
-                          className="cursor-pointer"
-                        >
-                          <ExternalLink className="h-4 w-4 mr-2" />
-                          {sheet.name}
-                        </DropdownMenuItem>
-                      ))}
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                )}
+          <form onSubmit={handleSubmit} className="space-y-6">
+            {/* Basic Information - 2 column grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="vendor">Carrier (Required)</Label>
+                  {vendorId && vendorPriceSheets.length > 0 && (
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="outline" size="sm" type="button">
+                          <FileText className="h-4 w-4 mr-1" />
+                          Price Sheets ({vendorPriceSheets.length})
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent className="bg-white z-50">
+                        {vendorPriceSheets.map((sheet) => (
+                          <DropdownMenuItem 
+                            key={sheet.id}
+                            onClick={() => handleOpenPriceSheet(sheet)}
+                            className="cursor-pointer"
+                          >
+                            <ExternalLink className="h-4 w-4 mr-2" />
+                            {sheet.name}
+                          </DropdownMenuItem>
+                        ))}
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  )}
+                </div>
+                <Select value={vendorId} onValueChange={setVendorId} required>
+                  <SelectTrigger>
+                    <SelectValue placeholder={loading ? "Loading vendors..." : "Select vendor"} />
+                  </SelectTrigger>
+                  <SelectContent className="bg-white z-50">
+                    {vendors.map((vendor) => (
+                      <SelectItem key={vendor.id} value={vendor.id}>
+                        <div className="flex items-center gap-2">
+                          <div 
+                            className="w-3 h-3 rounded-full" 
+                            style={{ backgroundColor: vendor.color || '#3B82F6' }}
+                          />
+                          {vendor.name}
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
-              <Select value={vendorId} onValueChange={setVendorId} required>
-                <SelectTrigger>
-                  <SelectValue placeholder={loading ? "Loading vendors..." : "Select vendor"} />
-                </SelectTrigger>
-                <SelectContent className="bg-white z-50">
-                  {vendors.map((vendor) => (
-                    <SelectItem key={vendor.id} value={vendor.id}>
-                      <div className="flex items-center gap-2">
-                        <div 
-                          className="w-3 h-3 rounded-full" 
-                          style={{ backgroundColor: vendor.color || '#3B82F6' }}
-                        />
-                        {vendor.name}
-                      </div>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+
+              <div className="space-y-2">
+                <Label htmlFor="category">Circuit Type (Required)</Label>
+                <Select value={categoryId} onValueChange={setCategoryId} required>
+                  <SelectTrigger>
+                    <SelectValue placeholder={loading ? "Loading types..." : "Select circuit type"} />
+                  </SelectTrigger>
+                  <SelectContent className="bg-white z-50">
+                    {categories.map((category) => (
+                      <SelectItem key={category.id} value={category.id}>
+                        {category.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="category">Circuit Type (Required)</Label>
-              <Select value={categoryId} onValueChange={setCategoryId} required>
-                <SelectTrigger>
-                  <SelectValue placeholder={loading ? "Loading types..." : "Select circuit type"} />
-                </SelectTrigger>
-                <SelectContent className="bg-white z-50">
-                  {categories.map((category) => (
-                    <SelectItem key={category.id} value={category.id}>
-                      {category.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
+            {/* Speed and Custom Speed */}
             <div className="space-y-2">
               <Label htmlFor="speed">Speed (Required)</Label>
               <Select value={speedId} onValueChange={setSpeedId} required>
@@ -287,207 +291,221 @@ export const EditCarrierQuoteDialog = ({ open, onOpenChange, carrier, onUpdateCa
               )}
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="price">Cost</Label>
-              <Input
-                id="price"
-                type="number"
-                step="0.01"
-                value={price}
-                onChange={(e) => setPrice(e.target.value)}
-                placeholder="Leave blank if waiting for quote"
-                className="[appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-              />
+            {/* Pricing Information - 3 column grid */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="price">Cost</Label>
+                <Input
+                  id="price"
+                  type="number"
+                  step="0.01"
+                  value={price}
+                  onChange={(e) => setPrice(e.target.value)}
+                  placeholder="Leave blank if waiting for quote"
+                  className="[appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="term">Contract Term</Label>
+                <Select value={term} onValueChange={setTerm}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Leave blank if waiting for quote" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-white z-50">
+                    <SelectItem value="Month to Month">Month to Month</SelectItem>
+                    <SelectItem value="12 months">12 months</SelectItem>
+                    <SelectItem value="24 months">24 months</SelectItem>
+                    <SelectItem value="36 months">36 months</SelectItem>
+                    <SelectItem value="60 months">60 months</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="other-costs">Other MRC Cost</Label>
+                <Input
+                  id="other-costs"
+                  type="number"
+                  step="0.01"
+                  value={otherCosts}
+                  onChange={(e) => setOtherCosts(e.target.value)}
+                  placeholder="Enter additional MRC costs"
+                  className="[appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                />
+              </div>
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="term">Contract Term</Label>
-              <Select value={term} onValueChange={setTerm}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Leave blank if waiting for quote" />
-                </SelectTrigger>
-                <SelectContent className="bg-white z-50">
-                  <SelectItem value="Month to Month">Month to Month</SelectItem>
-                  <SelectItem value="12 months">12 months</SelectItem>
-                  <SelectItem value="24 months">24 months</SelectItem>
-                  <SelectItem value="36 months">36 months</SelectItem>
-                  <SelectItem value="60 months">60 months</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="other-costs">Other MRC Cost</Label>
-              <Input
-                id="other-costs"
-                type="number"
-                step="0.01"
-                value={otherCosts}
-                onChange={(e) => setOtherCosts(e.target.value)}
-                placeholder="Enter additional MRC costs"
-                className="[appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-              />
-            </div>
-
+            {/* Options Section - Organized in columns */}
             <div className="space-y-4">
-              <Label>Options</Label>
-              <div className="grid grid-cols-1 gap-4">
-                <div className="space-y-3">
-                  <div className="flex items-center space-x-2">
-                    <Checkbox
-                      id="install-fee"
-                      checked={installFee}
-                      onCheckedChange={(checked) => setInstallFee(checked as boolean)}
-                    />
-                    <Label htmlFor="install-fee" className="text-sm font-normal">
-                      Install Fee
-                    </Label>
-                  </div>
-                  
-                  {installFee && (
-                    <div className="ml-6">
-                      <Label htmlFor="install-fee-amount" className="text-xs text-gray-600">
-                        Install Fee Amount
-                      </Label>
-                      <Input
-                        id="install-fee-amount"
-                        type="number"
-                        step="0.01"
-                        value={installFeeAmount}
-                        onChange={(e) => setInstallFeeAmount(e.target.value)}
-                        placeholder="Enter fee amount"
-                        className="mt-1 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+              <Label className="text-base font-semibold">Options</Label>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* Left Column */}
+                <div className="space-y-4">
+                  {/* Install Fee */}
+                  <div className="space-y-3">
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id="install-fee"
+                        checked={installFee}
+                        onCheckedChange={(checked) => setInstallFee(checked as boolean)}
                       />
-                    </div>
-                  )}
-                </div>
-                
-                <div className="flex items-center space-x-2">
-                  <Checkbox
-                    id="site-survey"
-                    checked={siteSurveyNeeded}
-                    onCheckedChange={(checked) => setSiteSurveyNeeded(checked as boolean)}
-                  />
-                  <Label htmlFor="site-survey" className="text-sm font-normal">
-                    Site Survey Needed
-                  </Label>
-                </div>
-                
-                <div className="flex items-center space-x-2">
-                  <Checkbox
-                    id="no-service"
-                    checked={noService}
-                    onCheckedChange={(checked) => setNoService(checked as boolean)}
-                  />
-                  <Label htmlFor="no-service" className="text-sm font-normal">
-                    No Service
-                  </Label>
-                </div>
-                
-                <div className="space-y-3">
-                  <div className="flex items-center space-x-2">
-                    <Checkbox
-                      id="includes-static-ip"
-                      checked={includesStaticIp}
-                      onCheckedChange={(checked) => setIncludesStaticIp(checked as boolean)}
-                    />
-                    <Label htmlFor="includes-static-ip" className="text-sm font-normal">
-                      1 Static IP (/30)
-                    </Label>
-                  </div>
-                  
-                  {includesStaticIp && (
-                    <div className="ml-6">
-                      <Label htmlFor="static-ip-fee-amount" className="text-xs text-gray-600">
-                        Static IP Fee Amount
+                      <Label htmlFor="install-fee" className="text-sm font-normal">
+                        Install Fee
                       </Label>
-                      <Input
-                        id="static-ip-fee-amount"
-                        type="number"
-                        step="0.01"
-                        value={staticIpFeeAmount}
-                        onChange={(e) => setStaticIpFeeAmount(e.target.value)}
-                        placeholder="Enter fee amount"
-                        className="mt-1 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                      />
                     </div>
-                  )}
+                    
+                    {installFee && (
+                      <div className="ml-6">
+                        <Label htmlFor="install-fee-amount" className="text-xs text-gray-600">
+                          Install Fee Amount
+                        </Label>
+                        <Input
+                          id="install-fee-amount"
+                          type="number"
+                          step="0.01"
+                          value={installFeeAmount}
+                          onChange={(e) => setInstallFeeAmount(e.target.value)}
+                          placeholder="Enter fee amount"
+                          className="mt-1 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                        />
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Static IP */}
+                  <div className="space-y-3">
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id="includes-static-ip"
+                        checked={includesStaticIp}
+                        onCheckedChange={(checked) => setIncludesStaticIp(checked as boolean)}
+                      />
+                      <Label htmlFor="includes-static-ip" className="text-sm font-normal">
+                        1 Static IP (/30)
+                      </Label>
+                    </div>
+                    
+                    {includesStaticIp && (
+                      <div className="ml-6">
+                        <Label htmlFor="static-ip-fee-amount" className="text-xs text-gray-600">
+                          Static IP Fee Amount
+                        </Label>
+                        <Input
+                          id="static-ip-fee-amount"
+                          type="number"
+                          step="0.01"
+                          value={staticIpFeeAmount}
+                          onChange={(e) => setStaticIpFeeAmount(e.target.value)}
+                          placeholder="Enter fee amount"
+                          className="mt-1 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                        />
+                      </div>
+                    )}
+                  </div>
+
+                  {/* 5 Static IP */}
+                  <div className="space-y-3">
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id="includes-5-static-ip"
+                        checked={includes5StaticIp}
+                        onCheckedChange={(checked) => setIncludes5StaticIp(checked as boolean)}
+                      />
+                      <Label htmlFor="includes-5-static-ip" className="text-sm font-normal">
+                        5 Static IP (/29)
+                      </Label>
+                    </div>
+                    
+                    {includes5StaticIp && (
+                      <div className="ml-6">
+                        <Label htmlFor="static-ip-5-fee-amount" className="text-xs text-gray-600">
+                          5 Static IP Fee Amount
+                        </Label>
+                        <Input
+                          id="static-ip-5-fee-amount"
+                          type="number"
+                          step="0.01"
+                          value={staticIp5FeeAmount}
+                          onChange={(e) => setStaticIp5FeeAmount(e.target.value)}
+                          placeholder="Enter fee amount"
+                          className="mt-1 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                        />
+                      </div>
+                    )}
+                  </div>
                 </div>
 
-                <div className="space-y-3">
+                {/* Right Column */}
+                <div className="space-y-4">
                   <div className="flex items-center space-x-2">
                     <Checkbox
-                      id="includes-5-static-ip"
-                      checked={includes5StaticIp}
-                      onCheckedChange={(checked) => setIncludes5StaticIp(checked as boolean)}
+                      id="site-survey"
+                      checked={siteSurveyNeeded}
+                      onCheckedChange={(checked) => setSiteSurveyNeeded(checked as boolean)}
                     />
-                    <Label htmlFor="includes-5-static-ip" className="text-sm font-normal">
-                      5 Static IP (/29)
+                    <Label htmlFor="site-survey" className="text-sm font-normal">
+                      Site Survey Needed
                     </Label>
                   </div>
                   
-                  {includes5StaticIp && (
-                    <div className="ml-6">
-                      <Label htmlFor="static-ip-5-fee-amount" className="text-xs text-gray-600">
-                        5 Static IP Fee Amount
-                      </Label>
-                      <Input
-                        id="static-ip-5-fee-amount"
-                        type="number"
-                        step="0.01"
-                        value={staticIp5FeeAmount}
-                        onChange={(e) => setStaticIp5FeeAmount(e.target.value)}
-                        placeholder="Enter fee amount"
-                        className="mt-1 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                      />
+                  <div className="flex items-center space-x-2">
+                    <Checkbox
+                      id="no-service"
+                      checked={noService}
+                      onCheckedChange={(checked) => setNoService(checked as boolean)}
+                    />
+                    <Label htmlFor="no-service" className="text-sm font-normal">
+                      No Service
+                    </Label>
+                  </div>
+
+                  {siteSurveyNeeded && (
+                    <div className="space-y-2">
+                      <Label>Site Survey Priority</Label>
+                      <div className="flex gap-2">
+                        <Button
+                          type="button"
+                          variant={siteSurveyColor === "red" ? "default" : "outline"}
+                          size="sm"
+                          onClick={() => setSiteSurveyColor("red")}
+                          className={siteSurveyColor === "red" ? "bg-red-500 hover:bg-red-600" : "border-red-500 text-red-500 hover:bg-red-50"}
+                        >
+                          Red
+                        </Button>
+                        <Button
+                          type="button"
+                          variant={siteSurveyColor === "yellow" ? "default" : "outline"}
+                          size="sm"
+                          onClick={() => setSiteSurveyColor("yellow")}
+                          className={siteSurveyColor === "yellow" ? "bg-yellow-500 hover:bg-yellow-600" : "border-yellow-500 text-yellow-600 hover:bg-yellow-50"}
+                        >
+                          Yellow
+                        </Button>
+                        <Button
+                          type="button"
+                          variant={siteSurveyColor === "orange" ? "default" : "outline"}
+                          size="sm"
+                          onClick={() => setSiteSurveyColor("orange")}
+                          className={siteSurveyColor === "orange" ? "bg-orange-500 hover:bg-orange-600" : "border-orange-500 text-orange-600 hover:bg-orange-50"}
+                        >
+                          Orange
+                        </Button>
+                        <Button
+                          type="button"
+                          variant={siteSurveyColor === "green" ? "default" : "outline"}
+                          size="sm"
+                          onClick={() => setSiteSurveyColor("green")}
+                          className={siteSurveyColor === "green" ? "bg-green-500 hover:bg-green-600" : "border-green-500 text-green-600 hover:bg-green-50"}
+                        >
+                          Green
+                        </Button>
+                      </div>
                     </div>
                   )}
                 </div>
               </div>
-
-              {siteSurveyNeeded && (
-                <div className="space-y-2 mt-4">
-                  <Label>Site Survey Priority</Label>
-                  <div className="flex gap-2">
-                    <Button
-                      type="button"
-                      variant={siteSurveyColor === "red" ? "default" : "outline"}
-                      size="sm"
-                      onClick={() => setSiteSurveyColor("red")}
-                      className={siteSurveyColor === "red" ? "bg-red-500 hover:bg-red-600" : "border-red-500 text-red-500 hover:bg-red-50"}
-                    >
-                      Red
-                    </Button>
-                    <Button
-                      type="button"
-                      variant={siteSurveyColor === "yellow" ? "default" : "outline"}
-                      size="sm"
-                      onClick={() => setSiteSurveyColor("yellow")}
-                      className={siteSurveyColor === "yellow" ? "bg-yellow-500 hover:bg-yellow-600" : "border-yellow-500 text-yellow-600 hover:bg-yellow-50"}
-                    >
-                      Yellow
-                    </Button>
-                    <Button
-                      type="button"
-                      variant={siteSurveyColor === "orange" ? "default" : "outline"}
-                      size="sm"
-                      onClick={() => setSiteSurveyColor("orange")}
-                      className={siteSurveyColor === "orange" ? "bg-orange-500 hover:bg-orange-600" : "border-orange-500 text-orange-600 hover:bg-orange-50"}
-                    >
-                      Orange
-                    </Button>
-                    <Button
-                      type="button"
-                      variant={siteSurveyColor === "green" ? "default" : "outline"}
-                      size="sm"
-                      onClick={() => setSiteSurveyColor("green")}
-                      className={siteSurveyColor === "green" ? "bg-green-500 hover:bg-green-600" : "border-green-500 text-green-600 hover:bg-green-50"}
-                    >
-                      Green
-                    </Button>
-                  </div>
-                </div>
-              )}
             </div>
 
             <div className="space-y-2">
@@ -510,7 +528,7 @@ export const EditCarrierQuoteDialog = ({ open, onOpenChange, carrier, onUpdateCa
               )}
             </div>
             
-            <div className="flex justify-end space-x-2 mt-6">
+            <div className="flex justify-end space-x-2 pt-4">
               <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
                 Cancel
               </Button>
