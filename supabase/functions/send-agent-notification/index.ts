@@ -7,6 +7,7 @@ const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
+  'Access-Control-Max-Age': '86400',
 };
 
 interface AgentNotificationRequest {
@@ -27,13 +28,22 @@ const supabase = createClient(supabaseUrl, supabaseServiceKey);
 const handler = async (req: Request): Promise<Response> => {
   console.log('Edge function called with method:', req.method);
   console.log('Request headers:', Object.fromEntries(req.headers.entries()));
+  console.log('Request URL:', req.url);
 
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
-    console.log('Handling CORS preflight request');
+    console.log('Handling CORS preflight request - returning corsHeaders:', corsHeaders);
     return new Response(null, { 
       status: 200,
       headers: corsHeaders 
+    });
+  }
+
+  if (req.method !== 'POST') {
+    console.log('Method not allowed:', req.method);
+    return new Response(JSON.stringify({ error: 'Method not allowed' }), {
+      status: 405,
+      headers: { 'Content-Type': 'application/json', ...corsHeaders },
     });
   }
 
