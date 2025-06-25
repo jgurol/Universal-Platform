@@ -1,4 +1,3 @@
-
 import { Button } from "@/components/ui/button";
 import { Edit, Trash2, Copy, GripVertical } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
@@ -26,7 +25,22 @@ export const CarrierCard = ({ carrier, onEdit, onDelete, onCopy, dragHandleProps
   // Calculate markup price for agents
   const getDisplayPrice = () => {
     if (isAdmin || isPending || isNoService) {
-      return carrier.price;
+      let basePrice = carrier.price;
+      
+      // Add static IP fees
+      if (carrier.static_ip && carrier.static_ip_fee_amount) {
+        basePrice += carrier.static_ip_fee_amount;
+      }
+      if (carrier.static_ip_5 && carrier.static_ip_5_fee_amount) {
+        basePrice += carrier.static_ip_5_fee_amount;
+      }
+      
+      // Add amortized install fee (divided by 36 months)
+      if (carrier.install_fee && carrier.install_fee_amount) {
+        basePrice += carrier.install_fee_amount / 36;
+      }
+      
+      return basePrice;
     }
 
     // Find matching category for the carrier type
@@ -44,12 +58,42 @@ export const CarrierCard = ({ carrier, onEdit, onDelete, onCopy, dragHandleProps
       const originalMinimumMarkup = matchingCategory.minimum_markup;
       const effectiveMinimumMarkup = Math.max(0, originalMinimumMarkup);
       
+      let basePrice = carrier.price;
+      
+      // Add static IP fees
+      if (carrier.static_ip && carrier.static_ip_fee_amount) {
+        basePrice += carrier.static_ip_fee_amount;
+      }
+      if (carrier.static_ip_5 && carrier.static_ip_5_fee_amount) {
+        basePrice += carrier.static_ip_5_fee_amount;
+      }
+      
+      // Add amortized install fee (divided by 36 months)
+      if (carrier.install_fee && carrier.install_fee_amount) {
+        basePrice += carrier.install_fee_amount / 36;
+      }
+      
       // Apply the markup: sell price = cost * (1 + markup/100)
       const markup = effectiveMinimumMarkup / 100;
-      return Math.round(carrier.price * (1 + markup) * 100) / 100;
+      return Math.round(basePrice * (1 + markup) * 100) / 100;
     }
 
-    return carrier.price;
+    let basePrice = carrier.price;
+    
+    // Add static IP fees
+    if (carrier.static_ip && carrier.static_ip_fee_amount) {
+      basePrice += carrier.static_ip_fee_amount;
+    }
+    if (carrier.static_ip_5 && carrier.static_ip_5_fee_amount) {
+      basePrice += carrier.static_ip_5_fee_amount;
+    }
+    
+    // Add amortized install fee (divided by 36 months)
+    if (carrier.install_fee && carrier.install_fee_amount) {
+      basePrice += carrier.install_fee_amount / 36;
+    }
+    
+    return basePrice;
   };
 
   const displayPrice = getDisplayPrice();
