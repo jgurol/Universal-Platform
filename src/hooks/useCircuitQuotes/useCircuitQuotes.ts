@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useToast } from "@/hooks/use-toast";
@@ -62,7 +63,10 @@ export const useCircuitQuotes = () => {
         quote.id === circuitQuoteId 
           ? { 
               ...quote, 
-              carriers: [...quote.carriers, newCarrier as CarrierQuote],
+              carriers: [...quote.carriers, {
+                ...newCarrier,
+                other_costs: newCarrier.other_costs ?? 0
+              } as CarrierQuote],
               // Update status to 'researching' if it was 'new_pricing'
               status: quote.status === 'new_pricing' ? 'researching' : quote.status
             }

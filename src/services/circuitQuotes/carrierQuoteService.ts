@@ -28,7 +28,7 @@ export const useCarrierQuoteService = () => {
           other_costs: carrierQuote.other_costs || 0,
           display_order: nextDisplayOrder
         })
-        .select()
+        .select('*, other_costs')
         .single();
 
       if (error) {
