@@ -35,4 +35,5 @@ export interface CarrierQuote {
   static_ip_fee_amount: number;
   static_ip_5: boolean;
   static_ip_5_fee_amount: number;
+  other_costs: number;
 }

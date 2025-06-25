@@ -39,6 +39,7 @@ export const EditCarrierQuoteDialog = ({ open, onOpenChange, carrier, onUpdateCa
   const [staticIpFeeAmount, setStaticIpFeeAmount] = useState("");
   const [includes5StaticIp, setIncludes5StaticIp] = useState(false);
   const [staticIp5FeeAmount, setStaticIp5FeeAmount] = useState("");
+  const [otherCosts, setOtherCosts] = useState("");
   const [isNotesDialogOpen, setIsNotesDialogOpen] = useState(false);
 
   const { vendors, categories, loading } = useCarrierOptions();
@@ -136,6 +137,8 @@ export const EditCarrierQuoteDialog = ({ open, onOpenChange, carrier, onUpdateCa
       setStaticIpFeeAmount(carrier.static_ip_fee_amount > 0 ? carrier.static_ip_fee_amount.toString() : "");
       setIncludes5StaticIp((carrier as any).static_ip_5 || false);
       setStaticIp5FeeAmount((carrier as any).static_ip_5_fee_amount > 0 ? (carrier as any).static_ip_5_fee_amount.toString() : "");
+      
+      setOtherCosts((carrier as any).other_costs > 0 ? (carrier as any).other_costs.toString() : "");
     }
   }, [carrier, vendors, categories, speeds]);
 
@@ -167,7 +170,8 @@ export const EditCarrierQuoteDialog = ({ open, onOpenChange, carrier, onUpdateCa
         static_ip: includesStaticIp,
         static_ip_fee_amount: staticIpFeeAmount ? parseFloat(staticIpFeeAmount) : 0,
         static_ip_5: includes5StaticIp,
-        static_ip_5_fee_amount: staticIp5FeeAmount ? parseFloat(staticIp5FeeAmount) : 0
+        static_ip_5_fee_amount: staticIp5FeeAmount ? parseFloat(staticIp5FeeAmount) : 0,
+        other_costs: otherCosts ? parseFloat(otherCosts) : 0
       } as CarrierQuote);
       
       onOpenChange(false);
@@ -309,6 +313,18 @@ export const EditCarrierQuoteDialog = ({ open, onOpenChange, carrier, onUpdateCa
                   <SelectItem value="60 months">60 months</SelectItem>
                 </SelectContent>
               </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="other-costs">Other Costs</Label>
+              <Input
+                id="other-costs"
+                type="number"
+                step="0.01"
+                value={otherCosts}
+                onChange={(e) => setOtherCosts(e.target.value)}
+                placeholder="Enter additional costs"
+              />
             </div>
 
             <div className="space-y-4">

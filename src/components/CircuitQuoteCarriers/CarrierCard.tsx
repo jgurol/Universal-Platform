@@ -69,6 +69,11 @@ export const CarrierCard = ({ carrier, onEdit, onDelete, onCopy, dragHandleProps
         basePrice += carrier.install_fee_amount / termMonths;
       }
       
+      // Add other costs
+      if ((carrier as any).other_costs) {
+        basePrice += (carrier as any).other_costs;
+      }
+      
       return basePrice;
     }
 
@@ -102,6 +107,11 @@ export const CarrierCard = ({ carrier, onEdit, onDelete, onCopy, dragHandleProps
         basePrice += carrier.install_fee_amount / termMonths;
       }
       
+      // Add other costs
+      if ((carrier as any).other_costs) {
+        basePrice += (carrier as any).other_costs;
+      }
+      
       // Apply the markup: sell price = cost * (1 + markup/100)
       const markup = effectiveMinimumMarkup / 100;
       return Math.round(basePrice * (1 + markup) * 100) / 100;
@@ -120,6 +130,11 @@ export const CarrierCard = ({ carrier, onEdit, onDelete, onCopy, dragHandleProps
     // Add amortized install fee (divided by contract term in months)
     if (carrier.install_fee && carrier.install_fee_amount) {
       basePrice += carrier.install_fee_amount / termMonths;
+    }
+    
+    // Add other costs
+    if ((carrier as any).other_costs) {
+      basePrice += (carrier as any).other_costs;
     }
     
     return basePrice;
@@ -152,7 +167,8 @@ export const CarrierCard = ({ carrier, onEdit, onDelete, onCopy, dragHandleProps
   // Check if there are any add-ons to show the base price
   const hasAddOns = (carrier.static_ip && carrier.static_ip_fee_amount) || 
                    (carrier.static_ip_5 && carrier.static_ip_5_fee_amount) || 
-                   (carrier.install_fee && carrier.install_fee_amount);
+                   (carrier.install_fee && carrier.install_fee_amount) ||
+                   ((carrier as any).other_costs && (carrier as any).other_costs > 0);
   
   // Helper function to get ticked checkboxes based on carrier details
   const getTickedCheckboxes = () => {

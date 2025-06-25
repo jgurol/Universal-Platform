@@ -37,6 +37,7 @@ export const AddCarrierQuoteDialog = ({ open, onOpenChange, onAddCarrier }: AddC
   const [staticIpFeeAmount, setStaticIpFeeAmount] = useState("");
   const [includes5StaticIp, setIncludes5StaticIp] = useState(false);
   const [staticIp5FeeAmount, setStaticIp5FeeAmount] = useState("");
+  const [otherCosts, setOtherCosts] = useState("");
 
   const { vendors, categories, loading } = useCarrierOptions();
   const { priceSheets } = useVendorPriceSheets();
@@ -103,6 +104,7 @@ export const AddCarrierQuoteDialog = ({ open, onOpenChange, onAddCarrier }: AddC
     setStaticIpFeeAmount("");
     setIncludes5StaticIp(false);
     setStaticIp5FeeAmount("");
+    setOtherCosts("");
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -132,7 +134,8 @@ export const AddCarrierQuoteDialog = ({ open, onOpenChange, onAddCarrier }: AddC
         static_ip: includesStaticIp,
         static_ip_fee_amount: staticIpFeeAmount ? parseFloat(staticIpFeeAmount) : 0,
         static_ip_5: includes5StaticIp,
-        static_ip_5_fee_amount: staticIp5FeeAmount ? parseFloat(staticIp5FeeAmount) : 0
+        static_ip_5_fee_amount: staticIp5FeeAmount ? parseFloat(staticIp5FeeAmount) : 0,
+        other_costs: otherCosts ? parseFloat(otherCosts) : 0
       });
       
       resetForm();
@@ -431,6 +434,18 @@ export const AddCarrierQuoteDialog = ({ open, onOpenChange, onAddCarrier }: AddC
                 </div>
               </div>
             )}
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="other-costs">Other Costs</Label>
+            <Input
+              id="other-costs"
+              type="number"
+              step="0.01"
+              value={otherCosts}
+              onChange={(e) => setOtherCosts(e.target.value)}
+              placeholder="Enter additional costs"
+            />
           </div>
 
           <div className="space-y-2">
