@@ -163,6 +163,7 @@ export type Database = {
           install_fee_amount: number | null
           no_service: boolean | null
           notes: string | null
+          other_costs: number | null
           price: number
           site_survey_needed: boolean | null
           slash_29: boolean | null
@@ -186,6 +187,7 @@ export type Database = {
           install_fee_amount?: number | null
           no_service?: boolean | null
           notes?: string | null
+          other_costs?: number | null
           price: number
           site_survey_needed?: boolean | null
           slash_29?: boolean | null
@@ -209,6 +211,7 @@ export type Database = {
           install_fee_amount?: number | null
           no_service?: boolean | null
           notes?: string | null
+          other_costs?: number | null
           price?: number
           site_survey_needed?: boolean | null
           slash_29?: boolean | null
