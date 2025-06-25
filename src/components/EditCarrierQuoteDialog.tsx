@@ -296,6 +296,7 @@ export const EditCarrierQuoteDialog = ({ open, onOpenChange, carrier, onUpdateCa
                 value={price}
                 onChange={(e) => setPrice(e.target.value)}
                 placeholder="Leave blank if waiting for quote"
+                className="[appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
               />
             </div>
 
@@ -324,6 +325,7 @@ export const EditCarrierQuoteDialog = ({ open, onOpenChange, carrier, onUpdateCa
                 value={otherCosts}
                 onChange={(e) => setOtherCosts(e.target.value)}
                 placeholder="Enter additional MRC costs"
+                className="[appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
               />
             </div>
 
@@ -354,7 +356,7 @@ export const EditCarrierQuoteDialog = ({ open, onOpenChange, carrier, onUpdateCa
                         value={installFeeAmount}
                         onChange={(e) => setInstallFeeAmount(e.target.value)}
                         placeholder="Enter fee amount"
-                        className="mt-1"
+                        className="mt-1 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                       />
                     </div>
                   )}
@@ -406,7 +408,7 @@ export const EditCarrierQuoteDialog = ({ open, onOpenChange, carrier, onUpdateCa
                         value={staticIpFeeAmount}
                         onChange={(e) => setStaticIpFeeAmount(e.target.value)}
                         placeholder="Enter fee amount"
-                        className="mt-1"
+                        className="mt-1 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                       />
                     </div>
                   )}
@@ -436,7 +438,7 @@ export const EditCarrierQuoteDialog = ({ open, onOpenChange, carrier, onUpdateCa
                         value={staticIp5FeeAmount}
                         onChange={(e) => setStaticIp5FeeAmount(e.target.value)}
                         placeholder="Enter fee amount"
-                        className="mt-1"
+                        className="mt-1 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                       />
                     </div>
                   )}
