@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { CircuitQuoteStatusSelect } from "@/components/CircuitQuoteStatusSelect";
 import { EditCircuitQuoteDialog } from "@/components/EditCircuitQuoteDialog";
 import { CircuitQuoteNotesDialog } from "@/components/CircuitQuotes/CircuitQuoteNotesDialog";
+import { DealDetailsDialog } from "@/components/CircuitQuotes/DealDetailsDialog";
 import { ChevronDown, ChevronUp, Edit, Trash2, FileText, MapPin, Building, ExternalLink } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import type { CircuitQuote } from "@/hooks/useCircuitQuotes";
@@ -31,6 +32,7 @@ export const CircuitQuoteCardHeader = ({
 }: CircuitQuoteCardHeaderProps) => {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isNotesDialogOpen, setIsNotesDialogOpen] = useState(false);
+  const [isDealDetailsOpen, setIsDealDetailsOpen] = useState(false);
   const { isAdmin } = useAuth();
 
   const statusColors = {
@@ -48,9 +50,7 @@ export const CircuitQuoteCardHeader = ({
   };
 
   const handleDealClick = () => {
-    // This could open a deal details dialog or navigate to the deal
-    console.log('Deal clicked:', quote.deal_registration_id);
-    // You could implement navigation or a modal here
+    setIsDealDetailsOpen(true);
   };
 
   return (
@@ -188,6 +188,12 @@ export const CircuitQuoteCardHeader = ({
         onOpenChange={setIsNotesDialogOpen}
         circuitQuoteId={quote.id}
         clientName={quote.client_name}
+      />
+
+      <DealDetailsDialog
+        open={isDealDetailsOpen}
+        onOpenChange={setIsDealDetailsOpen}
+        dealId={quote.deal_registration_id}
       />
     </>
   );
