@@ -19,6 +19,17 @@ export const EmailTemplateSelector = ({ selectedTemplateId, onTemplateSelect }: 
   
   const selectedTemplate = templates.find(t => t.id === selectedTemplateId);
 
+  // Auto-select default template when templates load
+  React.useEffect(() => {
+    if (!isLoading && templates.length > 0 && selectedTemplateId === "none") {
+      const defaultTemplate = templates.find(t => t.is_default);
+      if (defaultTemplate) {
+        console.log('EmailTemplateSelector - Auto-selecting default template:', defaultTemplate.name);
+        onTemplateSelect(defaultTemplate);
+      }
+    }
+  }, [templates, isLoading, selectedTemplateId, onTemplateSelect]);
+
   const handleTemplateChange = (templateId: string) => {
     if (templateId === "none") {
       onTemplateSelect(null);
