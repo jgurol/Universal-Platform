@@ -33,7 +33,7 @@ export const EmailFormFields = ({
   quoteId,
   contactName,
   quoteOwnerName,
-  fromEmail = "jim@californiatelecom.com",
+  fromEmail = "sales@californiatelecom.com",
   recipientEmails,
   onRecipientEmailsChange,
   ccEmails = "",
@@ -50,7 +50,7 @@ export const EmailFormFields = ({
         <Label htmlFor="from" className="text-sm font-medium">From</Label>
         <Input
           id="from"
-          value={`${quoteOwnerName} <${fromEmail}>`}
+          value={`${quoteOwnerName} <sales@californiatelecom.com>`}
           readOnly
           className="bg-gray-50 border-gray-200"
         />
