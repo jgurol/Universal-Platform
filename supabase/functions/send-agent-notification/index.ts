@@ -29,7 +29,11 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
+    console.log('Agent notification function called');
+    
     const { carrierQuoteId, circuitQuoteId, carrier, price, clientName, location }: AgentNotificationRequest = await req.json();
+    
+    console.log('Request data:', { carrierQuoteId, circuitQuoteId, carrier, price, clientName, location });
 
     // Get the circuit quote details and associated agent
     const { data: circuitQuote, error: circuitQuoteError } = await supabase
@@ -56,6 +60,8 @@ const handler = async (req: Request): Promise<Response> => {
       });
     }
 
+    console.log('Circuit quote found:', circuitQuote?.client_info);
+
     // Check if there's an associated agent
     const agent = circuitQuote?.client_info?.agents;
     if (!agent || !agent.email) {
@@ -65,6 +71,8 @@ const handler = async (req: Request): Promise<Response> => {
         headers: { 'Content-Type': 'application/json', ...corsHeaders },
       });
     }
+
+    console.log('Sending email to agent:', agent.email);
 
     const platformUrl = 'https://universal.californiatelecom.com/circuit-quotes';
     
