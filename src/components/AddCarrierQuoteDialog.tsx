@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -437,14 +438,14 @@ export const AddCarrierQuoteDialog = ({ open, onOpenChange, onAddCarrier }: AddC
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="other-costs">Other Costs</Label>
+            <Label htmlFor="other-costs">Other MRC Cost</Label>
             <Input
               id="other-costs"
               type="number"
               step="0.01"
               value={otherCosts}
               onChange={(e) => setOtherCosts(e.target.value)}
-              placeholder="Enter additional costs"
+              placeholder="Enter additional MRC costs"
             />
           </div>
 

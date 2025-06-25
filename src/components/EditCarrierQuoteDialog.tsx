@@ -316,14 +316,14 @@ export const EditCarrierQuoteDialog = ({ open, onOpenChange, carrier, onUpdateCa
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="other-costs">Other Costs</Label>
+              <Label htmlFor="other-costs">Other MRC Cost</Label>
               <Input
                 id="other-costs"
                 type="number"
                 step="0.01"
                 value={otherCosts}
                 onChange={(e) => setOtherCosts(e.target.value)}
-                placeholder="Enter additional costs"
+                placeholder="Enter additional MRC costs"
               />
             </div>
 
