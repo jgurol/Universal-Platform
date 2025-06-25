@@ -76,9 +76,9 @@ const handler = async (req: Request): Promise<Response> => {
 
     console.log('Acceptance URL generated:', acceptanceUrl);
 
-    // Prepare email data
+    // Prepare email data with verified domain
     const emailData: any = {
-      from: "Quotes <onboarding@resend.dev>", // You can customize this
+      from: "California Telecom Sales <sales@californiatelecom.com>",
       to: Array.isArray(to) ? to : [to],
       subject: subject,
       html: `
