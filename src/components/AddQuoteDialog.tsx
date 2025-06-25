@@ -746,7 +746,7 @@ export const AddQuoteDialog = ({ open, onOpenChange, onAddQuote, clients, client
                       ? "No templates available" 
                       : selectedTemplateId 
                         ? `${templates.find(t => t.id === selectedTemplateId)?.name}${templates.find(t => t.id === selectedTemplateId)?.is_default ? " (Default)" : ""}`
-                        : "Select template"
+                        : "Select a quote template"
                 } />
               </SelectTrigger>
               <SelectContent>
@@ -756,20 +756,20 @@ export const AddQuoteDialog = ({ open, onOpenChange, onAddQuote, clients, client
                   </SelectItem>
                 ) : templates.length === 0 ? (
                   <SelectItem value="no-templates" disabled>
-                    No templates available - Create one in System Settings
+                    No templates available - Create templates first
                   </SelectItem>
                 ) : (
                   templates.map((template) => (
                     <SelectItem key={template.id} value={template.id}>
-                      {template.name}{template.is_default && " (Default)"}
+                      {template.name}{template.is_default ? " (Default)" : ""}
                     </SelectItem>
                   ))
                 )}
               </SelectContent>
             </Select>
             {!isDataLoading && templates.length === 0 && (
-              <p className="text-sm text-red-500">
-                No templates available. Create templates in System Settings → Templates.
+              <p className="text-sm text-amber-600">
+                No quote templates found. Please create a template in System Settings → Quote Templates first.
               </p>
             )}
           </div>
