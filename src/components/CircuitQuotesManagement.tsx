@@ -49,6 +49,11 @@ export const CircuitQuotesManagement = () => {
     deleteQuote(quoteId);
   };
 
+  const handleQuoteAdded = () => {
+    // Refresh the quotes list after adding a new quote
+    window.location.reload();
+  };
+
   const handleStatsFilterChange = (filter: string | null) => {
     setStatsFilter(filter);
     // Update the status filter to match the stats filter
@@ -102,7 +107,7 @@ export const CircuitQuotesManagement = () => {
       <AddCircuitQuoteDialog
         open={isAddDialogOpen}
         onOpenChange={setIsAddDialogOpen}
-        onAddQuote={addQuote}
+        onQuoteAdded={handleQuoteAdded}
       />
     </div>
   );

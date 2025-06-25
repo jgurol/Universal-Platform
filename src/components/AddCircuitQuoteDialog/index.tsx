@@ -60,7 +60,7 @@ export const AddCircuitQuoteDialog = ({
 
   return (
     <>
-      <Dialog open={open} onValueChange={onOpenChange}>
+      <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Add Circuit Quote</DialogTitle>
@@ -120,7 +120,7 @@ export const AddCircuitQuoteDialog = ({
         <DealDetailsDialog
           open={showDealDetails}
           onOpenChange={setShowDealDetails}
-          deal={selectedDeal}
+          dealId={selectedDeal.id}
         />
       )}
     </>

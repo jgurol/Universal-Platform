@@ -37,7 +37,7 @@ export const useAddCircuitQuoteForm = ({ onQuoteAdded, onOpenChange }: UseAddCir
   const fetchClientInfos = async () => {
     try {
       const { data, error } = await supabase
-        .from('client_infos')
+        .from('client_info')
         .select('*')
         .order('company_name');
       
@@ -64,16 +64,21 @@ export const useAddCircuitQuoteForm = ({ onQuoteAdded, onOpenChange }: UseAddCir
 
   const fetchCategories = async () => {
     try {
-      const { data, error } = await supabase
-        .from('circuit_quote_categories')
-        .select('name')
-        .eq('is_active', true)
-        .order('name');
-      
-      if (error) throw error;
-      setCategories(data.map(item => item.name));
+      // Use a static list of categories for circuit quotes
+      const circuitCategories = [
+        'broadband',
+        'dedicated fiber',
+        'fixed wireless',
+        '4G/5G',
+        'ethernet',
+        'MPLS',
+        'SD-WAN',
+        'voice',
+        'security'
+      ];
+      setCategories(circuitCategories);
     } catch (error) {
-      console.error('Error fetching categories:', error);
+      console.error('Error setting categories:', error);
     }
   };
 
@@ -100,12 +105,20 @@ export const useAddCircuitQuoteForm = ({ onQuoteAdded, onOpenChange }: UseAddCir
     setIsSubmitting(true);
 
     try {
+      // Get client info to extract company name and location
+      const { data: clientInfo } = await supabase
+        .from('client_info')
+        .select('company_name')
+        .eq('id', clientId)
+        .single();
+
       const { data, error } = await supabase
         .from('circuit_quotes')
         .insert({
-          client_id: clientId,
+          client_info_id: clientId,
+          client_name: clientInfo?.company_name || 'Unknown Client',
+          location: 'TBD', // Default location, can be updated later
           deal_registration_id: selectedDealId === "no-deal" ? null : selectedDealId,
-          categories: selectedCategories,
           static_ip: staticIp,
           slash_29: slash29,
           dhcp: dhcp,
@@ -116,6 +129,18 @@ export const useAddCircuitQuoteForm = ({ onQuoteAdded, onOpenChange }: UseAddCir
         .single();
 
       if (error) throw error;
+
+      // Insert categories separately
+      if (data && selectedCategories.length > 0) {
+        const categoryInserts = selectedCategories.map(category => ({
+          circuit_quote_id: data.id,
+          category_name: category
+        }));
+
+        await supabase
+          .from('circuit_quote_categories')
+          .insert(categoryInserts);
+      }
 
       toast({
         title: "Success",
