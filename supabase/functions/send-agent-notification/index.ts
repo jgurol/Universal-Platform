@@ -26,35 +26,51 @@ const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
 const handler = async (req: Request): Promise<Response> => {
-  console.log('Edge function called with method:', req.method);
-  console.log('Request headers:', Object.fromEntries(req.headers.entries()));
-  console.log('Request URL:', req.url);
-
-  // Handle CORS preflight requests
-  if (req.method === 'OPTIONS') {
-    console.log('Handling CORS preflight request - returning corsHeaders:', corsHeaders);
-    return new Response(null, { 
-      status: 200,
-      headers: corsHeaders 
-    });
-  }
-
-  if (req.method !== 'POST') {
-    console.log('Method not allowed:', req.method);
-    return new Response(JSON.stringify({ error: 'Method not allowed' }), {
-      status: 405,
-      headers: { 'Content-Type': 'application/json', ...corsHeaders },
-    });
-  }
+  console.log('=== Edge function start ===');
+  console.log('Method:', req.method);
+  console.log('URL:', req.url);
+  console.log('Headers:', Object.fromEntries(req.headers.entries()));
 
   try {
-    console.log('Agent notification function called');
+    // Handle CORS preflight requests
+    if (req.method === 'OPTIONS') {
+      console.log('Handling OPTIONS preflight request');
+      return new Response(null, { 
+        status: 200,
+        headers: corsHeaders 
+      });
+    }
+
+    if (req.method !== 'POST') {
+      console.log('Method not allowed:', req.method);
+      return new Response(JSON.stringify({ error: 'Method not allowed' }), {
+        status: 405,
+        headers: { 'Content-Type': 'application/json', ...corsHeaders },
+      });
+    }
+
+    console.log('Processing POST request for agent notification');
     
-    const { carrierQuoteId, circuitQuoteId, carrier, price, clientName, location }: AgentNotificationRequest = await req.json();
+    const requestBody = await req.text();
+    console.log('Raw request body:', requestBody);
     
-    console.log('Request data:', { carrierQuoteId, circuitQuoteId, carrier, price, clientName, location });
+    let parsedBody;
+    try {
+      parsedBody = JSON.parse(requestBody);
+    } catch (parseError) {
+      console.error('JSON parse error:', parseError);
+      return new Response(JSON.stringify({ error: 'Invalid JSON body' }), {
+        status: 400,
+        headers: { 'Content-Type': 'application/json', ...corsHeaders },
+      });
+    }
+    
+    const { carrierQuoteId, circuitQuoteId, carrier, price, clientName, location }: AgentNotificationRequest = parsedBody;
+    
+    console.log('Parsed request data:', { carrierQuoteId, circuitQuoteId, carrier, price, clientName, location });
 
     // Get the circuit quote details and associated agent
+    console.log('Fetching circuit quote details...');
     const { data: circuitQuote, error: circuitQuoteError } = await supabase
       .from('circuit_quotes')
       .select(`
@@ -73,19 +89,23 @@ const handler = async (req: Request): Promise<Response> => {
 
     if (circuitQuoteError) {
       console.error('Error fetching circuit quote:', circuitQuoteError);
-      return new Response(JSON.stringify({ error: 'Circuit quote not found' }), {
+      return new Response(JSON.stringify({ error: 'Circuit quote not found', details: circuitQuoteError }), {
         status: 404,
         headers: { 'Content-Type': 'application/json', ...corsHeaders },
       });
     }
 
-    console.log('Circuit quote found:', circuitQuote?.client_info);
+    console.log('Circuit quote found:', {
+      id: circuitQuote?.id,
+      client_info: circuitQuote?.client_info,
+      has_agent: !!circuitQuote?.client_info?.agents
+    });
 
     // Check if there's an associated agent
     const agent = circuitQuote?.client_info?.agents;
     if (!agent || !agent.email) {
       console.log('No associated agent found for this circuit quote');
-      return new Response(JSON.stringify({ message: 'No agent notification needed' }), {
+      return new Response(JSON.stringify({ message: 'No agent notification needed - no agent found' }), {
         status: 200,
         headers: { 'Content-Type': 'application/json', ...corsHeaders },
       });
@@ -130,19 +150,33 @@ const handler = async (req: Request): Promise<Response> => {
       `,
     });
 
-    console.log('Agent notification email sent successfully:', emailResponse);
+    console.log('Email sent successfully:', emailResponse);
 
-    return new Response(JSON.stringify({ success: true, emailId: emailResponse.data?.id }), {
+    return new Response(JSON.stringify({ 
+      success: true, 
+      emailId: emailResponse.data?.id,
+      message: 'Agent notification sent successfully'
+    }), {
       status: 200,
       headers: {
         'Content-Type': 'application/json',
         ...corsHeaders,
       },
     });
+
   } catch (error: any) {
-    console.error('Error in send-agent-notification function:', error);
+    console.error('=== Error in send-agent-notification function ===');
+    console.error('Error type:', typeof error);
+    console.error('Error message:', error?.message);
+    console.error('Error stack:', error?.stack);
+    console.error('Full error object:', error);
+    
     return new Response(
-      JSON.stringify({ error: error.message || "An unexpected error occurred" }),
+      JSON.stringify({ 
+        error: 'Internal server error',
+        message: error?.message || "An unexpected error occurred",
+        timestamp: new Date().toISOString()
+      }),
       {
         status: 500,
         headers: { 'Content-Type': 'application/json', ...corsHeaders },
