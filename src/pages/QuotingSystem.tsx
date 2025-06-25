@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { NavigationBar } from "@/components/NavigationBar";
 import { RecentQuotes } from "@/components/RecentQuotes";
 import { ItemsManagement } from "@/components/ItemsManagement";
@@ -34,6 +34,12 @@ const QuotingSystem = () => {
   } = useQuoteActions(clients, fetchQuotes);
 
   const { addClient } = useClientActions(clients, setClients, fetchClients);
+
+  // Debug log when clientInfos changes in this component
+  useEffect(() => {
+    console.log('[QuotingSystem] clientInfos updated, length:', clientInfos.length);
+    console.log('[QuotingSystem] About to pass to RecentQuotes:', clientInfos.map(c => ({ id: c.id, name: c.company_name })));
+  }, [clientInfos]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">

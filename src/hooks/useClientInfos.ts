@@ -1,12 +1,12 @@
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
 import { ClientInfo } from "@/types/index";
 
 export const useClientInfos = () => {
   const [clientInfos, setClientInfos] = useState<ClientInfo[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
   const { user, isAdmin } = useAuth();
 
   const fetchClientInfos = async (userId?: string, associatedAgentId?: string | null, adminOverride?: boolean) => {
@@ -18,6 +18,8 @@ export const useClientInfos = () => {
       setIsLoading(false);
       return;
     }
+
+    setIsLoading(true);
 
     try {
       console.log('[useClientInfos] Fetching client infos - userId:', currentUserId, 'isAdmin:', currentIsAdmin, 'associatedAgentId:', associatedAgentId);
@@ -63,6 +65,7 @@ export const useClientInfos = () => {
         }));
 
         setClientInfos(formattedClientInfos);
+        console.log('[useClientInfos] Set clientInfos state to:', formattedClientInfos.length, 'items');
       }
     } catch (err) {
       console.error('Error in fetchClientInfos:', err);
@@ -71,13 +74,6 @@ export const useClientInfos = () => {
       setIsLoading(false);
     }
   };
-
-  useEffect(() => {
-    console.log('[useClientInfos] useEffect triggered - user:', !!user, 'isAdmin:', isAdmin);
-    if (user && isAdmin !== undefined) {
-      fetchClientInfos();
-    }
-  }, [user, isAdmin]);
 
   return {
     clientInfos,

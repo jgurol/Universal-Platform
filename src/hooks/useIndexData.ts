@@ -17,18 +17,59 @@ export const useIndexData = () => {
   const { quotes, setQuotes, fetchQuotes } = useQuotes(associatedAgentId, clients, clientInfos);
 
   useEffect(() => {
-    if (user && associatedAgentId !== undefined) {
-      Promise.all([
-        fetchClients(), 
-        fetchClientInfos(user.id, associatedAgentId, isAdmin)
-      ])
-        .then(() => {
-          // After clients and clientInfos are loaded, fetch quotes
-          return fetchQuotes();
-        })
-        .finally(() => setIsLoading(false));
-    }
+    const loadData = async () => {
+      if (!user) {
+        console.log('[useIndexData] No user available, skipping data load');
+        setIsLoading(false);
+        return;
+      }
+
+      if (associatedAgentId === undefined) {
+        console.log('[useIndexData] Still waiting for associatedAgentId to be resolved');
+        return;
+      }
+
+      console.log('[useIndexData] Starting data load for user:', user.id, 'isAdmin:', isAdmin, 'associatedAgentId:', associatedAgentId);
+      
+      try {
+        setIsLoading(true);
+
+        // Fetch clients and clientInfos in parallel
+        const [clientsResult] = await Promise.allSettled([
+          fetchClients(),
+          fetchClientInfos(user.id, associatedAgentId, isAdmin)
+        ]);
+
+        // Log the results
+        if (clientsResult.status === 'rejected') {
+          console.error('[useIndexData] Failed to fetch clients:', clientsResult.reason);
+        } else {
+          console.log('[useIndexData] Clients fetched successfully');
+        }
+
+        // Give a moment for clientInfos to be set in state, then fetch quotes
+        setTimeout(() => {
+          console.log('[useIndexData] Fetching quotes with clientInfos length:', clientInfos.length);
+          fetchQuotes();
+        }, 100);
+
+      } catch (error) {
+        console.error('[useIndexData] Error during data loading:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadData();
   }, [user, associatedAgentId, isAdmin]);
+
+  // Debug log when clientInfos changes
+  useEffect(() => {
+    console.log('[useIndexData] clientInfos updated, length:', clientInfos.length);
+    if (clientInfos.length > 0) {
+      console.log('[useIndexData] clientInfos sample:', clientInfos.slice(0, 3).map(c => ({ id: c.id, name: c.company_name })));
+    }
+  }, [clientInfos]);
 
   return {
     clients,

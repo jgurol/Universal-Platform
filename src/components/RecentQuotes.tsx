@@ -42,6 +42,14 @@ export const RecentQuotes = ({
   const [showArchived, setShowArchived] = useState(false);
   const { user } = useAuth();
 
+  // Debug log when clientInfos prop changes
+  useEffect(() => {
+    console.log('[RecentQuotes] Received clientInfos prop:', clientInfos.length, 'items');
+    if (clientInfos.length > 0) {
+      console.log('[RecentQuotes] Sample clientInfos:', clientInfos.slice(0, 3).map(c => ({ id: c.id, name: c.company_name })));
+    }
+  }, [clientInfos]);
+
   // Function to handle editing a quote - now available to all authenticated users
   const handleEditClick = (quote: Quote) => {
     setCurrentQuote(quote);
