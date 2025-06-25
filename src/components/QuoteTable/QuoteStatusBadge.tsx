@@ -1,4 +1,3 @@
-
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
@@ -22,7 +21,7 @@ export const QuoteStatusBadge = ({ quoteId, status, onStatusUpdate }: QuoteStatu
       console.log(`Changing quote ${quoteId} status to ${newStatus}`);
 
       if (newStatus === 'pending') {
-        console.log('Clearing acceptance data for quote being set to pending');
+        console.log('Setting quote to pending - clearing acceptance data and removing orders');
         
         // First, check if there are any acceptance records to delete
         const { data: existingAcceptances, error: checkError } = await supabase
@@ -53,6 +52,51 @@ export const QuoteStatusBadge = ({ quoteId, status, onStatusUpdate }: QuoteStatu
           console.log(`Successfully deleted ${count || 0} acceptance records for quote:`, quoteId);
         }
 
+        // Check for and delete associated orders
+        const { data: existingOrders, error: ordersCheckError } = await supabase
+          .from('orders')
+          .select('id, order_number')
+          .eq('quote_id', quoteId);
+
+        if (ordersCheckError) {
+          console.error('Error checking existing orders:', ordersCheckError);
+        } else if (existingOrders && existingOrders.length > 0) {
+          console.log(`Found ${existingOrders.length} orders to delete for quote:`, quoteId);
+          
+          // Delete circuit tracking records first (due to foreign key constraints)
+          for (const order of existingOrders) {
+            const { error: circuitDeleteError } = await supabase
+              .from('circuit_tracking')
+              .delete()
+              .eq('order_id', order.id);
+
+            if (circuitDeleteError) {
+              console.error(`Error deleting circuit tracking for order ${order.id}:`, circuitDeleteError);
+            } else {
+              console.log(`Successfully deleted circuit tracking for order ${order.id}`);
+            }
+          }
+
+          // Delete the orders
+          const { error: ordersDeleteError, count: ordersDeleted } = await supabase
+            .from('orders')
+            .delete({ count: 'exact' })
+            .eq('quote_id', quoteId);
+
+          if (ordersDeleteError) {
+            console.error('Error deleting orders:', ordersDeleteError);
+            toast({
+              title: "Warning",
+              description: "Failed to delete orders, but continuing with status update",
+              variant: "destructive"
+            });
+          } else {
+            console.log(`Successfully deleted ${ordersDeleted || 0} orders for quote:`, quoteId);
+          }
+        } else {
+          console.log('No orders found to delete for quote:', quoteId);
+        }
+
         // Update quote with cleared acceptance fields and pending status
         const { error } = await supabase
           .from('quotes')
@@ -74,10 +118,10 @@ export const QuoteStatusBadge = ({ quoteId, status, onStatusUpdate }: QuoteStatu
           return;
         }
 
-        console.log('Successfully updated quote to pending and cleared acceptance data');
+        console.log('Successfully updated quote to pending and cleared all related data');
         toast({
           title: "Status updated",
-          description: "Quote status changed to pending and acceptance data cleared",
+          description: "Quote status changed to pending and all related data cleared",
         });
 
       } else if (newStatus === 'approved') {
