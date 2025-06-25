@@ -164,20 +164,14 @@ export const CarrierCard = ({ carrier, onEdit, onDelete, onCopy, dragHandleProps
   const displayPrice = getDisplayPrice();
   const basePriceWithoutAddOns = getBasePriceWithoutAddOns();
   
-  // Check if there are any add-ons to show the base price
-  const hasAddOns = (carrier.static_ip && carrier.static_ip_fee_amount) || 
-                   (carrier.static_ip_5 && carrier.static_ip_5_fee_amount) || 
-                   (carrier.install_fee && carrier.install_fee_amount) ||
-                   ((carrier as any).other_costs && (carrier as any).other_costs > 0);
+  // Calculate total add-on costs
+  const totalAddOnCosts = (carrier.static_ip && carrier.static_ip_fee_amount ? carrier.static_ip_fee_amount : 0) +
+                         (carrier.static_ip_5 && carrier.static_ip_5_fee_amount ? carrier.static_ip_5_fee_amount : 0) +
+                         (carrier.install_fee && carrier.install_fee_amount ? carrier.install_fee_amount / getTermMonths(carrier.term) : 0) +
+                         ((carrier as any).other_costs ? (carrier as any).other_costs : 0);
   
-  // Only show base price if there are meaningful add-ons that actually add cost
-  const hasSignificantAddOns = (carrier.static_ip && carrier.static_ip_fee_amount && carrier.static_ip_fee_amount > 0) || 
-                              (carrier.static_ip_5 && carrier.static_ip_5_fee_amount && carrier.static_ip_5_fee_amount > 0) || 
-                              (carrier.install_fee && carrier.install_fee_amount && carrier.install_fee_amount > 0) ||
-                              ((carrier as any).other_costs && (carrier as any).other_costs > 0);
-  
-  // Only show base price if there are significant add-ons AND the base price is different from display price
-  const shouldShowBasePrice = hasSignificantAddOns && basePriceWithoutAddOns !== displayPrice && basePriceWithoutAddOns > 0;
+  // Only show base price if there are meaningful add-ons (total > 0) AND base price > 0
+  const shouldShowBasePrice = totalAddOnCosts > 0 && basePriceWithoutAddOns > 0 && basePriceWithoutAddOns !== displayPrice;
   
   // Helper function to get ticked checkboxes based on carrier details
   const getTickedCheckboxes = () => {
