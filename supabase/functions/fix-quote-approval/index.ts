@@ -198,8 +198,8 @@ const handler = async (req: Request): Promise<Response> => {
       if (existingOrders && existingOrders.length > 0) {
         console.log('Orders already exist for quote:', quoteId, 'Count:', existingOrders.length);
         
-        // Since orders exist, just update the quote status directly
-        console.log('Attempting to update quote status for existing orders...');
+        // Since orders exist, just update the quote status and create acceptance record
+        console.log('Updating quote status for existing orders...');
         
         try {
           // Get quote details for acceptance record creation
@@ -220,20 +220,18 @@ const handler = async (req: Request): Promise<Response> => {
           // Don't fail the whole operation for this
         }
         
-        // Update quote status directly
-        const { error: directUpdateError } = await supabase
-          .from('quotes')
-          .update({
-            status: 'approved',
-            accepted_at: new Date().toISOString(),
-            updated_at: new Date().toISOString()
-          })
-          .eq('id', quoteId);
+        // Update quote status using the secure function to avoid constraint issues
+        const { error: statusUpdateError } = await supabase.rpc('update_quote_status', {
+          quote_id: quoteId,
+          new_status: 'approved'
+        });
 
-        if (directUpdateError) {
-          console.error('Direct update failed:', directUpdateError);
-          throw new Error(`Quote status update failed for existing orders: ${directUpdateError.message} (Code: ${directUpdateError.code})`);
+        if (statusUpdateError) {
+          console.error('Status update via RPC failed:', statusUpdateError);
+          throw new Error(`Quote status update failed for existing orders: ${statusUpdateError.message} (Code: ${statusUpdateError.code})`);
         }
+
+        console.log('Quote status updated successfully for existing orders');
 
         return new Response(JSON.stringify({ 
           success: true, 
@@ -313,25 +311,21 @@ const handler = async (req: Request): Promise<Response> => {
         throw new Error(`Order creation exception: ${err instanceof Error ? err.message : 'Unknown error during order creation'}`);
       }
 
-      // Now update quote status directly to avoid RPC constraint issues
+      // Now update quote status using the secure function to avoid constraint issues
       console.log('Order created successfully, now updating quote status...');
       
       let statusUpdateSuccess = false;
-      const { error: directUpdateError } = await supabase
-        .from('quotes')
-        .update({
-          status: 'approved',
-          accepted_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', quoteId);
+      const { error: statusUpdateError } = await supabase.rpc('update_quote_status', {
+        quote_id: quoteId,
+        new_status: 'approved'
+      });
 
-      if (directUpdateError) {
-        console.error('Direct status update failed:', directUpdateError);
-        throw new Error(`Quote status update failed after order creation: ${directUpdateError.message} (Code: ${directUpdateError.code}) - Order ${newOrderId} was created successfully`);
+      if (statusUpdateError) {
+        console.error('Status update via RPC failed:', statusUpdateError);
+        throw new Error(`Quote status update failed after order creation: ${statusUpdateError.message} (Code: ${statusUpdateError.code}) - Order ${newOrderId} was created successfully`);
       } else {
         statusUpdateSuccess = true;
-        console.log('Successfully updated quote status via direct update');
+        console.log('Successfully updated quote status via RPC');
       }
 
       // Handle circuit tracking creation
