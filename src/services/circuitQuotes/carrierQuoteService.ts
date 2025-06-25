@@ -75,7 +75,10 @@ export const useCarrierQuoteService = () => {
           site_survey_needed: carrierQuote.site_survey_needed,
           no_service: carrierQuote.no_service,
           static_ip: carrierQuote.static_ip,
-          static_ip_fee_amount: carrierQuote.static_ip_fee_amount
+          static_ip_fee_amount: carrierQuote.static_ip_fee_amount,
+          static_ip_5: carrierQuote.static_ip_5,
+          static_ip_5_fee_amount: carrierQuote.static_ip_5_fee_amount,
+          other_costs: carrierQuote.other_costs || 0
         })
         .eq('id', carrierQuote.id);
 
