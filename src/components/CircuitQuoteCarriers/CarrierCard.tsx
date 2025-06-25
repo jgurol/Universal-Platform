@@ -22,6 +22,16 @@ export const CarrierCard = ({ carrier, onEdit, onDelete, onCopy, dragHandleProps
   const isPending = !carrier.price || carrier.price === 0;
   const isNoService = carrier.no_service;
   
+  // Helper function to format currency
+  const formatCurrency = (amount: number): string => {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD',
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    }).format(amount);
+  };
+  
   // Helper function to extract term months from term string
   const getTermMonths = (term: string | undefined): number => {
     if (!term) return 36; // Default to 36 months if no term specified
@@ -237,7 +247,7 @@ export const CarrierCard = ({ carrier, onEdit, onDelete, onCopy, dragHandleProps
           <div>
             <div className={`font-semibold text-lg ${isNoService ? 'text-red-600' : ''}`}>
               {isNoService ? 'No Service' : (
-                displayPrice > 0 ? `$${displayPrice}` : (
+                displayPrice > 0 ? formatCurrency(displayPrice) : (
                   <span className="text-orange-600 text-sm">Pending</span>
                 )
               )}
