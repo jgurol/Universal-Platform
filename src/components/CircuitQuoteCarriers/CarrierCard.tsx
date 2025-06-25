@@ -91,8 +91,13 @@ export const CarrierCard = ({ carrier, onEdit, onDelete, onCopy, dragHandleProps
       }
       ticked.push(staticIpText);
     }
-    // Add support for 5 Static IP (/29) - we'll need to add this field to the data model later
-    // For now, we can check for it in notes or add as a separate field
+    if (carrier.static_ip_5) {
+      let staticIp5Text = "5 Static IP (/29)";
+      if (carrier.static_ip_5_fee_amount && carrier.static_ip_5_fee_amount > 0) {
+        staticIp5Text += ` ($${carrier.static_ip_5_fee_amount})`;
+      }
+      ticked.push(staticIp5Text);
+    }
     return ticked;
   };
 

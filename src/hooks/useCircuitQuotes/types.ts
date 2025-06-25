@@ -33,4 +33,6 @@ export interface CarrierQuote {
   no_service: boolean;
   static_ip: boolean;
   static_ip_fee_amount: number;
+  static_ip_5: boolean;
+  static_ip_5_fee_amount: number;
 }

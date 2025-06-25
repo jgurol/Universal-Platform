@@ -165,7 +165,9 @@ export const EditCarrierQuoteDialog = ({ open, onOpenChange, carrier, onUpdateCa
         site_survey_needed: siteSurveyNeeded,
         no_service: noService,
         static_ip: includesStaticIp,
-        static_ip_fee_amount: staticIpFeeAmount ? parseFloat(staticIpFeeAmount) : 0
+        static_ip_fee_amount: staticIpFeeAmount ? parseFloat(staticIpFeeAmount) : 0,
+        static_ip_5: includes5StaticIp,
+        static_ip_5_fee_amount: staticIp5FeeAmount ? parseFloat(staticIp5FeeAmount) : 0
       });
       
       onOpenChange(false);
