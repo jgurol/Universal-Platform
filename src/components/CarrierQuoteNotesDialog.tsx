@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -45,7 +44,7 @@ export const CarrierQuoteNotesDialog = ({
   const [uploadingFiles, setUploadingFiles] = useState<File[]>([]);
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
-  const { user } = useAuth();
+  const { user, isAdmin } = useAuth();
 
   // Load existing notes when dialog opens
   useEffect(() => {
@@ -190,15 +189,9 @@ export const CarrierQuoteNotesDialog = ({
         if (filesError) throw filesError;
       }
 
-      // Add to local state
-      const newEntry: NoteEntry = {
-        id: noteData.id,
-        date: new Date().toISOString().split('T')[0],
-        note: newNote.trim(),
-        files: uploadedFiles
-      };
-
-      setNotes(prev => [newEntry, ...prev]);
+      // Reload notes from database to get the updated list
+      await loadNotes();
+      
       setNewNote("");
       setUploadingFiles([]);
 
@@ -208,7 +201,7 @@ export const CarrierQuoteNotesDialog = ({
       });
 
       // Update the carrier quote's notes field with a summary
-      const allNotesText = [newEntry, ...notes]
+      const allNotesText = notes
         .map(note => `${note.date}: ${note.note}`)
         .join('\n\n');
       
@@ -237,22 +230,25 @@ export const CarrierQuoteNotesDialog = ({
 
       if (error) throw error;
 
-      setNotes(prev => prev.filter(note => note.id !== noteId));
+      // Reload notes from database to get the updated list
+      await loadNotes();
       
       toast({
         title: "Note deleted",
         description: "Note has been deleted successfully"
       });
 
-      // Update summary
-      const remainingNotes = notes.filter(note => note.id !== noteId);
-      const allNotesText = remainingNotes
-        .map(note => `${note.date}: ${note.note}`)
-        .join('\n\n');
-      
-      if (onNotesUpdate) {
-        onNotesUpdate(allNotesText);
-      }
+      // Update summary after reloading
+      setTimeout(() => {
+        const allNotesText = notes
+          .filter(note => note.id !== noteId)
+          .map(note => `${note.date}: ${note.note}`)
+          .join('\n\n');
+        
+        if (onNotesUpdate) {
+          onNotesUpdate(allNotesText);
+        }
+      }, 100);
 
     } catch (error) {
       console.error('Error deleting note:', error);
