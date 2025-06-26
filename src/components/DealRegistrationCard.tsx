@@ -3,12 +3,13 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Edit, Trash2, Plus, DollarSign, Calendar, TrendingUp, Target, Building2, User, Archive, ArchiveRestore } from "lucide-react";
+import { Edit, Trash2, Plus, DollarSign, Calendar, TrendingUp, Target, Building2, User, Archive, ArchiveRestore, FileText } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { dealRegistrationService, DealRegistration, AddDealData } from "@/services/dealRegistrationService";
 import { AddDealDialog } from "@/components/AddDealDialog";
 import { EditDealDialog } from "@/components/EditDealDialog";
+import { DealNotesDialog } from "@/components/DealNotesDialog";
 import { ClientInfo } from "@/pages/Index";
 
 interface DealRegistrationCardProps {
@@ -22,6 +23,7 @@ export const DealRegistrationCard = ({ clientInfos, agentMapping }: DealRegistra
   const [isAddDealOpen, setIsAddDealOpen] = useState(false);
   const [editingDeal, setEditingDeal] = useState<DealRegistration | null>(null);
   const [showArchived, setShowArchived] = useState(false);
+  const [notesDialogDeal, setNotesDialogDeal] = useState<DealRegistration | null>(null);
   const { user } = useAuth();
   const { toast } = useToast();
 
@@ -299,7 +301,7 @@ export const DealRegistrationCard = ({ clientInfos, agentMapping }: DealRegistra
                         <h3 className="font-semibold truncate">{deal.deal_name}</h3>
                         <span className="text-gray-400">-</span>
                         <div className="flex items-center gap-1 text-sm font-medium text-green-700 flex-shrink-0">
-                          <span>${deal.deal_value.toLocaleString()}</span>
+                          <span>{deal.deal_value.toLocaleString()}</span>
                         </div>
                       </div>
                       <div className="flex gap-2 flex-shrink-0">
@@ -321,6 +323,15 @@ export const DealRegistrationCard = ({ clientInfos, agentMapping }: DealRegistra
                     </div>
                     
                     <div className="flex gap-1 flex-shrink-0">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setNotesDialogDeal(deal)}
+                        className="h-8 w-8 p-0 hover:bg-blue-50 hover:border-blue-300 text-blue-600"
+                      >
+                        <FileText className="w-3 h-3" />
+                      </Button>
+                      
                       {!deal.archived && (
                         <Button
                           variant="outline"
@@ -409,6 +420,15 @@ export const DealRegistrationCard = ({ clientInfos, agentMapping }: DealRegistra
           onUpdateDeal={updateDeal}
           deal={editingDeal}
           clientInfos={clientInfos}
+        />
+      )}
+
+      {notesDialogDeal && (
+        <DealNotesDialog
+          open={!!notesDialogDeal}
+          onOpenChange={(open) => !open && setNotesDialogDeal(null)}
+          dealId={notesDialogDeal.id}
+          dealName={notesDialogDeal.deal_name}
         />
       )}
     </>
