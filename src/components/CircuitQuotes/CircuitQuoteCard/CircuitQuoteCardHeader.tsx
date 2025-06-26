@@ -141,14 +141,15 @@ export const CircuitQuoteCardHeader = ({
                 </div>
               )}
             </div>
-
-            <div className="text-xs text-gray-500">
-              Created: {quote.created_at}
-            </div>
           </div>
         </div>
 
         <div className="flex items-center gap-2 ml-4">
+          {/* Move created date to top right */}
+          <div className="text-xs text-gray-500">
+            Created: {quote.created_at}
+          </div>
+          
           {isAdmin && (
             <>
               <Button
