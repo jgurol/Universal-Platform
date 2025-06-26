@@ -46,6 +46,8 @@ export const VendorAttachmentsDialog = ({ open, onOpenChange, vendor }: VendorAt
   };
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (!isAdmin) return; // Prevent non-admins from uploading
+    
     const files = Array.from(event.target.files || []);
     for (const file of files) {
       await uploadFile(file, currentFolderId || undefined, isPublicUpload);
@@ -54,16 +56,18 @@ export const VendorAttachmentsDialog = ({ open, onOpenChange, vendor }: VendorAt
   };
 
   const handleCreateFolder = async () => {
-    if (newFolderName.trim()) {
-      await createFolder(newFolderName.trim(), currentFolderId || undefined);
-      setNewFolderName("");
-      setShowNewFolderInput(false);
-    }
+    if (!isAdmin || !newFolderName.trim()) return; // Prevent non-admins from creating folders
+    
+    await createFolder(newFolderName.trim(), currentFolderId || undefined);
+    setNewFolderName("");
+    setShowNewFolderInput(false);
   };
 
   const handleDrop = async (e: React.DragEvent, targetFolderId?: string) => {
     e.preventDefault();
     setDragOverFolderId(null);
+
+    if (!isAdmin) return; // Prevent non-admins from using drag & drop
 
     const files = Array.from(e.dataTransfer.files);
     if (files.length > 0) {
@@ -80,6 +84,7 @@ export const VendorAttachmentsDialog = ({ open, onOpenChange, vendor }: VendorAt
   };
 
   const handleDragOver = (e: React.DragEvent, folderId?: string) => {
+    if (!isAdmin) return; // Don't allow drag over for non-admins
     e.preventDefault();
     setDragOverFolderId(folderId || null);
   };
@@ -89,6 +94,10 @@ export const VendorAttachmentsDialog = ({ open, onOpenChange, vendor }: VendorAt
   };
 
   const handleAttachmentDragStart = (e: React.DragEvent, attachmentId: string) => {
+    if (!isAdmin) {
+      e.preventDefault();
+      return; // Prevent non-admins from dragging attachments
+    }
     e.dataTransfer.setData('text/plain', attachmentId);
   };
 
@@ -97,6 +106,7 @@ export const VendorAttachmentsDialog = ({ open, onOpenChange, vendor }: VendorAt
   };
 
   const handleTogglePublicStatus = (attachmentId: string, currentPublicStatus: boolean) => {
+    if (!isAdmin) return; // Only admins can toggle public status
     togglePublicStatus(attachmentId, !currentPublicStatus);
   };
 
@@ -123,45 +133,47 @@ export const VendorAttachmentsDialog = ({ open, onOpenChange, vendor }: VendorAt
         </DialogHeader>
 
         <div className="space-y-4">
-          {/* Upload and New Folder Controls */}
-          <div className="flex items-center gap-4 flex-wrap">
-            <Button
-              onClick={() => document.getElementById('file-upload')?.click()}
-              className="bg-blue-600 hover:bg-blue-700"
-            >
-              <Upload className="h-4 w-4 mr-2" />
-              Upload Files
-            </Button>
-            <input
-              id="file-upload"
-              type="file"
-              multiple
-              onChange={handleFileUpload}
-              className="hidden"
-            />
-            <Button
-              variant="outline"
-              onClick={() => setShowNewFolderInput(true)}
-            >
-              <Plus className="h-4 w-4 mr-2" />
-              New Folder
-            </Button>
-            
-            {/* Public/Private Toggle for Uploads */}
-            <div className="flex items-center space-x-2">
-              <Switch
-                id="public-upload"
-                checked={isPublicUpload}
-                onCheckedChange={setIsPublicUpload}
+          {/* Upload and New Folder Controls - Only show for admins */}
+          {isAdmin && (
+            <div className="flex items-center gap-4 flex-wrap">
+              <Button
+                onClick={() => document.getElementById('file-upload')?.click()}
+                className="bg-blue-600 hover:bg-blue-700"
+              >
+                <Upload className="h-4 w-4 mr-2" />
+                Upload Files
+              </Button>
+              <input
+                id="file-upload"
+                type="file"
+                multiple
+                onChange={handleFileUpload}
+                className="hidden"
               />
-              <Label htmlFor="public-upload" className="text-sm">
-                Make uploads public (visible to agents)
-              </Label>
+              <Button
+                variant="outline"
+                onClick={() => setShowNewFolderInput(true)}
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                New Folder
+              </Button>
+              
+              {/* Public/Private Toggle for Uploads */}
+              <div className="flex items-center space-x-2">
+                <Switch
+                  id="public-upload"
+                  checked={isPublicUpload}
+                  onCheckedChange={setIsPublicUpload}
+                />
+                <Label htmlFor="public-upload" className="text-sm">
+                  Make uploads public (visible to agents)
+                </Label>
+              </div>
             </div>
-          </div>
+          )}
 
-          {/* New Folder Input */}
-          {showNewFolderInput && (
+          {/* New Folder Input - Only show for admins */}
+          {isAdmin && showNewFolderInput && (
             <div className="flex items-center gap-2">
               <Input
                 placeholder="Folder name"
@@ -177,20 +189,22 @@ export const VendorAttachmentsDialog = ({ open, onOpenChange, vendor }: VendorAt
             </div>
           )}
 
-          {/* Drop Zone */}
-          <div
-            className={`border-2 border-dashed rounded-lg p-4 transition-colors ${
-              dragOverFolderId === null ? 'border-blue-300 bg-blue-50' : 'border-gray-300'
-            }`}
-            onDrop={(e) => handleDrop(e, currentFolderId || undefined)}
-            onDragOver={(e) => handleDragOver(e)}
-            onDragLeave={handleDragLeave}
-          >
-            <p className="text-center text-gray-500">
-              Drop files here to upload to current folder
-              {isPublicUpload ? " (will be public)" : " (will be private)"}
-            </p>
-          </div>
+          {/* Drop Zone - Only show for admins */}
+          {isAdmin && (
+            <div
+              className={`border-2 border-dashed rounded-lg p-4 transition-colors ${
+                dragOverFolderId === null ? 'border-blue-300 bg-blue-50' : 'border-gray-300'
+              }`}
+              onDrop={(e) => handleDrop(e, currentFolderId || undefined)}
+              onDragOver={(e) => handleDragOver(e)}
+              onDragLeave={handleDragLeave}
+            >
+              <p className="text-center text-gray-500">
+                Drop files here to upload to current folder
+                {isPublicUpload ? " (will be public)" : " (will be private)"}
+              </p>
+            </div>
+          )}
 
           {/* Folders Grid */}
           {currentFolders.length > 0 && (
@@ -233,12 +247,12 @@ export const VendorAttachmentsDialog = ({ open, onOpenChange, vendor }: VendorAt
                 <Card
                   key={attachment.id}
                   className="cursor-pointer hover:shadow-md transition-shadow group"
-                  draggable
+                  draggable={isAdmin}
                   onDragStart={(e) => handleAttachmentDragStart(e, attachment.id)}
                 >
                   <CardContent className="p-4 text-center relative">
-                    <div className="absolute top-1 right-1 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                      {isAdmin && (
+                    {isAdmin && (
+                      <div className="absolute top-1 right-1 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                         <Button
                           variant="ghost"
                           size="sm"
@@ -254,18 +268,18 @@ export const VendorAttachmentsDialog = ({ open, onOpenChange, vendor }: VendorAt
                             <EyeOff className="h-3 w-3 text-gray-500" />
                           )}
                         </Button>
-                      )}
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          deleteAttachment(attachment.id);
-                        }}
-                      >
-                        <Trash2 className="h-3 w-3 text-red-500" />
-                      </Button>
-                    </div>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            deleteAttachment(attachment.id);
+                          }}
+                        >
+                          <Trash2 className="h-3 w-3 text-red-500" />
+                        </Button>
+                      </div>
+                    )}
                     <div onClick={() => openAttachment(attachment)}>
                       <FileIcon className="h-12 w-12 mx-auto mb-2 text-gray-600" />
                       <p className="text-xs font-medium truncate" title={attachment.file_name}>
@@ -299,7 +313,11 @@ export const VendorAttachmentsDialog = ({ open, onOpenChange, vendor }: VendorAt
             <div className="text-center py-8 text-gray-500">
               <FolderIcon className="h-12 w-12 mx-auto mb-4 text-gray-300" />
               <p className="text-lg font-medium mb-2">No files or folders</p>
-              <p className="text-sm">Upload files or create folders to get started</p>
+              {isAdmin ? (
+                <p className="text-sm">Upload files or create folders to get started</p>
+              ) : (
+                <p className="text-sm">No public files available</p>
+              )}
             </div>
           )}
         </div>
