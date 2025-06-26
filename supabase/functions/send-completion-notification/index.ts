@@ -312,7 +312,8 @@ Please provide:
 3. Any potential concerns or limitations
 4. Best fit based on the deal requirements
 
-Keep the response concise and professional for an agent email.
+Format your response as a professional email with proper line breaks and spacing.
+Keep it concise but informative.
         `;
 
         console.log('Sending request to OpenAI...');
@@ -327,7 +328,7 @@ Keep the response concise and professional for an agent email.
             messages: [
               {
                 role: 'system',
-                content: 'You are a telecom expert who provides concise, professional circuit recommendations for sales agents.'
+                content: 'You are a telecom expert who provides concise, professional circuit recommendations for sales agents. Format your response with proper line breaks and spacing for email readability.'
               },
               {
                 role: 'user',
@@ -341,7 +342,15 @@ Keep the response concise and professional for an agent email.
 
         if (openaiResponse.ok) {
           const openaiData = await openaiResponse.json();
-          aiRecommendation = openaiData.choices[0]?.message?.content || aiRecommendation;
+          let rawRecommendation = openaiData.choices[0]?.message?.content || aiRecommendation;
+          
+          // Format the AI response for HTML email with proper line breaks
+          aiRecommendation = rawRecommendation
+            .split('\n')
+            .map(line => line.trim())
+            .filter(line => line.length > 0)
+            .join('<br><br>');
+          
           console.log('AI recommendation generated successfully');
         } else {
           console.error('OpenAI API error:', await openaiResponse.text());
@@ -351,7 +360,7 @@ Keep the response concise and professional for an agent email.
       }
     }
 
-    // Format carriers list for email
+    // Format carriers list for email (without install fee column)
     const carriersListHtml = carriersData.map(carrier => `
       <tr>
         <td style="padding: 8px; border: 1px solid #ddd; font-weight: bold;">${carrier.carrier}</td>
@@ -359,7 +368,6 @@ Keep the response concise and professional for an agent email.
         <td style="padding: 8px; border: 1px solid #ddd;">${carrier.speed}</td>
         <td style="padding: 8px; border: 1px solid #ddd;">$${carrier.price.toFixed(2)}</td>
         <td style="padding: 8px; border: 1px solid #ddd;">${carrier.term || 'N/A'}</td>
-        <td style="padding: 8px; border: 1px solid #ddd;">${carrier.install_fee ? `$${carrier.install_fee_amount}` : 'None'}</td>
       </tr>
     `).join('');
 
@@ -396,7 +404,6 @@ Keep the response concise and professional for an agent email.
                 <th style="padding: 10px; border: 1px solid #ddd; text-align: left;">Speed</th>
                 <th style="padding: 10px; border: 1px solid #ddd; text-align: left;">Monthly Price</th>
                 <th style="padding: 10px; border: 1px solid #ddd; text-align: left;">Term</th>
-                <th style="padding: 10px; border: 1px solid #ddd; text-align: left;">Install Fee</th>
               </tr>
             </thead>
             <tbody>
@@ -406,7 +413,7 @@ Keep the response concise and professional for an agent email.
 
           <div style="background-color: #e8f4fd; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #2563eb;">
             <h3 style="margin-top: 0; color: #1e40af;">AI Recommendations</h3>
-            <div style="white-space: pre-line; color: #374151; line-height: 1.6;">${aiRecommendation}</div>
+            <div style="color: #374151; line-height: 1.6;">${aiRecommendation}</div>
           </div>
           
           <p>
