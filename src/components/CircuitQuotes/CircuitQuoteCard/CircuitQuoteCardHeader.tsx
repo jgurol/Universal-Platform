@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { CircuitQuoteStatusSelect } from "@/components/CircuitQuoteStatusSelect";
@@ -8,6 +8,7 @@ import { CircuitQuoteNotesDialog } from "@/components/CircuitQuotes/CircuitQuote
 import { DealDetailsDialog } from "@/components/CircuitQuotes/DealDetailsDialog";
 import { ChevronDown, ChevronUp, Edit, Trash2, FileText, MapPin, Building, ExternalLink } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
 import type { CircuitQuote } from "@/hooks/useCircuitQuotes";
 
 interface CircuitQuoteCardHeaderProps {
@@ -33,7 +34,31 @@ export const CircuitQuoteCardHeader = ({
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isNotesDialogOpen, setIsNotesDialogOpen] = useState(false);
   const [isDealDetailsOpen, setIsDealDetailsOpen] = useState(false);
+  const [notesCount, setNotesCount] = useState(0);
   const { isAdmin } = useAuth();
+
+  // Load notes count for this circuit quote
+  useEffect(() => {
+    const loadNotesCount = async () => {
+      try {
+        const { count, error } = await supabase
+          .from('circuit_quote_notes')
+          .select('*', { count: 'exact', head: true })
+          .eq('circuit_quote_id', quote.id);
+
+        if (error) {
+          console.error('Error loading notes count:', error);
+          return;
+        }
+
+        setNotesCount(count || 0);
+      } catch (error) {
+        console.error('Error loading notes count:', error);
+      }
+    };
+
+    loadNotesCount();
+  }, [quote.id]);
 
   const statusColors = {
     'new_pricing': 'bg-blue-100 text-blue-800',
@@ -88,16 +113,27 @@ export const CircuitQuoteCardHeader = ({
                   Deal
                 </Button>
               )}
-              {/* Move notes button next to deal button */}
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setIsNotesDialogOpen(true)}
-                className="text-blue-600 hover:text-blue-700"
-              >
-                <FileText className="h-4 w-4 mr-1" />
-                Notes
-              </Button>
+              {/* Move notes button next to deal button with badge */}
+              <div className="relative">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setIsNotesDialogOpen(true)}
+                  className="text-blue-600 hover:text-blue-700"
+                >
+                  <FileText className="h-4 w-4 mr-1" />
+                  Notes
+                </Button>
+                {/* Notes count badge */}
+                {notesCount > 0 && (
+                  <Badge 
+                    variant="destructive" 
+                    className="absolute -top-1 -right-1 h-4 w-4 p-0 flex items-center justify-center text-[10px] min-w-[16px]"
+                  >
+                    {notesCount}
+                  </Badge>
+                )}
+              </div>
               
               {/* Move requirements badges to top next to notes button */}
               {quote.static_ip && (
