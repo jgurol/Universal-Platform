@@ -2,25 +2,20 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Building2, Mail, Phone, User, FileText, ExternalLink, AlertCircle, Trash2, Plus } from "lucide-react";
+import { Building2, Mail, Phone, User, FolderIcon, Plus } from "lucide-react";
 import { useVendors } from "@/hooks/useVendors";
-import { useVendorPriceSheets } from "@/hooks/useVendorPriceSheets";
 import { useAuth } from "@/context/AuthContext";
-import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/hooks/use-toast";
 import { AddVendorDialog } from "@/components/AddVendorDialog";
+import { VendorAttachmentsDialog } from "@/components/VendorAttachmentsDialog";
 import { useState } from "react";
+import { Vendor } from "@/types/vendors";
 
 export const VendorsView = () => {
   const { vendors, isLoading, addVendor } = useVendors();
-  const { priceSheets, cleanupOrphanedRecords, verifyFileExists } = useVendorPriceSheets();
   const { isAdmin } = useAuth();
-  const { toast } = useToast();
   const [isAddVendorOpen, setIsAddVendorOpen] = useState(false);
-
-  console.log('VendorsView - Total price sheets:', priceSheets.length);
-  console.log('VendorsView - Public price sheets:', priceSheets.filter(sheet => sheet.is_public).length);
-  console.log('VendorsView - isAdmin:', isAdmin);
+  const [isAttachmentsOpen, setIsAttachmentsOpen] = useState(false);
+  const [selectedVendor, setSelectedVendor] = useState<Vendor | null>(null);
 
   const getSalesModelBadgeColor = (salesModel?: string) => {
     switch (salesModel) {
@@ -35,80 +30,9 @@ export const VendorsView = () => {
     }
   };
 
-  const getPublicPriceSheetsForVendor = (vendorId: string) => {
-    // For admins, show all price sheets for the vendor
-    // For agents, show only public price sheets for the vendor
-    return priceSheets.filter(sheet => {
-      if (sheet.vendor_id === vendorId) {
-        return isAdmin || sheet.is_public === true;
-      }
-      return false;
-    });
-  };
-
-  const handleOpenPriceSheet = async (priceSheet: any) => {
-    try {
-      console.log('Opening price sheet with path:', priceSheet.file_path);
-      
-      // First verify the file exists
-      const fileExists = await verifyFileExists(priceSheet.file_path);
-      
-      if (!fileExists) {
-        console.error('File does not exist:', priceSheet.file_path);
-        toast({
-          title: "File Not Found",
-          description: `The file "${priceSheet.name}" was not found in storage. It may have been deleted or moved.`,
-          variant: "destructive"
-        });
-        return;
-      }
-
-      console.log('File exists, creating signed URL');
-
-      // File exists, now create signed URL
-      const { data, error } = await supabase.storage
-        .from('vendor-price-sheets')
-        .createSignedUrl(priceSheet.file_path, 3600); // 1 hour expiry
-
-      if (error) {
-        console.error('Error creating signed URL:', error);
-        toast({
-          title: "Access Error",
-          description: `Cannot access file: ${error.message}`,
-          variant: "destructive"
-        });
-        return;
-      }
-
-      console.log('Successfully created signed URL');
-
-      // Open in popup window
-      const popup = window.open(
-        data.signedUrl, 
-        'priceSheet',
-        'width=1200,height=800,scrollbars=yes,resizable=yes,toolbar=no,menubar=no'
-      );
-      
-      if (!popup) {
-        toast({
-          title: "Popup blocked",
-          description: "Please allow popups for this site to view price sheets",
-          variant: "destructive"
-        });
-      } else {
-        toast({
-          title: "Opening price sheet",
-          description: `${priceSheet.name} is opening in a popup window.`,
-        });
-      }
-    } catch (error) {
-      console.error('Unexpected error opening price sheet:', error);
-      toast({
-        title: "Error",
-        description: "An unexpected error occurred while opening the price sheet",
-        variant: "destructive"
-      });
-    }
+  const handleViewAttachments = (vendor: Vendor) => {
+    setSelectedVendor(vendor);
+    setIsAttachmentsOpen(true);
   };
 
   if (isLoading) {
@@ -141,16 +65,6 @@ export const VendorsView = () => {
                 <Plus className="h-4 w-4 mr-2" />
                 Add Vendor
               </Button>
-              {isAdmin && (
-                <Button 
-                  onClick={cleanupOrphanedRecords}
-                  variant="outline"
-                  className="text-red-600 border-red-200 hover:bg-red-50"
-                >
-                  <Trash2 className="h-4 w-4 mr-2" />
-                  Cleanup Missing Files
-                </Button>
-              )}
             </div>
           </div>
         </CardHeader>
@@ -163,84 +77,67 @@ export const VendorsView = () => {
             </div>
           ) : (
             <div className="space-y-3">
-              {vendors.map((vendor) => {
-                const publicPriceSheets = getPublicPriceSheetsForVendor(vendor.id);
-                
-                return (
-                  <div key={vendor.id} className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
-                    <div className="flex items-center gap-3 flex-1">
-                      <div 
-                        className="w-4 h-4 rounded-full border border-gray-300"
-                        style={{ backgroundColor: vendor.color || '#3B82F6' }}
-                      />
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-1">
-                          <h4 className="font-medium text-gray-900">{vendor.name}</h4>
-                          {isAdmin && vendor.dba && (
-                            <Badge variant="outline" className="text-xs bg-yellow-50 text-yellow-700 border-yellow-200">
-                              DBA: {vendor.dba}
-                            </Badge>
-                          )}
-                          {isAdmin && vendor.rep_name && (
-                            <Badge variant="outline" className="text-xs">
-                              <User className="w-3 h-3 mr-1" />
-                              {vendor.rep_name}
-                            </Badge>
-                          )}
-                          {isAdmin && vendor.sales_model && (
-                            <Badge variant="outline" className={`text-xs ${getSalesModelBadgeColor(vendor.sales_model)}`}>
-                              {vendor.sales_model.charAt(0).toUpperCase() + vendor.sales_model.slice(1)}
-                            </Badge>
-                          )}
-                        </div>
-                        {vendor.description && (
-                          <p className="text-sm text-gray-600 mb-2">{vendor.description}</p>
+              {vendors.map((vendor) => (
+                <div key={vendor.id} className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
+                  <div className="flex items-center gap-3 flex-1">
+                    <div 
+                      className="w-4 h-4 rounded-full border border-gray-300"
+                      style={{ backgroundColor: vendor.color || '#3B82F6' }}
+                    />
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-1">
+                        <h4 className="font-medium text-gray-900">{vendor.name}</h4>
+                        {isAdmin && vendor.dba && (
+                          <Badge variant="outline" className="text-xs bg-yellow-50 text-yellow-700 border-yellow-200">
+                            DBA: {vendor.dba}
+                          </Badge>
                         )}
-                        {isAdmin && (
-                          <div className="flex items-center gap-4 text-xs text-gray-500">
-                            {vendor.email && (
-                              <div className="flex items-center gap-1">
-                                <Mail className="h-3 w-3" />
-                                {vendor.email}
-                              </div>
-                            )}
-                            {vendor.phone && (
-                              <div className="flex items-center gap-1">
-                                <Phone className="h-3 w-3" />
-                                {vendor.phone}
-                              </div>
-                            )}
-                          </div>
+                        {isAdmin && vendor.rep_name && (
+                          <Badge variant="outline" className="text-xs">
+                            <User className="w-3 h-3 mr-1" />
+                            {vendor.rep_name}
+                          </Badge>
                         )}
-                        
-                        {/* Public Price Sheets - Show for both admins and agents */}
-                        {publicPriceSheets.length > 0 && (
-                          <div className="mt-2">
-                            <p className="text-xs text-gray-500 mb-1">
-                              {isAdmin ? "Price Sheets:" : "Public Price Sheets:"}
-                            </p>
-                            <div className="flex flex-wrap gap-1">
-                              {publicPriceSheets.map((sheet) => (
-                                <Button
-                                  key={sheet.id}
-                                  variant="outline"
-                                  size="sm"
-                                  className="h-6 px-2 text-xs"
-                                  onClick={() => handleOpenPriceSheet(sheet)}
-                                >
-                                  <FileText className="h-3 w-3 mr-1" />
-                                  {sheet.name}
-                                  <ExternalLink className="h-3 w-3 ml-1" />
-                                </Button>
-                              ))}
-                            </div>
-                          </div>
+                        {isAdmin && vendor.sales_model && (
+                          <Badge variant="outline" className={`text-xs ${getSalesModelBadgeColor(vendor.sales_model)}`}>
+                            {vendor.sales_model.charAt(0).toUpperCase() + vendor.sales_model.slice(1)}
+                          </Badge>
                         )}
                       </div>
+                      {vendor.description && (
+                        <p className="text-sm text-gray-600 mb-2">{vendor.description}</p>
+                      )}
+                      {isAdmin && (
+                        <div className="flex items-center gap-4 text-xs text-gray-500">
+                          {vendor.email && (
+                            <div className="flex items-center gap-1">
+                              <Mail className="h-3 w-3" />
+                              {vendor.email}
+                            </div>
+                          )}
+                          {vendor.phone && (
+                            <div className="flex items-center gap-1">
+                              <Phone className="h-3 w-3" />
+                              {vendor.phone}
+                            </div>
+                          )}
+                        </div>
+                      )}
                     </div>
                   </div>
-                );
-              })}
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleViewAttachments(vendor)}
+                      className="text-blue-600 hover:text-blue-700"
+                      title="View Attachments"
+                    >
+                      <FolderIcon className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+              ))}
             </div>
           )}
         </CardContent>
@@ -250,6 +147,12 @@ export const VendorsView = () => {
         open={isAddVendorOpen}
         onOpenChange={setIsAddVendorOpen}
         onAddVendor={addVendor}
+      />
+
+      <VendorAttachmentsDialog
+        open={isAttachmentsOpen}
+        onOpenChange={setIsAttachmentsOpen}
+        vendor={selectedVendor}
       />
     </>
   );

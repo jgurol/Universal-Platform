@@ -1,11 +1,12 @@
+
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Plus, Building2, Edit, Trash2, Mail, Phone, Zap, Copy } from "lucide-react";
+import { Plus, Building2, Edit, Trash2, Mail, Phone, Zap, Copy, FolderIcon } from "lucide-react";
 import { useVendors } from "@/hooks/useVendors";
 import { AddVendorDialog } from "@/components/AddVendorDialog";
 import { EditVendorDialog } from "@/components/EditVendorDialog";
-import { VendorPriceSheetsList } from "@/components/VendorPriceSheetsList";
+import { VendorAttachmentsDialog } from "@/components/VendorAttachmentsDialog";
 import { SpeedsManagement } from "@/components/SpeedsManagement";
 import { Badge } from "@/components/ui/badge";
 import { Vendor } from "@/types/vendors";
@@ -14,6 +15,7 @@ import { useToast } from "@/hooks/use-toast";
 export const VendorsManagement = () => {
   const [isAddVendorOpen, setIsAddVendorOpen] = useState(false);
   const [isEditVendorOpen, setIsEditVendorOpen] = useState(false);
+  const [isAttachmentsOpen, setIsAttachmentsOpen] = useState(false);
   const [showSpeedsManagement, setShowSpeedsManagement] = useState(false);
   const [selectedVendor, setSelectedVendor] = useState<Vendor | null>(null);
   const { vendors, isLoading, addVendor, updateVendor, deleteVendor } = useVendors();
@@ -22,6 +24,11 @@ export const VendorsManagement = () => {
   const handleEditVendor = (vendor: Vendor) => {
     setSelectedVendor(vendor);
     setIsEditVendorOpen(true);
+  };
+
+  const handleViewAttachments = (vendor: Vendor) => {
+    setSelectedVendor(vendor);
+    setIsAttachmentsOpen(true);
   };
 
   const handleDuplicateVendor = (vendor: Vendor) => {
@@ -175,6 +182,15 @@ export const VendorsManagement = () => {
                     <Button 
                       variant="ghost" 
                       size="sm" 
+                      onClick={() => handleViewAttachments(vendor)}
+                      className="text-blue-600 hover:text-blue-700"
+                      title="View Attachments"
+                    >
+                      <FolderIcon className="h-4 w-4" />
+                    </Button>
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
                       onClick={() => handleDuplicateVendor(vendor)}
                       className="text-green-600 hover:text-green-700"
                       title="Duplicate Vendor"
@@ -201,8 +217,6 @@ export const VendorsManagement = () => {
         </CardContent>
       </Card>
 
-      <VendorPriceSheetsList />
-
       <AddVendorDialog
         open={isAddVendorOpen}
         onOpenChange={setIsAddVendorOpen}
@@ -213,6 +227,12 @@ export const VendorsManagement = () => {
         open={isEditVendorOpen}
         onOpenChange={setIsEditVendorOpen}
         onUpdateVendor={handleUpdateVendor}
+        vendor={selectedVendor}
+      />
+
+      <VendorAttachmentsDialog
+        open={isAttachmentsOpen}
+        onOpenChange={setIsAttachmentsOpen}
         vendor={selectedVendor}
       />
     </div>
