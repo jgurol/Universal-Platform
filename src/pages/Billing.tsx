@@ -1,7 +1,6 @@
 
 import { NavigationBar } from "@/components/NavigationBar";
 import { QuickNavigation } from "@/components/QuickNavigation";
-import { Header } from "@/components/Header";
 import { RecentTransactions } from "@/components/RecentTransactions";
 import { AgentSummary } from "@/components/AgentSummary";
 import { useIndexData } from "@/hooks/useIndexData";
@@ -49,7 +48,11 @@ const Billing = () => {
       <NavigationBar />
       <QuickNavigation />
       <div className="container mx-auto px-4 py-8 max-w-7xl">
-        <Header />
+        {/* Page Title */}
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-gray-900">Commission Tracker</h1>
+          <p className="text-gray-600 mt-2">Track and manage commission payments</p>
+        </div>
         
         {/* Agent Summary */}
         <div className="mb-8">
