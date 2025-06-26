@@ -1,3 +1,4 @@
+
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.50.0";
 import { Resend } from "npm:resend@2.0.0";
@@ -271,6 +272,9 @@ const handler = async (req: Request): Promise<Response> => {
 
     console.log('Processed carriers data for AI:', carriersData.length);
 
+    // Check for site survey requirements
+    const siteSurveyRequired = carriersData.some(carrier => carrier.site_survey_needed);
+
     // Generate AI explanation
     let aiExplanation = "Unable to generate AI explanation at this time.";
     
@@ -315,7 +319,16 @@ Write a single comprehensive paragraph that explains the key differences between
 
         if (openaiResponse.ok) {
           const openaiData = await openaiResponse.json();
-          aiExplanation = openaiData.choices[0]?.message?.content || aiExplanation;
+          let rawExplanation = openaiData.choices[0]?.message?.content || aiExplanation;
+          
+          // Format the AI response for HTML email with proper line breaks and paragraph spacing
+          aiExplanation = rawExplanation
+            .split('\n')
+            .map(line => line.trim())
+            .filter(line => line.length > 0)
+            .map(line => `<p style="margin: 0 0 12px 0; line-height: 1.6;">${line}</p>`)
+            .join('');
+          
           console.log('AI explanation generated successfully');
         } else {
           console.error('OpenAI API error:', await openaiResponse.text());
@@ -340,6 +353,16 @@ Write a single comprehensive paragraph that explains the key differences between
 
     const platformUrl = 'https://universal.californiatelecom.com/circuit-quotes';
     
+    // Create site survey warning section if needed
+    const siteSurveyWarningHtml = siteSurveyRequired ? `
+      <div style="background-color: #fef3c7; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #f59e0b;">
+        <h3 style="margin-top: 0; color: #92400e;">⚠️ Site Survey Required</h3>
+        <p style="color: #92400e; margin: 0; line-height: 1.6;">
+          One or more circuit options require a site survey. This may result in additional construction costs and extended installation timelines. Please factor this into your planning and customer expectations.
+        </p>
+      </div>
+    ` : '';
+    
     const emailResponse = await resend.emails.send({
       from: 'Universal Platform <noreply@californiatelecom.com>',
       to: [agent.email],
@@ -360,6 +383,8 @@ Write a single comprehensive paragraph that explains the key differences between
             ${circuitQuote.deal_registration?.deal_name ? `<p><strong>Deal:</strong> ${circuitQuote.deal_registration.deal_name}</p>` : ''}
           </div>
 
+          ${siteSurveyWarningHtml}
+
           <h3 style="color: #333;">Available Circuit Options</h3>
           <table style="width: 100%; border-collapse: collapse; margin: 20px 0;">
             <thead>
@@ -378,7 +403,7 @@ Write a single comprehensive paragraph that explains the key differences between
 
           <div style="background-color: #e8f4fd; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #2563eb;">
             <h3 style="margin-top: 0; color: #1e40af;">Circuit Technology Explanation</h3>
-            <div style="color: #374151; line-height: 1.6;">${aiExplanation}</div>
+            <div style="color: #374151;">${aiExplanation}</div>
           </div>
           
           <p>
