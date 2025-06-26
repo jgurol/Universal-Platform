@@ -284,13 +284,24 @@ export const DealRegistrationCard = ({ clientInfos, agentMapping }: DealRegistra
                   key={deal.id}
                   className={`p-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors duration-200 ${deal.archived ? 'opacity-60 bg-gray-50' : ''}`}
                 >
-                  {/* Line 1: Deal name, deal value, badges, and actions */}
+                  {/* Line 1: Company - Deal Name - Deal Value, badges, and actions */}
                   <div className="flex items-center justify-between mb-2">
                     <div className="flex items-center gap-3 flex-1 min-w-0">
-                      <h3 className="font-semibold text-gray-900 truncate">{deal.deal_name}</h3>
-                      <div className="flex items-center gap-1 text-sm font-medium text-green-700">
-                        <DollarSign className="w-3 h-3" />
-                        <span>${deal.deal_value.toLocaleString()}</span>
+                      <div className="flex items-center gap-2 text-gray-900 min-w-0">
+                        {deal.client_info_id && getClientName(deal.client_info_id) && (
+                          <>
+                            <span className="font-medium text-blue-700 truncate">
+                              {getClientName(deal.client_info_id)}
+                            </span>
+                            <span className="text-gray-400">-</span>
+                          </>
+                        )}
+                        <h3 className="font-semibold truncate">{deal.deal_name}</h3>
+                        <span className="text-gray-400">-</span>
+                        <div className="flex items-center gap-1 text-sm font-medium text-green-700 flex-shrink-0">
+                          <DollarSign className="w-3 h-3" />
+                          <span>${deal.deal_value.toLocaleString()}</span>
+                        </div>
                       </div>
                       <div className="flex gap-2 flex-shrink-0">
                         <Badge className={`${getStageColor(deal.stage)} text-xs px-2 py-0.5`}>
@@ -365,13 +376,6 @@ export const DealRegistrationCard = ({ clientInfos, agentMapping }: DealRegistra
                     </div>
                     
                     <div className="flex items-center gap-4">
-                      {deal.client_info_id && getClientName(deal.client_info_id) && (
-                        <div className="flex items-center gap-1">
-                          <Building2 className="w-3 h-3" />
-                          <span className="truncate max-w-32">{getClientName(deal.client_info_id)}</span>
-                        </div>
-                      )}
-                      
                       {deal.agent_id && agentMapping[deal.agent_id] && (
                         <div className="flex items-center gap-1">
                           <User className="w-3 h-3" />
