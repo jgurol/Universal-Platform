@@ -176,15 +176,10 @@ export const ClientInfoList = ({
     return `${address.city}, ${address.state}`;
   };
 
-  const formatCompactContact = (contact: ClientContact) => {
+  const formatContactInfo = (contact: ClientContact) => {
     const parts = [];
     if (contact.first_name && contact.last_name) {
       parts.push(`${contact.first_name} ${contact.last_name}`);
-    }
-    if (contact.email) {
-      parts.push(contact.email);
-    } else if (contact.phone) {
-      parts.push(contact.phone);
     }
     return parts.join(' • ');
   };
@@ -226,13 +221,27 @@ export const ClientInfoList = ({
                         )}
                       </div>
                       
-                      {/* Line 2: Contact + Address + Notes */}
+                      {/* Line 2: Contact Name + Phone + Email + Address + Notes */}
                       <div className="flex items-center gap-3 text-sm text-gray-600">
                         {primaryContact && (
-                          <div className="flex items-center gap-1 flex-shrink-0">
-                            <Crown className="w-3 h-3 text-yellow-600" />
-                            <span className="truncate max-w-[200px]">{formatCompactContact(primaryContact)}</span>
-                          </div>
+                          <>
+                            <div className="flex items-center gap-1 flex-shrink-0">
+                              <Crown className="w-3 h-3 text-yellow-600" />
+                              <span className="truncate max-w-[120px]">{formatContactInfo(primaryContact)}</span>
+                            </div>
+                            {primaryContact.phone && (
+                              <div className="flex items-center gap-1 flex-shrink-0">
+                                <Phone className="w-3 h-3 text-blue-600" />
+                                <span>{primaryContact.phone}</span>
+                              </div>
+                            )}
+                            {primaryContact.email && (
+                              <div className="flex items-center gap-1 flex-shrink-0">
+                                <Mail className="w-3 h-3 text-purple-600" />
+                                <span className="truncate max-w-[150px]">{primaryContact.email}</span>
+                              </div>
+                            )}
+                          </>
                         )}
                         {primaryAddress && (
                           <div className="flex items-center gap-1 flex-shrink-0">
@@ -243,11 +252,6 @@ export const ClientInfoList = ({
                         {clientInfo.notes && (
                           <div className="truncate text-gray-500 italic">
                             "{clientInfo.notes}"
-                          </div>
-                        )}
-                        {clientInfo.revio_id && (
-                          <div className="text-gray-500 flex-shrink-0">
-                            ID: {clientInfo.revio_id}
                           </div>
                         )}
                       </div>
