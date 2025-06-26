@@ -56,70 +56,86 @@ export const CircuitQuoteCardHeader = ({
   return (
     <>
       <div className="flex items-start justify-between">
-        <div className="flex-1 space-y-2">
-          <div className="flex items-center gap-3">
-            <h3 className="text-lg font-semibold text-gray-900">{quote.client_name}</h3>
-            <Badge className={statusColors[quote.status]}>
-              {statusLabels[quote.status]}
-            </Badge>
-            {quote.deal_registration_id && (
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={handleDealClick}
-                className="text-purple-600 hover:text-purple-700"
-              >
-                <ExternalLink className="h-3 w-3 mr-1" />
-                Deal
-              </Button>
+        <div className="flex items-start gap-3">
+          {/* Move expand/collapse button to the left */}
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={onToggleExpanded}
+            className="flex-shrink-0 mt-1"
+          >
+            {isExpanded ? (
+              <ChevronUp className="h-4 w-4" />
+            ) : (
+              <ChevronDown className="h-4 w-4" />
             )}
-          </div>
+          </Button>
           
-          <div className="flex items-center gap-4 text-sm text-gray-600">
-            <div className="flex items-center gap-1">
-              <MapPin className="h-4 w-4" />
-              <span>{quote.location}</span>
+          <div className="flex-1 space-y-2">
+            <div className="flex items-center gap-3">
+              <h3 className="text-lg font-semibold text-gray-900">{quote.client_name}</h3>
+              <Badge className={statusColors[quote.status]}>
+                {statusLabels[quote.status]}
+              </Badge>
+              {quote.deal_registration_id && (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={handleDealClick}
+                  className="text-purple-600 hover:text-purple-700"
+                >
+                  <ExternalLink className="h-3 w-3 mr-1" />
+                  Deal
+                </Button>
+              )}
             </div>
-            {quote.suite && (
+            
+            <div className="flex items-center gap-4 text-sm text-gray-600">
               <div className="flex items-center gap-1">
-                <Building className="h-4 w-4" />
-                <span>Suite {quote.suite}</span>
+                <MapPin className="h-4 w-4" />
+                <span>{quote.location}</span>
               </div>
-            )}
-          </div>
+              {quote.suite && (
+                <div className="flex items-center gap-1">
+                  <Building className="h-4 w-4" />
+                  <span>Suite {quote.suite}</span>
+                </div>
+              )}
+            </div>
 
-          <div className="flex flex-wrap gap-2 text-xs">
-            {quote.static_ip && (
-              <Badge variant="outline" className="text-blue-600 border-blue-200">
-                /30 Static IP
-              </Badge>
-            )}
-            {quote.slash_29 && (
-              <Badge variant="outline" className="text-blue-600 border-blue-200">
-                /29 Static IP
-              </Badge>
-            )}
-            {quote.dhcp && (
-              <Badge variant="outline" className="text-green-600 border-green-200">
-                DHCP
-              </Badge>
-            )}
-            {quote.mikrotik_required && (
-              <Badge variant="outline" className="text-orange-600 border-orange-200">
-                Router Required
-              </Badge>
-            )}
-            {quote.categories && quote.categories.length > 0 && (
-              quote.categories.map((category, index) => (
-                <Badge key={index} variant="outline" className="text-purple-600 border-purple-200 capitalize">
-                  {category}
+            <div className="flex flex-wrap gap-2 text-xs">
+              {quote.static_ip && (
+                <Badge variant="outline" className="text-blue-600 border-blue-200">
+                  /30 Static IP
                 </Badge>
-              ))
-            )}
-          </div>
+              )}
+              {quote.slash_29 && (
+                <Badge variant="outline" className="text-blue-600 border-blue-200">
+                  /29 Static IP
+                </Badge>
+              )}
+              {quote.dhcp && (
+                <Badge variant="outline" className="text-green-600 border-green-200">
+                  DHCP
+                </Badge>
+              )}
+              {quote.mikrotik_required && (
+                <Badge variant="outline" className="text-orange-600 border-orange-200">
+                  Router Required
+                </Badge>
+              )}
+              {quote.categories && quote.categories.length > 0 && (
+                quote.categories.map((category, index) => (
+                  <Badge key={index} variant="outline" className="text-purple-600 border-purple-200 capitalize">
+                    {category}
+                  </Badge>
+                ))
+              )}
+            </div>
 
-          <div className="text-xs text-gray-500">
-            Created: {quote.created_at}
+            <div className="text-xs text-gray-500">
+              Created: {quote.created_at}
+            </div>
           </div>
         </div>
 
@@ -159,18 +175,6 @@ export const CircuitQuoteCardHeader = ({
               />
             </>
           )}
-          
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={onToggleExpanded}
-          >
-            {isExpanded ? (
-              <ChevronUp className="h-4 w-4" />
-            ) : (
-              <ChevronDown className="h-4 w-4" />
-            )}
-          </Button>
         </div>
       </div>
 

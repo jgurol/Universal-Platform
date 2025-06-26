@@ -76,21 +76,22 @@ export const CollapsibleCarrierGroup = ({
       <CollapsibleTrigger asChild>
         <Button 
           variant="ghost" 
-          className="w-full justify-between p-2 h-auto font-medium text-left hover:bg-gray-50"
+          className="w-full justify-start p-2 h-auto font-medium text-left hover:bg-gray-50"
         >
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 w-full">
+            {/* Move chevron to the left */}
+            {isOpen ? (
+              <ChevronDown className="h-4 w-4 flex-shrink-0" />
+            ) : (
+              <ChevronRight className="h-4 w-4 flex-shrink-0" />
+            )}
             <div 
-              className="w-3 h-3 rounded-full"
+              className="w-3 h-3 rounded-full flex-shrink-0"
               style={{ backgroundColor: carriers[0]?.color || '#3B82F6' }}
             />
-            <span>{carrierName}</span>
+            <span className="flex-1">{carrierName}</span>
             <span className="text-sm text-gray-500">({carriers.length})</span>
           </div>
-          {isOpen ? (
-            <ChevronDown className="h-4 w-4" />
-          ) : (
-            <ChevronRight className="h-4 w-4" />
-          )}
         </Button>
       </CollapsibleTrigger>
       
