@@ -1,4 +1,5 @@
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { Edit, Trash2, Copy, GripVertical, MessageSquare } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { useCategories } from "@/hooks/useCategories";
@@ -6,7 +7,8 @@ import { useClients } from "@/hooks/useClients";
 import type { CarrierQuote } from "@/hooks/useCircuitQuotes";
 import { DraggableProvidedDragHandleProps } from "react-beautiful-dnd";
 import { CarrierQuoteNotesDialog } from "@/components/CarrierQuoteNotesDialog";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
 
 interface CarrierCardProps {
   carrier: CarrierQuote;
@@ -21,9 +23,33 @@ export const CarrierCard = ({ carrier, onEdit, onDelete, onCopy, dragHandleProps
   const { categories } = useCategories();
   const { clients } = useClients();
   const [showNotesDialog, setShowNotesDialog] = useState(false);
+  const [notesCount, setNotesCount] = useState(0);
   
   const isPending = !carrier.price || carrier.price === 0;
   const isNoService = carrier.no_service;
+
+  // Load notes count for this carrier
+  useEffect(() => {
+    const loadNotesCount = async () => {
+      try {
+        const { count, error } = await supabase
+          .from('carrier_quote_notes')
+          .select('*', { count: 'exact', head: true })
+          .eq('carrier_quote_id', carrier.id);
+
+        if (error) {
+          console.error('Error loading notes count:', error);
+          return;
+        }
+
+        setNotesCount(count || 0);
+      } catch (error) {
+        console.error('Error loading notes count:', error);
+      }
+    };
+
+    loadNotesCount();
+  }, [carrier.id]);
   
   // Helper function to format currency
   const formatCurrency = (amount: number): string => {
@@ -344,15 +370,26 @@ export const CarrierCard = ({ carrier, onEdit, onDelete, onCopy, dragHandleProps
           
           {/* Action buttons - always on the right */}
           <div className="flex items-center gap-2 flex-shrink-0">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setShowNotesDialog(true)}
-              className="h-8 w-8 p-0 text-gray-500 hover:text-blue-600"
-              title="View/Add Notes"
-            >
-              <MessageSquare className="h-4 w-4" />
-            </Button>
+            <div className="relative">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowNotesDialog(true)}
+                className="h-8 w-8 p-0 text-gray-500 hover:text-blue-600"
+                title="View/Add Notes"
+              >
+                <MessageSquare className="h-4 w-4" />
+              </Button>
+              {/* Notes count badge */}
+              {notesCount > 0 && (
+                <Badge 
+                  variant="destructive" 
+                  className="absolute -top-1 -right-1 h-4 w-4 p-0 flex items-center justify-center text-[10px] min-w-[16px]"
+                >
+                  {notesCount}
+                </Badge>
+              )}
+            </div>
             {isAdmin && onCopy && (
               <Button
                 variant="ghost"
