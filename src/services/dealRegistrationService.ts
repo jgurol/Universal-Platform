@@ -16,6 +16,7 @@ export interface DealRegistration {
   created_at: string;
   updated_at: string;
   status: string;
+  archived?: boolean;
 }
 
 export interface AddDealData {
@@ -31,11 +32,17 @@ export interface AddDealData {
 }
 
 export const dealRegistrationService = {
-  async fetchDeals(): Promise<DealRegistration[]> {
-    const { data, error } = await supabase
+  async fetchDeals(includeArchived: boolean = false): Promise<DealRegistration[]> {
+    let query = supabase
       .from('deal_registrations')
       .select('*')
       .order('created_at', { ascending: false });
+
+    if (!includeArchived) {
+      query = query.or('archived.is.null,archived.eq.false');
+    }
+
+    const { data, error } = await query;
 
     if (error) {
       console.error('Error fetching deals:', error);
@@ -89,6 +96,30 @@ export const dealRegistrationService = {
     }
 
     return data;
+  },
+
+  async archiveDeal(dealId: string): Promise<void> {
+    const { error } = await supabase
+      .from('deal_registrations')
+      .update({ archived: true, updated_at: new Date().toISOString() })
+      .eq('id', dealId);
+
+    if (error) {
+      console.error('Error archiving deal:', error);
+      throw error;
+    }
+  },
+
+  async unarchiveDeal(dealId: string): Promise<void> {
+    const { error } = await supabase
+      .from('deal_registrations')
+      .update({ archived: false, updated_at: new Date().toISOString() })
+      .eq('id', dealId);
+
+    if (error) {
+      console.error('Error unarchiving deal:', error);
+      throw error;
+    }
   },
 
   async deleteDeal(dealId: string): Promise<void> {

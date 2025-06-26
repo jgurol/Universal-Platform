@@ -2,7 +2,8 @@ import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Edit, Trash2, Plus, DollarSign, Calendar, TrendingUp, Target, Building2, User } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Edit, Trash2, Plus, DollarSign, Calendar, TrendingUp, Target, Building2, User, Archive, ArchiveRestore } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { dealRegistrationService, DealRegistration, AddDealData } from "@/services/dealRegistrationService";
@@ -20,6 +21,7 @@ export const DealRegistrationCard = ({ clientInfos, agentMapping }: DealRegistra
   const [isLoading, setIsLoading] = useState(true);
   const [isAddDealOpen, setIsAddDealOpen] = useState(false);
   const [editingDeal, setEditingDeal] = useState<DealRegistration | null>(null);
+  const [showArchived, setShowArchived] = useState(false);
   const { user } = useAuth();
   const { toast } = useToast();
 
@@ -27,12 +29,12 @@ export const DealRegistrationCard = ({ clientInfos, agentMapping }: DealRegistra
     if (user) {
       fetchDeals();
     }
-  }, [user]);
+  }, [user, showArchived]);
 
   const fetchDeals = async () => {
     try {
       setIsLoading(true);
-      const data = await dealRegistrationService.fetchDeals();
+      const data = await dealRegistrationService.fetchDeals(showArchived);
       setDeals(data);
     } catch (error) {
       console.error('Error fetching deals:', error);
@@ -84,8 +86,46 @@ export const DealRegistrationCard = ({ clientInfos, agentMapping }: DealRegistra
     }
   };
 
+  const archiveDeal = async (deal: DealRegistration) => {
+    if (window.confirm(`Are you sure you want to archive "${deal.deal_name}"?`)) {
+      try {
+        await dealRegistrationService.archiveDeal(deal.id);
+        await fetchDeals(); // Refresh the list
+        toast({
+          title: "Deal archived",
+          description: `${deal.deal_name} has been archived successfully.`,
+        });
+      } catch (error) {
+        console.error('Error archiving deal:', error);
+        toast({
+          title: "Failed to archive deal",
+          description: "There was an error archiving the deal",
+          variant: "destructive"
+        });
+      }
+    }
+  };
+
+  const unarchiveDeal = async (deal: DealRegistration) => {
+    try {
+      await dealRegistrationService.unarchiveDeal(deal.id);
+      await fetchDeals(); // Refresh the list
+      toast({
+        title: "Deal unarchived",
+        description: `${deal.deal_name} has been unarchived successfully.`,
+      });
+    } catch (error) {
+      console.error('Error unarchiving deal:', error);
+      toast({
+        title: "Failed to unarchive deal",
+        description: "There was an error unarchiving the deal",
+        variant: "destructive"
+      });
+    }
+  };
+
   const deleteDeal = async (deal: DealRegistration) => {
-    if (window.confirm(`Are you sure you want to delete "${deal.deal_name}"?`)) {
+    if (window.confirm(`Are you sure you want to permanently delete "${deal.deal_name}"?`)) {
       try {
         await dealRegistrationService.deleteDeal(deal.id);
         setDeals(deals.filter(d => d.id !== deal.id));
@@ -142,9 +182,9 @@ export const DealRegistrationCard = ({ clientInfos, agentMapping }: DealRegistra
     return client?.company_name || 'Unknown Client';
   };
 
-  const totalDealValue = deals.reduce((sum, deal) => sum + deal.deal_value, 0);
-  const activeDealCount = deals.filter(deal => deal.status === 'active').length;
-  const avgProbability = deals.length > 0 ? deals.reduce((sum, deal) => sum + deal.probability, 0) / deals.length : 0;
+  const activeDealCount = deals.filter(deal => deal.status === 'active' && !deal.archived).length;
+  const totalDealValue = deals.filter(deal => !deal.archived).reduce((sum, deal) => sum + deal.deal_value, 0);
+  const avgProbability = deals.filter(deal => !deal.archived).length > 0 ? deals.filter(deal => !deal.archived).reduce((sum, deal) => sum + deal.probability, 0) / deals.filter(deal => !deal.archived).length : 0;
 
   if (isLoading) {
     return (
@@ -171,13 +211,28 @@ export const DealRegistrationCard = ({ clientInfos, agentMapping }: DealRegistra
               </CardTitle>
               <CardDescription>Track and manage your sales opportunities</CardDescription>
             </div>
-            <Button 
-              onClick={() => setIsAddDealOpen(true)}
-              className="bg-green-600 hover:bg-green-700 text-white"
-            >
-              <Plus className="w-4 h-4 mr-1" />
-              Register Deal
-            </Button>
+            <div className="flex items-center gap-4">
+              <div className="flex items-center space-x-2">
+                <Checkbox 
+                  id="show-archived" 
+                  checked={showArchived}
+                  onCheckedChange={(checked) => setShowArchived(checked as boolean)}
+                />
+                <label 
+                  htmlFor="show-archived" 
+                  className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                >
+                  Show archived
+                </label>
+              </div>
+              <Button 
+                onClick={() => setIsAddDealOpen(true)}
+                className="bg-green-600 hover:bg-green-700 text-white"
+              >
+                <Plus className="w-4 h-4 mr-1" />
+                Register Deal
+              </Button>
+            </div>
           </div>
         </CardHeader>
         <CardContent className="pt-0">
@@ -221,13 +276,13 @@ export const DealRegistrationCard = ({ clientInfos, agentMapping }: DealRegistra
             {deals.length === 0 ? (
               <div className="text-center py-8 text-gray-500">
                 <Target className="w-12 h-12 mx-auto mb-4 text-gray-300" />
-                <p>No deals registered yet. Click "Register Deal" to get started!</p>
+                <p>No deals {showArchived ? 'archived' : 'registered'} yet. {!showArchived && 'Click "Register Deal" to get started!'}</p>
               </div>
             ) : (
               deals.map((deal) => (
                 <div
                   key={deal.id}
-                  className="p-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors duration-200"
+                  className={`p-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors duration-200 ${deal.archived ? 'opacity-60 bg-gray-50' : ''}`}
                 >
                   {/* Line 1: Deal name, badges, and actions */}
                   <div className="flex items-center justify-between mb-2">
@@ -243,18 +298,46 @@ export const DealRegistrationCard = ({ clientInfos, agentMapping }: DealRegistra
                         <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200 text-xs px-2 py-0.5">
                           {deal.probability}%
                         </Badge>
+                        {deal.archived && (
+                          <Badge variant="outline" className="bg-gray-50 text-gray-600 border-gray-300 text-xs px-2 py-0.5">
+                            Archived
+                          </Badge>
+                        )}
                       </div>
                     </div>
                     
                     <div className="flex gap-1 flex-shrink-0">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setEditingDeal(deal)}
-                        className="h-8 w-8 p-0 hover:bg-blue-50 hover:border-blue-300"
-                      >
-                        <Edit className="w-3 h-3" />
-                      </Button>
+                      {!deal.archived && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setEditingDeal(deal)}
+                          className="h-8 w-8 p-0 hover:bg-blue-50 hover:border-blue-300"
+                        >
+                          <Edit className="w-3 h-3" />
+                        </Button>
+                      )}
+                      
+                      {deal.archived ? (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => unarchiveDeal(deal)}
+                          className="h-8 w-8 p-0 hover:bg-green-50 hover:border-green-300 text-green-600"
+                        >
+                          <ArchiveRestore className="w-3 h-3" />
+                        </Button>
+                      ) : (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => archiveDeal(deal)}
+                          className="h-8 w-8 p-0 hover:bg-yellow-50 hover:border-yellow-300 text-yellow-600"
+                        >
+                          <Archive className="w-3 h-3" />
+                        </Button>
+                      )}
+                      
                       <Button
                         variant="outline"
                         size="sm"
