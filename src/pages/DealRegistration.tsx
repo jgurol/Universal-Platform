@@ -1,5 +1,4 @@
 
-import { Header } from "@/components/Header";
 import { NavigationBar } from "@/components/NavigationBar";
 import { QuickNavigation } from "@/components/QuickNavigation";
 import { DealRegistrationCard } from "@/components/DealRegistrationCard";
@@ -13,8 +12,6 @@ const DealRegistration = () => {
       <NavigationBar />
       <QuickNavigation />
       <div className="container mx-auto px-4 py-8 max-w-7xl">
-        <Header />
-        
         {/* Deal Registration Section */}
         <div className="mt-8">
           <DealRegistrationCard 
