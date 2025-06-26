@@ -1,3 +1,4 @@
+
 import { Button } from "@/components/ui/button";
 import { FileText, Download, Trash2, Calendar, User, Image } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
@@ -35,16 +36,34 @@ export const CarrierQuoteNotesList = ({ notes, onDeleteNote }: CarrierQuoteNotes
   };
 
   const formatDateTime = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleString('en-US', {
-      timeZone: 'America/Los_Angeles', // Default timezone fallback
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      hour: 'numeric',
-      minute: '2-digit',
-      hour12: true
-    });
+    console.log('Original date string:', dateString);
+    
+    try {
+      // Handle both ISO date strings and date-only strings
+      const date = new Date(dateString);
+      console.log('Parsed date object:', date);
+      console.log('Date is valid:', !isNaN(date.getTime()));
+      
+      if (isNaN(date.getTime())) {
+        return 'Invalid Date';
+      }
+
+      // Format the date in local timezone
+      const formatted = date.toLocaleString('en-US', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+        hour: 'numeric',
+        minute: '2-digit',
+        hour12: true
+      });
+      
+      console.log('Formatted date:', formatted);
+      return formatted;
+    } catch (error) {
+      console.error('Error formatting date:', error);
+      return 'Invalid Date';
+    }
   };
 
   const isImageFile = (fileType: string) => {
