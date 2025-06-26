@@ -27,7 +27,7 @@ export const CollapsibleCarrierGroup = ({
   onReorderCarriers,
   allCarriers
 }: CollapsibleCarrierGroupProps) => {
-  const [isOpen, setIsOpen] = useState(true);
+  const [isOpen, setIsOpen] = useState(false);
   const { isAdmin } = useAuth();
 
   // Sort carriers within this group by display_order, then by speed
