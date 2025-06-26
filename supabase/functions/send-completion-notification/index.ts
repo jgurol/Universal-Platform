@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.50.0";
 import { Resend } from "npm:resend@2.0.0";
@@ -255,19 +254,58 @@ const handler = async (req: Request): Promise<Response> => {
 
     // Helper function to get site survey status
     const getSiteSurveyStatus = (carrier: any) => {
-      if (carrier.site_survey_needed) {
+      if (!carrier.site_survey_needed) {
         return {
-          text: 'Required',
-          color: '#dc2626', // red
-          bgColor: '#fef2f2'
+          text: '',
+          color: '',
+          bgColor: ''
         };
       }
-      // You can add logic here for orange/yellow based on other criteria
-      return {
-        text: 'Not Required',
-        color: '#16a34a', // green
-        bgColor: '#f0fdf4'
-      };
+      
+      // Extract site survey color from notes if present
+      let surveyColor = 'red'; // default
+      if (carrier.notes && carrier.notes.includes("Site Survey:")) {
+        const parts = carrier.notes.split("Site Survey:");
+        if (parts.length > 1) {
+          const colorPart = parts[1].trim().toLowerCase();
+          if (colorPart.startsWith("red") || colorPart.startsWith("yellow") || colorPart.startsWith("orange") || colorPart.startsWith("green")) {
+            surveyColor = colorPart.split(" ")[0];
+          }
+        }
+      }
+      
+      switch (surveyColor.toLowerCase()) {
+        case 'red':
+          return {
+            text: 'Construction needed',
+            color: '#dc2626', // red
+            bgColor: '#fef2f2'
+          };
+        case 'orange':
+          return {
+            text: 'Construction likely',
+            color: '#ea580c', // orange
+            bgColor: '#fff7ed'
+          };
+        case 'yellow':
+          return {
+            text: 'Possible Construction',
+            color: '#ca8a04', // yellow
+            bgColor: '#fefce8'
+          };
+        case 'green':
+          return {
+            text: 'No Construction',
+            color: '#16a34a', // green
+            bgColor: '#f0fdf4'
+          };
+        default:
+          return {
+            text: 'Construction needed',
+            color: '#dc2626', // red
+            bgColor: '#fef2f2'
+          };
+      }
     };
 
     // Prepare carrier data for AI analysis and email display
@@ -373,7 +411,7 @@ Write a single comprehensive paragraph that explains the key differences between
         <td style="padding: 8px; border: 1px solid #ddd;">${carrier.speed}</td>
         <td style="padding: 8px; border: 1px solid #ddd;">$${carrier.price.toFixed(2)}</td>
         <td style="padding: 8px; border: 1px solid #ddd;">${carrier.term || 'N/A'}</td>
-        <td style="padding: 8px; border: 1px solid #ddd; background-color: ${carrier.site_survey_status.bgColor}; color: ${carrier.site_survey_status.color}; font-weight: bold;">
+        <td style="padding: 8px; border: 1px solid #ddd; ${carrier.site_survey_status.bgColor ? `background-color: ${carrier.site_survey_status.bgColor}; color: ${carrier.site_survey_status.color}; font-weight: bold;` : ''}">
           ${carrier.site_survey_status.text}
         </td>
       </tr>
