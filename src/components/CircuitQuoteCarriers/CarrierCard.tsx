@@ -175,7 +175,7 @@ export const CarrierCard = ({
             </div>
           )}
 
-          <CarrierTags carrier={carrier} />
+          <CarrierTags carriers={[carrier]} />
 
           <div className="flex items-center justify-between mt-3 pt-3 border-t">
             <div className="flex items-center gap-2">
