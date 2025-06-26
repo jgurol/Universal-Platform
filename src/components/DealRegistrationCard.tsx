@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -163,7 +162,7 @@ export const DealRegistrationCard = ({ clientInfos, agentMapping }: DealRegistra
   return (
     <>
       <Card className="bg-white shadow-lg border-0">
-        <CardHeader>
+        <CardHeader className="pb-4">
           <div className="flex justify-between items-center">
             <div>
               <CardTitle className="text-xl font-semibold text-gray-900 flex items-center gap-2">
@@ -181,44 +180,44 @@ export const DealRegistrationCard = ({ clientInfos, agentMapping }: DealRegistra
             </Button>
           </div>
         </CardHeader>
-        <CardContent>
+        <CardContent className="pt-0">
           {/* Summary Stats */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-            <div className="bg-gradient-to-r from-green-50 to-emerald-50 p-4 rounded-lg border border-green-200">
+            <div className="bg-gradient-to-r from-green-50 to-emerald-50 p-3 rounded-lg border border-green-200">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-green-600 font-medium">Total Value</p>
-                  <p className="text-2xl font-bold text-green-800">
+                  <p className="text-xl font-bold text-green-800">
                     ${totalDealValue.toLocaleString()}
                   </p>
                 </div>
-                <DollarSign className="h-8 w-8 text-green-600" />
+                <DollarSign className="h-6 w-6 text-green-600" />
               </div>
             </div>
             
-            <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-4 rounded-lg border border-blue-200">
+            <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-3 rounded-lg border border-blue-200">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-blue-600 font-medium">Active Deals</p>
-                  <p className="text-2xl font-bold text-blue-800">{activeDealCount}</p>
+                  <p className="text-xl font-bold text-blue-800">{activeDealCount}</p>
                 </div>
-                <Target className="h-8 w-8 text-blue-600" />
+                <Target className="h-6 w-6 text-blue-600" />
               </div>
             </div>
             
-            <div className="bg-gradient-to-r from-purple-50 to-violet-50 p-4 rounded-lg border border-purple-200">
+            <div className="bg-gradient-to-r from-purple-50 to-violet-50 p-3 rounded-lg border border-purple-200">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-purple-600 font-medium">Avg. Probability</p>
-                  <p className="text-2xl font-bold text-purple-800">{avgProbability.toFixed(0)}%</p>
+                  <p className="text-xl font-bold text-purple-800">{avgProbability.toFixed(0)}%</p>
                 </div>
-                <TrendingUp className="h-8 w-8 text-purple-600" />
+                <TrendingUp className="h-6 w-6 text-purple-600" />
               </div>
             </div>
           </div>
 
-          {/* Deals List */}
-          <div className="space-y-4">
+          {/* Deals List - Compact Layout */}
+          <div className="space-y-3">
             {deals.length === 0 ? (
               <div className="text-center py-8 text-gray-500">
                 <Target className="w-12 h-12 mx-auto mb-4 text-gray-300" />
@@ -228,75 +227,82 @@ export const DealRegistrationCard = ({ clientInfos, agentMapping }: DealRegistra
               deals.map((deal) => (
                 <div
                   key={deal.id}
-                  className="flex flex-col p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors duration-200"
+                  className="p-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors duration-200"
                 >
-                  <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between mb-3">
-                    <div className="flex-1">
-                      <h3 className="font-semibold text-gray-900 mb-2">{deal.deal_name}</h3>
-                      <div className="flex flex-wrap gap-2 mb-2">
-                        <Badge className={getStageColor(deal.stage)}>
+                  {/* Line 1: Deal name, badges, and actions */}
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-3 flex-1 min-w-0">
+                      <h3 className="font-semibold text-gray-900 truncate">{deal.deal_name}</h3>
+                      <div className="flex gap-2 flex-shrink-0">
+                        <Badge className={`${getStageColor(deal.stage)} text-xs px-2 py-0.5`}>
                           {deal.stage.charAt(0).toUpperCase() + deal.stage.slice(1).replace('-', ' ')}
                         </Badge>
-                        <Badge className={getStatusColor(deal.status)}>
+                        <Badge className={`${getStatusColor(deal.status)} text-xs px-2 py-0.5`}>
                           {deal.status.charAt(0).toUpperCase() + deal.status.slice(1)}
                         </Badge>
-                        <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
-                          {deal.probability}% Probability
+                        <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200 text-xs px-2 py-0.5">
+                          {deal.probability}%
                         </Badge>
                       </div>
                     </div>
                     
-                    <div className="flex gap-2">
+                    <div className="flex gap-1 flex-shrink-0">
                       <Button
                         variant="outline"
                         size="sm"
                         onClick={() => setEditingDeal(deal)}
-                        className="hover:bg-blue-50 hover:border-blue-300"
+                        className="h-8 w-8 p-0 hover:bg-blue-50 hover:border-blue-300"
                       >
-                        <Edit className="w-4 h-4" />
+                        <Edit className="w-3 h-3" />
                       </Button>
                       <Button
                         variant="outline"
                         size="sm"
                         onClick={() => deleteDeal(deal)}
-                        className="hover:bg-red-50 hover:border-red-300 text-red-600"
+                        className="h-8 w-8 p-0 hover:bg-red-50 hover:border-red-300 text-red-600"
                       >
-                        <Trash2 className="w-4 h-4" />
+                        <Trash2 className="w-3 h-3" />
                       </Button>
                     </div>
                   </div>
                   
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 text-sm text-gray-600">
-                    <div className="flex items-center gap-1">
-                      <DollarSign className="w-4 h-4" />
-                      <span className="font-medium">${deal.deal_value.toLocaleString()}</span>
+                  {/* Line 2: Combined data points */}
+                  <div className="flex items-center justify-between text-sm text-gray-600">
+                    <div className="flex items-center gap-4">
+                      <div className="flex items-center gap-1">
+                        <DollarSign className="w-3 h-3" />
+                        <span className="font-medium">${deal.deal_value.toLocaleString()}</span>
+                      </div>
+                      
+                      {deal.expected_close_date && (
+                        <div className="flex items-center gap-1">
+                          <Calendar className="w-3 h-3" />
+                          <span>Close: {new Date(deal.expected_close_date).toLocaleDateString()}</span>
+                        </div>
+                      )}
                     </div>
                     
-                    {deal.expected_close_date && (
-                      <div className="flex items-center gap-1">
-                        <Calendar className="w-4 h-4" />
-                        <span>Close: {new Date(deal.expected_close_date).toLocaleDateString()}</span>
-                      </div>
-                    )}
-                    
-                    {deal.client_info_id && getClientName(deal.client_info_id) && (
-                      <div className="flex items-center gap-1">
-                        <Building2 className="w-4 h-4" />
-                        <span>{getClientName(deal.client_info_id)}</span>
-                      </div>
-                    )}
-                    
-                    {deal.agent_id && agentMapping[deal.agent_id] && (
-                      <div className="flex items-center gap-1">
-                        <User className="w-4 h-4" />
-                        <span>{agentMapping[deal.agent_id]}</span>
-                      </div>
-                    )}
+                    <div className="flex items-center gap-4">
+                      {deal.client_info_id && getClientName(deal.client_info_id) && (
+                        <div className="flex items-center gap-1">
+                          <Building2 className="w-3 h-3" />
+                          <span className="truncate max-w-32">{getClientName(deal.client_info_id)}</span>
+                        </div>
+                      )}
+                      
+                      {deal.agent_id && agentMapping[deal.agent_id] && (
+                        <div className="flex items-center gap-1">
+                          <User className="w-3 h-3" />
+                          <span className="truncate max-w-32">{agentMapping[deal.agent_id]}</span>
+                        </div>
+                      )}
+                    </div>
                   </div>
                   
+                  {/* Optional description line (only if description exists) */}
                   {deal.description && (
-                    <div className="mt-3 pt-3 border-t border-gray-100">
-                      <p className="text-sm text-gray-700">{deal.description}</p>
+                    <div className="mt-2 pt-2 border-t border-gray-100">
+                      <p className="text-xs text-gray-600 line-clamp-2">{deal.description}</p>
                     </div>
                   )}
                 </div>
