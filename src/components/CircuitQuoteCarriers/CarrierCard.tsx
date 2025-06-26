@@ -50,6 +50,32 @@ export const CarrierCard = ({ carrier, onEdit, onDelete, onCopy, dragHandleProps
 
     loadNotesCount();
   }, [carrier.id]);
+
+  // Refresh notes count when dialog closes
+  const handleNotesDialogClose = (open: boolean) => {
+    setShowNotesDialog(open);
+    if (!open) {
+      // Reload notes count after dialog closes
+      const loadNotesCount = async () => {
+        try {
+          const { count, error } = await supabase
+            .from('carrier_quote_notes')
+            .select('*', { count: 'exact', head: true })
+            .eq('carrier_quote_id', carrier.id);
+
+          if (error) {
+            console.error('Error loading notes count:', error);
+            return;
+          }
+
+          setNotesCount(count || 0);
+        } catch (error) {
+          console.error('Error loading notes count:', error);
+        }
+      };
+      loadNotesCount();
+    }
+  };
   
   // Helper function to format currency
   const formatCurrency = (amount: number): string => {
@@ -427,7 +453,7 @@ export const CarrierCard = ({ carrier, onEdit, onDelete, onCopy, dragHandleProps
 
       <CarrierQuoteNotesDialog
         open={showNotesDialog}
-        onOpenChange={setShowNotesDialog}
+        onOpenChange={handleNotesDialogClose}
         carrierId={carrier.id}
         carrierName={`${carrier.carrier} - ${carrier.type} - ${carrier.speed}`}
         initialNotes={carrier.notes || ""}
