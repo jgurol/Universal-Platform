@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -12,6 +13,7 @@ interface NoteEntry {
   date: string;
   note: string;
   files: NoteFile[];
+  user_name: string;
 }
 
 interface NoteFile {
@@ -61,7 +63,8 @@ export const CarrierQuoteNotesDialog = ({
         id: Date.now().toString(),
         date: new Date().toISOString().split('T')[0],
         note: initialNotes,
-        files: []
+        files: [],
+        user_name: 'Unknown User'
       };
       setNotes([initialEntry]);
     }
@@ -80,10 +83,20 @@ export const CarrierQuoteNotesDialog = ({
 
       if (error) throw error;
 
+      // Get user profiles for the notes
+      const userIds = [...new Set(data?.map(note => note.user_id) || [])];
+      const { data: profilesData } = await supabase
+        .from('profiles')
+        .select('id, full_name')
+        .in('id', userIds);
+
+      const profilesMap = new Map(profilesData?.map(p => [p.id, p.full_name]) || []);
+
       const formattedNotes: NoteEntry[] = (data || []).map(note => ({
         id: note.id,
         date: new Date(note.created_at).toISOString().split('T')[0],
         note: note.content,
+        user_name: profilesMap.get(note.user_id) || 'Unknown User',
         files: (note.carrier_quote_note_files || []).map((file: any) => ({
           id: file.id,
           name: file.file_name,
