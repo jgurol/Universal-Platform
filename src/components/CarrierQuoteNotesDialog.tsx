@@ -120,9 +120,9 @@ export const CarrierQuoteNotesDialog = ({
 
       console.log('Uploading file to path:', filePath);
 
-      // Upload file to storage - using the same bucket as circuit quotes
+      // Upload file to storage - using the carrier-quote-files bucket
       const { data: uploadData, error: uploadError } = await supabase.storage
-        .from('circuit-quote-files')
+        .from('carrier-quote-files')
         .upload(filePath, file);
 
       if (uploadError) {
@@ -134,7 +134,7 @@ export const CarrierQuoteNotesDialog = ({
 
       // Get the public URL for the uploaded file
       const { data: urlData } = supabase.storage
-        .from('circuit-quote-files')
+        .from('carrier-quote-files')
         .getPublicUrl(filePath);
 
       console.log('Public URL generated:', urlData.publicUrl);
