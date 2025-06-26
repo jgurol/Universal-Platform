@@ -725,6 +725,79 @@ export type Database = {
           },
         ]
       }
+      deal_registration_note_files: {
+        Row: {
+          created_at: string
+          deal_registration_note_id: string
+          file_name: string
+          file_path: string
+          file_size: number | null
+          file_type: string
+          id: string
+        }
+        Insert: {
+          created_at?: string
+          deal_registration_note_id: string
+          file_name: string
+          file_path: string
+          file_size?: number | null
+          file_type: string
+          id?: string
+        }
+        Update: {
+          created_at?: string
+          deal_registration_note_id?: string
+          file_name?: string
+          file_path?: string
+          file_size?: number | null
+          file_type?: string
+          id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "deal_registration_note_files_deal_registration_note_id_fkey"
+            columns: ["deal_registration_note_id"]
+            isOneToOne: false
+            referencedRelation: "deal_registration_notes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      deal_registration_notes: {
+        Row: {
+          content: string
+          created_at: string
+          deal_registration_id: string
+          id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          deal_registration_id: string
+          id?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          deal_registration_id?: string
+          id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "deal_registration_notes_deal_registration_id_fkey"
+            columns: ["deal_registration_id"]
+            isOneToOne: false
+            referencedRelation: "deal_registrations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       deal_registrations: {
         Row: {
           agent_id: string | null

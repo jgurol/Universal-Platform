@@ -58,7 +58,7 @@ export const DealNotesDialog = ({
     try {
       setLoadingNotes(true);
       
-      // Fetch notes with user profile information and files
+      // Fetch notes with files
       const { data: notesData, error } = await supabase
         .from('deal_registration_notes')
         .select(`
