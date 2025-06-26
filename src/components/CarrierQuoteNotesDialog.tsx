@@ -112,7 +112,7 @@ export const CarrierQuoteNotesDialog = ({
     }
   };
 
-  const uploadFile = async (file: File): Promise<NoteFile | null> => {
+  const uploadFile = async (file: File, noteId: string): Promise<NoteFile | null> => {
     try {
       const fileExt = file.name.split('.').pop();
       const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
@@ -120,6 +120,7 @@ export const CarrierQuoteNotesDialog = ({
 
       console.log('Uploading file to path:', filePath);
 
+      // Upload file to storage
       const { data: uploadData, error: uploadError } = await supabase.storage
         .from('carrier-quote-files')
         .upload(filePath, file);
@@ -138,8 +139,26 @@ export const CarrierQuoteNotesDialog = ({
 
       console.log('Public URL generated:', urlData.publicUrl);
 
+      // Save file reference to database
+      const { data: fileData, error: fileError } = await supabase
+        .from('carrier_quote_note_files')
+        .insert({
+          carrier_quote_note_id: noteId,
+          file_name: file.name,
+          file_type: file.type,
+          file_path: urlData.publicUrl,
+          file_size: file.size
+        })
+        .select()
+        .single();
+
+      if (fileError) {
+        console.error('File record error:', fileError);
+        throw fileError;
+      }
+
       return {
-        id: Date.now().toString() + Math.random().toString(36).substring(2),
+        id: fileData.id,
         name: file.name,
         type: file.type,
         url: urlData.publicUrl,
@@ -163,21 +182,12 @@ export const CarrierQuoteNotesDialog = ({
 
     setLoading(true);
     try {
-      // Upload files first
-      const uploadedFiles: NoteFile[] = [];
-      for (const file of uploadingFiles) {
-        const uploadedFile = await uploadFile(file);
-        if (uploadedFile) {
-          uploadedFiles.push(uploadedFile);
-        }
-      }
-
-      // Save note to database
+      // Save note to database first
       const { data: noteData, error: noteError } = await supabase
         .from('carrier_quote_notes')
         .insert({
           carrier_quote_id: carrierId,
-          content: newNote.trim(),
+          content: newNote.trim() || "File upload",
           user_id: user?.id
         })
         .select()
@@ -185,21 +195,13 @@ export const CarrierQuoteNotesDialog = ({
 
       if (noteError) throw noteError;
 
-      // Save file references with the correct public URLs
-      if (uploadedFiles.length > 0) {
-        const fileInserts = uploadedFiles.map(file => ({
-          carrier_quote_note_id: noteData.id,
-          file_name: file.name,
-          file_type: file.type,
-          file_path: file.url, // This is already the public URL
-          file_size: file.size
-        }));
-
-        const { error: filesError } = await supabase
-          .from('carrier_quote_note_files')
-          .insert(fileInserts);
-
-        if (filesError) throw filesError;
+      // Upload files after note is created
+      const uploadedFiles: NoteFile[] = [];
+      for (const file of uploadingFiles) {
+        const uploadedFile = await uploadFile(file, noteData.id);
+        if (uploadedFile) {
+          uploadedFiles.push(uploadedFile);
+        }
       }
 
       // Reload notes from database to get the updated list
