@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -56,6 +55,40 @@ export const useClientContacts = (clientInfoId: string | null) => {
 
     try {
       console.log('useClientContacts - Adding contact:', { ...contactData, client_info_id: clientInfoId });
+      
+      // First, let's check if the user owns this client
+      const { data: clientCheck, error: clientError } = await supabase
+        .from('client_info')
+        .select('id, user_id, company_name')
+        .eq('id', clientInfoId)
+        .single();
+
+      if (clientError) {
+        console.error('useClientContacts - Error checking client ownership:', clientError);
+        throw clientError;
+      }
+
+      console.log('useClientContacts - Client check result:', clientCheck);
+
+      // Get current user
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      if (userError) {
+        console.error('useClientContacts - Error getting current user:', userError);
+        throw userError;
+      }
+
+      console.log('useClientContacts - Current user ID:', user?.id);
+      console.log('useClientContacts - Client owner ID:', clientCheck?.user_id);
+
+      if (clientCheck?.user_id !== user?.id) {
+        console.error('useClientContacts - User does not own this client');
+        toast({
+          title: "Error",
+          description: "You don't have permission to add contacts to this client",
+          variant: "destructive"
+        });
+        return;
+      }
       
       const { data, error } = await supabase
         .from('client_contacts')
