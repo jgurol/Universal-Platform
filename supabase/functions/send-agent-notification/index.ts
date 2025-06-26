@@ -19,17 +19,10 @@ interface AgentNotificationRequest {
   location: string;
 }
 
-const resend = new Resend(Deno.env.get('RESEND_API_KEY'));
-const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-
-const supabase = createClient(supabaseUrl, supabaseServiceKey);
-
 const handler = async (req: Request): Promise<Response> => {
   console.log('=== Edge function start ===');
   console.log('Method:', req.method);
   console.log('URL:', req.url);
-  console.log('Headers:', Object.fromEntries(req.headers.entries()));
 
   try {
     // Handle CORS preflight requests
@@ -51,6 +44,30 @@ const handler = async (req: Request): Promise<Response> => {
 
     console.log('Processing POST request for agent notification');
     
+    // Initialize Supabase and Resend with error handling
+    const supabaseUrl = Deno.env.get('SUPABASE_URL');
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+    const resendApiKey = Deno.env.get('RESEND_API_KEY');
+
+    if (!supabaseUrl || !supabaseServiceKey) {
+      console.error('Missing Supabase environment variables');
+      return new Response(JSON.stringify({ error: 'Server configuration error' }), {
+        status: 500,
+        headers: { 'Content-Type': 'application/json', ...corsHeaders },
+      });
+    }
+
+    if (!resendApiKey) {
+      console.error('Missing RESEND_API_KEY environment variable');
+      return new Response(JSON.stringify({ error: 'Email service not configured' }), {
+        status: 500,
+        headers: { 'Content-Type': 'application/json', ...corsHeaders },
+      });
+    }
+
+    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+    const resend = new Resend(resendApiKey);
+    
     const requestBody = await req.text();
     console.log('Raw request body:', requestBody);
     
@@ -68,6 +85,15 @@ const handler = async (req: Request): Promise<Response> => {
     const { carrierQuoteId, circuitQuoteId, carrier, price, clientName, location }: AgentNotificationRequest = parsedBody;
     
     console.log('Parsed request data:', { carrierQuoteId, circuitQuoteId, carrier, price, clientName, location });
+
+    // Validate required fields
+    if (!carrierQuoteId || !circuitQuoteId || !carrier || !clientName || !location) {
+      console.error('Missing required fields in request');
+      return new Response(JSON.stringify({ error: 'Missing required fields' }), {
+        status: 400,
+        headers: { 'Content-Type': 'application/json', ...corsHeaders },
+      });
+    }
 
     // Get the circuit quote details and associated agent
     console.log('Fetching circuit quote details...');
