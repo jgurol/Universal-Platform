@@ -88,6 +88,23 @@ export const useCircuitQuoteService = () => {
 
   const updateQuote = async (updatedQuote: CircuitQuote) => {
     try {
+      // Get the current quote to check for status change
+      const { data: currentQuote, error: fetchError } = await supabase
+        .from('circuit_quotes')
+        .select('status')
+        .eq('id', updatedQuote.id)
+        .single();
+
+      if (fetchError) {
+        console.error('Error fetching current quote:', fetchError);
+        toast({
+          title: "Error",
+          description: "Failed to fetch current quote status",
+          variant: "destructive"
+        });
+        return false;
+      }
+
       const { error } = await supabase
         .from('circuit_quotes')
         .update({
@@ -118,9 +135,38 @@ export const useCircuitQuoteService = () => {
       // Update categories
       await saveCircuitQuoteCategories(updatedQuote.id, updatedQuote.categories || []);
 
+      // Check if status changed to 'completed' and send notification
+      if (currentQuote.status !== 'completed' && updatedQuote.status === 'completed') {
+        console.log('Status changed to completed, sending notification...');
+        try {
+          const { error: notificationError } = await supabase.functions.invoke('send-completion-notification', {
+            body: {
+              circuitQuoteId: updatedQuote.id
+            }
+          });
+
+          if (notificationError) {
+            console.error('Error sending completion notification:', notificationError);
+            // Don't fail the update if notification fails
+            toast({
+              title: "Warning",
+              description: "Quote updated but agent notification failed to send",
+              variant: "destructive"
+            });
+          } else {
+            console.log('Completion notification sent successfully');
+          }
+        } catch (notificationError) {
+          console.error('Error invoking completion notification function:', notificationError);
+          // Don't fail the update if notification fails
+        }
+      }
+
       toast({
         title: "Success",
-        description: "Circuit quote updated successfully"
+        description: updatedQuote.status === 'completed' ? 
+          "Circuit quote completed and agent notified!" : 
+          "Circuit quote updated successfully"
       });
       
       return true;
