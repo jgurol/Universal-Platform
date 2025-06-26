@@ -101,7 +101,7 @@ export const useVendorAttachments = (vendorId?: string) => {
     }
   };
 
-  const uploadFile = async (file: File, folderId?: string): Promise<VendorAttachment | null> => {
+  const uploadFile = async (file: File, folderId?: string, isPublic: boolean = false): Promise<VendorAttachment | null> => {
     if (!user || !vendorId) return null;
 
     try {
@@ -131,7 +131,8 @@ export const useVendorAttachments = (vendorId?: string) => {
           file_path: urlData.publicUrl,
           file_type: file.type,
           file_size: file.size,
-          uploaded_by: user.id
+          uploaded_by: user.id,
+          is_public: isPublic
         })
         .select()
         .single();
@@ -211,6 +212,43 @@ export const useVendorAttachments = (vendorId?: string) => {
     }
   };
 
+  const togglePublicStatus = async (attachmentId: string, isPublic: boolean) => {
+    try {
+      const { error } = await supabase
+        .from('vendor_attachments')
+        .update({ is_public: isPublic })
+        .eq('id', attachmentId);
+
+      if (error) throw error;
+
+      setAttachments(prev => 
+        prev.map(att => 
+          att.id === attachmentId 
+            ? { ...att, is_public: isPublic }
+            : att
+        )
+      );
+      setAllAttachments(prev => 
+        prev.map(att => 
+          att.id === attachmentId 
+            ? { ...att, is_public: isPublic }
+            : att
+        )
+      );
+      toast({
+        title: isPublic ? "File made public" : "File made private",
+        description: isPublic ? "Agents can now see this file" : "Only admins can see this file",
+      });
+    } catch (error) {
+      console.error('Error updating attachment visibility:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update file visibility",
+        variant: "destructive"
+      });
+    }
+  };
+
   const getTotalAttachmentCount = useMemo(() => {
     return (targetVendorId?: string): number => {
       if (!targetVendorId) return 0;
@@ -238,6 +276,7 @@ export const useVendorAttachments = (vendorId?: string) => {
     uploadFile,
     moveAttachment,
     deleteAttachment,
+    togglePublicStatus,
     getTotalAttachmentCount,
     refetch: () => {
       fetchFolders();

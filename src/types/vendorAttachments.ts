@@ -17,6 +17,7 @@ export interface VendorAttachment {
   file_type?: string;
   file_size?: number;
   uploaded_by: string;
+  is_public: boolean;
   created_at: string;
   updated_at: string;
 }

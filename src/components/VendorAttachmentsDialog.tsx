@@ -1,14 +1,18 @@
+
 import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { FolderIcon, FileIcon, Upload, Plus, ArrowLeft, Trash2 } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
+import { FolderIcon, FileIcon, Upload, Plus, ArrowLeft, Trash2, Eye, EyeOff } from "lucide-react";
 import { useVendorAttachments } from "@/hooks/useVendorAttachments";
 import { VendorFolder, VendorAttachment } from "@/types/vendorAttachments";
 import { Vendor } from "@/types/vendors";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/context/AuthContext";
 
 interface VendorAttachmentsDialogProps {
   open: boolean;
@@ -21,9 +25,11 @@ export const VendorAttachmentsDialog = ({ open, onOpenChange, vendor }: VendorAt
   const [newFolderName, setNewFolderName] = useState("");
   const [showNewFolderInput, setShowNewFolderInput] = useState(false);
   const [dragOverFolderId, setDragOverFolderId] = useState<string | null>(null);
+  const [isPublicUpload, setIsPublicUpload] = useState(false);
   
-  const { folders, attachments, isLoading, createFolder, uploadFile, moveAttachment, deleteAttachment } = useVendorAttachments(vendor?.id);
+  const { folders, attachments, isLoading, createFolder, uploadFile, moveAttachment, deleteAttachment, togglePublicStatus } = useVendorAttachments(vendor?.id);
   const { toast } = useToast();
+  const { isAdmin } = useAuth();
 
   const currentFolder = folders.find(f => f.id === currentFolderId);
   const currentFolders = folders.filter(f => f.parent_folder_id === currentFolderId);
@@ -42,7 +48,7 @@ export const VendorAttachmentsDialog = ({ open, onOpenChange, vendor }: VendorAt
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(event.target.files || []);
     for (const file of files) {
-      await uploadFile(file, currentFolderId || undefined);
+      await uploadFile(file, currentFolderId || undefined, isPublicUpload);
     }
     event.target.value = '';
   };
@@ -62,7 +68,7 @@ export const VendorAttachmentsDialog = ({ open, onOpenChange, vendor }: VendorAt
     const files = Array.from(e.dataTransfer.files);
     if (files.length > 0) {
       for (const file of files) {
-        await uploadFile(file, targetFolderId);
+        await uploadFile(file, targetFolderId, isPublicUpload);
       }
     } else {
       // Handle moving existing attachments
@@ -90,6 +96,10 @@ export const VendorAttachmentsDialog = ({ open, onOpenChange, vendor }: VendorAt
     window.open(attachment.file_path, '_blank');
   };
 
+  const handleTogglePublicStatus = (attachmentId: string, currentPublicStatus: boolean) => {
+    togglePublicStatus(attachmentId, !currentPublicStatus);
+  };
+
   if (!vendor) return null;
 
   return (
@@ -114,7 +124,7 @@ export const VendorAttachmentsDialog = ({ open, onOpenChange, vendor }: VendorAt
 
         <div className="space-y-4">
           {/* Upload and New Folder Controls */}
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-4 flex-wrap">
             <Button
               onClick={() => document.getElementById('file-upload')?.click()}
               className="bg-blue-600 hover:bg-blue-700"
@@ -136,6 +146,18 @@ export const VendorAttachmentsDialog = ({ open, onOpenChange, vendor }: VendorAt
               <Plus className="h-4 w-4 mr-2" />
               New Folder
             </Button>
+            
+            {/* Public/Private Toggle for Uploads */}
+            <div className="flex items-center space-x-2">
+              <Switch
+                id="public-upload"
+                checked={isPublicUpload}
+                onCheckedChange={setIsPublicUpload}
+              />
+              <Label htmlFor="public-upload" className="text-sm">
+                Make uploads public (visible to agents)
+              </Label>
+            </div>
           </div>
 
           {/* New Folder Input */}
@@ -164,7 +186,10 @@ export const VendorAttachmentsDialog = ({ open, onOpenChange, vendor }: VendorAt
             onDragOver={(e) => handleDragOver(e)}
             onDragLeave={handleDragLeave}
           >
-            <p className="text-center text-gray-500">Drop files here to upload to current folder</p>
+            <p className="text-center text-gray-500">
+              Drop files here to upload to current folder
+              {isPublicUpload ? " (will be public)" : " (will be private)"}
+            </p>
           </div>
 
           {/* Folders Grid */}
@@ -210,29 +235,59 @@ export const VendorAttachmentsDialog = ({ open, onOpenChange, vendor }: VendorAt
                   className="cursor-pointer hover:shadow-md transition-shadow group"
                   draggable
                   onDragStart={(e) => handleAttachmentDragStart(e, attachment.id)}
-                  onClick={() => openAttachment(attachment)}
                 >
                   <CardContent className="p-4 text-center relative">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        deleteAttachment(attachment.id);
-                      }}
-                    >
-                      <Trash2 className="h-3 w-3 text-red-500" />
-                    </Button>
-                    <FileIcon className="h-12 w-12 mx-auto mb-2 text-gray-600" />
-                    <p className="text-xs font-medium truncate" title={attachment.file_name}>
-                      {attachment.file_name}
-                    </p>
-                    {attachment.file_size && (
-                      <p className="text-xs text-gray-500">
-                        {(attachment.file_size / 1024).toFixed(1)} KB
+                    <div className="absolute top-1 right-1 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                      {isAdmin && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleTogglePublicStatus(attachment.id, attachment.is_public);
+                          }}
+                          title={attachment.is_public ? "Make private" : "Make public"}
+                        >
+                          {attachment.is_public ? (
+                            <Eye className="h-3 w-3 text-green-500" />
+                          ) : (
+                            <EyeOff className="h-3 w-3 text-gray-500" />
+                          )}
+                        </Button>
+                      )}
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          deleteAttachment(attachment.id);
+                        }}
+                      >
+                        <Trash2 className="h-3 w-3 text-red-500" />
+                      </Button>
+                    </div>
+                    <div onClick={() => openAttachment(attachment)}>
+                      <FileIcon className="h-12 w-12 mx-auto mb-2 text-gray-600" />
+                      <p className="text-xs font-medium truncate" title={attachment.file_name}>
+                        {attachment.file_name}
                       </p>
-                    )}
+                      {attachment.file_size && (
+                        <p className="text-xs text-gray-500">
+                          {(attachment.file_size / 1024).toFixed(1)} KB
+                        </p>
+                      )}
+                      <div className="flex items-center justify-center mt-1">
+                        {attachment.is_public ? (
+                          <Badge variant="outline" className="text-xs bg-green-50 text-green-700 border-green-200">
+                            Public
+                          </Badge>
+                        ) : (
+                          <Badge variant="outline" className="text-xs bg-gray-50 text-gray-700 border-gray-200">
+                            Private
+                          </Badge>
+                        )}
+                      </div>
+                    </div>
                   </CardContent>
                 </Card>
               ))}

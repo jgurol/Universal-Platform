@@ -1439,6 +1439,7 @@ export type Database = {
           file_type: string | null
           folder_id: string | null
           id: string
+          is_public: boolean
           updated_at: string
           uploaded_by: string
           vendor_id: string
@@ -1451,6 +1452,7 @@ export type Database = {
           file_type?: string | null
           folder_id?: string | null
           id?: string
+          is_public?: boolean
           updated_at?: string
           uploaded_by: string
           vendor_id: string
@@ -1463,6 +1465,7 @@ export type Database = {
           file_type?: string | null
           folder_id?: string | null
           id?: string
+          is_public?: boolean
           updated_at?: string
           uploaded_by?: string
           vendor_id?: string
