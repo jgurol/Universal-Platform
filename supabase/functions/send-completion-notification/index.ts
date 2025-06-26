@@ -1,3 +1,4 @@
+
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.50.0";
 import { Resend } from "npm:resend@2.0.0";
@@ -252,7 +253,24 @@ const handler = async (req: Request): Promise<Response> => {
       return basePrice;
     };
 
-    // Prepare carrier data for AI analysis
+    // Helper function to get site survey status
+    const getSiteSurveyStatus = (carrier: any) => {
+      if (carrier.site_survey_needed) {
+        return {
+          text: 'Required',
+          color: '#dc2626', // red
+          bgColor: '#fef2f2'
+        };
+      }
+      // You can add logic here for orange/yellow based on other criteria
+      return {
+        text: 'Not Required',
+        color: '#16a34a', // green
+        bgColor: '#f0fdf4'
+      };
+    };
+
+    // Prepare carrier data for AI analysis and email display
     const carriersData = circuitQuote.carrier_quotes
       .filter((carrier: any) => !carrier.no_service)
       .map((carrier: any) => ({
@@ -266,14 +284,16 @@ const handler = async (req: Request): Promise<Response> => {
         install_fee_amount: carrier.install_fee_amount,
         site_survey_needed: carrier.site_survey_needed,
         static_ip: carrier.static_ip,
-        static_ip_fee_amount: carrier.static_ip_fee_amount
+        static_ip_fee_amount: carrier.static_ip_fee_amount,
+        site_survey_status: getSiteSurveyStatus(carrier)
       }))
       .sort((a, b) => {
-        // First sort by carrier name
-        if (a.carrier !== b.carrier) {
-          return a.carrier.localeCompare(b.carrier);
+        // First sort by carrier name alphabetically
+        const carrierComparison = a.carrier.localeCompare(b.carrier);
+        if (carrierComparison !== 0) {
+          return carrierComparison;
         }
-        // Then sort by price
+        // Then sort by price (lowest to highest)
         return a.price - b.price;
       });
 
@@ -345,7 +365,7 @@ Write a single comprehensive paragraph that explains the key differences between
       }
     }
 
-    // Format carriers list for email (without install fee column) - now sorted
+    // Format carriers list for email with site survey column - sorted by carrier then price
     const carriersListHtml = carriersData.map(carrier => `
       <tr>
         <td style="padding: 8px; border: 1px solid #ddd; font-weight: bold;">${carrier.carrier}</td>
@@ -353,6 +373,9 @@ Write a single comprehensive paragraph that explains the key differences between
         <td style="padding: 8px; border: 1px solid #ddd;">${carrier.speed}</td>
         <td style="padding: 8px; border: 1px solid #ddd;">$${carrier.price.toFixed(2)}</td>
         <td style="padding: 8px; border: 1px solid #ddd;">${carrier.term || 'N/A'}</td>
+        <td style="padding: 8px; border: 1px solid #ddd; background-color: ${carrier.site_survey_status.bgColor}; color: ${carrier.site_survey_status.color}; font-weight: bold;">
+          ${carrier.site_survey_status.text}
+        </td>
       </tr>
     `).join('');
 
@@ -401,6 +424,7 @@ Write a single comprehensive paragraph that explains the key differences between
                 <th style="padding: 10px; border: 1px solid #ddd; text-align: left;">Speed</th>
                 <th style="padding: 10px; border: 1px solid #ddd; text-align: left;">Monthly Price</th>
                 <th style="padding: 10px; border: 1px solid #ddd; text-align: left;">Term</th>
+                <th style="padding: 10px; border: 1px solid #ddd; text-align: left;">Site Survey</th>
               </tr>
             </thead>
             <tbody>
