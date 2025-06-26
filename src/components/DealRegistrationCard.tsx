@@ -299,7 +299,6 @@ export const DealRegistrationCard = ({ clientInfos, agentMapping }: DealRegistra
                         <h3 className="font-semibold truncate">{deal.deal_name}</h3>
                         <span className="text-gray-400">-</span>
                         <div className="flex items-center gap-1 text-sm font-medium text-green-700 flex-shrink-0">
-                          <DollarSign className="w-3 h-3" />
                           <span>${deal.deal_value.toLocaleString()}</span>
                         </div>
                       </div>
