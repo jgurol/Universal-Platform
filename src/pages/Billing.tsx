@@ -14,17 +14,34 @@ const Billing = () => {
     clients,
     quotes,
     clientInfos,
+    associatedAgentId,
+    fetchQuotes
   } = useIndexData();
 
   const {
-    transactions,
     addTransaction,
     updateTransaction,
     approveCommission,
     payCommission,
-    deleteTransaction,
-    associatedAgentId
-  } = useTransactionActions();
+    deleteTransaction
+  } = useTransactionActions(clients, fetchQuotes);
+
+  // Convert quotes to transactions format for display
+  const transactions = quotes.map(quote => ({
+    id: quote.id,
+    clientId: quote.client_id || '',
+    clientInfoId: quote.client_info_id || '',
+    amount: Number(quote.amount),
+    date: quote.date,
+    description: quote.description || '',
+    invoiceNumber: quote.quote_number || '',
+    invoiceMonth: quote.quote_month || '',
+    invoiceYear: quote.quote_year || '',
+    isPaid: quote.status === 'approved',
+    paymentMethod: '',
+    referenceNumber: '',
+    commissionOverride: quote.commission_override
+  }));
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
