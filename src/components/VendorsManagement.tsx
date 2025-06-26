@@ -1,7 +1,9 @@
+
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Plus, Building2, Edit, Trash2, Mail, Phone, Zap, Copy, FolderIcon } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Plus, Building2, Edit, Trash2, Mail, Phone, Zap, Copy, FolderIcon, Search } from "lucide-react";
 import { useVendors } from "@/hooks/useVendors";
 import { AddVendorDialog } from "@/components/AddVendorDialog";
 import { EditVendorDialog } from "@/components/EditVendorDialog";
@@ -18,9 +20,20 @@ export const VendorsManagement = () => {
   const [isAttachmentsOpen, setIsAttachmentsOpen] = useState(false);
   const [showSpeedsManagement, setShowSpeedsManagement] = useState(false);
   const [selectedVendor, setSelectedVendor] = useState<Vendor | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
   const { vendors, isLoading, addVendor, updateVendor, deleteVendor } = useVendors();
   const { toast } = useToast();
   const { getTotalAttachmentCount } = useVendorAttachments();
+
+  // Filter vendors based on search query
+  const filteredVendors = vendors.filter(vendor => 
+    vendor.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    vendor.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    vendor.rep_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    vendor.email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    vendor.dba?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    vendor.sales_model?.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   const handleEditVendor = (vendor: Vendor) => {
     setSelectedVendor(vendor);
@@ -107,7 +120,7 @@ export const VendorsManagement = () => {
               <Building2 className="h-5 w-5 text-blue-600" />
               <CardTitle>Vendors</CardTitle>
               <Badge variant="outline" className="ml-2">
-                {vendors.length} vendors
+                {filteredVendors.length} of {vendors.length} vendors
               </Badge>
             </div>
             <div className="flex items-center gap-2">
@@ -125,6 +138,17 @@ export const VendorsManagement = () => {
               </Button>
             </div>
           </div>
+          
+          {/* Search Bar */}
+          <div className="relative max-w-md">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+            <Input
+              placeholder="Search vendors..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-10"
+            />
+          </div>
         </CardHeader>
         <CardContent>
           {vendors.length === 0 ? (
@@ -137,9 +161,15 @@ export const VendorsManagement = () => {
                 Add Your First Vendor
               </Button>
             </div>
+          ) : filteredVendors.length === 0 ? (
+            <div className="text-center py-8 text-gray-500">
+              <Search className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+              <p className="text-lg font-medium mb-2">No vendors found</p>
+              <p className="text-sm">Try adjusting your search terms</p>
+            </div>
           ) : (
             <div className="space-y-3">
-              {vendors.map((vendor) => {
+              {filteredVendors.map((vendor) => {
                 const attachmentCount = getTotalAttachmentCount(vendor.id);
                 return (
                   <div key={vendor.id} className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50">
