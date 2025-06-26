@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -135,7 +136,7 @@ export const CarrierQuoteNotesDialog = ({
         .from('carrier-quote-files')
         .getPublicUrl(filePath);
 
-      console.log('Public URL:', urlData.publicUrl);
+      console.log('Public URL generated:', urlData.publicUrl);
 
       return {
         id: Date.now().toString() + Math.random().toString(36).substring(2),
@@ -184,13 +185,13 @@ export const CarrierQuoteNotesDialog = ({
 
       if (noteError) throw noteError;
 
-      // Save file references
+      // Save file references with the correct public URLs
       if (uploadedFiles.length > 0) {
         const fileInserts = uploadedFiles.map(file => ({
           carrier_quote_note_id: noteData.id,
           file_name: file.name,
           file_type: file.type,
-          file_path: file.url,
+          file_path: file.url, // This is already the public URL
           file_size: file.size
         }));
 
