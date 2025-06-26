@@ -1,6 +1,5 @@
 
 import { useState } from "react";
-import { Header } from "@/components/Header";
 import { NavigationBar } from "@/components/NavigationBar";
 import { QuickNavigation } from "@/components/QuickNavigation";
 import { ClientManagementHeader } from "@/components/ClientManagementHeader";
@@ -24,8 +23,6 @@ const ClientManagement = () => {
       <NavigationBar />
       <QuickNavigation />
       <div className="container mx-auto px-4 py-8 max-w-7xl">
-        <Header />
-        
         <ClientManagementHeader onAddClient={() => setIsAddClientInfoOpen(true)} />
         
         <div className="bg-white shadow-lg border-0 rounded-lg p-6 -mt-6 relative z-10">
