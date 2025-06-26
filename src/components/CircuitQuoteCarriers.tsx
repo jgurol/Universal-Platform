@@ -1,10 +1,9 @@
 
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
-import { DragDropContext, Droppable, Draggable, DropResult } from "react-beautiful-dnd";
 import type { CarrierQuote } from "@/hooks/useCircuitQuotes";
-import { CarrierCard } from "./CircuitQuoteCarriers/CarrierCard";
 import { CarrierTags } from "./CircuitQuoteCarriers/CarrierTags";
+import { CollapsibleCarrierGroup } from "./CircuitQuoteCarriers/CollapsibleCarrierGroup";
 import { useAuth } from "@/context/AuthContext";
 import { reorderCarrierQuotes } from "@/services/circuitQuotes/reorderCarrierQuotes";
 import { useToast } from "@/hooks/use-toast";
@@ -41,38 +40,33 @@ export const CircuitQuoteCarriers = ({
     return <CarrierTags carriers={carriers} />;
   }
 
-  // Sort carriers by display_order first, then by carrier name, then by speed
-  const sortedCarriers = [...carriers].sort((a, b) => {
-    // Use display_order if available, otherwise fall back to creation order
-    const orderA = (a as any).display_order ?? 999;
-    const orderB = (b as any).display_order ?? 999;
+  // Group carriers by carrier name
+  const carrierGroups = carriers.reduce((groups, carrier) => {
+    const carrierName = carrier.carrier;
+    if (!groups[carrierName]) {
+      groups[carrierName] = [];
+    }
+    groups[carrierName].push(carrier);
+    return groups;
+  }, {} as Record<string, CarrierQuote[]>);
+
+  // Sort carrier groups by the first carrier's display_order in each group
+  const sortedCarrierNames = Object.keys(carrierGroups).sort((a, b) => {
+    const firstCarrierA = carrierGroups[a][0];
+    const firstCarrierB = carrierGroups[b][0];
+    
+    const orderA = (firstCarrierA as any).display_order ?? 999;
+    const orderB = (firstCarrierB as any).display_order ?? 999;
     
     if (orderA !== orderB) {
       return orderA - orderB;
     }
     
-    const carrierComparison = a.carrier.localeCompare(b.carrier);
-    if (carrierComparison !== 0) {
-      return carrierComparison;
-    }
-    return a.speed.localeCompare(b.speed);
+    return a.localeCompare(b);
   });
 
-  const handleDragEnd = async (result: DropResult) => {
-    if (!result.destination || !isAdmin || !onReorderCarriers) {
-      return;
-    }
-
-    const { source, destination } = result;
-    
-    if (source.index === destination.index) {
-      return;
-    }
-
-    // Create new array with reordered items
-    const reorderedCarriers = Array.from(sortedCarriers);
-    const [removed] = reorderedCarriers.splice(source.index, 1);
-    reorderedCarriers.splice(destination.index, 0, removed);
+  const handleReorderCarriers = async (reorderedCarriers: CarrierQuote[]) => {
+    if (!onReorderCarriers) return;
 
     // Update display_order for all carriers
     const carriersWithNewOrder = reorderedCarriers.map((carrier, index) => ({
@@ -97,7 +91,6 @@ export const CircuitQuoteCarriers = ({
         description: "Failed to save new order. Please try again.",
         variant: "destructive"
       });
-      // Revert optimistic update by not calling onReorderCarriers again
     }
   };
 
@@ -117,52 +110,20 @@ export const CircuitQuoteCarriers = ({
         )}
       </div>
       
-      {isAdmin ? (
-        <DragDropContext onDragEnd={handleDragEnd}>
-          <Droppable droppableId="carrier-quotes">
-            {(provided, snapshot) => (
-              <div
-                {...provided.droppableProps}
-                ref={provided.innerRef}
-                className={`grid gap-3 ${snapshot.isDraggingOver ? 'bg-blue-50 rounded-lg p-2' : ''}`}
-              >
-                {sortedCarriers.map((carrier, index) => (
-                  <Draggable key={carrier.id} draggableId={carrier.id} index={index}>
-                    {(provided, snapshot) => (
-                      <div
-                        ref={provided.innerRef}
-                        {...provided.draggableProps}
-                        className={`${snapshot.isDragging ? 'shadow-lg' : ''}`}
-                      >
-                        <CarrierCard
-                          carrier={carrier}
-                          onEdit={onEditCarrier}
-                          onDelete={onDeleteCarrier}
-                          onCopy={onCopyCarrier}
-                          dragHandleProps={provided.dragHandleProps}
-                        />
-                      </div>
-                    )}
-                  </Draggable>
-                ))}
-                {provided.placeholder}
-              </div>
-            )}
-          </Droppable>
-        </DragDropContext>
-      ) : (
-        <div className="grid gap-3">
-          {sortedCarriers.map((carrier) => (
-            <CarrierCard
-              key={carrier.id}
-              carrier={carrier}
-              onEdit={isAdmin ? onEditCarrier : undefined}
-              onDelete={isAdmin ? onDeleteCarrier : undefined}
-              onCopy={isAdmin ? onCopyCarrier : undefined}
-            />
-          ))}
-        </div>
-      )}
+      <div className="space-y-3">
+        {sortedCarrierNames.map((carrierName) => (
+          <CollapsibleCarrierGroup
+            key={carrierName}
+            carrierName={carrierName}
+            carriers={carrierGroups[carrierName]}
+            allCarriers={carriers}
+            onEditCarrier={onEditCarrier}
+            onDeleteCarrier={onDeleteCarrier}
+            onCopyCarrier={onCopyCarrier}
+            onReorderCarriers={handleReorderCarriers}
+          />
+        ))}
+      </div>
     </div>
   );
 };
