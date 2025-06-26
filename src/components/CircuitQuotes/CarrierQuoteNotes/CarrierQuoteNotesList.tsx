@@ -39,43 +39,26 @@ export const CarrierQuoteNotesList = ({ notes, onDeleteNote }: CarrierQuoteNotes
     console.log('Original date string:', dateString);
     
     try {
-      let date: Date;
+      // Parse the datetime string directly
+      const date = new Date(dateString);
+      console.log('Parsed datetime:', date);
       
-      // Check if it's a date-only string (YYYY-MM-DD format)
-      if (/^\d{4}-\d{2}-\d{2}$/.test(dateString)) {
-        // For date-only strings, create date in local timezone to avoid UTC conversion
-        const [year, month, day] = dateString.split('-').map(Number);
-        date = new Date(year, month - 1, day, 12, 0, 0); // Set to noon to avoid timezone issues
-        console.log('Created local date for date-only string:', date);
-        
-        // For date-only, just show the date
-        return date.toLocaleDateString('en-US', {
-          year: 'numeric',
-          month: 'short',
-          day: 'numeric'
-        });
-      } else {
-        // Handle full datetime strings
-        date = new Date(dateString);
-        console.log('Parsed datetime:', date);
-        
-        if (isNaN(date.getTime())) {
-          return 'Invalid Date';
-        }
-
-        // Format the full datetime
-        const formatted = date.toLocaleString('en-US', {
-          year: 'numeric',
-          month: 'short',
-          day: 'numeric',
-          hour: 'numeric',
-          minute: '2-digit',
-          hour12: true
-        });
-        
-        console.log('Formatted datetime:', formatted);
-        return formatted;
+      if (isNaN(date.getTime())) {
+        return 'Invalid Date';
       }
+
+      // Format the full datetime with time
+      const formatted = date.toLocaleString('en-US', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+        hour: 'numeric',
+        minute: '2-digit',
+        hour12: true
+      });
+      
+      console.log('Formatted datetime:', formatted);
+      return formatted;
     } catch (error) {
       console.error('Error formatting date:', error);
       return 'Invalid Date';

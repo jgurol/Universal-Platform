@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -61,7 +60,7 @@ export const CarrierQuoteNotesDialog = ({
       // Convert existing notes to first entry if no structured notes exist
       const initialEntry: NoteEntry = {
         id: Date.now().toString(),
-        date: new Date().toISOString().split('T')[0],
+        date: new Date().toISOString(), // Use full timestamp
         note: initialNotes,
         files: [],
         user_name: 'Unknown User'
@@ -94,7 +93,7 @@ export const CarrierQuoteNotesDialog = ({
 
       const formattedNotes: NoteEntry[] = (data || []).map(note => ({
         id: note.id,
-        date: new Date(note.created_at).toISOString().split('T')[0],
+        date: note.created_at, // Keep the full timestamp
         note: note.content,
         user_name: profilesMap.get(note.user_id) || 'Unknown User',
         files: (note.carrier_quote_note_files || []).map((file: any) => ({
