@@ -299,7 +299,7 @@ export const CircuitQuoteNotesDialog = ({
 
   return (
     <Drawer open={open} onOpenChange={onOpenChange}>
-      <DrawerContent className="h-[85vh] max-w-2xl mr-auto">
+      <DrawerContent className="h-[85vh] max-w-2xl ml-auto">
         <DrawerHeader className="flex items-center justify-between border-b">
           <DrawerTitle>Notes - {clientName}</DrawerTitle>
           <DrawerClose asChild>
