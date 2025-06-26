@@ -1,12 +1,12 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { saveCircuitQuoteCategories } from "./circuitQuoteCategoriesService";
 import type { CircuitQuote } from "@/hooks/useCircuitQuotes/types";
 
 export const useCircuitQuoteService = () => {
   const { toast } = useToast();
 
-  const addQuote = async (newQuote: Omit<CircuitQuote, "id" | "created_at" | "carriers" | "categories">, userId: string, categories: string[] = []) => {
+  const addQuote = async (newQuote: Omit<CircuitQuote, "id" | "created_at" | "carriers" | "categories">, userId: string) => {
     try {
       // Validate that the client_info_id exists and is accessible before creating the quote
       if (newQuote.client_info_id) {
@@ -61,11 +61,6 @@ export const useCircuitQuoteService = () => {
           });
         }
         return null;
-      }
-
-      // Save categories if provided
-      if (categories.length > 0) {
-        await saveCircuitQuoteCategories(data.id, categories);
       }
 
       toast({
@@ -130,9 +125,6 @@ export const useCircuitQuoteService = () => {
         });
         return false;
       }
-
-      // Update categories
-      await saveCircuitQuoteCategories(updatedQuote.id, updatedQuote.categories || []);
 
       // Check if status changed to 'completed' and send notification
       if (currentQuote.status !== 'completed' && updatedQuote.status === 'completed') {

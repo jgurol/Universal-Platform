@@ -14,7 +14,6 @@ interface UseAddCircuitQuoteFormProps {
 export const useAddCircuitQuoteForm = ({ onQuoteAdded, onOpenChange }: UseAddCircuitQuoteFormProps) => {
   const [clientId, setClientId] = useState("");
   const [selectedDealId, setSelectedDealId] = useState("");
-  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [staticIp, setStaticIp] = useState(false);
   const [slash29, setSlash29] = useState(false);
   const [dhcp, setDhcp] = useState(false);
@@ -22,7 +21,6 @@ export const useAddCircuitQuoteForm = ({ onQuoteAdded, onOpenChange }: UseAddCir
   
   const [clientInfos, setClientInfos] = useState<ClientInfo[]>([]);
   const [deals, setDeals] = useState<DealRegistration[]>([]);
-  const [categories, setCategories] = useState<string[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const { toast } = useToast();
@@ -31,7 +29,6 @@ export const useAddCircuitQuoteForm = ({ onQuoteAdded, onOpenChange }: UseAddCir
   useEffect(() => {
     fetchClientInfos();
     fetchDeals();
-    fetchCategories();
   }, []);
 
   const fetchClientInfos = async () => {
@@ -62,41 +59,13 @@ export const useAddCircuitQuoteForm = ({ onQuoteAdded, onOpenChange }: UseAddCir
     }
   };
 
-  const fetchCategories = async () => {
-    try {
-      // Use a static list of categories for circuit quotes
-      const circuitCategories = [
-        'broadband',
-        'dedicated fiber',
-        'fixed wireless',
-        '4G/5G',
-        'ethernet',
-        'MPLS',
-        'SD-WAN',
-        'voice',
-        'security'
-      ];
-      setCategories(circuitCategories);
-    } catch (error) {
-      console.error('Error setting categories:', error);
-    }
-  };
-
-  const handleCategoryChange = (category: string, checked: boolean) => {
-    if (checked) {
-      setSelectedCategories(prev => [...prev, category]);
-    } else {
-      setSelectedCategories(prev => prev.filter(c => c !== category));
-    }
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!clientId || selectedCategories.length === 0) {
+    if (!clientId || !selectedDealId || selectedDealId === "no-deal") {
       toast({
         title: "Validation Error",
-        description: "Please select a client and at least one category.",
+        description: "Please select a client and a deal registration.",
         variant: "destructive"
       });
       return;
@@ -118,7 +87,7 @@ export const useAddCircuitQuoteForm = ({ onQuoteAdded, onOpenChange }: UseAddCir
           client_info_id: clientId,
           client_name: clientInfo?.company_name || 'Unknown Client',
           location: 'TBD', // Default location, can be updated later
-          deal_registration_id: selectedDealId === "no-deal" ? null : selectedDealId,
+          deal_registration_id: selectedDealId,
           static_ip: staticIp,
           slash_29: slash29,
           dhcp: dhcp,
@@ -130,18 +99,6 @@ export const useAddCircuitQuoteForm = ({ onQuoteAdded, onOpenChange }: UseAddCir
 
       if (error) throw error;
 
-      // Insert categories separately
-      if (data && selectedCategories.length > 0) {
-        const categoryInserts = selectedCategories.map(category => ({
-          circuit_quote_id: data.id,
-          category_name: category
-        }));
-
-        await supabase
-          .from('circuit_quote_categories')
-          .insert(categoryInserts);
-      }
-
       toast({
         title: "Success",
         description: "Circuit quote created successfully!"
@@ -150,7 +107,6 @@ export const useAddCircuitQuoteForm = ({ onQuoteAdded, onOpenChange }: UseAddCir
       // Reset form
       setClientId("");
       setSelectedDealId("");
-      setSelectedCategories([]);
       setStaticIp(false);
       setSlash29(false);
       setDhcp(false);
@@ -176,8 +132,6 @@ export const useAddCircuitQuoteForm = ({ onQuoteAdded, onOpenChange }: UseAddCir
     setClientId,
     selectedDealId,
     setSelectedDealId,
-    selectedCategories,
-    setSelectedCategories,
     staticIp,
     setStaticIp,
     slash29,
@@ -190,13 +144,11 @@ export const useAddCircuitQuoteForm = ({ onQuoteAdded, onOpenChange }: UseAddCir
     // Data
     clientInfos,
     deals,
-    categories,
     
     // Loading states
     isSubmitting,
     
     // Actions
-    handleSubmit,
-    handleCategoryChange
+    handleSubmit
   };
 };

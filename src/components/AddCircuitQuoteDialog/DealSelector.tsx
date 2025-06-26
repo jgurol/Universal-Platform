@@ -18,14 +18,13 @@ export const DealSelector = ({ deals, selectedDealId, onDealChange, onViewDealDe
 
   return (
     <div className="space-y-2">
-      <Label htmlFor="dealRegistration">Deal Registration (Optional)</Label>
+      <Label htmlFor="dealRegistration">Deal Registration *</Label>
       <div className="flex gap-2">
         <Select value={selectedDealId} onValueChange={onDealChange}>
           <SelectTrigger className="flex-1">
-            <SelectValue placeholder="Select a deal registration (optional)" />
+            <SelectValue placeholder="Select a deal registration" />
           </SelectTrigger>
           <SelectContent className="bg-white">
-            <SelectItem value="no-deal">No specific deal</SelectItem>
             {deals.map((deal) => (
               <SelectItem key={deal.id} value={deal.id}>
                 <div className="flex flex-col">

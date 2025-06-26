@@ -5,7 +5,6 @@ import { Button } from "@/components/ui/button";
 import { ClientSelector } from "./ClientSelector";
 import { DealSelector } from "./DealSelector";
 import { CircuitRequirements } from "./CircuitRequirements";
-import { CategorySelector } from "./CategorySelector";
 import { useAddCircuitQuoteForm } from "./useAddCircuitQuoteForm";
 import { DealDetailsDialog } from "@/components/CircuitQuotes/DealDetailsDialog";
 
@@ -26,8 +25,6 @@ export const AddCircuitQuoteDialog = ({
     setClientId,
     selectedDealId,
     setSelectedDealId,
-    selectedCategories,
-    setSelectedCategories,
     staticIp,
     setStaticIp,
     slash29,
@@ -40,14 +37,12 @@ export const AddCircuitQuoteDialog = ({
     // Data
     clientInfos,
     deals,
-    categories,
     
     // Loading states
     isSubmitting,
     
     // Actions
-    handleSubmit,
-    handleCategoryChange
+    handleSubmit
   } = useAddCircuitQuoteForm({ onQuoteAdded, onOpenChange });
 
   const [showDealDetails, setShowDealDetails] = useState(false);
@@ -80,12 +75,6 @@ export const AddCircuitQuoteDialog = ({
               onViewDealDetails={handleViewDealDetails}
             />
 
-            <CategorySelector
-              categories={categories}
-              selectedCategories={selectedCategories}
-              onCategoryChange={handleCategoryChange}
-            />
-
             <CircuitRequirements
               staticIp={staticIp}
               slash29={slash29}
@@ -107,7 +96,7 @@ export const AddCircuitQuoteDialog = ({
               </Button>
               <Button
                 type="submit"
-                disabled={isSubmitting || !clientId || selectedCategories.length === 0}
+                disabled={isSubmitting || !clientId || !selectedDealId || selectedDealId === "no-deal"}
               >
                 {isSubmitting ? "Creating..." : "Create Circuit Quote"}
               </Button>
