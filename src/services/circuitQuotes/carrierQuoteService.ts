@@ -6,80 +6,6 @@ import type { CarrierQuote } from "@/hooks/useCircuitQuotes";
 export const useCarrierQuoteService = () => {
   const { toast } = useToast();
 
-  const sendAgentNotification = async (carrierQuote: CarrierQuote, circuitQuoteId: string) => {
-    try {
-      console.log('Attempting to send agent notification for carrier quote:', carrierQuote.id);
-      
-      // Get circuit quote details for the notification
-      const { data: circuitQuote, error: circuitError } = await supabase
-        .from('circuit_quotes')
-        .select(`
-          client_name, 
-          location,
-          client_info:client_info_id (
-            id,
-            company_name,
-            agent_id,
-            agents (
-              id,
-              email,
-              first_name,
-              last_name
-            )
-          )
-        `)
-        .eq('id', circuitQuoteId)
-        .single();
-
-      if (circuitError) {
-        console.error('Error fetching circuit quote for notification:', circuitError);
-        return;
-      }
-
-      if (!circuitQuote) {
-        console.log('Circuit quote not found for notification');
-        return;
-      }
-
-      console.log('Circuit quote data for notification:', {
-        client_name: circuitQuote.client_name,
-        location: circuitQuote.location,
-        client_info: circuitQuote.client_info,
-        has_agent: !!circuitQuote.client_info?.agents
-      });
-
-      // Check if there's an associated agent
-      if (!circuitQuote.client_info?.agents?.email) {
-        console.log('No agent email found for circuit quote:', circuitQuoteId);
-        console.log('Client info:', circuitQuote.client_info);
-        return;
-      }
-
-      console.log('Sending notification to agent:', circuitQuote.client_info.agents.email);
-
-      // Call the edge function to send agent notification
-      const { data, error } = await supabase.functions.invoke('send-agent-notification', {
-        body: {
-          carrierQuoteId: carrierQuote.id,
-          circuitQuoteId: circuitQuoteId,
-          carrier: carrierQuote.carrier,
-          price: carrierQuote.price,
-          clientName: circuitQuote.client_name,
-          location: circuitQuote.location,
-        },
-      });
-
-      if (error) {
-        console.error('Error calling send-agent-notification function:', error);
-      } else {
-        console.log('Agent notification sent successfully:', data);
-      }
-    } catch (error) {
-      console.error('Error sending agent notification:', error);
-      // Don't throw error here as we don't want to block the main operation
-    }
-  };
-
   const addCarrierQuote = async (circuitQuoteId: string, carrierQuote: Omit<CarrierQuote, "id" | "circuit_quote_id">) => {
     try {
       console.log('Adding carrier quote:', { circuitQuoteId, carrier: carrierQuote.carrier, price: carrierQuote.price });
@@ -119,14 +45,6 @@ export const useCarrierQuoteService = () => {
 
       console.log('Carrier quote added successfully:', data);
 
-      // Send agent notification if price is provided (for new quotes with price > 0)
-      if (carrierQuote.price > 0) {
-        console.log('Sending agent notification for new carrier quote with price > 0');
-        await sendAgentNotification(data as CarrierQuote, circuitQuoteId);
-      } else {
-        console.log('No agent notification sent - price is 0 for new carrier quote');
-      }
-
       toast({
         title: "Success",
         description: "Carrier quote added successfully",
@@ -148,13 +66,6 @@ export const useCarrierQuoteService = () => {
     try {
       console.log('Updating carrier quote:', { id: carrierQuote.id, carrier: carrierQuote.carrier, price: carrierQuote.price });
       
-      // Get the previous price to check if it was just added
-      const { data: previousData } = await supabase
-        .from('carrier_quotes')
-        .select('price')
-        .eq('id', carrierQuote.id)
-        .single();
-
       const { error } = await supabase
         .from('carrier_quotes')
         .update({
@@ -188,17 +99,6 @@ export const useCarrierQuoteService = () => {
       }
 
       console.log('Carrier quote updated successfully');
-
-      // Send agent notification if price was just added (was 0 or null before, now has a value)
-      const previousPrice = previousData?.price || 0;
-      console.log('Price change check:', { previousPrice, newPrice: carrierQuote.price });
-      
-      if (previousPrice === 0 && carrierQuote.price > 0) {
-        console.log('Sending agent notification for price update from 0 to', carrierQuote.price);
-        await sendAgentNotification(carrierQuote, carrierQuote.circuit_quote_id);
-      } else {
-        console.log('No agent notification sent - price change condition not met');
-      }
 
       toast({
         title: "Success",
