@@ -1,7 +1,7 @@
-
 import { useState, useEffect } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerClose } from "@/components/ui/drawer";
 import { Button } from "@/components/ui/button";
+import { X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
 import { useToast } from "@/hooks/use-toast";
@@ -58,10 +58,9 @@ export const CarrierQuoteNotesDialog = ({
   // Initialize with existing notes if they exist
   useEffect(() => {
     if (open && initialNotes && notes.length === 0) {
-      // Convert existing notes to first entry if no structured notes exist
       const initialEntry: NoteEntry = {
         id: Date.now().toString(),
-        date: new Date().toISOString(), // Use full timestamp
+        date: new Date().toISOString(),
         note: initialNotes,
         files: [],
         user_name: 'Unknown User'
@@ -94,7 +93,7 @@ export const CarrierQuoteNotesDialog = ({
 
       const formattedNotes: NoteEntry[] = (data || []).map(note => ({
         id: note.id,
-        date: note.created_at, // Keep the full timestamp
+        date: note.created_at,
         note: note.content,
         user_name: profilesMap.get(note.user_id) || 'Unknown User',
         files: (note.carrier_quote_note_files || []).map((file: any) => ({
@@ -120,7 +119,6 @@ export const CarrierQuoteNotesDialog = ({
 
       console.log('Uploading file to path:', filePath);
 
-      // Upload file to storage - using the carrier-quote-files bucket
       const { data: uploadData, error: uploadError } = await supabase.storage
         .from('carrier-quote-files')
         .upload(filePath, file);
@@ -132,14 +130,12 @@ export const CarrierQuoteNotesDialog = ({
 
       console.log('Upload successful:', uploadData);
 
-      // Get the public URL for the uploaded file
       const { data: urlData } = supabase.storage
         .from('carrier-quote-files')
         .getPublicUrl(filePath);
 
       console.log('Public URL generated:', urlData.publicUrl);
 
-      // Save file reference to database
       const { data: fileData, error: fileError } = await supabase
         .from('carrier_quote_note_files')
         .insert({
@@ -182,7 +178,6 @@ export const CarrierQuoteNotesDialog = ({
 
     setLoading(true);
     try {
-      // Save note to database first
       const { data: noteData, error: noteError } = await supabase
         .from('carrier_quote_notes')
         .insert({
@@ -195,7 +190,6 @@ export const CarrierQuoteNotesDialog = ({
 
       if (noteError) throw noteError;
 
-      // Upload files after note is created
       const uploadedFiles: NoteFile[] = [];
       for (const file of uploadingFiles) {
         const uploadedFile = await uploadFile(file, noteData.id);
@@ -204,7 +198,6 @@ export const CarrierQuoteNotesDialog = ({
         }
       }
 
-      // Reload notes from database to get the updated list
       await loadNotes();
       
       setNewNote("");
@@ -215,7 +208,6 @@ export const CarrierQuoteNotesDialog = ({
         description: "Your note has been saved successfully"
       });
 
-      // Update the carrier quote's notes field with a summary
       const allNotesText = notes
         .map(note => `${note.date}: ${note.note}`)
         .join('\n\n');
@@ -245,7 +237,6 @@ export const CarrierQuoteNotesDialog = ({
 
       if (error) throw error;
 
-      // Reload notes from database to get the updated list
       await loadNotes();
       
       toast({
@@ -253,7 +244,6 @@ export const CarrierQuoteNotesDialog = ({
         description: "Note has been deleted successfully"
       });
 
-      // Update summary after reloading
       setTimeout(() => {
         const allNotesText = notes
           .filter(note => note.id !== noteId)
@@ -276,13 +266,18 @@ export const CarrierQuoteNotesDialog = ({
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[800px] max-h-[80vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>Notes for {carrierName}</DialogTitle>
-        </DialogHeader>
+    <Drawer open={open} onOpenChange={onOpenChange}>
+      <DrawerContent className="h-[85vh] max-w-2xl ml-auto">
+        <DrawerHeader className="flex items-center justify-between border-b">
+          <DrawerTitle>Notes for {carrierName}</DrawerTitle>
+          <DrawerClose asChild>
+            <Button variant="ghost" size="sm">
+              <X className="h-4 w-4" />
+            </Button>
+          </DrawerClose>
+        </DrawerHeader>
 
-        <div className="space-y-4">
+        <div className="flex-1 overflow-y-auto p-6 space-y-4">
           <CarrierQuoteNotesForm
             newNote={newNote}
             setNewNote={setNewNote}
@@ -297,13 +292,7 @@ export const CarrierQuoteNotesDialog = ({
             onDeleteNote={deleteNote}
           />
         </div>
-
-        <div className="flex justify-end mt-4">
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
-            Close
-          </Button>
-        </div>
-      </DialogContent>
-    </Dialog>
+      </DrawerContent>
+    </Drawer>
   );
 };

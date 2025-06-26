@@ -1,11 +1,11 @@
 import { useState, useEffect } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerClose } from "@/components/ui/drawer";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { FileText, Upload, Download, Trash2, Calendar, User, Image } from "lucide-react";
+import { FileText, Upload, Download, Trash2, Calendar, User, Image, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
 
@@ -57,7 +57,6 @@ export const CircuitQuoteNotesDialog = ({
     try {
       setLoadingNotes(true);
       
-      // Fetch notes with user profile information and files
       const { data: notesData, error } = await supabase
         .from('circuit_quote_notes')
         .select(`
@@ -77,7 +76,6 @@ export const CircuitQuoteNotesDialog = ({
         return;
       }
 
-      // Get user profiles for the notes
       const userIds = [...new Set(notesData?.map(note => note.user_id) || [])];
       const { data: profilesData } = await supabase
         .from('profiles')
@@ -119,7 +117,6 @@ export const CircuitQuoteNotesDialog = ({
       const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
       const filePath = `circuit-quote-notes/${circuitQuoteId}/${fileName}`;
 
-      // Upload file to storage
       const { data: uploadData, error: uploadError } = await supabase.storage
         .from('circuit-quote-files')
         .upload(filePath, file);
@@ -129,12 +126,10 @@ export const CircuitQuoteNotesDialog = ({
         throw uploadError;
       }
 
-      // Get the public URL for the uploaded file
       const { data: urlData } = supabase.storage
         .from('circuit-quote-files')
         .getPublicUrl(filePath);
 
-      // Save file reference to database
       const { data: fileData, error: fileError } = await supabase
         .from('circuit_quote_note_files')
         .insert({
@@ -182,7 +177,6 @@ export const CircuitQuoteNotesDialog = ({
 
     setLoading(true);
     try {
-      // Save note to database
       const { data: noteData, error: noteError } = await supabase
         .from('circuit_quote_notes')
         .insert({
@@ -198,7 +192,6 @@ export const CircuitQuoteNotesDialog = ({
         throw noteError;
       }
 
-      // Upload files if any
       const uploadedFiles: NoteFile[] = [];
       for (const file of uploadingFiles) {
         const uploadedFile = await uploadFile(file, noteData.id);
@@ -212,11 +205,9 @@ export const CircuitQuoteNotesDialog = ({
         description: "Note saved successfully"
       });
 
-      // Reset form
       setNewNote("");
       setUploadingFiles([]);
       
-      // Reload notes
       await loadNotes();
 
     } catch (error) {
@@ -307,13 +298,18 @@ export const CircuitQuoteNotesDialog = ({
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[700px] max-h-[80vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>Notes - {clientName}</DialogTitle>
-        </DialogHeader>
+    <Drawer open={open} onOpenChange={onOpenChange}>
+      <DrawerContent className="h-[85vh] max-w-2xl ml-auto">
+        <DrawerHeader className="flex items-center justify-between border-b">
+          <DrawerTitle>Notes - {clientName}</DrawerTitle>
+          <DrawerClose asChild>
+            <Button variant="ghost" size="sm">
+              <X className="h-4 w-4" />
+            </Button>
+          </DrawerClose>
+        </DrawerHeader>
 
-        <div className="space-y-6">
+        <div className="flex-1 overflow-y-auto p-6 space-y-6">
           {/* Add New Note Section */}
           <div className="border rounded-lg p-4 bg-gray-50">
             <Label htmlFor="new-note" className="text-sm font-medium mb-2 block">
@@ -502,13 +498,7 @@ export const CircuitQuoteNotesDialog = ({
             )}
           </div>
         </div>
-
-        <div className="flex justify-end mt-6">
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
-            Close
-          </Button>
-        </div>
-      </DialogContent>
-    </Dialog>
+      </DrawerContent>
+    </Drawer>
   );
 };
