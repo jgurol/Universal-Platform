@@ -1,6 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { FileText, Download, Trash2, Calendar, User, Image } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
+import { useSystemSettings } from "@/context/SystemSettingsContext";
 
 interface NoteFile {
   id: string;
@@ -25,6 +26,7 @@ interface CarrierQuoteNotesListProps {
 
 export const CarrierQuoteNotesList = ({ notes, onDeleteNote }: CarrierQuoteNotesListProps) => {
   const { isAdmin } = useAuth();
+  const { settings } = useSystemSettings();
 
   const formatFileSize = (bytes: number) => {
     if (bytes === 0) return '0 Bytes';
@@ -35,7 +37,16 @@ export const CarrierQuoteNotesList = ({ notes, onDeleteNote }: CarrierQuoteNotes
   };
 
   const formatDateTime = (dateString: string) => {
-    return new Date(dateString).toLocaleString();
+    const date = new Date(dateString);
+    return date.toLocaleString('en-US', {
+      timeZone: settings.timezone || 'America/Los_Angeles',
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true
+    });
   };
 
   const isImageFile = (fileType: string) => {
