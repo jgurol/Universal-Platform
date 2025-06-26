@@ -1,10 +1,12 @@
 import { Button } from "@/components/ui/button";
-import { Edit, Trash2, Copy, GripVertical } from "lucide-react";
+import { Edit, Trash2, Copy, GripVertical, MessageSquare } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { useCategories } from "@/hooks/useCategories";
 import { useClients } from "@/hooks/useClients";
 import type { CarrierQuote } from "@/hooks/useCircuitQuotes";
 import { DraggableProvidedDragHandleProps } from "react-beautiful-dnd";
+import { CarrierQuoteNotesDialog } from "@/components/CarrierQuoteNotesDialog";
+import { useState } from "react";
 
 interface CarrierCardProps {
   carrier: CarrierQuote;
@@ -18,6 +20,7 @@ export const CarrierCard = ({ carrier, onEdit, onDelete, onCopy, dragHandleProps
   const { isAdmin, user } = useAuth();
   const { categories } = useCategories();
   const { clients } = useClients();
+  const [showNotesDialog, setShowNotesDialog] = useState(false);
   
   const isPending = !carrier.price || carrier.price === 0;
   const isNoService = carrier.no_service;
@@ -256,145 +259,167 @@ export const CarrierCard = ({ carrier, onEdit, onDelete, onCopy, dragHandleProps
   const latestNote = getLatestNote();
 
   return (
-    <div 
-      className={`border rounded-lg p-4 ${
-        isNoService ? 'bg-red-50 border-red-200' : 'bg-gray-50'
-      }`}
-    >
-      <div className="flex items-center gap-4">
-        {/* Drag handle for admins */}
-        {isAdmin && dragHandleProps && (
-          <div 
-            {...dragHandleProps}
-            className="flex items-center justify-center w-6 h-6 cursor-grab active:cursor-grabbing text-gray-400 hover:text-gray-600 flex-shrink-0"
-          >
-            <GripVertical className="h-4 w-4" />
-          </div>
-        )}
-        
-        {/* Main content in a flexible grid */}
-        <div className="flex-1 grid grid-cols-1 md:grid-cols-8 gap-4 items-center">
-          <div>
+    <>
+      <div 
+        className={`border rounded-lg p-4 ${
+          isNoService ? 'bg-red-50 border-red-200' : 'bg-gray-50'
+        }`}
+      >
+        <div className="flex items-center gap-4">
+          {/* Drag handle for admins */}
+          {isAdmin && dragHandleProps && (
             <div 
-              className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium text-white shadow-sm ${
-                isPending && !isNoService ? 'animate-pulse' : ''
-              }`}
-              style={{ backgroundColor: carrier.color || '#3B82F6' }}
+              {...dragHandleProps}
+              className="flex items-center justify-center w-6 h-6 cursor-grab active:cursor-grabbing text-gray-400 hover:text-gray-600 flex-shrink-0"
             >
-              {carrier.carrier}
+              <GripVertical className="h-4 w-4" />
             </div>
-          </div>
+          )}
           
-          <div>
-            <div className="font-medium">{carrier.type}</div>
-          </div>
-          
-          <div>
-            <div className="font-medium">{carrier.speed}</div>
-          </div>
-          
-          <div>
-            <div className={`font-semibold text-lg ${isNoService ? 'text-red-600' : ''}`}>
-              {isNoService ? 'No Service' : (
-                displayPrice > 0 ? formatCurrency(displayPrice) : (
-                  <span className="text-orange-600 text-sm">Pending</span>
-                )
-              )}
-            </div>
-            {/* Show base price without add-ons only if there are significant add-ons */}
-            {!isNoService && displayPrice > 0 && shouldShowBasePrice && (
-              <div className="text-xs text-gray-500 mt-1">
-                Base: {formatCurrency(basePriceWithoutAddOns)}
+          {/* Main content in a flexible grid */}
+          <div className="flex-1 grid grid-cols-1 md:grid-cols-8 gap-4 items-center">
+            <div>
+              <div 
+                className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium text-white shadow-sm ${
+                  isPending && !isNoService ? 'animate-pulse' : ''
+                }`}
+                style={{ backgroundColor: carrier.color || '#3B82F6' }}
+              >
+                {carrier.carrier}
               </div>
-            )}
-          </div>
-          
-          <div>
-            <div className="text-sm">
-              {carrier.term && <div className="font-medium">{carrier.term}</div>}
             </div>
-          </div>
-          
-          <div className="md:col-span-2">
-            <div className="text-sm text-gray-600">
-              {tickedOptions.length > 0 && (
-                <div className="flex flex-wrap gap-1 mb-1">
-                  {tickedOptions.map((option, index) => {
-                    let badgeClass = "bg-blue-100 text-blue-800";
-                    
-                    if (option === 'No Service') {
-                      badgeClass = "bg-red-100 text-red-800";
-                    } else if (option.includes('Static IP')) {
-                      badgeClass = "bg-green-100 text-green-800";
-                    } else if (option.includes('Other MRC Cost')) {
-                      badgeClass = "bg-purple-100 text-purple-800";
-                    } else if (option.includes('Site Survey')) {
-                      if (option.includes('RED')) {
-                        badgeClass = "bg-red-100 text-red-800";
-                      } else if (option.includes('YELLOW')) {
-                        badgeClass = "bg-yellow-100 text-yellow-800";
-                      } else if (option.includes('ORANGE')) {
-                        badgeClass = "bg-orange-100 text-orange-800";
-                      } else if (option.includes('GREEN')) {
-                        badgeClass = "bg-green-100 text-green-800";
-                      }
-                    }
-                    
-                    return (
-                      <span 
-                        key={index} 
-                        className={`inline-flex items-center px-2 py-1 rounded-full text-xs ${badgeClass}`}
-                      >
-                        {option}
-                      </span>
-                    );
-                  })}
+            
+            <div>
+              <div className="font-medium">{carrier.type}</div>
+            </div>
+            
+            <div>
+              <div className="font-medium">{carrier.speed}</div>
+            </div>
+            
+            <div>
+              <div className={`font-semibold text-lg ${isNoService ? 'text-red-600' : ''}`}>
+                {isNoService ? 'No Service' : (
+                  displayPrice > 0 ? formatCurrency(displayPrice) : (
+                    <span className="text-orange-600 text-sm">Pending</span>
+                  )
+                )}
+              </div>
+              {/* Show base price without add-ons only if there are significant add-ons */}
+              {!isNoService && displayPrice > 0 && shouldShowBasePrice && (
+                <div className="text-xs text-gray-500 mt-1">
+                  Base: {formatCurrency(basePriceWithoutAddOns)}
                 </div>
               )}
-              {latestNote}
+            </div>
+            
+            <div>
+              <div className="text-sm">
+                {carrier.term && <div className="font-medium">{carrier.term}</div>}
+              </div>
+            </div>
+            
+            <div className="md:col-span-2">
+              <div className="text-sm text-gray-600">
+                {tickedOptions.length > 0 && (
+                  <div className="flex flex-wrap gap-1 mb-1">
+                    {tickedOptions.map((option, index) => {
+                      let badgeClass = "bg-blue-100 text-blue-800";
+                      
+                      if (option === 'No Service') {
+                        badgeClass = "bg-red-100 text-red-800";
+                      } else if (option.includes('Static IP')) {
+                        badgeClass = "bg-green-100 text-green-800";
+                      } else if (option.includes('Other MRC Cost')) {
+                        badgeClass = "bg-purple-100 text-purple-800";
+                      } else if (option.includes('Site Survey')) {
+                        if (option.includes('RED')) {
+                          badgeClass = "bg-red-100 text-red-800";
+                        } else if (option.includes('YELLOW')) {
+                          badgeClass = "bg-yellow-100 text-yellow-800";
+                        } else if (option.includes('ORANGE')) {
+                          badgeClass = "bg-orange-100 text-orange-800";
+                        } else if (option.includes('GREEN')) {
+                          badgeClass = "bg-green-100 text-green-800";
+                        }
+                      }
+                      
+                      return (
+                        <span 
+                          key={index} 
+                          className={`inline-flex items-center px-2 py-1 rounded-full text-xs ${badgeClass}`}
+                        >
+                          {option}
+                        </span>
+                      );
+                    })}
+                  </div>
+                )}
+                {latestNote}
+              </div>
+            </div>
+            
+            <div>
+              {/* This column is intentionally empty to balance the grid */}
             </div>
           </div>
           
-          <div>
-            {/* This column is intentionally empty to balance the grid */}
+          {/* Action buttons - always on the right */}
+          <div className="flex items-center gap-2 flex-shrink-0">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setShowNotesDialog(true)}
+              className="h-8 w-8 p-0 text-gray-500 hover:text-blue-600"
+              title="View/Add Notes"
+            >
+              <MessageSquare className="h-4 w-4" />
+            </Button>
+            {isAdmin && onCopy && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => onCopy(carrier)}
+                className="h-8 w-8 p-0 text-gray-500 hover:text-green-600"
+                title="Copy Carrier Quote"
+              >
+                <Copy className="h-4 w-4" />
+              </Button>
+            )}
+            {isAdmin && onEdit && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => onEdit(carrier)}
+                className="h-8 w-8 p-0"
+              >
+                <Edit className="h-4 w-4" />
+              </Button>
+            )}
+            {isAdmin && onDelete && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => onDelete(carrier.id)}
+                className="h-8 w-8 p-0 text-red-600 hover:text-red-700"
+              >
+                <Trash2 className="h-4 w-4" />
+              </Button>
+            )}
           </div>
         </div>
-        
-        {/* Action buttons - always on the right */}
-        <div className="flex items-center gap-2 flex-shrink-0">
-          {isAdmin && onCopy && (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => onCopy(carrier)}
-              className="h-8 w-8 p-0 text-gray-500 hover:text-green-600"
-              title="Copy Carrier Quote"
-            >
-              <Copy className="h-4 w-4" />
-            </Button>
-          )}
-          {isAdmin && onEdit && (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => onEdit(carrier)}
-              className="h-8 w-8 p-0"
-            >
-              <Edit className="h-4 w-4" />
-            </Button>
-          )}
-          {isAdmin && onDelete && (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => onDelete(carrier.id)}
-              className="h-8 w-8 p-0 text-red-600 hover:text-red-700"
-            >
-              <Trash2 className="h-4 w-4" />
-            </Button>
-          )}
-        </div>
       </div>
-    </div>
+
+      <CarrierQuoteNotesDialog
+        open={showNotesDialog}
+        onOpenChange={setShowNotesDialog}
+        carrierId={carrier.id}
+        carrierName={`${carrier.carrier} - ${carrier.type} - ${carrier.speed}`}
+        initialNotes={carrier.notes || ""}
+        onNotesUpdate={(notes) => {
+          // Optionally handle notes update here if needed
+        }}
+      />
+    </>
   );
 };
