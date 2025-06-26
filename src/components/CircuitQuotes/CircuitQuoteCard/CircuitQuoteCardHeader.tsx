@@ -72,7 +72,7 @@ export const CircuitQuoteCardHeader = ({
           </Button>
           
           <div className="flex-1 space-y-2">
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-3 flex-wrap">
               <h3 className="text-lg font-semibold text-gray-900">{quote.client_name}</h3>
               <Badge className={statusColors[quote.status]}>
                 {statusLabels[quote.status]}
@@ -98,22 +98,8 @@ export const CircuitQuoteCardHeader = ({
                 <FileText className="h-4 w-4 mr-1" />
                 Notes
               </Button>
-            </div>
-            
-            <div className="flex items-center gap-4 text-sm text-gray-600">
-              <div className="flex items-center gap-1">
-                <MapPin className="h-4 w-4" />
-                <span>{quote.location}</span>
-              </div>
-              {quote.suite && (
-                <div className="flex items-center gap-1">
-                  <Building className="h-4 w-4" />
-                  <span>Suite {quote.suite}</span>
-                </div>
-              )}
-            </div>
-
-            <div className="flex flex-wrap gap-2 text-xs">
+              
+              {/* Move requirements badges to top next to notes button */}
               {quote.static_ip && (
                 <Badge variant="outline" className="text-blue-600 border-blue-200">
                   /30 Static IP
@@ -140,6 +126,19 @@ export const CircuitQuoteCardHeader = ({
                     {category}
                   </Badge>
                 ))
+              )}
+            </div>
+            
+            <div className="flex items-center gap-4 text-sm text-gray-600">
+              <div className="flex items-center gap-1">
+                <MapPin className="h-4 w-4" />
+                <span>{quote.location}</span>
+              </div>
+              {quote.suite && (
+                <div className="flex items-center gap-1">
+                  <Building className="h-4 w-4" />
+                  <span>Suite {quote.suite}</span>
+                </div>
               )}
             </div>
 
