@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -49,6 +50,8 @@ export const EditDealDialog = ({
 }: EditDealDialogProps) => {
   const [agents, setAgents] = useState<Agent[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
+  const [selectedAgentId, setSelectedAgentId] = useState<string | null>(null);
 
   const { register, handleSubmit, reset, setValue, watch, formState: { errors } } = useForm<DealRegistration>();
 
@@ -61,6 +64,8 @@ export const EditDealDialog = ({
         ...deal,
         expected_close_date: deal.expected_close_date || null
       });
+      setSelectedClientId(deal.client_info_id);
+      setSelectedAgentId(deal.agent_id);
     }
   }, [deal, open, reset]);
 
@@ -95,15 +100,31 @@ export const EditDealDialog = ({
   const handleOpenChange = (newOpen: boolean) => {
     if (!newOpen) {
       reset();
+      setSelectedClientId(null);
+      setSelectedAgentId(null);
     }
     onOpenChange(newOpen);
+  };
+
+  const handleClientChange = (clientId: string) => {
+    const finalClientId = clientId === "none" ? null : clientId;
+    setSelectedClientId(finalClientId);
+    setValue("client_info_id", finalClientId);
+  };
+
+  const handleAgentChange = (agentId: string) => {
+    const finalAgentId = agentId === "none" ? null : agentId;
+    setSelectedAgentId(finalAgentId);
+    setValue("agent_id", finalAgentId);
   };
 
   const onSubmit = (data: DealRegistration) => {
     if (deal) {
       onUpdateDeal({
         ...deal,
-        ...data
+        ...data,
+        client_info_id: selectedClientId,
+        agent_id: selectedAgentId
       });
       onOpenChange(false);
     }
@@ -219,8 +240,8 @@ export const EditDealDialog = ({
             <div className="space-y-2">
               <Label htmlFor="client_info_id">Client</Label>
               <Select 
-                value={deal.client_info_id || "none"} 
-                onValueChange={(value) => setValue("client_info_id", value === "none" ? null : value)}
+                value={selectedClientId || "none"} 
+                onValueChange={handleClientChange}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Select client" />
@@ -239,8 +260,8 @@ export const EditDealDialog = ({
             <div className="space-y-2">
               <Label htmlFor="agent_id">Associated Agent</Label>
               <Select 
-                value={deal.agent_id || "none"} 
-                onValueChange={(value) => setValue("agent_id", value === "none" ? null : value)}
+                value={selectedAgentId || "none"} 
+                onValueChange={handleAgentChange}
               >
                 <SelectTrigger>
                   <SelectValue placeholder={isLoading ? "Loading agents..." : "Select agent"} />
