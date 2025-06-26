@@ -1,9 +1,9 @@
-
 import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { FolderIcon, FileIcon, Upload, Plus, ArrowLeft, Trash2 } from "lucide-react";
 import { useVendorAttachments } from "@/hooks/useVendorAttachments";
 import { VendorFolder, VendorAttachment } from "@/types/vendorAttachments";
@@ -28,6 +28,16 @@ export const VendorAttachmentsDialog = ({ open, onOpenChange, vendor }: VendorAt
   const currentFolder = folders.find(f => f.id === currentFolderId);
   const currentFolders = folders.filter(f => f.parent_folder_id === currentFolderId);
   const currentAttachments = attachments.filter(a => a.folder_id === currentFolderId);
+
+  // Function to count attachments in a folder (including subfolders)
+  const countAttachmentsInFolder = (folderId: string): number => {
+    const directAttachments = attachments.filter(a => a.folder_id === folderId).length;
+    const subfolders = folders.filter(f => f.parent_folder_id === folderId);
+    const subfolderAttachments = subfolders.reduce((count, subfolder) => 
+      count + countAttachmentsInFolder(subfolder.id), 0
+    );
+    return directAttachments + subfolderAttachments;
+  };
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(event.target.files || []);
@@ -160,23 +170,34 @@ export const VendorAttachmentsDialog = ({ open, onOpenChange, vendor }: VendorAt
           {/* Folders Grid */}
           {currentFolders.length > 0 && (
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-              {currentFolders.map((folder) => (
-                <Card
-                  key={folder.id}
-                  className={`cursor-pointer hover:shadow-md transition-shadow ${
-                    dragOverFolderId === folder.id ? 'bg-blue-100 border-blue-300' : ''
-                  }`}
-                  onClick={() => setCurrentFolderId(folder.id)}
-                  onDrop={(e) => handleDrop(e, folder.id)}
-                  onDragOver={(e) => handleDragOver(e, folder.id)}
-                  onDragLeave={handleDragLeave}
-                >
-                  <CardContent className="p-4 text-center">
-                    <FolderIcon className="h-12 w-12 mx-auto mb-2 text-blue-600" />
-                    <p className="text-sm font-medium truncate">{folder.name}</p>
-                  </CardContent>
-                </Card>
-              ))}
+              {currentFolders.map((folder) => {
+                const attachmentCount = countAttachmentsInFolder(folder.id);
+                return (
+                  <Card
+                    key={folder.id}
+                    className={`cursor-pointer hover:shadow-md transition-shadow ${
+                      dragOverFolderId === folder.id ? 'bg-blue-100 border-blue-300' : ''
+                    }`}
+                    onClick={() => setCurrentFolderId(folder.id)}
+                    onDrop={(e) => handleDrop(e, folder.id)}
+                    onDragOver={(e) => handleDragOver(e, folder.id)}
+                    onDragLeave={handleDragLeave}
+                  >
+                    <CardContent className="p-4 text-center relative">
+                      {attachmentCount > 0 && (
+                        <Badge 
+                          variant="secondary" 
+                          className="absolute -top-2 -right-2 h-6 w-6 rounded-full p-0 flex items-center justify-center text-xs bg-blue-600 text-white"
+                        >
+                          {attachmentCount}
+                        </Badge>
+                      )}
+                      <FolderIcon className="h-12 w-12 mx-auto mb-2 text-blue-600" />
+                      <p className="text-sm font-medium truncate">{folder.name}</p>
+                    </CardContent>
+                  </Card>
+                );
+              })}
             </div>
           )}
 
