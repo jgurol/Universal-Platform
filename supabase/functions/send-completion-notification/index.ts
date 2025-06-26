@@ -271,36 +271,22 @@ const handler = async (req: Request): Promise<Response> => {
 
     console.log('Processed carriers data for AI:', carriersData.length);
 
-    // Generate AI recommendation
-    let aiRecommendation = "Unable to generate AI recommendation at this time.";
+    // Generate AI explanation
+    let aiExplanation = "Unable to generate AI explanation at this time.";
     
     if (carriersData.length > 0) {
       try {
         const dealInfo = circuitQuote.deal_registration || {};
         const prompt = `
-As a telecom expert, analyze these circuit options and provide a brief summary:
+As a telecom expert, explain the differences between these circuit options for this client location:
 
-Deal Information:
-- Name: ${dealInfo.deal_name || 'Not specified'}
-- Description: ${dealInfo.description || 'Not specified'}
-- Deal Value: $${dealInfo.deal_value || 'Not specified'}
-
-Client Requirements:
-- Location: ${circuitQuote.location}
-- Static IP Required: ${circuitQuote.static_ip ? 'Yes' : 'No'}
-- /29 Block Required: ${circuitQuote.slash_29 ? 'Yes' : 'No'}
-
+Location: ${circuitQuote.location}
 Available Circuit Options:
 ${carriersData.map((carrier, index) => `
 ${index + 1}. ${carrier.carrier} - ${carrier.type} - ${carrier.speed} - $${carrier.price}/mo - ${carrier.term || 'N/A'}
 `).join('')}
 
-Provide a BRIEF summary (3-4 sentences max) covering:
-1. Top recommendation and why
-2. Key cost/value consideration
-3. Any important notes
-
-Keep it very concise and professional.
+Write a single comprehensive paragraph that explains the key differences between the carriers, circuit types (fiber vs cable vs copper etc.), speed offerings, and pricing variations. Focus on technical differences and what makes each option unique. Keep it educational and informative without making specific recommendations.
         `;
 
         console.log('Sending request to OpenAI...');
@@ -315,7 +301,7 @@ Keep it very concise and professional.
             messages: [
               {
                 role: 'system',
-                content: 'You are a telecom expert who provides concise, professional circuit recommendations for sales agents. Format your response with proper line breaks and spacing for email readability.'
+                content: 'You are a telecom expert who provides clear, educational explanations about circuit technologies and carrier differences. Write in a professional, informative tone.'
               },
               {
                 role: 'user',
@@ -323,27 +309,19 @@ Keep it very concise and professional.
               }
             ],
             temperature: 0.3,
-            max_tokens: 800
+            max_tokens: 600
           }),
         });
 
         if (openaiResponse.ok) {
           const openaiData = await openaiResponse.json();
-          let rawRecommendation = openaiData.choices[0]?.message?.content || aiRecommendation;
-          
-          // Format the AI response for HTML email with proper line breaks
-          aiRecommendation = rawRecommendation
-            .split('\n')
-            .map(line => line.trim())
-            .filter(line => line.length > 0)
-            .join('<br><br>');
-          
-          console.log('AI recommendation generated successfully');
+          aiExplanation = openaiData.choices[0]?.message?.content || aiExplanation;
+          console.log('AI explanation generated successfully');
         } else {
           console.error('OpenAI API error:', await openaiResponse.text());
         }
       } catch (aiError) {
-        console.error('Error generating AI recommendation:', aiError);
+        console.error('Error generating AI explanation:', aiError);
       }
     }
 
@@ -399,8 +377,8 @@ Keep it very concise and professional.
           </table>
 
           <div style="background-color: #e8f4fd; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #2563eb;">
-            <h3 style="margin-top: 0; color: #1e40af;">AI Recommendations</h3>
-            <div style="color: #374151; line-height: 1.6;">${aiRecommendation}</div>
+            <h3 style="margin-top: 0; color: #1e40af;">Circuit Technology Explanation</h3>
+            <div style="color: #374151; line-height: 1.6;">${aiExplanation}</div>
           </div>
           
           <p>
