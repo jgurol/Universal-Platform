@@ -1,4 +1,3 @@
-
 import { Button } from "@/components/ui/button";
 import { Edit, Trash2, Copy, GripVertical, MessageSquare } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
@@ -144,14 +143,45 @@ export const CarrierCard = ({ carrier, onEdit, onDelete, onCopy, dragHandleProps
     return basePrice;
   };
 
+  // Get base price without add-ons for display
+  const getBasePriceWithoutAddOns = () => {
+    if (isAdmin || isPending || isNoService) {
+      return carrier.price;
+    }
+
+    // Find matching category for the carrier type
+    const matchingCategory = categories.find(cat => 
+      cat.type?.toLowerCase() === carrier.type.toLowerCase() ||
+      cat.name.toLowerCase().includes(carrier.type.toLowerCase())
+    );
+
+    if (matchingCategory && matchingCategory.minimum_markup && matchingCategory.minimum_markup > 0) {
+      const effectiveMinimumMarkup = Math.max(0, matchingCategory.minimum_markup);
+      const markup = effectiveMinimumMarkup / 100;
+      return Math.round(carrier.price * (1 + markup) * 100) / 100;
+    }
+
+    return carrier.price;
+  };
+
   const displayPrice = getDisplayPrice();
+  const basePriceWithoutAddOns = getBasePriceWithoutAddOns();
+  
+  // Calculate total add-on costs
+  const totalAddOnCosts = (carrier.static_ip && carrier.static_ip_fee_amount ? carrier.static_ip_fee_amount : 0) +
+                         (carrier.static_ip_5 && carrier.static_ip_5_fee_amount ? carrier.static_ip_5_fee_amount : 0) +
+                         (carrier.install_fee && carrier.install_fee_amount ? carrier.install_fee_amount / getTermMonths(carrier.term) : 0) +
+                         ((carrier as any).other_costs ? (carrier as any).other_costs : 0);
+  
+  // Only show base price if there are meaningful add-ons (total > 0) AND base price > 0
+  const shouldShowBasePrice = totalAddOnCosts > 0 && basePriceWithoutAddOns > 0 && basePriceWithoutAddOns !== displayPrice;
   
   // Helper function to get ticked checkboxes based on carrier details
   const getTickedCheckboxes = () => {
     const ticked = [];
     if (carrier.install_fee) {
       let installText = "Install Fee";
-      if (isAdmin && carrier.install_fee_amount && carrier.install_fee_amount > 0) {
+      if (carrier.install_fee_amount && carrier.install_fee_amount > 0) {
         installText += ` ($${carrier.install_fee_amount})`;
       }
       ticked.push(installText);
@@ -179,19 +209,19 @@ export const CarrierCard = ({ carrier, onEdit, onDelete, onCopy, dragHandleProps
     if (carrier.no_service) ticked.push("No Service");
     if (carrier.static_ip) {
       let staticIpText = "1 Static IP (/30)";
-      if (isAdmin && carrier.static_ip_fee_amount && carrier.static_ip_fee_amount > 0) {
+      if (carrier.static_ip_fee_amount && carrier.static_ip_fee_amount > 0) {
         staticIpText += ` ($${carrier.static_ip_fee_amount})`;
       }
       ticked.push(staticIpText);
     }
     if ((carrier as any).static_ip_5) {
       let staticIp5Text = "5 Static IP (/29)";
-      if (isAdmin && (carrier as any).static_ip_5_fee_amount && (carrier as any).static_ip_5_fee_amount > 0) {
+      if ((carrier as any).static_ip_5_fee_amount && (carrier as any).static_ip_5_fee_amount > 0) {
         staticIp5Text += ` ($${(carrier as any).static_ip_5_fee_amount})`;
       }
       ticked.push(staticIp5Text);
     }
-    if (isAdmin && (carrier as any).other_costs && (carrier as any).other_costs > 0) {
+    if ((carrier as any).other_costs && (carrier as any).other_costs > 0) {
       ticked.push(`Other MRC Cost ($${(carrier as any).other_costs})`);
     }
     return ticked;
@@ -239,20 +269,17 @@ export const CarrierCard = ({ carrier, onEdit, onDelete, onCopy, dragHandleProps
             </div>
             
             <div>
-              {/* Only show price for admins */}
-              {isAdmin && (
-                <div className={`font-semibold text-lg ${isNoService ? 'text-red-600' : ''}`}>
-                  {isNoService ? 'No Service' : (
-                    displayPrice > 0 ? formatCurrency(displayPrice) : (
-                      <span className="text-orange-600 text-sm">Pending</span>
-                    )
-                  )}
-                </div>
-              )}
-              {/* For agents, just show status without price */}
-              {!isAdmin && (
-                <div className={`font-semibold text-lg ${isNoService ? 'text-red-600' : 'text-green-600'}`}>
-                  {isNoService ? 'No Service' : 'Available'}
+              <div className={`font-semibold text-lg ${isNoService ? 'text-red-600' : ''}`}>
+                {isNoService ? 'No Service' : (
+                  displayPrice > 0 ? formatCurrency(displayPrice) : (
+                    <span className="text-orange-600 text-sm">Pending</span>
+                  )
+                )}
+              </div>
+              {/* Show base price without add-ons only if there are significant add-ons */}
+              {!isNoService && displayPrice > 0 && shouldShowBasePrice && (
+                <div className="text-xs text-gray-500 mt-1">
+                  Base: {formatCurrency(basePriceWithoutAddOns)}
                 </div>
               )}
             </div>

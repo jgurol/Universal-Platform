@@ -1,14 +1,11 @@
 
 import type { CarrierQuote } from "@/hooks/useCircuitQuotes";
-import { useAuth } from "@/context/AuthContext";
 
 interface CarrierTagsProps {
   carriers: CarrierQuote[];
 }
 
 export const CarrierTags = ({ carriers }: CarrierTagsProps) => {
-  const { isAdmin } = useAuth();
-  
   const getTickedCheckboxes = (carrier: CarrierQuote) => {
     const ticked = [];
     if (carrier.install_fee) ticked.push("Install Fee");
@@ -55,26 +52,11 @@ export const CarrierTags = ({ carriers }: CarrierTagsProps) => {
     const tickedOptionsArray = Array.from(allTickedOptions);
     const isPending = hasPendingQuotes;
     
-    // Create tooltip with carrier info - show prices only for admins
+    // Create tooltip with all carrier info for this vendor
     const tooltipParts = vendorCarriers.map(carrier => {
       const carrierTickedOptions = getTickedCheckboxes(carrier);
-      let carrierInfo = `${carrier.type} - ${carrier.speed}`;
-      
-      // Only show price info for admins
-      if (isAdmin) {
-        const priceText = carrier.no_service ? 'No Service' : (carrier.price > 0 ? `$${carrier.price}` : 'Pending quote');
-        carrierInfo += ` - ${priceText}`;
-      } else {
-        // For agents, just show availability status
-        const statusText = carrier.no_service ? 'No Service' : 'Available';
-        carrierInfo += ` - ${statusText}`;
-      }
-      
-      if (carrierTickedOptions.length > 0) {
-        carrierInfo += ` - ${carrierTickedOptions.join(', ')}`;
-      }
-      
-      return carrierInfo;
+      const priceText = carrier.no_service ? 'No Service' : (carrier.price > 0 ? `$${carrier.price}` : 'Pending quote');
+      return `${carrier.type} - ${carrier.speed} - ${priceText}${carrierTickedOptions.length > 0 ? ` - ${carrierTickedOptions.join(', ')}` : ''}`;
     });
     
     let tooltipText = `${vendorName} - ${tooltipParts.join('   | ')}`;
