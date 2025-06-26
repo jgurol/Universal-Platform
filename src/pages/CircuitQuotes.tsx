@@ -1,12 +1,14 @@
 
 import { useState } from "react";
 import { NavigationBar } from "@/components/NavigationBar";
+import { QuickNavigation } from "@/components/QuickNavigation";
 import { CircuitQuotesManagement } from "@/components/CircuitQuotesManagement";
 
 const CircuitQuotes = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
       <NavigationBar />
+      <QuickNavigation />
       <div className="container mx-auto px-4 py-8 max-w-7xl">
         {/* Page Title */}
         <div className="mb-8">
