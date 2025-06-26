@@ -728,6 +728,7 @@ export type Database = {
       deal_registrations: {
         Row: {
           agent_id: string | null
+          archived: boolean | null
           client_info_id: string | null
           created_at: string
           deal_name: string
@@ -744,6 +745,7 @@ export type Database = {
         }
         Insert: {
           agent_id?: string | null
+          archived?: boolean | null
           client_info_id?: string | null
           created_at?: string
           deal_name: string
@@ -760,6 +762,7 @@ export type Database = {
         }
         Update: {
           agent_id?: string | null
+          archived?: boolean | null
           client_info_id?: string | null
           created_at?: string
           deal_name?: string
