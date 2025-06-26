@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.50.0";
 import { Resend } from "npm:resend@2.0.0";
@@ -268,7 +267,15 @@ const handler = async (req: Request): Promise<Response> => {
         site_survey_needed: carrier.site_survey_needed,
         static_ip: carrier.static_ip,
         static_ip_fee_amount: carrier.static_ip_fee_amount
-      }));
+      }))
+      .sort((a, b) => {
+        // First sort by carrier name
+        if (a.carrier !== b.carrier) {
+          return a.carrier.localeCompare(b.carrier);
+        }
+        // Then sort by price
+        return a.price - b.price;
+      });
 
     console.log('Processed carriers data for AI:', carriersData.length);
 
@@ -338,7 +345,7 @@ Write a single comprehensive paragraph that explains the key differences between
       }
     }
 
-    // Format carriers list for email (without install fee column)
+    // Format carriers list for email (without install fee column) - now sorted
     const carriersListHtml = carriersData.map(carrier => `
       <tr>
         <td style="padding: 8px; border: 1px solid #ddd; font-weight: bold;">${carrier.carrier}</td>
