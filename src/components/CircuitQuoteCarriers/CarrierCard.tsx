@@ -227,36 +227,7 @@ export const CarrierCard = ({ carrier, onEdit, onDelete, onCopy, dragHandleProps
     return ticked;
   };
 
-  // Helper function to get the latest note from carrier notes
-  const getLatestNote = (): string => {
-    if (!carrier.notes) return '';
-    
-    // Remove site survey color coding from displayed notes
-    let cleanNotes = carrier.notes;
-    if (cleanNotes.includes("Site Survey:")) {
-      const parts = cleanNotes.split(" | Site Survey:");
-      if (parts.length > 1) {
-        cleanNotes = parts[0];
-      } else {
-        const siteSurveyIndex = cleanNotes.indexOf("Site Survey:");
-        if (siteSurveyIndex === 0) {
-          cleanNotes = "";
-        } else {
-          cleanNotes = cleanNotes.substring(0, siteSurveyIndex).replace(" | ", "").trim();
-        }
-      }
-    }
-    
-    const noteEntries = cleanNotes.split('\n\n').filter(note => note.trim());
-    if (noteEntries.length === 0) return '';
-    
-    const latestNoteEntry = noteEntries[0];
-    const datePattern = /^\d{4}-\d{2}-\d{2}:\s*/;
-    return latestNoteEntry.replace(datePattern, '').trim();
-  };
-
   const tickedOptions = getTickedCheckboxes();
-  const latestNote = getLatestNote();
 
   return (
     <>
@@ -322,7 +293,7 @@ export const CarrierCard = ({ carrier, onEdit, onDelete, onCopy, dragHandleProps
             <div className="md:col-span-2">
               <div className="text-sm text-gray-600">
                 {tickedOptions.length > 0 && (
-                  <div className="flex flex-wrap gap-1 mb-1">
+                  <div className="flex flex-wrap gap-1">
                     {tickedOptions.map((option, index) => {
                       let badgeClass = "bg-blue-100 text-blue-800";
                       
@@ -355,7 +326,6 @@ export const CarrierCard = ({ carrier, onEdit, onDelete, onCopy, dragHandleProps
                     })}
                   </div>
                 )}
-                {latestNote}
               </div>
             </div>
             
