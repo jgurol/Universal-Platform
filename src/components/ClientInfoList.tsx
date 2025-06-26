@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -238,7 +239,7 @@ export const ClientInfoList = ({
                             {primaryContact.email && (
                               <div className="flex items-center gap-1 flex-shrink-0">
                                 <Mail className="w-3 h-3 text-purple-600" />
-                                <span className="truncate max-w-[150px]">{primaryContact.email}</span>
+                                <span>{primaryContact.email}</span>
                               </div>
                             )}
                           </>
