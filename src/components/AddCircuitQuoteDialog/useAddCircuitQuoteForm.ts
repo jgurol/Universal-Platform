@@ -14,6 +14,8 @@ interface UseAddCircuitQuoteFormProps {
 export const useAddCircuitQuoteForm = ({ onQuoteAdded, onOpenChange }: UseAddCircuitQuoteFormProps) => {
   const [clientId, setClientId] = useState("");
   const [selectedDealId, setSelectedDealId] = useState("");
+  const [location, setLocation] = useState("");
+  const [suite, setSuite] = useState("");
   const [staticIp, setStaticIp] = useState(false);
   const [slash29, setSlash29] = useState(false);
   const [dhcp, setDhcp] = useState(false);
@@ -62,10 +64,10 @@ export const useAddCircuitQuoteForm = ({ onQuoteAdded, onOpenChange }: UseAddCir
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!clientId || !selectedDealId || selectedDealId === "no-deal") {
+    if (!clientId || !selectedDealId || !location.trim()) {
       toast({
         title: "Validation Error",
-        description: "Please select a client and a deal registration.",
+        description: "Please select a client, deal registration, and provide a service address.",
         variant: "destructive"
       });
       return;
@@ -74,7 +76,7 @@ export const useAddCircuitQuoteForm = ({ onQuoteAdded, onOpenChange }: UseAddCir
     setIsSubmitting(true);
 
     try {
-      // Get client info to extract company name and location
+      // Get client info to extract company name
       const { data: clientInfo } = await supabase
         .from('client_info')
         .select('company_name')
@@ -86,7 +88,8 @@ export const useAddCircuitQuoteForm = ({ onQuoteAdded, onOpenChange }: UseAddCir
         .insert({
           client_info_id: clientId,
           client_name: clientInfo?.company_name || 'Unknown Client',
-          location: 'TBD', // Default location, can be updated later
+          location: location,
+          suite: suite || null,
           deal_registration_id: selectedDealId,
           static_ip: staticIp,
           slash_29: slash29,
@@ -107,6 +110,8 @@ export const useAddCircuitQuoteForm = ({ onQuoteAdded, onOpenChange }: UseAddCir
       // Reset form
       setClientId("");
       setSelectedDealId("");
+      setLocation("");
+      setSuite("");
       setStaticIp(false);
       setSlash29(false);
       setDhcp(false);
@@ -132,6 +137,10 @@ export const useAddCircuitQuoteForm = ({ onQuoteAdded, onOpenChange }: UseAddCir
     setClientId,
     selectedDealId,
     setSelectedDealId,
+    location,
+    setLocation,
+    suite,
+    setSuite,
     staticIp,
     setStaticIp,
     slash29,

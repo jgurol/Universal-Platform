@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { ClientSelector } from "./ClientSelector";
 import { DealSelector } from "./DealSelector";
 import { CircuitRequirements } from "./CircuitRequirements";
+import { AddressInput } from "./AddressInput";
 import { useAddCircuitQuoteForm } from "./useAddCircuitQuoteForm";
 import { DealDetailsDialog } from "@/components/CircuitQuotes/DealDetailsDialog";
 
@@ -25,6 +26,10 @@ export const AddCircuitQuoteDialog = ({
     setClientId,
     selectedDealId,
     setSelectedDealId,
+    location,
+    setLocation,
+    suite,
+    setSuite,
     staticIp,
     setStaticIp,
     slash29,
@@ -75,6 +80,13 @@ export const AddCircuitQuoteDialog = ({
               onViewDealDetails={handleViewDealDetails}
             />
 
+            <AddressInput
+              location={location}
+              suite={suite}
+              onLocationChange={setLocation}
+              onSuiteChange={setSuite}
+            />
+
             <CircuitRequirements
               staticIp={staticIp}
               slash29={slash29}
@@ -96,7 +108,7 @@ export const AddCircuitQuoteDialog = ({
               </Button>
               <Button
                 type="submit"
-                disabled={isSubmitting || !clientId || !selectedDealId || selectedDealId === "no-deal"}
+                disabled={isSubmitting || !clientId || !selectedDealId || !location.trim()}
               >
                 {isSubmitting ? "Creating..." : "Create Circuit Quote"}
               </Button>
