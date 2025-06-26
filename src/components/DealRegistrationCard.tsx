@@ -284,10 +284,14 @@ export const DealRegistrationCard = ({ clientInfos, agentMapping }: DealRegistra
                   key={deal.id}
                   className={`p-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors duration-200 ${deal.archived ? 'opacity-60 bg-gray-50' : ''}`}
                 >
-                  {/* Line 1: Deal name, badges, and actions */}
+                  {/* Line 1: Deal name, deal value, badges, and actions */}
                   <div className="flex items-center justify-between mb-2">
                     <div className="flex items-center gap-3 flex-1 min-w-0">
                       <h3 className="font-semibold text-gray-900 truncate">{deal.deal_name}</h3>
+                      <div className="flex items-center gap-1 text-sm font-medium text-green-700">
+                        <DollarSign className="w-3 h-3" />
+                        <span>${deal.deal_value.toLocaleString()}</span>
+                      </div>
                       <div className="flex gap-2 flex-shrink-0">
                         <Badge className={`${getStageColor(deal.stage)} text-xs px-2 py-0.5`}>
                           {deal.stage.charAt(0).toUpperCase() + deal.stage.slice(1).replace('-', ' ')}
@@ -349,14 +353,9 @@ export const DealRegistrationCard = ({ clientInfos, agentMapping }: DealRegistra
                     </div>
                   </div>
                   
-                  {/* Line 2: Combined data points */}
+                  {/* Line 2: Additional data points */}
                   <div className="flex items-center justify-between text-sm text-gray-600">
                     <div className="flex items-center gap-4">
-                      <div className="flex items-center gap-1">
-                        <DollarSign className="w-3 h-3" />
-                        <span className="font-medium">${deal.deal_value.toLocaleString()}</span>
-                      </div>
-                      
                       {deal.expected_close_date && (
                         <div className="flex items-center gap-1">
                           <Calendar className="w-3 h-3" />
