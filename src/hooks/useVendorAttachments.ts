@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/context/AuthContext";
@@ -7,6 +7,7 @@ import { VendorFolder, VendorAttachment } from "@/types/vendorAttachments";
 export const useVendorAttachments = (vendorId?: string) => {
   const [folders, setFolders] = useState<VendorFolder[]>([]);
   const [attachments, setAttachments] = useState<VendorAttachment[]>([]);
+  const [allAttachments, setAllAttachments] = useState<VendorAttachment[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const { user } = useAuth();
   const { toast } = useToast();
@@ -52,6 +53,20 @@ export const useVendorAttachments = (vendorId?: string) => {
         description: "Failed to fetch attachments",
         variant: "destructive"
       });
+    }
+  };
+
+  const fetchAllAttachments = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('vendor_attachments')
+        .select('*')
+        .order('file_name');
+
+      if (error) throw error;
+      setAllAttachments(data || []);
+    } catch (error) {
+      console.error('Error fetching all attachments:', error);
     }
   };
 
@@ -124,6 +139,7 @@ export const useVendorAttachments = (vendorId?: string) => {
       if (attachmentError) throw attachmentError;
 
       setAttachments(prev => [...prev, attachmentData]);
+      setAllAttachments(prev => [...prev, attachmentData]);
       toast({
         title: "File uploaded",
         description: `${file.name} has been uploaded successfully.`,
@@ -180,6 +196,7 @@ export const useVendorAttachments = (vendorId?: string) => {
       if (error) throw error;
 
       setAttachments(prev => prev.filter(att => att.id !== attachmentId));
+      setAllAttachments(prev => prev.filter(att => att.id !== attachmentId));
       toast({
         title: "File deleted",
         description: "File has been deleted successfully.",
@@ -194,10 +211,16 @@ export const useVendorAttachments = (vendorId?: string) => {
     }
   };
 
-  const getTotalAttachmentCount = (targetVendorId?: string): number => {
-    if (!targetVendorId) return 0;
-    return attachments.filter(a => a.vendor_id === targetVendorId).length;
-  };
+  const getTotalAttachmentCount = useMemo(() => {
+    return (targetVendorId?: string): number => {
+      if (!targetVendorId) return 0;
+      return allAttachments.filter(a => a.vendor_id === targetVendorId).length;
+    };
+  }, [allAttachments]);
+
+  useEffect(() => {
+    fetchAllAttachments();
+  }, []);
 
   useEffect(() => {
     if (vendorId) {
@@ -219,6 +242,7 @@ export const useVendorAttachments = (vendorId?: string) => {
     refetch: () => {
       fetchFolders();
       fetchAttachments();
+      fetchAllAttachments();
     }
   };
 };
