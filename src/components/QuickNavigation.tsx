@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Users, UserPlus, Zap, FileText, BarChart3, DollarSign } from 'lucide-react';
+import { Users, UserPlus, Zap, FileText, BarChart3, DollarSign, Building2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
@@ -41,6 +41,12 @@ const navigationItems = [
     icon: DollarSign,
     label: 'Commission',
     description: 'Commission tracking'
+  },
+  {
+    path: '/vendors',
+    icon: Building2,
+    label: 'Vendors',
+    description: 'Vendor management'
   }
 ];
 

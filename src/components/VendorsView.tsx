@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -13,6 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { Vendor } from "@/types/vendors";
 import { useToast } from "@/hooks/use-toast";
 import { useVendorAttachments } from "@/hooks/useVendorAttachments";
+import { useAuth } from "@/context/AuthContext";
 
 export const VendorsView = () => {
   const [isAddVendorOpen, setIsAddVendorOpen] = useState(false);
@@ -24,6 +24,7 @@ export const VendorsView = () => {
   const { vendors, isLoading, addVendor, updateVendor, deleteVendor } = useVendors();
   const { toast } = useToast();
   const { getTotalAttachmentCount } = useVendorAttachments();
+  const { isAdmin } = useAuth();
 
   // Filter vendors based on search query
   const filteredVendors = vendors.filter(vendor => 
@@ -124,18 +125,22 @@ export const VendorsView = () => {
               </Badge>
             </div>
             <div className="flex items-center gap-2">
-              <Button 
-                onClick={() => setShowSpeedsManagement(true)} 
-                variant="outline"
-                className="text-purple-600 border-purple-200 hover:bg-purple-50"
-              >
-                <Zap className="h-4 w-4 mr-2" />
-                Manage Speeds
-              </Button>
-              <Button onClick={() => setIsAddVendorOpen(true)} className="bg-blue-600 hover:bg-blue-700">
-                <Plus className="h-4 w-4 mr-2" />
-                Add Vendor
-              </Button>
+              {isAdmin && (
+                <Button 
+                  onClick={() => setShowSpeedsManagement(true)} 
+                  variant="outline"
+                  className="text-purple-600 border-purple-200 hover:bg-purple-50"
+                >
+                  <Zap className="h-4 w-4 mr-2" />
+                  Manage Speeds
+                </Button>
+              )}
+              {isAdmin && (
+                <Button onClick={() => setIsAddVendorOpen(true)} className="bg-blue-600 hover:bg-blue-700">
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Vendor
+                </Button>
+              )}
             </div>
           </div>
           
@@ -156,10 +161,12 @@ export const VendorsView = () => {
               <Building2 className="h-12 w-12 mx-auto mb-4 text-gray-300" />
               <p className="text-lg font-medium mb-2">No vendors yet</p>
               <p className="text-sm mb-4">Add your first vendor to get started</p>
-              <Button onClick={() => setIsAddVendorOpen(true)} variant="outline">
-                <Plus className="h-4 w-4 mr-2" />
-                Add Your First Vendor
-              </Button>
+              {isAdmin && (
+                <Button onClick={() => setIsAddVendorOpen(true)} variant="outline">
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Your First Vendor
+                </Button>
+              )}
             </div>
           ) : filteredVendors.length === 0 ? (
             <div className="text-center py-8 text-gray-500">
@@ -229,27 +236,31 @@ export const VendorsView = () => {
                           </Badge>
                         )}
                       </Button>
-                      <Button 
-                        variant="ghost" 
-                        size="sm" 
-                        onClick={() => handleDuplicateVendor(vendor)}
-                        className="text-green-600 hover:text-green-700"
-                        title="Duplicate Vendor"
-                      >
-                        <Copy className="h-4 w-4" />
-                      </Button>
-                      <Button variant="ghost" size="sm" onClick={() => handleEditVendor(vendor)}>
-                        <Edit className="h-4 w-4" />
-                      </Button>
-                      <Button 
-                        variant="ghost" 
-                        size="sm" 
-                        className="text-red-600 hover:text-red-700"
-                        onClick={() => handleDeleteVendor(vendor)}
-                        title="Delete Vendor"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
+                      {isAdmin && (
+                        <>
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            onClick={() => handleDuplicateVendor(vendor)}
+                            className="text-green-600 hover:text-green-700"
+                            title="Duplicate Vendor"
+                          >
+                            <Copy className="h-4 w-4" />
+                          </Button>
+                          <Button variant="ghost" size="sm" onClick={() => handleEditVendor(vendor)}>
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            className="text-red-600 hover:text-red-700"
+                            onClick={() => handleDeleteVendor(vendor)}
+                            title="Delete Vendor"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </>
+                      )}
                     </div>
                   </div>
                 );
@@ -259,18 +270,22 @@ export const VendorsView = () => {
         </CardContent>
       </Card>
 
-      <AddVendorDialog
-        open={isAddVendorOpen}
-        onOpenChange={setIsAddVendorOpen}
-        onAddVendor={addVendor}
-      />
+      {isAdmin && (
+        <AddVendorDialog
+          open={isAddVendorOpen}
+          onOpenChange={setIsAddVendorOpen}
+          onAddVendor={addVendor}
+        />
+      )}
 
-      <EditVendorDialog
-        open={isEditVendorOpen}
-        onOpenChange={setIsEditVendorOpen}
-        onUpdateVendor={handleUpdateVendor}
-        vendor={selectedVendor}
-      />
+      {isAdmin && (
+        <EditVendorDialog
+          open={isEditVendorOpen}
+          onOpenChange={setIsEditVendorOpen}
+          onUpdateVendor={handleUpdateVendor}
+          vendor={selectedVendor}
+        />
+      )}
 
       <VendorAttachmentsDialog
         open={isAttachmentsOpen}
