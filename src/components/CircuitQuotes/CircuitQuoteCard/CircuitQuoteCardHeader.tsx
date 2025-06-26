@@ -88,6 +88,16 @@ export const CircuitQuoteCardHeader = ({
                   Deal
                 </Button>
               )}
+              {/* Move notes button next to deal button */}
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setIsNotesDialogOpen(true)}
+                className="text-blue-600 hover:text-blue-700"
+              >
+                <FileText className="h-4 w-4 mr-1" />
+                Notes
+              </Button>
             </div>
             
             <div className="flex items-center gap-4 text-sm text-gray-600">
@@ -140,16 +150,6 @@ export const CircuitQuoteCardHeader = ({
         </div>
 
         <div className="flex items-center gap-2 ml-4">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setIsNotesDialogOpen(true)}
-            className="text-blue-600 hover:text-blue-700"
-          >
-            <FileText className="h-4 w-4 mr-1" />
-            Notes
-          </Button>
-          
           {isAdmin && (
             <>
               <Button
