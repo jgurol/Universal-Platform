@@ -7,9 +7,9 @@ import { VendorFolder, VendorAttachment } from "@/types/vendorAttachments";
 export const useVendorAttachments = (vendorId?: string) => {
   const [folders, setFolders] = useState<VendorFolder[]>([]);
   const [attachments, setAttachments] = useState<VendorAttachment[]>([]);
-  const [allAttachments, setAllAttachments] = useState<VendorAttachment[]>([]);
+  const [allVendorAttachments, setAllVendorAttachments] = useState<VendorAttachment[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const { user } = useAuth();
+  const { user, isAdmin } = useAuth();
   const { toast } = useToast();
 
   const fetchFolders = async () => {
@@ -56,17 +56,18 @@ export const useVendorAttachments = (vendorId?: string) => {
     }
   };
 
-  const fetchAllAttachments = async () => {
+  const fetchAllVendorAttachments = async () => {
     try {
+      // Fetch all attachments that the current user can see (RLS will filter appropriately)
       const { data, error } = await supabase
         .from('vendor_attachments')
         .select('*')
         .order('file_name');
 
       if (error) throw error;
-      setAllAttachments(data || []);
+      setAllVendorAttachments(data || []);
     } catch (error) {
-      console.error('Error fetching all attachments:', error);
+      console.error('Error fetching all vendor attachments:', error);
     }
   };
 
@@ -140,7 +141,7 @@ export const useVendorAttachments = (vendorId?: string) => {
       if (attachmentError) throw attachmentError;
 
       setAttachments(prev => [...prev, attachmentData]);
-      setAllAttachments(prev => [...prev, attachmentData]);
+      setAllVendorAttachments(prev => [...prev, attachmentData]);
       toast({
         title: "File uploaded",
         description: `${file.name} has been uploaded successfully.`,
@@ -197,7 +198,7 @@ export const useVendorAttachments = (vendorId?: string) => {
       if (error) throw error;
 
       setAttachments(prev => prev.filter(att => att.id !== attachmentId));
-      setAllAttachments(prev => prev.filter(att => att.id !== attachmentId));
+      setAllVendorAttachments(prev => prev.filter(att => att.id !== attachmentId));
       toast({
         title: "File deleted",
         description: "File has been deleted successfully.",
@@ -228,7 +229,7 @@ export const useVendorAttachments = (vendorId?: string) => {
             : att
         )
       );
-      setAllAttachments(prev => 
+      setAllVendorAttachments(prev => 
         prev.map(att => 
           att.id === attachmentId 
             ? { ...att, is_public: isPublic }
@@ -252,12 +253,13 @@ export const useVendorAttachments = (vendorId?: string) => {
   const getTotalAttachmentCount = useMemo(() => {
     return (targetVendorId?: string): number => {
       if (!targetVendorId) return 0;
-      return allAttachments.filter(a => a.vendor_id === targetVendorId).length;
+      // Count only attachments that the current user can see (filtered by RLS)
+      return allVendorAttachments.filter(a => a.vendor_id === targetVendorId).length;
     };
-  }, [allAttachments]);
+  }, [allVendorAttachments]);
 
   useEffect(() => {
-    fetchAllAttachments();
+    fetchAllVendorAttachments();
   }, []);
 
   useEffect(() => {
@@ -281,7 +283,7 @@ export const useVendorAttachments = (vendorId?: string) => {
     refetch: () => {
       fetchFolders();
       fetchAttachments();
-      fetchAllAttachments();
+      fetchAllVendorAttachments();
     }
   };
 };
