@@ -15,18 +15,33 @@ export const ClientContactsDialog = ({
   open, 
   onOpenChange 
 }: ClientContactsDialogProps) => {
+  console.log('ClientContactsDialog - clientId:', clientId);
+  
   const { contacts, addContact, updateContact, deleteContact } = useClientContacts(clientId);
 
   const handleAddContact = async (contactData: any) => {
-    await addContact(contactData);
+    try {
+      console.log('Adding contact for clientId:', clientId, 'with data:', contactData);
+      await addContact(contactData);
+    } catch (error) {
+      console.error('Error in handleAddContact:', error);
+    }
   };
 
   const handleUpdateContact = async (contactData: any) => {
-    await updateContact(contactData);
+    try {
+      await updateContact(contactData);
+    } catch (error) {
+      console.error('Error in handleUpdateContact:', error);
+    }
   };
 
   const handleDeleteContact = async (contactId: string) => {
-    await deleteContact(contactId);
+    try {
+      await deleteContact(contactId);
+    } catch (error) {
+      console.error('Error in handleDeleteContact:', error);
+    }
   };
 
   return (
