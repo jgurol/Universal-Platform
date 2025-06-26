@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerClose } from "@/components/ui/drawer";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Separator } from "@/components/ui/separator";
-import { FileText, ExternalLink, MessageSquare, X } from "lucide-react";
+import { FileText, ExternalLink, MessageSquare } from "lucide-react";
 import { CarrierQuote } from "@/hooks/useCircuitQuotes";
 import { useCarrierOptions } from "@/hooks/useCarrierOptions";
 import { useVendorPriceSheets } from "@/hooks/useVendorPriceSheets";
@@ -185,388 +185,384 @@ export const EditCarrierQuoteDialog = ({ open, onOpenChange, carrier, onUpdateCa
 
   return (
     <>
-      <Drawer open={open} onOpenChange={onOpenChange}>
-        <DrawerContent className="h-[85vh] max-w-5xl ml-auto">
-          <DrawerHeader className="flex items-center justify-between border-b">
-            <DrawerTitle>Edit Carrier Quote</DrawerTitle>
-            <DrawerClose asChild>
-              <Button variant="ghost" size="sm">
-                <X className="h-4 w-4" />
-              </Button>
-            </DrawerClose>
-          </DrawerHeader>
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent className="sm:max-w-5xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Edit Carrier Quote</DialogTitle>
+            <DialogDescription>
+              Update the carrier quote information. Leave cost and term blank if waiting for vendor response.
+            </DialogDescription>
+          </DialogHeader>
           
-          <div className="flex-1 overflow-y-auto p-6">
-            <form onSubmit={handleSubmit} className="space-y-4">
-              {/* Basic Carrier Information */}
-              <div className="space-y-3">
-                <Label className="text-sm font-semibold">Carrier Information</Label>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                  <div className="space-y-1">
-                    <div className="flex items-center justify-between">
-                      <Label htmlFor="vendor" className="text-xs">Carrier (Required)</Label>
-                      {vendorId && vendorPriceSheets.length > 0 && (
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="outline" size="sm" type="button" className="h-7 text-xs">
-                              <FileText className="h-3 w-3 mr-1" />
-                              Price Sheets ({vendorPriceSheets.length})
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent className="bg-white z-50">
-                            {vendorPriceSheets.map((sheet) => (
-                              <DropdownMenuItem 
-                                key={sheet.id}
-                                onClick={() => handleOpenPriceSheet(sheet)}
-                                className="cursor-pointer"
-                              >
-                                <ExternalLink className="h-4 w-4 mr-2" />
-                                {sheet.name}
-                              </DropdownMenuItem>
-                            ))}
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      )}
-                    </div>
-                    <Select value={vendorId} onValueChange={setVendorId} required>
-                      <SelectTrigger className="h-8">
-                        <SelectValue placeholder={loading ? "Loading vendors..." : "Select vendor"} />
-                      </SelectTrigger>
-                      <SelectContent className="bg-white z-50">
-                        {vendors.map((vendor) => (
-                          <SelectItem key={vendor.id} value={vendor.id}>
-                            <div className="flex items-center gap-2">
-                              <div 
-                                className="w-3 h-3 rounded-full" 
-                                style={{ backgroundColor: vendor.color || '#3B82F6' }}
-                              />
-                              {vendor.name}
-                            </div>
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div className="space-y-1">
-                    <Label htmlFor="category" className="text-xs">Circuit Type (Required)</Label>
-                    <Select value={categoryId} onValueChange={setCategoryId} required>
-                      <SelectTrigger className="h-8">
-                        <SelectValue placeholder={loading ? "Loading types..." : "Select circuit type"} />
-                      </SelectTrigger>
-                      <SelectContent className="bg-white z-50">
-                        {categories.map((category) => (
-                          <SelectItem key={category.id} value={category.id}>
-                            {category.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-
-                {/* Speed Selection */}
+          <form onSubmit={handleSubmit} className="space-y-4">
+            {/* Basic Carrier Information */}
+            <div className="space-y-3">
+              <Label className="text-sm font-semibold">Carrier Information</Label>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <div className="space-y-1">
-                  <Label htmlFor="speed" className="text-xs">Speed (Required)</Label>
-                  <Select value={speedId} onValueChange={setSpeedId} required>
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="vendor" className="text-xs">Carrier (Required)</Label>
+                    {vendorId && vendorPriceSheets.length > 0 && (
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="outline" size="sm" type="button" className="h-7 text-xs">
+                            <FileText className="h-3 w-3 mr-1" />
+                            Price Sheets ({vendorPriceSheets.length})
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent className="bg-white z-50">
+                          {vendorPriceSheets.map((sheet) => (
+                            <DropdownMenuItem 
+                              key={sheet.id}
+                              onClick={() => handleOpenPriceSheet(sheet)}
+                              className="cursor-pointer"
+                            >
+                              <ExternalLink className="h-4 w-4 mr-2" />
+                              {sheet.name}
+                            </DropdownMenuItem>
+                          ))}
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    )}
+                  </div>
+                  <Select value={vendorId} onValueChange={setVendorId} required>
                     <SelectTrigger className="h-8">
-                      <SelectValue placeholder={speedsLoading ? "Loading speeds..." : "Select speed"} />
+                      <SelectValue placeholder={loading ? "Loading vendors..." : "Select vendor"} />
                     </SelectTrigger>
                     <SelectContent className="bg-white z-50">
-                      {speeds.map((speed) => (
-                        <SelectItem key={speed.id} value={speed.id}>
-                          <div className="flex flex-col">
-                            <span>{speed.name}</span>
-                            {speed.description && (
-                              <span className="text-xs text-gray-500">{speed.description}</span>
-                            )}
+                      {vendors.map((vendor) => (
+                        <SelectItem key={vendor.id} value={vendor.id}>
+                          <div className="flex items-center gap-2">
+                            <div 
+                              className="w-3 h-3 rounded-full" 
+                              style={{ backgroundColor: vendor.color || '#3B82F6' }}
+                            />
+                            {vendor.name}
                           </div>
                         </SelectItem>
                       ))}
-                      <SelectItem value="custom">Custom Speed</SelectItem>
                     </SelectContent>
                   </Select>
-                  
-                  {speedId === "custom" && (
-                    <Input
-                      value={customSpeed}
-                      onChange={(e) => setCustomSpeed(e.target.value)}
-                      placeholder="Enter custom speed (e.g., 250x250M)"
-                      className="h-8 mt-1"
-                      required
-                    />
-                  )}
+                </div>
+
+                <div className="space-y-1">
+                  <Label htmlFor="category" className="text-xs">Circuit Type (Required)</Label>
+                  <Select value={categoryId} onValueChange={setCategoryId} required>
+                    <SelectTrigger className="h-8">
+                      <SelectValue placeholder={loading ? "Loading types..." : "Select circuit type"} />
+                    </SelectTrigger>
+                    <SelectContent className="bg-white z-50">
+                      {categories.map((category) => (
+                        <SelectItem key={category.id} value={category.id}>
+                          {category.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
 
-              <Separator />
-
-              {/* Pricing Information */}
-              <div className="space-y-3">
-                <Label className="text-sm font-semibold">Pricing & Contract</Label>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                  <div className="space-y-1">
-                    <Label htmlFor="price" className="text-xs">Monthly Cost</Label>
-                    <Input
-                      id="price"
-                      type="number"
-                      step="0.01"
-                      value={price}
-                      onChange={(e) => setPrice(e.target.value)}
-                      placeholder="Leave blank if waiting for quote"
-                      className="h-8 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                    />
-                  </div>
-
-                  <div className="space-y-1">
-                    <Label htmlFor="other-costs" className="text-xs">Other Monthly Costs</Label>
-                    <Input
-                      id="other-costs"
-                      type="number"
-                      step="0.01"
-                      value={otherCosts}
-                      onChange={(e) => setOtherCosts(e.target.value)}
-                      placeholder="Additional MRC costs"
-                      className="h-8 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                    />
-                  </div>
-
-                  <div className="space-y-1">
-                    <Label htmlFor="term" className="text-xs">Contract Term</Label>
-                    <Select value={term} onValueChange={setTerm}>
-                      <SelectTrigger className="h-8">
-                        <SelectValue placeholder="Leave blank if waiting for quote" />
-                      </SelectTrigger>
-                      <SelectContent className="bg-white z-50">
-                        <SelectItem value="Month to Month">Month to Month</SelectItem>
-                        <SelectItem value="12 months">12 months</SelectItem>
-                        <SelectItem value="24 months">24 months</SelectItem>
-                        <SelectItem value="36 months">36 months</SelectItem>
-                        <SelectItem value="60 months">60 months</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-              </div>
-
-              <Separator />
-
-              {/* Installation & Setup Fees */}
-              <div className="space-y-3">
-                <Label className="text-sm font-semibold">Installation & Setup</Label>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <div className="flex items-center space-x-2">
-                      <Checkbox
-                        id="install-fee"
-                        checked={installFee}
-                        onCheckedChange={(checked) => setInstallFee(checked as boolean)}
-                      />
-                      <Label htmlFor="install-fee" className="text-xs font-normal">
-                        Installation Fee
-                      </Label>
-                    </div>
-                    
-                    {installFee && (
-                      <div className="ml-6">
-                        <Label htmlFor="install-fee-amount" className="text-xs text-gray-600">
-                          Installation Fee Amount
-                        </Label>
-                        <Input
-                          id="install-fee-amount"
-                          type="number"
-                          step="0.01"
-                          value={installFeeAmount}
-                          onChange={(e) => setInstallFeeAmount(e.target.value)}
-                          placeholder="Enter fee amount"
-                          className="h-8 mt-1 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                        />
-                      </div>
-                    )}
-                  </div>
-
-                  <div className="space-y-2">
-                    <div className="flex items-center space-x-2">
-                      <Checkbox
-                        id="site-survey"
-                        checked={siteSurveyNeeded}
-                        onCheckedChange={(checked) => setSiteSurveyNeeded(checked as boolean)}
-                      />
-                      <Label htmlFor="site-survey" className="text-xs font-normal">
-                        Site Survey Needed
-                      </Label>
-                    </div>
-
-                    {siteSurveyNeeded && (
-                      <div className="ml-6 space-y-1">
-                        <Label className="text-xs text-gray-600">Site Survey Priority</Label>
-                        <div className="flex gap-1">
-                          <Button
-                            type="button"
-                            variant={siteSurveyColor === "red" ? "default" : "outline"}
-                            size="sm"
-                            onClick={() => setSiteSurveyColor("red")}
-                            className={`h-7 px-2 text-xs ${siteSurveyColor === "red" ? "bg-red-500 hover:bg-red-600" : "border-red-500 text-red-500 hover:bg-red-50"}`}
-                          >
-                            Red
-                          </Button>
-                          <Button
-                            type="button"
-                            variant={siteSurveyColor === "yellow" ? "default" : "outline"}
-                            size="sm"
-                            onClick={() => setSiteSurveyColor("yellow")}
-                            className={`h-7 px-2 text-xs ${siteSurveyColor === "yellow" ? "bg-yellow-500 hover:bg-yellow-600" : "border-yellow-500 text-yellow-600 hover:bg-yellow-50"}`}
-                          >
-                            Yellow
-                          </Button>
-                          <Button
-                            type="button"
-                            variant={siteSurveyColor === "orange" ? "default" : "outline"}
-                            size="sm"
-                            onClick={() => setSiteSurveyColor("orange")}
-                            className={`h-7 px-2 text-xs ${siteSurveyColor === "orange" ? "bg-orange-500 hover:bg-orange-600" : "border-orange-500 text-orange-600 hover:bg-orange-50"}`}
-                          >
-                            Orange
-                          </Button>
-                          <Button
-                            type="button"
-                            variant={siteSurveyColor === "green" ? "default" : "outline"}
-                            size="sm"
-                            onClick={() => setSiteSurveyColor("green")}
-                            className={`h-7 px-2 text-xs ${siteSurveyColor === "green" ? "bg-green-500 hover:bg-green-600" : "border-green-500 text-green-600 hover:bg-green-50"}`}
-                          >
-                            Green
-                          </Button>
+              {/* Speed Selection */}
+              <div className="space-y-1">
+                <Label htmlFor="speed" className="text-xs">Speed (Required)</Label>
+                <Select value={speedId} onValueChange={setSpeedId} required>
+                  <SelectTrigger className="h-8">
+                    <SelectValue placeholder={speedsLoading ? "Loading speeds..." : "Select speed"} />
+                  </SelectTrigger>
+                  <SelectContent className="bg-white z-50">
+                    {speeds.map((speed) => (
+                      <SelectItem key={speed.id} value={speed.id}>
+                        <div className="flex flex-col">
+                          <span>{speed.name}</span>
+                          {speed.description && (
+                            <span className="text-xs text-gray-500">{speed.description}</span>
+                          )}
                         </div>
-                      </div>
-                    )}
-                  </div>
+                      </SelectItem>
+                    ))}
+                    <SelectItem value="custom">Custom Speed</SelectItem>
+                  </SelectContent>
+                </Select>
+                
+                {speedId === "custom" && (
+                  <Input
+                    value={customSpeed}
+                    onChange={(e) => setCustomSpeed(e.target.value)}
+                    placeholder="Enter custom speed (e.g., 250x250M)"
+                    className="h-8 mt-1"
+                    required
+                  />
+                )}
+              </div>
+            </div>
+
+            <Separator />
+
+            {/* Pricing Information */}
+            <div className="space-y-3">
+              <Label className="text-sm font-semibold">Pricing & Contract</Label>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                <div className="space-y-1">
+                  <Label htmlFor="price" className="text-xs">Monthly Cost</Label>
+                  <Input
+                    id="price"
+                    type="number"
+                    step="0.01"
+                    value={price}
+                    onChange={(e) => setPrice(e.target.value)}
+                    placeholder="Leave blank if waiting for quote"
+                    className="h-8 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <Label htmlFor="other-costs" className="text-xs">Other Monthly Costs</Label>
+                  <Input
+                    id="other-costs"
+                    type="number"
+                    step="0.01"
+                    value={otherCosts}
+                    onChange={(e) => setOtherCosts(e.target.value)}
+                    placeholder="Additional MRC costs"
+                    className="h-8 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <Label htmlFor="term" className="text-xs">Contract Term</Label>
+                  <Select value={term} onValueChange={setTerm}>
+                    <SelectTrigger className="h-8">
+                      <SelectValue placeholder="Leave blank if waiting for quote" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-white z-50">
+                      <SelectItem value="Month to Month">Month to Month</SelectItem>
+                      <SelectItem value="12 months">12 months</SelectItem>
+                      <SelectItem value="24 months">24 months</SelectItem>
+                      <SelectItem value="36 months">36 months</SelectItem>
+                      <SelectItem value="60 months">60 months</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
+            </div>
 
-              <Separator />
+            <Separator />
 
-              {/* Static IP Options */}
-              <div className="space-y-3">
-                <Label className="text-sm font-semibold">Static IP Options</Label>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <div className="flex items-center space-x-2">
-                      <Checkbox
-                        id="includes-static-ip"
-                        checked={includesStaticIp}
-                        onCheckedChange={(checked) => setIncludesStaticIp(checked as boolean)}
-                      />
-                      <Label htmlFor="includes-static-ip" className="text-xs font-normal">
-                        1 Static IP (/30)
-                      </Label>
-                    </div>
-                    
-                    {includesStaticIp && (
-                      <div className="ml-6">
-                        <Label htmlFor="static-ip-fee-amount" className="text-xs text-gray-600">
-                          Static IP Fee Amount
-                        </Label>
-                        <Input
-                          id="static-ip-fee-amount"
-                          type="number"
-                          step="0.01"
-                          value={staticIpFeeAmount}
-                          onChange={(e) => setStaticIpFeeAmount(e.target.value)}
-                          placeholder="Enter fee amount"
-                          className="h-8 mt-1 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                        />
-                      </div>
-                    )}
-                  </div>
-
-                  <div className="space-y-2">
-                    <div className="flex items-center space-x-2">
-                      <Checkbox
-                        id="includes-5-static-ip"
-                        checked={includes5StaticIp}
-                        onCheckedChange={(checked) => setIncludes5StaticIp(checked as boolean)}
-                      />
-                      <Label htmlFor="includes-5-static-ip" className="text-xs font-normal">
-                        5 Static IP (/29)
-                      </Label>
-                    </div>
-                    
-                    {includes5StaticIp && (
-                      <div className="ml-6">
-                        <Label htmlFor="static-ip-5-fee-amount" className="text-xs text-gray-600">
-                          5 Static IP Fee Amount
-                        </Label>
-                        <Input
-                          id="static-ip-5-fee-amount"
-                          type="number"
-                          step="0.01"
-                          value={staticIp5FeeAmount}
-                          onChange={(e) => setStaticIp5FeeAmount(e.target.value)}
-                          placeholder="Enter fee amount"
-                          className="h-8 mt-1 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                        />
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-
-              <Separator />
-
-              {/* Service Status & Notes */}
-              <div className="space-y-3">
-                <Label className="text-sm font-semibold">Service Status & Notes</Label>
+            {/* Installation & Setup Fees */}
+            <div className="space-y-3">
+              <Label className="text-sm font-semibold">Installation & Setup</Label>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <div className="flex items-center space-x-2">
                     <Checkbox
-                      id="no-service"
-                      checked={noService}
-                      onCheckedChange={(checked) => setNoService(checked as boolean)}
+                      id="install-fee"
+                      checked={installFee}
+                      onCheckedChange={(checked) => setInstallFee(checked as boolean)}
                     />
-                    <Label htmlFor="no-service" className="text-xs font-normal">
-                      No Service Available
+                    <Label htmlFor="install-fee" className="text-xs font-normal">
+                      Installation Fee
+                    </Label>
+                  </div>
+                  
+                  {installFee && (
+                    <div className="ml-6">
+                      <Label htmlFor="install-fee-amount" className="text-xs text-gray-600">
+                        Installation Fee Amount
+                      </Label>
+                      <Input
+                        id="install-fee-amount"
+                        type="number"
+                        step="0.01"
+                        value={installFeeAmount}
+                        onChange={(e) => setInstallFeeAmount(e.target.value)}
+                        placeholder="Enter fee amount"
+                        className="h-8 mt-1 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                      />
+                    </div>
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <div className="flex items-center space-x-2">
+                    <Checkbox
+                      id="site-survey"
+                      checked={siteSurveyNeeded}
+                      onCheckedChange={(checked) => setSiteSurveyNeeded(checked as boolean)}
+                    />
+                    <Label htmlFor="site-survey" className="text-xs font-normal">
+                      Site Survey Needed
                     </Label>
                   </div>
 
-                  <div className="space-y-1">
-                    <Label htmlFor="notes" className="text-xs">Additional Notes</Label>
-                    <div className="flex gap-2">
-                      <Button
-                        type="button"
-                        variant="outline"
-                        onClick={() => setIsNotesDialogOpen(true)}
-                        className="w-full justify-start h-8 text-xs"
-                      >
-                        <MessageSquare className="h-3 w-3 mr-2" />
-                        {notes ? "View/Edit Notes" : "Add Notes"}
-                      </Button>
-                    </div>
-                    {notes && (
-                      <div className="text-xs text-gray-500 mt-1">
-                        {notes.length > 100 ? `${notes.substring(0, 100)}...` : notes}
+                  {siteSurveyNeeded && (
+                    <div className="ml-6 space-y-1">
+                      <Label className="text-xs text-gray-600">Site Survey Priority</Label>
+                      <div className="flex gap-1">
+                        <Button
+                          type="button"
+                          variant={siteSurveyColor === "red" ? "default" : "outline"}
+                          size="sm"
+                          onClick={() => setSiteSurveyColor("red")}
+                          className={`h-7 px-2 text-xs ${siteSurveyColor === "red" ? "bg-red-500 hover:bg-red-600" : "border-red-500 text-red-500 hover:bg-red-50"}`}
+                        >
+                          Red
+                        </Button>
+                        <Button
+                          type="button"
+                          variant={siteSurveyColor === "yellow" ? "default" : "outline"}
+                          size="sm"
+                          onClick={() => setSiteSurveyColor("yellow")}
+                          className={`h-7 px-2 text-xs ${siteSurveyColor === "yellow" ? "bg-yellow-500 hover:bg-yellow-600" : "border-yellow-500 text-yellow-600 hover:bg-yellow-50"}`}
+                        >
+                          Yellow
+                        </Button>
+                        <Button
+                          type="button"
+                          variant={siteSurveyColor === "orange" ? "default" : "outline"}
+                          size="sm"
+                          onClick={() => setSiteSurveyColor("orange")}
+                          className={`h-7 px-2 text-xs ${siteSurveyColor === "orange" ? "bg-orange-500 hover:bg-orange-600" : "border-orange-500 text-orange-600 hover:bg-orange-50"}`}
+                        >
+                          Orange
+                        </Button>
+                        <Button
+                          type="button"
+                          variant={siteSurveyColor === "green" ? "default" : "outline"}
+                          size="sm"
+                          onClick={() => setSiteSurveyColor("green")}
+                          className={`h-7 px-2 text-xs ${siteSurveyColor === "green" ? "bg-green-500 hover:bg-green-600" : "border-green-500 text-green-600 hover:bg-green-50"}`}
+                        >
+                          Green
+                        </Button>
                       </div>
-                    )}
-                  </div>
+                    </div>
+                  )}
                 </div>
               </div>
-              
-              <div className="flex justify-end space-x-2 pt-3 border-t">
-                <Button type="button" variant="outline" onClick={() => onOpenChange(false)} className="h-8 px-3 text-sm">
-                  Cancel
-                </Button>
-                <Button 
-                  type="submit" 
-                  className="h-8 px-3 text-sm bg-purple-600 hover:bg-purple-700"
-                  disabled={!vendorId || !categoryId || !speedId || loading || speedsLoading || (speedId === "custom" && !customSpeed)}
-                >
-                  Update Carrier Quote
-                </Button>
+            </div>
+
+            <Separator />
+
+            {/* Static IP Options */}
+            <div className="space-y-3">
+              <Label className="text-sm font-semibold">Static IP Options</Label>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <div className="flex items-center space-x-2">
+                    <Checkbox
+                      id="includes-static-ip"
+                      checked={includesStaticIp}
+                      onCheckedChange={(checked) => setIncludesStaticIp(checked as boolean)}
+                    />
+                    <Label htmlFor="includes-static-ip" className="text-xs font-normal">
+                      1 Static IP (/30)
+                    </Label>
+                  </div>
+                  
+                  {includesStaticIp && (
+                    <div className="ml-6">
+                      <Label htmlFor="static-ip-fee-amount" className="text-xs text-gray-600">
+                        Static IP Fee Amount
+                      </Label>
+                      <Input
+                        id="static-ip-fee-amount"
+                        type="number"
+                        step="0.01"
+                        value={staticIpFeeAmount}
+                        onChange={(e) => setStaticIpFeeAmount(e.target.value)}
+                        placeholder="Enter fee amount"
+                        className="h-8 mt-1 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                      />
+                    </div>
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <div className="flex items-center space-x-2">
+                    <Checkbox
+                      id="includes-5-static-ip"
+                      checked={includes5StaticIp}
+                      onCheckedChange={(checked) => setIncludes5StaticIp(checked as boolean)}
+                    />
+                    <Label htmlFor="includes-5-static-ip" className="text-xs font-normal">
+                      5 Static IP (/29)
+                    </Label>
+                  </div>
+                  
+                  {includes5StaticIp && (
+                    <div className="ml-6">
+                      <Label htmlFor="static-ip-5-fee-amount" className="text-xs text-gray-600">
+                        5 Static IP Fee Amount
+                      </Label>
+                      <Input
+                        id="static-ip-5-fee-amount"
+                        type="number"
+                        step="0.01"
+                        value={staticIp5FeeAmount}
+                        onChange={(e) => setStaticIp5FeeAmount(e.target.value)}
+                        placeholder="Enter fee amount"
+                        className="h-8 mt-1 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                      />
+                    </div>
+                  )}
+                </div>
               </div>
-            </form>
-          </div>
-        </DrawerContent>
-      </Drawer>
+            </div>
+
+            <Separator />
+
+            {/* Service Status & Notes */}
+            <div className="space-y-3">
+              <Label className="text-sm font-semibold">Service Status & Notes</Label>
+              <div className="space-y-2">
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="no-service"
+                    checked={noService}
+                    onCheckedChange={(checked) => setNoService(checked as boolean)}
+                  />
+                  <Label htmlFor="no-service" className="text-xs font-normal">
+                    No Service Available
+                  </Label>
+                </div>
+
+                <div className="space-y-1">
+                  <Label htmlFor="notes" className="text-xs">Additional Notes</Label>
+                  <div className="flex gap-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => setIsNotesDialogOpen(true)}
+                      className="w-full justify-start h-8 text-xs"
+                    >
+                      <MessageSquare className="h-3 w-3 mr-2" />
+                      {notes ? "View/Edit Notes" : "Add Notes"}
+                    </Button>
+                  </div>
+                  {notes && (
+                    <div className="text-xs text-gray-500 mt-1">
+                      {notes.length > 100 ? `${notes.substring(0, 100)}...` : notes}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+            
+            <div className="flex justify-end space-x-2 pt-3">
+              <Button type="button" variant="outline" onClick={() => onOpenChange(false)} className="h-8 px-3 text-sm">
+                Cancel
+              </Button>
+              <Button 
+                type="submit" 
+                className="h-8 px-3 text-sm bg-purple-600 hover:bg-purple-700"
+                disabled={!vendorId || !categoryId || !speedId || loading || speedsLoading || (speedId === "custom" && !customSpeed)}
+              >
+                Update Carrier Quote
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
 
       <CarrierQuoteNotesDialog
         open={isNotesDialogOpen}
