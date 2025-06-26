@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -11,6 +10,7 @@ import { SpeedsManagement } from "@/components/SpeedsManagement";
 import { Badge } from "@/components/ui/badge";
 import { Vendor } from "@/types/vendors";
 import { useToast } from "@/hooks/use-toast";
+import { useVendorAttachments } from "@/hooks/useVendorAttachments";
 
 export const VendorsManagement = () => {
   const [isAddVendorOpen, setIsAddVendorOpen] = useState(false);
@@ -20,6 +20,7 @@ export const VendorsManagement = () => {
   const [selectedVendor, setSelectedVendor] = useState<Vendor | null>(null);
   const { vendors, isLoading, addVendor, updateVendor, deleteVendor } = useVendors();
   const { toast } = useToast();
+  const { getTotalAttachmentCount } = useVendorAttachments();
 
   const handleEditVendor = (vendor: Vendor) => {
     setSelectedVendor(vendor);
@@ -138,80 +139,91 @@ export const VendorsManagement = () => {
             </div>
           ) : (
             <div className="space-y-3">
-              {vendors.map((vendor) => (
-                <div key={vendor.id} className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50">
-                  <div className="flex items-center gap-3">
-                    <div 
-                      className="w-4 h-4 rounded-full border border-gray-300"
-                      style={{ backgroundColor: vendor.color || '#3B82F6' }}
-                    />
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-1">
-                        <h4 className="font-medium text-gray-900">{vendor.name}</h4>
-                        {vendor.rep_name && (
-                          <Badge variant="outline" className="text-xs">
-                            Rep: {vendor.rep_name}
-                          </Badge>
+              {vendors.map((vendor) => {
+                const attachmentCount = getTotalAttachmentCount(vendor.id);
+                return (
+                  <div key={vendor.id} className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50">
+                    <div className="flex items-center gap-3">
+                      <div 
+                        className="w-4 h-4 rounded-full border border-gray-300"
+                        style={{ backgroundColor: vendor.color || '#3B82F6' }}
+                      />
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-1">
+                          <h4 className="font-medium text-gray-900">{vendor.name}</h4>
+                          {vendor.rep_name && (
+                            <Badge variant="outline" className="text-xs">
+                              Rep: {vendor.rep_name}
+                            </Badge>
+                          )}
+                          {vendor.sales_model && (
+                            <Badge variant="outline" className={`text-xs ${getSalesModelBadgeColor(vendor.sales_model)}`}>
+                              {vendor.sales_model.charAt(0).toUpperCase() + vendor.sales_model.slice(1)}
+                            </Badge>
+                          )}
+                        </div>
+                        {vendor.description && (
+                          <p className="text-sm text-gray-600 mb-2">{vendor.description}</p>
                         )}
-                        {vendor.sales_model && (
-                          <Badge variant="outline" className={`text-xs ${getSalesModelBadgeColor(vendor.sales_model)}`}>
-                            {vendor.sales_model.charAt(0).toUpperCase() + vendor.sales_model.slice(1)}
-                          </Badge>
-                        )}
-                      </div>
-                      {vendor.description && (
-                        <p className="text-sm text-gray-600 mb-2">{vendor.description}</p>
-                      )}
-                      <div className="flex items-center gap-4 text-xs text-gray-500">
-                        {vendor.email && (
-                          <div className="flex items-center gap-1">
-                            <Mail className="h-3 w-3" />
-                            {vendor.email}
-                          </div>
-                        )}
-                        {vendor.phone && (
-                          <div className="flex items-center gap-1">
-                            <Phone className="h-3 w-3" />
-                            {vendor.phone}
-                          </div>
-                        )}
+                        <div className="flex items-center gap-4 text-xs text-gray-500">
+                          {vendor.email && (
+                            <div className="flex items-center gap-1">
+                              <Mail className="h-3 w-3" />
+                              {vendor.email}
+                            </div>
+                          )}
+                          {vendor.phone && (
+                            <div className="flex items-center gap-1">
+                              <Phone className="h-3 w-3" />
+                              {vendor.phone}
+                            </div>
+                          )}
+                        </div>
                       </div>
                     </div>
+                    <div className="flex items-center gap-2">
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        onClick={() => handleViewAttachments(vendor)}
+                        className="text-blue-600 hover:text-blue-700 relative"
+                        title="View Attachments"
+                      >
+                        <FolderIcon className="h-4 w-4" />
+                        {attachmentCount > 0 && (
+                          <Badge 
+                            variant="secondary" 
+                            className="absolute -top-1 -right-1 h-5 w-5 rounded-full p-0 flex items-center justify-center text-xs bg-blue-600 text-white"
+                          >
+                            {attachmentCount}
+                          </Badge>
+                        )}
+                      </Button>
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        onClick={() => handleDuplicateVendor(vendor)}
+                        className="text-green-600 hover:text-green-700"
+                        title="Duplicate Vendor"
+                      >
+                        <Copy className="h-4 w-4" />
+                      </Button>
+                      <Button variant="ghost" size="sm" onClick={() => handleEditVendor(vendor)}>
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        className="text-red-600 hover:text-red-700"
+                        onClick={() => handleDeleteVendor(vendor)}
+                        title="Delete Vendor"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <Button 
-                      variant="ghost" 
-                      size="sm" 
-                      onClick={() => handleViewAttachments(vendor)}
-                      className="text-blue-600 hover:text-blue-700"
-                      title="View Attachments"
-                    >
-                      <FolderIcon className="h-4 w-4" />
-                    </Button>
-                    <Button 
-                      variant="ghost" 
-                      size="sm" 
-                      onClick={() => handleDuplicateVendor(vendor)}
-                      className="text-green-600 hover:text-green-700"
-                      title="Duplicate Vendor"
-                    >
-                      <Copy className="h-4 w-4" />
-                    </Button>
-                    <Button variant="ghost" size="sm" onClick={() => handleEditVendor(vendor)}>
-                      <Edit className="h-4 w-4" />
-                    </Button>
-                    <Button 
-                      variant="ghost" 
-                      size="sm" 
-                      className="text-red-600 hover:text-red-700"
-                      onClick={() => handleDeleteVendor(vendor)}
-                      title="Delete Vendor"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </CardContent>

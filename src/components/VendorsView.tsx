@@ -1,4 +1,3 @@
-
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -9,6 +8,7 @@ import { AddVendorDialog } from "@/components/AddVendorDialog";
 import { VendorAttachmentsDialog } from "@/components/VendorAttachmentsDialog";
 import { useState } from "react";
 import { Vendor } from "@/types/vendors";
+import { useVendorAttachments } from "@/hooks/useVendorAttachments";
 
 export const VendorsView = () => {
   const { vendors, isLoading, addVendor } = useVendors();
@@ -16,6 +16,7 @@ export const VendorsView = () => {
   const [isAddVendorOpen, setIsAddVendorOpen] = useState(false);
   const [isAttachmentsOpen, setIsAttachmentsOpen] = useState(false);
   const [selectedVendor, setSelectedVendor] = useState<Vendor | null>(null);
+  const { getTotalAttachmentCount } = useVendorAttachments();
 
   const getSalesModelBadgeColor = (salesModel?: string) => {
     switch (salesModel) {
@@ -77,67 +78,78 @@ export const VendorsView = () => {
             </div>
           ) : (
             <div className="space-y-3">
-              {vendors.map((vendor) => (
-                <div key={vendor.id} className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
-                  <div className="flex items-center gap-3 flex-1">
-                    <div 
-                      className="w-4 h-4 rounded-full border border-gray-300"
-                      style={{ backgroundColor: vendor.color || '#3B82F6' }}
-                    />
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-1">
-                        <h4 className="font-medium text-gray-900">{vendor.name}</h4>
-                        {isAdmin && vendor.dba && (
-                          <Badge variant="outline" className="text-xs bg-yellow-50 text-yellow-700 border-yellow-200">
-                            DBA: {vendor.dba}
-                          </Badge>
-                        )}
-                        {isAdmin && vendor.rep_name && (
-                          <Badge variant="outline" className="text-xs">
-                            <User className="w-3 h-3 mr-1" />
-                            {vendor.rep_name}
-                          </Badge>
-                        )}
-                        {isAdmin && vendor.sales_model && (
-                          <Badge variant="outline" className={`text-xs ${getSalesModelBadgeColor(vendor.sales_model)}`}>
-                            {vendor.sales_model.charAt(0).toUpperCase() + vendor.sales_model.slice(1)}
-                          </Badge>
-                        )}
-                      </div>
-                      {vendor.description && (
-                        <p className="text-sm text-gray-600 mb-2">{vendor.description}</p>
-                      )}
-                      {isAdmin && (
-                        <div className="flex items-center gap-4 text-xs text-gray-500">
-                          {vendor.email && (
-                            <div className="flex items-center gap-1">
-                              <Mail className="h-3 w-3" />
-                              {vendor.email}
-                            </div>
+              {vendors.map((vendor) => {
+                const attachmentCount = getTotalAttachmentCount(vendor.id);
+                return (
+                  <div key={vendor.id} className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
+                    <div className="flex items-center gap-3 flex-1">
+                      <div 
+                        className="w-4 h-4 rounded-full border border-gray-300"
+                        style={{ backgroundColor: vendor.color || '#3B82F6' }}
+                      />
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-1">
+                          <h4 className="font-medium text-gray-900">{vendor.name}</h4>
+                          {isAdmin && vendor.dba && (
+                            <Badge variant="outline" className="text-xs bg-yellow-50 text-yellow-700 border-yellow-200">
+                              DBA: {vendor.dba}
+                            </Badge>
                           )}
-                          {vendor.phone && (
-                            <div className="flex items-center gap-1">
-                              <Phone className="h-3 w-3" />
-                              {vendor.phone}
-                            </div>
+                          {isAdmin && vendor.rep_name && (
+                            <Badge variant="outline" className="text-xs">
+                              <User className="w-3 h-3 mr-1" />
+                              {vendor.rep_name}
+                            </Badge>
+                          )}
+                          {isAdmin && vendor.sales_model && (
+                            <Badge variant="outline" className={`text-xs ${getSalesModelBadgeColor(vendor.sales_model)}`}>
+                              {vendor.sales_model.charAt(0).toUpperCase() + vendor.sales_model.slice(1)}
+                            </Badge>
                           )}
                         </div>
-                      )}
+                        {vendor.description && (
+                          <p className="text-sm text-gray-600 mb-2">{vendor.description}</p>
+                        )}
+                        {isAdmin && (
+                          <div className="flex items-center gap-4 text-xs text-gray-500">
+                            {vendor.email && (
+                              <div className="flex items-center gap-1">
+                                <Mail className="h-3 w-3" />
+                                {vendor.email}
+                              </div>
+                            )}
+                            {vendor.phone && (
+                              <div className="flex items-center gap-1">
+                                <Phone className="h-3 w-3" />
+                                {vendor.phone}
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleViewAttachments(vendor)}
+                        className="text-blue-600 hover:text-blue-700 relative"
+                        title="View Attachments"
+                      >
+                        <FolderIcon className="h-4 w-4" />
+                        {attachmentCount > 0 && (
+                          <Badge 
+                            variant="secondary" 
+                            className="absolute -top-1 -right-1 h-5 w-5 rounded-full p-0 flex items-center justify-center text-xs bg-blue-600 text-white"
+                          >
+                            {attachmentCount}
+                          </Badge>
+                        )}
+                      </Button>
                     </div>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleViewAttachments(vendor)}
-                      className="text-blue-600 hover:text-blue-700"
-                      title="View Attachments"
-                    >
-                      <FolderIcon className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </CardContent>

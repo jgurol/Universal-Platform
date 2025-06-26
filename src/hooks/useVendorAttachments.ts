@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -195,6 +194,11 @@ export const useVendorAttachments = (vendorId?: string) => {
     }
   };
 
+  const getTotalAttachmentCount = (targetVendorId?: string): number => {
+    if (!targetVendorId) return 0;
+    return attachments.filter(a => a.vendor_id === targetVendorId).length;
+  };
+
   useEffect(() => {
     if (vendorId) {
       Promise.all([fetchFolders(), fetchAttachments()]).finally(() => {
@@ -211,6 +215,7 @@ export const useVendorAttachments = (vendorId?: string) => {
     uploadFile,
     moveAttachment,
     deleteAttachment,
+    getTotalAttachmentCount,
     refetch: () => {
       fetchFolders();
       fetchAttachments();
