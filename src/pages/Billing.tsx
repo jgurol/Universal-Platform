@@ -2,11 +2,30 @@
 import { NavigationBar } from "@/components/NavigationBar";
 import { QuickNavigation } from "@/components/QuickNavigation";
 import { Header } from "@/components/Header";
-import { TransactionCard } from "@/components/TransactionCard";
 import { RecentTransactions } from "@/components/RecentTransactions";
 import { AgentSummary } from "@/components/AgentSummary";
+import { useIndexData } from "@/hooks/useIndexData";
+import { useTransactionActions } from "@/hooks/useTransactionActions";
+import { useAuth } from "@/context/AuthContext";
 
 const Billing = () => {
+  const { isAdmin } = useAuth();
+  const {
+    clients,
+    quotes,
+    clientInfos,
+  } = useIndexData();
+
+  const {
+    transactions,
+    addTransaction,
+    updateTransaction,
+    approveCommission,
+    payCommission,
+    deleteTransaction,
+    associatedAgentId
+  } = useTransactionActions();
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
       <NavigationBar />
@@ -15,13 +34,28 @@ const Billing = () => {
         <Header />
         
         {/* Agent Summary */}
-        <AgentSummary />
-        
-        {/* Transaction Management */}
-        <TransactionCard />
+        <div className="mb-8">
+          <AgentSummary 
+            clients={clients}
+            quotes={quotes}
+            allQuotes={quotes}
+            isAdmin={isAdmin}
+            activeFilter={null}
+          />
+        </div>
         
         {/* Recent Transactions */}
-        <RecentTransactions />
+        <RecentTransactions 
+          transactions={transactions}
+          clients={clients}
+          clientInfos={clientInfos}
+          onAddTransaction={addTransaction}
+          onUpdateTransaction={updateTransaction}
+          onApproveCommission={approveCommission}
+          onPayCommission={payCommission}
+          onDeleteTransaction={deleteTransaction}
+          associatedAgentId={associatedAgentId}
+        />
       </div>
     </div>
   );
