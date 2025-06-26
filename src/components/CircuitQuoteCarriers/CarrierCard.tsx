@@ -1,4 +1,3 @@
-
 import { Button } from "@/components/ui/button";
 import { Edit, Trash2, Copy, GripVertical, MessageSquare } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
@@ -165,6 +164,9 @@ export const CarrierCard = ({ carrier, onEdit, onDelete, onCopy, dragHandleProps
     return carrier.price;
   };
 
+  // For agents, check if all required data is loaded before displaying price
+  const isDataReady = isAdmin || (categories.length > 0 && clients.length > 0);
+  
   const displayPrice = getDisplayPrice();
   const basePriceWithoutAddOns = getBasePriceWithoutAddOns();
   
@@ -272,8 +274,13 @@ export const CarrierCard = ({ carrier, onEdit, onDelete, onCopy, dragHandleProps
             <div>
               <div className={`font-semibold text-lg ${isNoService ? 'text-red-600' : ''}`}>
                 {isNoService ? 'No Service' : (
-                  displayPrice > 0 ? formatCurrency(displayPrice) : (
-                    <span className="text-orange-600 text-sm">Pending</span>
+                  // For agents, only show price if data is ready and price > 0
+                  (!isAdmin && !isDataReady) ? (
+                    <span className="text-orange-600 text-sm">Loading...</span>
+                  ) : (
+                    displayPrice > 0 ? formatCurrency(displayPrice) : (
+                      <span className="text-orange-600 text-sm">Pending</span>
+                    )
                   )
                 )}
               </div>
