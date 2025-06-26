@@ -131,7 +131,7 @@ export const CircuitQuoteCardHeader = ({
             
             {/* Address and created date on the same line */}
             <div className="flex items-center justify-between text-sm text-gray-600">
-              <div className="flex items-center gap-4">
+              <div className="flex items-center gap-4 text-left">
                 <div className="flex items-center gap-1">
                   <MapPin className="h-4 w-4" />
                   <span>{quote.location}</span>
@@ -143,7 +143,7 @@ export const CircuitQuoteCardHeader = ({
                   </div>
                 )}
               </div>
-              <div>
+              <div className="text-right">
                 Created: {quote.created_at}
               </div>
             </div>
