@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.50.0";
 import { Resend } from "npm:resend@2.0.0";
@@ -279,41 +278,29 @@ const handler = async (req: Request): Promise<Response> => {
       try {
         const dealInfo = circuitQuote.deal_registration || {};
         const prompt = `
-As a telecom expert, analyze these circuit options for a client deal and provide recommendations:
+As a telecom expert, analyze these circuit options and provide a brief summary:
 
 Deal Information:
 - Name: ${dealInfo.deal_name || 'Not specified'}
 - Description: ${dealInfo.description || 'Not specified'}
-- Notes: ${dealInfo.notes || 'Not specified'}
 - Deal Value: $${dealInfo.deal_value || 'Not specified'}
 
 Client Requirements:
 - Location: ${circuitQuote.location}
 - Static IP Required: ${circuitQuote.static_ip ? 'Yes' : 'No'}
 - /29 Block Required: ${circuitQuote.slash_29 ? 'Yes' : 'No'}
-- DHCP: ${circuitQuote.dhcp ? 'Yes' : 'No'}
-- MikroTik Required: ${circuitQuote.mikrotik_required ? 'Yes' : 'No'}
 
 Available Circuit Options:
 ${carriersData.map((carrier, index) => `
-${index + 1}. ${carrier.carrier} - ${carrier.type}
-   - Speed: ${carrier.speed}
-   - Monthly Price: $${carrier.price}
-   - Term: ${carrier.term || 'Not specified'}
-   - Install Fee: ${carrier.install_fee ? `$${carrier.install_fee_amount}` : 'None'}
-   - Site Survey Needed: ${carrier.site_survey_needed ? 'Yes' : 'No'}
-   - Static IP: ${carrier.static_ip ? `Included ($${carrier.static_ip_fee_amount || 0} fee)` : 'Not included'}
-   - Notes: ${carrier.notes || 'None'}
+${index + 1}. ${carrier.carrier} - ${carrier.type} - ${carrier.speed} - $${carrier.price}/mo - ${carrier.term || 'N/A'}
 `).join('')}
 
-Please provide:
-1. Top 2-3 recommendations with brief reasoning
-2. Cost-benefit analysis considerations
-3. Any potential concerns or limitations
-4. Best fit based on the deal requirements
+Provide a BRIEF summary (3-4 sentences max) covering:
+1. Top recommendation and why
+2. Key cost/value consideration
+3. Any important notes
 
-Format your response as a professional email with proper line breaks and spacing.
-Keep it concise but informative.
+Keep it very concise and professional.
         `;
 
         console.log('Sending request to OpenAI...');
