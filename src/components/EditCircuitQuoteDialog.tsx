@@ -1,11 +1,12 @@
 
 import { useState, useEffect } from "react";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerClose } from "@/components/ui/drawer";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
+import { X } from "lucide-react";
 import { CircuitQuote } from "@/hooks/useCircuitQuotes";
 
 interface EditCircuitQuoteDialogProps {
@@ -57,123 +58,127 @@ export const EditCircuitQuoteDialog = ({ open, onOpenChange, quote, onUpdateQuot
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[500px]">
-        <DialogHeader>
-          <DialogTitle>Edit Circuit Quote</DialogTitle>
-          <DialogDescription>
-            Update the circuit quote details and requirements.
-          </DialogDescription>
-        </DialogHeader>
+    <Drawer open={open} onOpenChange={onOpenChange}>
+      <DrawerContent className="h-[85vh] max-w-md ml-auto">
+        <DrawerHeader className="flex items-center justify-between border-b">
+          <DrawerTitle>Edit Circuit Quote</DrawerTitle>
+          <DrawerClose asChild>
+            <Button variant="ghost" size="sm">
+              <X className="h-4 w-4" />
+            </Button>
+          </DrawerClose>
+        </DrawerHeader>
         
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="client-name">Client Name (Required)</Label>
-            <Input
-              id="client-name"
-              value={clientName}
-              onChange={(e) => setClientName(e.target.value)}
-              required
-            />
-          </div>
+        <div className="flex-1 overflow-y-auto p-6">
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="client-name">Client Name (Required)</Label>
+              <Input
+                id="client-name"
+                value={clientName}
+                onChange={(e) => setClientName(e.target.value)}
+                required
+              />
+            </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="location">Location (Required)</Label>
-            <Input
-              id="location"
-              value={location}
-              onChange={(e) => setLocation(e.target.value)}
-              required
-            />
-          </div>
+            <div className="space-y-2">
+              <Label htmlFor="location">Location (Required)</Label>
+              <Input
+                id="location"
+                value={location}
+                onChange={(e) => setLocation(e.target.value)}
+                required
+              />
+            </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="suite">Suite</Label>
-            <Input
-              id="suite"
-              value={suite}
-              onChange={(e) => setSuite(e.target.value)}
-            />
-          </div>
+            <div className="space-y-2">
+              <Label htmlFor="suite">Suite</Label>
+              <Input
+                id="suite"
+                value={suite}
+                onChange={(e) => setSuite(e.target.value)}
+              />
+            </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="status">Status</Label>
-            <Select value={status} onValueChange={setStatus}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select status" />
-              </SelectTrigger>
-              <SelectContent className="bg-white">
-                <SelectItem value="new_pricing">New Pricing</SelectItem>
-                <SelectItem value="researching">Researching</SelectItem>
-                <SelectItem value="completed">Completed</SelectItem>
-                <SelectItem value="sent_to_customer">Sent to Customer</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+            <div className="space-y-2">
+              <Label htmlFor="status">Status</Label>
+              <Select value={status} onValueChange={setStatus}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select status" />
+                </SelectTrigger>
+                <SelectContent className="bg-white">
+                  <SelectItem value="new_pricing">New Pricing</SelectItem>
+                  <SelectItem value="researching">Researching</SelectItem>
+                  <SelectItem value="completed">Completed</SelectItem>
+                  <SelectItem value="sent_to_customer">Sent to Customer</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
 
-          <div className="space-y-4">
-            <Label>Quote Requirements</Label>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="flex items-center space-x-2">
-                <Checkbox
-                  id="static-ip"
-                  checked={staticIp}
-                  onCheckedChange={(checked) => setStaticIp(checked as boolean)}
-                />
-                <Label htmlFor="static-ip" className="text-sm font-normal">
-                  /30 Static IP
-                </Label>
-              </div>
-              
-              <div className="flex items-center space-x-2">
-                <Checkbox
-                  id="slash-29"
-                  checked={slash29}
-                  onCheckedChange={(checked) => setSlash29(checked as boolean)}
-                />
-                <Label htmlFor="slash-29" className="text-sm font-normal">
-                  /29 Static IP
-                </Label>
-              </div>
+            <div className="space-y-4">
+              <Label>Quote Requirements</Label>
+              <div className="grid grid-cols-1 gap-4">
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="static-ip"
+                    checked={staticIp}
+                    onCheckedChange={(checked) => setStaticIp(checked as boolean)}
+                  />
+                  <Label htmlFor="static-ip" className="text-sm font-normal">
+                    /30 Static IP
+                  </Label>
+                </div>
+                
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="slash-29"
+                    checked={slash29}
+                    onCheckedChange={(checked) => setSlash29(checked as boolean)}
+                  />
+                  <Label htmlFor="slash-29" className="text-sm font-normal">
+                    /29 Static IP
+                  </Label>
+                </div>
 
-              <div className="flex items-center space-x-2">
-                <Checkbox
-                  id="dhcp"
-                  checked={dhcp}
-                  onCheckedChange={(checked) => setDhcp(checked as boolean)}
-                />
-                <Label htmlFor="dhcp" className="text-sm font-normal">
-                  DHCP (No Static IP)
-                </Label>
-              </div>
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="dhcp"
+                    checked={dhcp}
+                    onCheckedChange={(checked) => setDhcp(checked as boolean)}
+                  />
+                  <Label htmlFor="dhcp" className="text-sm font-normal">
+                    DHCP (No Static IP)
+                  </Label>
+                </div>
 
-              <div className="flex items-center space-x-2">
-                <Checkbox
-                  id="mikrotik-required"
-                  checked={mikrotikRequired}
-                  onCheckedChange={(checked) => setMikrotikRequired(checked as boolean)}
-                />
-                <Label htmlFor="mikrotik-required" className="text-sm font-normal">
-                  Router Required (Mikrotik)
-                </Label>
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="mikrotik-required"
+                    checked={mikrotikRequired}
+                    onCheckedChange={(checked) => setMikrotikRequired(checked as boolean)}
+                  />
+                  <Label htmlFor="mikrotik-required" className="text-sm font-normal">
+                    Router Required (Mikrotik)
+                  </Label>
+                </div>
               </div>
             </div>
-          </div>
-          
-          <div className="flex justify-end space-x-2 mt-6">
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-              Cancel
-            </Button>
-            <Button 
-              type="submit" 
-              className="bg-purple-600 hover:bg-purple-700"
-              disabled={!clientName || !location}
-            >
-              Update Quote
-            </Button>
-          </div>
-        </form>
-      </DialogContent>
-    </Dialog>
+            
+            <div className="flex justify-end space-x-2 mt-6 pt-4 border-t">
+              <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+                Cancel
+              </Button>
+              <Button 
+                type="submit" 
+                className="bg-purple-600 hover:bg-purple-700"
+                disabled={!clientName || !location}
+              >
+                Update Quote
+              </Button>
+            </div>
+          </form>
+        </div>
+      </DrawerContent>
+    </Drawer>
   );
 };
