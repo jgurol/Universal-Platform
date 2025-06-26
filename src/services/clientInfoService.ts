@@ -22,6 +22,7 @@ export const clientInfoService = {
       query = query.eq('user_id', userId);
     }
     
+    // Always sort by company name in ascending order
     const { data, error } = await query.order('company_name', { ascending: true });
     
     if (error) {
