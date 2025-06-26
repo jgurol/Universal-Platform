@@ -9,37 +9,37 @@ const navigationItems = [
   {
     path: '/client-management',
     icon: Users,
-    label: 'Client Management',
+    label: 'Clients',
     description: 'Manage client information'
   },
   {
     path: '/deal-registration',
     icon: UserPlus,
-    label: 'Deal Registration',
+    label: 'Deals',
     description: 'Register new deals'
   },
   {
     path: '/circuit-quotes',
     icon: Zap,
-    label: 'Circuit Quotes',
+    label: 'Circuits',
     description: 'Circuit pricing research'
   },
   {
     path: '/quoting-system',
     icon: FileText,
-    label: 'Quoting System',
+    label: 'Quotes',
     description: 'Create and manage quotes'
   },
   {
     path: '/circuit-tracking',
     icon: BarChart3,
-    label: 'Circuit Tracking',
+    label: 'Tracking',
     description: 'Track circuit progress'
   },
   {
     path: '/billing',
     icon: DollarSign,
-    label: 'Track Commissions',
+    label: 'Commission',
     description: 'Commission tracking'
   }
 ];
@@ -68,8 +68,9 @@ export const QuickNavigation = () => {
                         asChild
                         className={isActive ? "bg-blue-600 hover:bg-blue-700" : ""}
                       >
-                        <Link to={item.path}>
+                        <Link to={item.path} className="flex items-center gap-2">
                           <Icon className="h-4 w-4" />
+                          <span className="hidden sm:inline">{item.label}</span>
                         </Link>
                       </Button>
                     </TooltipTrigger>
