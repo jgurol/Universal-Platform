@@ -129,27 +129,28 @@ export const CircuitQuoteCardHeader = ({
               )}
             </div>
             
-            <div className="flex items-center gap-4 text-sm text-gray-600">
-              <div className="flex items-center gap-1">
-                <MapPin className="h-4 w-4" />
-                <span>{quote.location}</span>
-              </div>
-              {quote.suite && (
+            {/* Address and created date on the same line */}
+            <div className="flex items-center justify-between text-sm text-gray-600">
+              <div className="flex items-center gap-4">
                 <div className="flex items-center gap-1">
-                  <Building className="h-4 w-4" />
-                  <span>Suite {quote.suite}</span>
+                  <MapPin className="h-4 w-4" />
+                  <span>{quote.location}</span>
                 </div>
-              )}
+                {quote.suite && (
+                  <div className="flex items-center gap-1">
+                    <Building className="h-4 w-4" />
+                    <span>Suite {quote.suite}</span>
+                  </div>
+                )}
+              </div>
+              <div>
+                Created: {quote.created_at}
+              </div>
             </div>
           </div>
         </div>
 
         <div className="flex items-center gap-2 ml-4">
-          {/* Move created date to top right */}
-          <div className="text-xs text-gray-500">
-            Created: {quote.created_at}
-          </div>
-          
           {isAdmin && (
             <>
               <Button
