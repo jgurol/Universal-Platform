@@ -364,18 +364,23 @@ export const DealRegistrationCard = ({ clientInfos, agentMapping }: DealRegistra
                     </div>
                   </div>
                   
-                  {/* Line 2: Additional data points */}
+                  {/* Line 2: Description and Agent Company */}
                   <div className="flex items-center justify-between text-sm text-gray-600">
-                    <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-4 flex-1 min-w-0">
                       {deal.expected_close_date && (
                         <div className="flex items-center gap-1">
                           <Calendar className="w-3 h-3" />
                           <span>Close: {new Date(deal.expected_close_date).toLocaleDateString()}</span>
                         </div>
                       )}
+                      {deal.description && (
+                        <div className="flex-1 min-w-0">
+                          <span className="text-xs text-gray-600 line-clamp-1 truncate">{deal.description}</span>
+                        </div>
+                      )}
                     </div>
                     
-                    <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-4 flex-shrink-0">
                       {deal.agent_id && agentMapping[deal.agent_id] && (
                         <div className="flex items-center gap-1">
                           <User className="w-3 h-3" />
@@ -384,13 +389,6 @@ export const DealRegistrationCard = ({ clientInfos, agentMapping }: DealRegistra
                       )}
                     </div>
                   </div>
-                  
-                  {/* Optional description line (only if description exists) */}
-                  {deal.description && (
-                    <div className="mt-2 pt-2 border-t border-gray-100">
-                      <p className="text-xs text-gray-600 line-clamp-2">{deal.description}</p>
-                    </div>
-                  )}
                 </div>
               ))
             )}
