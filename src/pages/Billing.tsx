@@ -29,18 +29,19 @@ const Billing = () => {
   // Convert quotes to transactions format for display
   const transactions = quotes.map(quote => ({
     id: quote.id,
-    clientId: quote.client_id || '',
-    clientInfoId: quote.client_info_id || '',
+    clientId: quote.clientId || '',
+    clientName: quote.clientName || '',
+    clientInfoId: quote.clientInfoId || '',
     amount: Number(quote.amount),
     date: quote.date,
     description: quote.description || '',
-    invoiceNumber: quote.quote_number || '',
-    invoiceMonth: quote.quote_month || '',
-    invoiceYear: quote.quote_year || '',
+    invoiceNumber: quote.quoteNumber || '',
+    invoiceMonth: quote.quoteMonth || '',
+    invoiceYear: quote.quoteYear || '',
     isPaid: quote.status === 'approved',
     paymentMethod: '',
     referenceNumber: '',
-    commissionOverride: quote.commission_override
+    commissionOverride: quote.commissionOverride
   }));
 
   return (
