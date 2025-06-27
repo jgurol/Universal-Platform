@@ -1,66 +1,94 @@
 
-import React, { useState } from "react";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { useState, useEffect } from "react";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useToast } from "@/hooks/use-toast";
 import { useAgentAgreementTemplates } from "@/hooks/useAgentAgreementTemplates";
 
 interface AddClientDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onAddClient: (client: any) => void;
-  onFetchClients: () => void;
+  onFetchClients?: () => void;
 }
 
-export const AddClientDialog: React.FC<AddClientDialogProps> = ({
-  open,
-  onOpenChange,
-  onAddClient,
-  onFetchClients
-}) => {
-  const { templates, isLoading: templatesLoading } = useAgentAgreementTemplates();
-  const [formData, setFormData] = useState({
-    firstName: "",
-    lastName: "",
-    email: "",
-    companyName: "",
-    commissionRate: 0,
-    templateId: ""
-  });
+export const AddClientDialog = ({ open, onOpenChange, onAddClient, onFetchClients }: AddClientDialogProps) => {
+  const [companyName, setCompanyName] = useState("");
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
+  const [email, setEmail] = useState("");
+  const [commissionRate, setCommissionRate] = useState("");
+  const [optOutOfCommission, setOptOutOfCommission] = useState(false);
+  const [selectedTemplateId, setSelectedTemplateId] = useState<string>("");
+  const { toast } = useToast();
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const { templates, isLoading: templatesLoading } = useAgentAgreementTemplates();
+
+  // Set default template when templates load
+  useEffect(() => {
+    if (templates.length > 0 && !selectedTemplateId) {
+      const defaultTemplate = templates.find(t => t.is_default);
+      if (defaultTemplate) {
+        setSelectedTemplateId(defaultTemplate.id);
+      } else {
+        setSelectedTemplateId(templates[0].id);
+      }
+    }
+  }, [templates, selectedTemplateId]);
+
+  // Handle commission opt-out
+  useEffect(() => {
+    if (optOutOfCommission) {
+      setCommissionRate("0");
+    }
+  }, [optOutOfCommission]);
+
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    try {
-      await onAddClient({
-        ...formData,
-        selectedTemplateId: formData.templateId || null
-      });
+    if (firstName && lastName && email) {
+      const finalCommissionRate = optOutOfCommission ? 0 : parseFloat(commissionRate);
+      
+      if (!optOutOfCommission && (isNaN(finalCommissionRate) || finalCommissionRate < 0 || finalCommissionRate > 100)) {
+        toast({
+          title: "Invalid Commission Rate",
+          description: "Commission rate must be between 0 and 100",
+          variant: "destructive"
+        });
+        return;
+      }
+      
+      const newClient = {
+        firstName,
+        lastName,
+        companyName,
+        email,
+        commissionRate: finalCommissionRate,
+        selectedTemplateId: selectedTemplateId || undefined
+      };
+      
+      onAddClient(newClient);
       
       // Reset form
-      setFormData({
-        firstName: "",
-        lastName: "",
-        email: "",
-        companyName: "",
-        commissionRate: 0,
-        templateId: ""
-      });
-      
+      setCompanyName("");
+      setFirstName("");
+      setLastName("");
+      setEmail("");
+      setCommissionRate("");
+      setOptOutOfCommission(false);
+      setSelectedTemplateId("");
       onOpenChange(false);
-      onFetchClients();
-    } catch (error) {
-      console.error('Error adding client:', error);
+    } else {
+      toast({
+        title: "Missing Information",
+        description: "Please fill out all required fields",
+        variant: "destructive"
+      });
     }
-  };
-
-  const handleInputChange = (field: string, value: string | number) => {
-    setFormData(prev => ({
-      ...prev,
-      [field]: value
-    }));
   };
 
   return (
@@ -69,99 +97,115 @@ export const AddClientDialog: React.FC<AddClientDialogProps> = ({
         <DialogHeader>
           <DialogTitle>Add New Salesperson</DialogTitle>
           <DialogDescription>
-            Add a new commission salesperson to your team. They will receive an agreement email with the selected template.
+            Add a new salesperson to your commission system.
           </DialogDescription>
         </DialogHeader>
-        
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <Label htmlFor="firstName">First Name</Label>
-              <Input
-                id="firstName"
-                value={formData.firstName}
-                onChange={(e) => handleInputChange("firstName", e.target.value)}
-                required
-              />
-            </div>
-            <div>
-              <Label htmlFor="lastName">Last Name</Label>
-              <Input
-                id="lastName"
-                value={formData.lastName}
-                onChange={(e) => handleInputChange("lastName", e.target.value)}
-                required
-              />
-            </div>
+          <div className="space-y-2">
+            <Label htmlFor="companyName">Salesperson Name</Label>
+            <Input
+              id="companyName"
+              value={companyName}
+              onChange={(e) => setCompanyName(e.target.value)}
+              placeholder="Enter salesperson name"
+            />
           </div>
-          
-          <div>
+          <div className="space-y-2">
+            <Label htmlFor="firstName">First Name</Label>
+            <Input
+              id="firstName"
+              value={firstName}
+              onChange={(e) => setFirstName(e.target.value)}
+              placeholder="Enter first name"
+              required
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="lastName">Last Name</Label>
+            <Input
+              id="lastName"
+              value={lastName}
+              onChange={(e) => setLastName(e.target.value)}
+              placeholder="Enter last name"
+              required
+            />
+          </div>
+          <div className="space-y-2">
             <Label htmlFor="email">Email</Label>
             <Input
               id="email"
               type="email"
-              value={formData.email}
-              onChange={(e) => handleInputChange("email", e.target.value)}
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="Enter agent email"
               required
             />
           </div>
           
-          <div>
-            <Label htmlFor="companyName">Company Name</Label>
-            <Input
-              id="companyName"
-              value={formData.companyName}
-              onChange={(e) => handleInputChange("companyName", e.target.value)}
+          {/* Commission Opt-out Checkbox */}
+          <div className="flex items-center space-x-2">
+            <Checkbox
+              id="optOutOfCommission"
+              checked={optOutOfCommission}
+              onCheckedChange={(checked) => setOptOutOfCommission(checked === true)}
             />
+            <Label htmlFor="optOutOfCommission" className="text-sm font-medium">
+              Opt out of commission (no commission percentage)
+            </Label>
           </div>
           
-          <div>
-            <Label htmlFor="commissionRate">Commission Rate (%)</Label>
+          <div className="space-y-2">
+            <Label htmlFor="commission">Commission Rate (%)</Label>
             <Input
-              id="commissionRate"
+              id="commission"
               type="number"
+              step="0.1"
               min="0"
               max="100"
-              step="0.01"
-              value={formData.commissionRate}
-              onChange={(e) => handleInputChange("commissionRate", parseFloat(e.target.value) || 0)}
-              required
+              value={commissionRate}
+              onChange={(e) => {
+                if (!optOutOfCommission) {
+                  setCommissionRate(e.target.value);
+                }
+              }}
+              placeholder="Enter commission rate"
+              disabled={optOutOfCommission}
+              required={!optOutOfCommission}
+              className={optOutOfCommission ? "bg-gray-100 cursor-not-allowed" : ""}
             />
+            {optOutOfCommission && (
+              <p className="text-xs text-gray-500">
+                Commission is disabled for this salesperson
+              </p>
+            )}
           </div>
 
-          <div>
-            <Label htmlFor="templateId">Agreement Template</Label>
-            <Select
-              value={formData.templateId}
-              onValueChange={(value) => handleInputChange("templateId", value)}
-            >
+          <div className="space-y-2">
+            <Label htmlFor="agreementTemplate">Agreement Template</Label>
+            <Select value={selectedTemplateId} onValueChange={setSelectedTemplateId}>
               <SelectTrigger>
                 <SelectValue placeholder={templatesLoading ? "Loading templates..." : "Select a template"} />
               </SelectTrigger>
               <SelectContent>
-                {templates.length === 0 ? (
-                  <SelectItem value="default" disabled>
-                    No templates available - using default
+                {templates.map((template) => (
+                  <SelectItem key={template.id} value={template.id}>
+                    {template.name} {template.is_default && "(Default)"}
                   </SelectItem>
-                ) : (
-                  templates.map((template) => (
-                    <SelectItem key={template.id} value={template.id}>
-                      {template.name} {template.is_default && "(Default)"}
-                    </SelectItem>
-                  ))
-                )}
+                ))}
               </SelectContent>
             </Select>
-            <p className="text-xs text-gray-500 mt-1">
-              This template will be sent to the agent via email
-            </p>
+            {templates.length === 0 && !templatesLoading && (
+              <p className="text-xs text-yellow-600">
+                No agreement templates found. The agent will receive a default template.
+              </p>
+            )}
           </div>
           
-          <div className="flex justify-end space-x-2 pt-4">
+          <div className="flex justify-end space-x-2">
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               Cancel
             </Button>
-            <Button type="submit">
+            <Button type="submit" className="bg-blue-600 hover:bg-blue-700">
               Add Salesperson
             </Button>
           </div>
