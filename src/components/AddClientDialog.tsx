@@ -41,6 +41,32 @@ export function AddClientDialog({ open, onOpenChange, onAddClient, onFetchClient
     try {
       setIsSubmitting(true);
       
+      // First check if agent with this email already exists
+      const { data: existingAgent, error: checkError } = await supabase
+        .from('agents')
+        .select('email')
+        .eq('email', formData.email)
+        .maybeSingle();
+
+      if (checkError) {
+        console.error('Error checking existing agent:', checkError);
+        toast({
+          title: "Error checking agent",
+          description: "There was an error checking if the agent already exists. Please try again.",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      if (existingAgent) {
+        toast({
+          title: "Agent already exists",
+          description: `An agent with email ${formData.email} already exists in the system.`,
+          variant: "destructive"
+        });
+        return;
+      }
+
       const newClient: Omit<Client, "id" | "totalEarnings" | "lastPayment"> = {
         firstName: formData.firstName,
         lastName: formData.lastName,
@@ -67,11 +93,21 @@ export function AddClientDialog({ open, onOpenChange, onAddClient, onFetchClient
 
       if (error) {
         console.error('Error adding agent:', error);
-        toast({
-          title: "Failed to add agent",
-          description: error.message,
-          variant: "destructive"
-        });
+        
+        // Handle specific error cases
+        if (error.code === '23505' && error.message.includes('agents_email_key')) {
+          toast({
+            title: "Duplicate email address",
+            description: `An agent with email ${formData.email} already exists. Please use a different email address.`,
+            variant: "destructive"
+          });
+        } else {
+          toast({
+            title: "Failed to add agent",
+            description: error.message || "There was an error adding the agent. Please try again.",
+            variant: "destructive"
+          });
+        }
         return;
       }
 
@@ -127,7 +163,7 @@ export function AddClientDialog({ open, onOpenChange, onAddClient, onFetchClient
       console.error('Error in form submission:', error);
       toast({
         title: "Failed to add agent",
-        description: "There was an error adding the agent. Please try again.",
+        description: "There was an unexpected error adding the agent. Please try again.",
         variant: "destructive"
       });
     } finally {
