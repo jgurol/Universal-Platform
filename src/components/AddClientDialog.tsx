@@ -1,9 +1,9 @@
+
 import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { supabase } from "@/integrations/supabase/client";
 import { Client } from "@/pages/Index";
 import { useToast } from "@/hooks/use-toast";
 
@@ -29,6 +29,8 @@ export function AddClientDialog({ open, onOpenChange, onAddClient, onFetchClient
     e.preventDefault();
     
     try {
+      setIsSubmitting(true);
+      
       const newClient: Omit<Client, "id" | "totalEarnings" | "lastPayment"> = {
         firstName: formData.firstName,
         lastName: formData.lastName,
@@ -38,41 +40,8 @@ export function AddClientDialog({ open, onOpenChange, onAddClient, onFetchClient
         commissionRate: parseFloat(formData.commissionRate),
       };
 
-      // Add the client first
+      // Add the client
       await onAddClient(newClient);
-      
-      // If client was added successfully, send agent agreement email
-      try {
-        const { data, error } = await supabase.functions.invoke('send-agent-agreement', {
-          body: {
-            agentId: 'temp-id', // This will be updated after we refactor to get the actual ID
-            agentEmail: formData.email,
-            agentName: `${formData.firstName} ${formData.lastName}`,
-            commissionRate: parseFloat(formData.commissionRate)
-          }
-        });
-
-        if (error) {
-          console.error('Error sending agent agreement email:', error);
-          toast({
-            title: "Agent added but email failed",
-            description: "The agent was added successfully, but we couldn't send the agreement email. Please try again later.",
-            variant: "destructive"
-          });
-        } else {
-          toast({
-            title: "Agent added and email sent!",
-            description: `${formData.firstName} ${formData.lastName} has been added and will receive an agreement email shortly.`,
-          });
-        }
-      } catch (emailError) {
-        console.error('Error sending agreement email:', emailError);
-        toast({
-          title: "Agent added but email failed",
-          description: "The agent was added successfully, but we couldn't send the agreement email.",
-          variant: "destructive"
-        });
-      }
       
       // Reset form and close dialog
       setFormData({
@@ -91,6 +60,8 @@ export function AddClientDialog({ open, onOpenChange, onAddClient, onFetchClient
         description: "There was an error adding the agent. Please try again.",
         variant: "destructive"
       });
+    } finally {
+      setIsSubmitting(false);
     }
   };
 

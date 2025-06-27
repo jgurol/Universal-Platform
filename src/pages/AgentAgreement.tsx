@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useParams, Navigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -22,6 +21,7 @@ interface AgentData {
 }
 
 interface TokenData {
+  id: string;
   agent_id: string;
   expires_at: string;
   used: boolean;
