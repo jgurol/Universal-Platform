@@ -22,3 +22,6 @@ export interface DatabaseQuote {
   created_at: string | null;
   updated_at: string | null;
 }
+
+// Re-export Quote from the main types
+export { Quote } from "@/pages/Index";

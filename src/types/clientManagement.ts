@@ -25,3 +25,6 @@ export interface ClientManagementHook {
   addClientInfo: (clientInfo: AddClientInfoData) => Promise<void>;
   updateClientInfo: (clientInfo: ClientInfo) => Promise<void>;
 }
+
+// Re-export ClientInfo from the main types
+export { ClientInfo };

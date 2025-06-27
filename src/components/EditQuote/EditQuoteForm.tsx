@@ -7,8 +7,7 @@ import { EditQuoteHeader } from "./EditQuoteHeader";
 import { EditQuoteAddressSection } from "./EditQuoteAddressSection";
 import { EditQuoteTemplateSection } from "./EditQuoteTemplateSection";
 import { QuoteItemsManager } from "@/components/QuoteItemsManager";
-import { Quote } from "@/types/quote";
-import { ClientInfo } from "@/types/clientManagement";
+import { Quote, ClientInfo } from "@/pages/Index";
 import { QuoteItemData } from "@/types/quoteItems";
 import { useQuoteForm } from "@/hooks/useQuoteForm";
 
@@ -23,26 +22,51 @@ export const EditQuoteForm = ({ quote, clientInfo, onSave, onCancel }: EditQuote
   const { toast } = useToast();
   const [items, setItems] = useState<QuoteItemData[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [selectedTemplateId, setSelectedTemplateId] = useState<string>("");
+  const [selectedBillingAddressId, setSelectedBillingAddressId] = useState<string | null>(null);
+  const [selectedServiceAddressId, setSelectedServiceAddressId] = useState<string | null>(null);
 
   const {
-    formData,
-    setFormData,
-    selectedTemplate,
-    setSelectedTemplate,
-    isFormValid,
-    validateForm
-  } = useQuoteForm({
-    initialQuote: quote,
-    initialClientInfo: clientInfo,
-    items
-  });
+    clientId,
+    setClientId,
+    clientInfoId,
+    setClientInfoId,
+    date,
+    setDate,
+    description,
+    setDescription,
+    quoteNumber,
+    setQuoteNumber,
+    quoteMonth,
+    setQuoteMonth,
+    quoteYear,
+    setQuoteYear,
+    status,
+    setStatus,
+    expiresAt,
+    setExpiresAt,
+    notes,
+    setNotes,
+    commissionOverride,
+    setCommissionOverride
+  } = useQuoteForm(quote, true);
 
+  // Initialize form data from quote
   useEffect(() => {
-    validateForm();
-  }, [formData, items, selectedTemplate, validateForm]);
+    if (quote) {
+      setSelectedTemplateId(quote.templateId || "");
+      setSelectedBillingAddressId(quote.billingAddress || null);
+      setSelectedServiceAddressId(quote.serviceAddress || null);
+    }
+  }, [quote]);
+
+  // Simple form validation
+  const isFormValid = () => {
+    return description && clientInfoId && selectedTemplateId && items.length > 0;
+  };
 
   const handleSave = async () => {
-    if (!isFormValid) {
+    if (!isFormValid()) {
       toast({
         title: "Form Invalid",
         description: "Please fill in all required fields",
@@ -54,8 +78,20 @@ export const EditQuoteForm = ({ quote, clientInfo, onSave, onCancel }: EditQuote
     setIsLoading(true);
     try {
       const updatedQuote = {
-        ...formData,
-        template_id: selectedTemplate?.id || null,
+        clientId,
+        clientInfoId,
+        date,
+        description,
+        quoteNumber,
+        quoteMonth,
+        quoteYear,
+        status,
+        expiresAt,
+        notes,
+        commissionOverride: commissionOverride ? parseFloat(commissionOverride) : undefined,
+        templateId: selectedTemplateId,
+        billingAddress: selectedBillingAddressId,
+        serviceAddress: selectedServiceAddressId,
         items
       };
       
@@ -77,31 +113,57 @@ export const EditQuoteForm = ({ quote, clientInfo, onSave, onCancel }: EditQuote
     }
   };
 
+  const handleBillingAddressChange = (addressId: string | null, customAddr?: string) => {
+    setSelectedBillingAddressId(addressId);
+  };
+
+  const handleServiceAddressChange = (addressId: string | null, customAddr?: string) => {
+    setSelectedServiceAddressId(addressId);
+  };
+
   return (
     <div className="space-y-6">
-      <EditQuoteHeader quote={quote} clientInfo={clientInfo} />
+      <EditQuoteHeader
+        quoteNumber={quoteNumber}
+        onQuoteNumberChange={setQuoteNumber}
+        date={date}
+        onDateChange={setDate}
+        expiresAt={expiresAt}
+        onExpiresAtChange={setExpiresAt}
+      />
       
       <EditQuoteFormFields
-        formData={formData}
-        setFormData={setFormData}
+        description={description}
+        onDescriptionChange={setDescription}
+        clientInfoId={clientInfoId}
+        onClientInfoIdChange={setClientInfoId}
+        clientInfos={[clientInfo]}
+        status={status}
+        onStatusChange={setStatus}
+        commissionOverride={commissionOverride}
+        onCommissionOverrideChange={setCommissionOverride}
+        notes={notes}
+        onNotesChange={setNotes}
       />
 
       <EditQuoteAddressSection
-        formData={formData}
-        setFormData={setFormData}
-        clientInfo={clientInfo}
+        clientInfoId={clientInfoId}
+        selectedBillingAddressId={selectedBillingAddressId}
+        onBillingAddressChange={handleBillingAddressChange}
+        selectedServiceAddressId={selectedServiceAddressId}
+        onServiceAddressChange={handleServiceAddressChange}
       />
 
       <QuoteItemsManager
         items={items}
         onItemsChange={setItems}
-        clientInfoId={clientInfo.id}
-        showHeaders={true}
+        clientInfoId={clientInfoId}
       />
 
       <EditQuoteTemplateSection
-        selectedTemplate={selectedTemplate}
-        setSelectedTemplate={setSelectedTemplate}
+        selectedTemplateId={selectedTemplateId}
+        onTemplateChange={setSelectedTemplateId}
+        templates={[]}
       />
 
       <div className="flex justify-end space-x-2 pt-4">
@@ -110,7 +172,7 @@ export const EditQuoteForm = ({ quote, clientInfo, onSave, onCancel }: EditQuote
         </Button>
         <Button 
           onClick={handleSave}
-          disabled={!isFormValid || isLoading}
+          disabled={!isFormValid() || isLoading}
           className="bg-blue-600 hover:bg-blue-700"
         >
           {isLoading ? "Updating..." : "Update Quote"}
