@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import { ClientInfo } from "@/types/index";
@@ -136,6 +135,7 @@ const AcceptQuote = () => {
       if (!quoteData) throw new Error('Quote not found');
 
       console.log('Quote data fetched:', quoteData);
+      console.log('Quote term field:', quoteData.term); // Debug log for term field
       
       // Transform the database quote to match our Quote interface
       const transformedQuote: Quote = {
@@ -152,7 +152,7 @@ const AcceptQuote = () => {
         quoteNumber: quoteData.quote_number,
         quoteMonth: quoteData.quote_month,
         quoteYear: quoteData.quote_year,
-        term: (quoteData as any).term || '', // Safely access term with type assertion
+        term: quoteData.term || '', // Ensure term is populated
         expiresAt: quoteData.expires_at,
         commission: quoteData.commission,
         commissionOverride: quoteData.commission_override,
@@ -168,6 +168,7 @@ const AcceptQuote = () => {
         user_id: quoteData.user_id
       };
       
+      console.log('Transformed quote term:', transformedQuote.term); // Debug log for transformed term
       setQuote(transformedQuote);
 
       // Fetch template content if template_id exists
@@ -643,7 +644,16 @@ const AcceptQuote = () => {
               </div>
             </div>
 
-            {/* Initial Term - Updated condition to always show if term exists */}
+            {/* Initial Term - Debug version */}
+            <div>
+              <h3 className="text-lg font-semibold text-gray-900">Debug Info</h3>
+              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4">
+                <p className="text-sm">Quote term value: "{quote.term}"</p>
+                <p className="text-sm">Term exists: {quote.term ? 'true' : 'false'}</p>
+                <p className="text-sm">Term not empty: {quote.term && quote.term.trim() !== '' ? 'true' : 'false'}</p>
+              </div>
+            </div>
+
             {quote.term && quote.term.trim() !== '' && (
               <div className="space-y-4">
                 <h3 className="text-lg font-semibold text-gray-900">Initial Term</h3>
