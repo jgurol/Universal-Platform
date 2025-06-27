@@ -11,6 +11,7 @@ interface RequestBody {
   agentEmail: string;
   agentName: string;
   commissionRate: number;
+  templateId?: string;
 }
 
 Deno.serve(async (req) => {
@@ -25,9 +26,9 @@ Deno.serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    const { agentId, agentEmail, agentName, commissionRate }: RequestBody = await req.json();
+    const { agentId, agentEmail, agentName, commissionRate, templateId }: RequestBody = await req.json();
     
-    console.log('Received request for agent:', { agentId, agentEmail, agentName });
+    console.log('Received request for agent:', { agentId, agentEmail, agentName, templateId });
     
     // First, let's verify the agent exists before creating the token
     const { data: existingAgent, error: agentCheckError } = await supabaseClient
@@ -47,6 +48,51 @@ Deno.serve(async (req) => {
     }
 
     console.log('Agent verified:', existingAgent);
+
+    // Get the selected template or fall back to default
+    let templateContent = '';
+    if (templateId) {
+      console.log('Fetching specific template:', templateId);
+      const { data: selectedTemplate, error: templateError } = await supabaseClient
+        .from('agent_agreement_templates')
+        .select('content')
+        .eq('id', templateId)
+        .maybeSingle();
+
+      if (!templateError && selectedTemplate) {
+        templateContent = selectedTemplate.content;
+        console.log('Using selected template');
+      } else {
+        console.log('Selected template not found, falling back to default');
+      }
+    }
+
+    // If no template content yet, try to get the default template
+    if (!templateContent) {
+      console.log('Fetching default template');
+      const { data: defaultTemplate, error: defaultError } = await supabaseClient
+        .from('agent_agreement_templates')
+        .select('content')
+        .eq('is_default', true)
+        .maybeSingle();
+
+      if (!defaultError && defaultTemplate) {
+        templateContent = defaultTemplate.content;
+        console.log('Using default template');
+      }
+    }
+
+    // If still no template, use fallback content
+    if (!templateContent) {
+      console.log('No templates found, using fallback content');
+      templateContent = `
+        <p><strong>INDEPENDENT SALES AGENT AGREEMENT</strong></p>
+        <p>This Agreement is entered into between the Company and the Agent named below.</p>
+        <p><strong>1. APPOINTMENT:</strong> Company hereby appoints Agent as an independent sales representative.</p>
+        <p><strong>2. COMMISSION:</strong> Agent shall receive a commission of {{commission_rate}}% on all accepted orders.</p>
+        <p><strong>3. INDEPENDENT CONTRACTOR:</strong> Agent is an independent contractor and not an employee of Company.</p>
+      `;
+    }
     
     // Generate secure token for agent agreement access
     const token = crypto.randomUUID();
@@ -55,7 +101,7 @@ Deno.serve(async (req) => {
 
     console.log('Creating token for agent:', agentId, 'Token expires at:', expiresAt.toISOString());
 
-    // Store the token in database
+    // Store the token in database with template content
     const { error: tokenError } = await supabaseClient
       .from('agent_agreement_tokens')
       .insert({

@@ -13,7 +13,7 @@ export const useClientActions = (
   const { toast } = useToast();
 
   // Function to add a new client to Supabase
-  const addClient = async (newClient: Omit<Client, "id" | "totalEarnings" | "lastPayment">) => {
+  const addClient = async (newClient: Omit<Client, "id" | "totalEarnings" | "lastPayment"> & { selectedTemplateId?: string }) => {
     if (!user) return;
     
     try {
@@ -56,14 +56,15 @@ export const useClientActions = (
 
         setClients([...clients, newClientWithId]);
 
-        // Send agent agreement email with the actual agent ID
+        // Send agent agreement email with the actual agent ID and selected template
         try {
           const { error: emailError } = await supabase.functions.invoke('send-agent-agreement', {
             body: {
               agentId: data.id,
               agentEmail: data.email,
               agentName: `${data.first_name} ${data.last_name}`,
-              commissionRate: data.commission_rate
+              commissionRate: data.commission_rate,
+              templateId: newClient.selectedTemplateId || null
             }
           });
 

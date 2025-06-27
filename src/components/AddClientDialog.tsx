@@ -1,177 +1,66 @@
 
-import { useState } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import React, { useState } from "react";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { supabase } from "@/integrations/supabase/client";
-import { Client } from "@/pages/Index";
-import { useToast } from "@/hooks/use-toast";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useAgentAgreementTemplates } from "@/hooks/useAgentAgreementTemplates";
 
 interface AddClientDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onAddClient: (newClient: Omit<Client, "id" | "totalEarnings" | "lastPayment">) => Promise<void>;
+  onAddClient: (client: any) => void;
   onFetchClients: () => void;
 }
 
-export function AddClientDialog({ open, onOpenChange, onAddClient, onFetchClients }: AddClientDialogProps) {
+export const AddClientDialog: React.FC<AddClientDialogProps> = ({
+  open,
+  onOpenChange,
+  onAddClient,
+  onFetchClients
+}) => {
+  const { templates, isLoading: templatesLoading } = useAgentAgreementTemplates();
   const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
     email: "",
     companyName: "",
-    commissionRate: "15",
+    commissionRate: 0,
+    templateId: ""
   });
-  const { toast } = useToast();
-  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!formData.firstName || !formData.lastName || !formData.email) {
-      toast({
-        title: "Missing required fields",
-        description: "Please fill in all required fields.",
-        variant: "destructive"
-      });
-      return;
-    }
-    
-    if (isSubmitting) return; // Prevent double submission
-    
     try {
-      setIsSubmitting(true);
-      
-      // First check if agent with this email already exists
-      const { data: existingAgent, error: checkError } = await supabase
-        .from('agents')
-        .select('email')
-        .eq('email', formData.email)
-        .maybeSingle();
-
-      if (checkError) {
-        console.error('Error checking existing agent:', checkError);
-        toast({
-          title: "Error checking agent",
-          description: "There was an error checking if the agent already exists. Please try again.",
-          variant: "destructive"
-        });
-        return;
-      }
-
-      if (existingAgent) {
-        toast({
-          title: "Agent already exists",
-          description: `An agent with email ${formData.email} already exists in the system.`,
-          variant: "destructive"
-        });
-        return;
-      }
-
-      // Add the client to the database first
-      const { data, error } = await supabase
-        .from('agents')
-        .insert({
-          first_name: formData.firstName,
-          last_name: formData.lastName,
-          email: formData.email,
-          company_name: formData.companyName,
-          commission_rate: parseFloat(formData.commissionRate),
-          total_earnings: 0,
-          last_payment: new Date().toISOString()
-        })
-        .select('*')
-        .single();
-
-      if (error) {
-        console.error('Error adding agent:', error);
-        
-        // Handle specific error cases
-        if (error.code === '23505' && error.message.includes('agents_email_key')) {
-          toast({
-            title: "Duplicate email address",
-            description: `An agent with email ${formData.email} already exists. Please use a different email address.`,
-            variant: "destructive"
-          });
-        } else {
-          toast({
-            title: "Failed to add agent",
-            description: error.message || "There was an error adding the agent. Please try again.",
-            variant: "destructive"
-          });
-        }
-        return;
-      }
-
-      if (data) {
-        console.log('Agent added successfully:', data);
-        
-        // Create the client object for the parent callback
-        const newClient: Omit<Client, "id" | "totalEarnings" | "lastPayment"> = {
-          firstName: formData.firstName,
-          lastName: formData.lastName,
-          name: `${formData.firstName} ${formData.lastName}`,
-          email: formData.email,
-          companyName: formData.companyName,
-          commissionRate: parseFloat(formData.commissionRate),
-        };
-
-        // Now send the agreement email with the actual agent ID
-        try {
-          const { error: emailError } = await supabase.functions.invoke('send-agent-agreement', {
-            body: {
-              agentId: data.id, // Use the actual agent ID from the database
-              agentEmail: data.email,
-              agentName: `${data.first_name} ${data.last_name}`,
-              commissionRate: data.commission_rate
-            }
-          });
-
-          if (emailError) {
-            console.error('Error sending agent agreement email:', emailError);
-            toast({
-              title: "Agent added successfully!",
-              description: `${formData.firstName} ${formData.lastName} has been added, but we couldn't send the agreement email. You can resend it later.`,
-            });
-          } else {
-            toast({
-              title: "Success!",
-              description: `${formData.firstName} ${formData.lastName} has been added and will receive an agreement email shortly.`,
-            });
-          }
-        } catch (emailError) {
-          console.error('Error sending agreement email:', emailError);
-          toast({
-            title: "Agent added successfully!",
-            description: `${formData.firstName} ${formData.lastName} has been added, but we couldn't send the agreement email. You can resend it later.`,
-          });
-        }
-
-        // Update the parent component's state
-        onFetchClients();
-        
-        // Reset form and close dialog
-        setFormData({
-          firstName: "",
-          lastName: "",
-          email: "",
-          companyName: "",
-          commissionRate: "15",
-        });
-        onOpenChange(false);
-      }
-      
-    } catch (error) {
-      console.error('Error in form submission:', error);
-      toast({
-        title: "Failed to add agent",
-        description: "There was an unexpected error adding the agent. Please try again.",
-        variant: "destructive"
+      await onAddClient({
+        ...formData,
+        selectedTemplateId: formData.templateId || null
       });
-    } finally {
-      setIsSubmitting(false);
+      
+      // Reset form
+      setFormData({
+        firstName: "",
+        lastName: "",
+        email: "",
+        companyName: "",
+        commissionRate: 0,
+        templateId: ""
+      });
+      
+      onOpenChange(false);
+      onFetchClients();
+    } catch (error) {
+      console.error('Error adding client:', error);
     }
+  };
+
+  const handleInputChange = (field: string, value: string | number) => {
+    setFormData(prev => ({
+      ...prev,
+      [field]: value
+    }));
   };
 
   return (
@@ -179,67 +68,105 @@ export function AddClientDialog({ open, onOpenChange, onAddClient, onFetchClient
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle>Add New Salesperson</DialogTitle>
+          <DialogDescription>
+            Add a new commission salesperson to your team. They will receive an agreement email with the selected template.
+          </DialogDescription>
         </DialogHeader>
+        
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <Label htmlFor="firstName">First Name *</Label>
-            <Input
-              id="firstName"
-              type="text"
-              value={formData.firstName}
-              onChange={(e) => setFormData(prev => ({ ...prev, firstName: e.target.value }))}
-              required
-            />
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <Label htmlFor="firstName">First Name</Label>
+              <Input
+                id="firstName"
+                value={formData.firstName}
+                onChange={(e) => handleInputChange("firstName", e.target.value)}
+                required
+              />
+            </div>
+            <div>
+              <Label htmlFor="lastName">Last Name</Label>
+              <Input
+                id="lastName"
+                value={formData.lastName}
+                onChange={(e) => handleInputChange("lastName", e.target.value)}
+                required
+              />
+            </div>
           </div>
+          
           <div>
-            <Label htmlFor="lastName">Last Name *</Label>
-            <Input
-              id="lastName"
-              type="text"
-              value={formData.lastName}
-              onChange={(e) => setFormData(prev => ({ ...prev, lastName: e.target.value }))}
-              required
-            />
-          </div>
-          <div>
-            <Label htmlFor="email">Email *</Label>
+            <Label htmlFor="email">Email</Label>
             <Input
               id="email"
               type="email"
               value={formData.email}
-              onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
+              onChange={(e) => handleInputChange("email", e.target.value)}
               required
             />
           </div>
+          
           <div>
             <Label htmlFor="companyName">Company Name</Label>
             <Input
               id="companyName"
-              type="text"
               value={formData.companyName}
-              onChange={(e) => setFormData(prev => ({ ...prev, companyName: e.target.value }))}
+              onChange={(e) => handleInputChange("companyName", e.target.value)}
             />
           </div>
+          
           <div>
-            <Label htmlFor="commissionRate">Commission Rate (%) *</Label>
+            <Label htmlFor="commissionRate">Commission Rate (%)</Label>
             <Input
               id="commissionRate"
               type="number"
-              min={0}
-              max={100}
-              step={0.1}
+              min="0"
+              max="100"
+              step="0.01"
               value={formData.commissionRate}
-              onChange={(e) => setFormData(prev => ({ ...prev, commissionRate: e.target.value }))}
+              onChange={(e) => handleInputChange("commissionRate", parseFloat(e.target.value) || 0)}
               required
             />
           </div>
-          <div className="flex justify-end">
-            <Button type="submit" disabled={isSubmitting}>
-              {isSubmitting ? "Adding..." : "Add Salesperson"}
+
+          <div>
+            <Label htmlFor="templateId">Agreement Template</Label>
+            <Select
+              value={formData.templateId}
+              onValueChange={(value) => handleInputChange("templateId", value)}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder={templatesLoading ? "Loading templates..." : "Select a template"} />
+              </SelectTrigger>
+              <SelectContent>
+                {templates.length === 0 ? (
+                  <SelectItem value="default" disabled>
+                    No templates available - using default
+                  </SelectItem>
+                ) : (
+                  templates.map((template) => (
+                    <SelectItem key={template.id} value={template.id}>
+                      {template.name} {template.is_default && "(Default)"}
+                    </SelectItem>
+                  ))
+                )}
+              </SelectContent>
+            </Select>
+            <p className="text-xs text-gray-500 mt-1">
+              This template will be sent to the agent via email
+            </p>
+          </div>
+          
+          <div className="flex justify-end space-x-2 pt-4">
+            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+              Cancel
+            </Button>
+            <Button type="submit">
+              Add Salesperson
             </Button>
           </div>
         </form>
       </DialogContent>
     </Dialog>
   );
-}
+};
