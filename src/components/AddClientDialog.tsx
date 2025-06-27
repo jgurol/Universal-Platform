@@ -38,6 +38,8 @@ export function AddClientDialog({ open, onOpenChange, onAddClient, onFetchClient
       return;
     }
     
+    if (isSubmitting) return; // Prevent double submission
+    
     try {
       setIsSubmitting(true);
       
@@ -66,15 +68,6 @@ export function AddClientDialog({ open, onOpenChange, onAddClient, onFetchClient
         });
         return;
       }
-
-      const newClient: Omit<Client, "id" | "totalEarnings" | "lastPayment"> = {
-        firstName: formData.firstName,
-        lastName: formData.lastName,
-        name: `${formData.firstName} ${formData.lastName}`,
-        email: formData.email,
-        companyName: formData.companyName,
-        commissionRate: parseFloat(formData.commissionRate),
-      };
 
       // Add the client to the database first
       const { data, error } = await supabase
@@ -112,6 +105,18 @@ export function AddClientDialog({ open, onOpenChange, onAddClient, onFetchClient
       }
 
       if (data) {
+        console.log('Agent added successfully:', data);
+        
+        // Create the client object for the parent callback
+        const newClient: Omit<Client, "id" | "totalEarnings" | "lastPayment"> = {
+          firstName: formData.firstName,
+          lastName: formData.lastName,
+          name: `${formData.firstName} ${formData.lastName}`,
+          email: formData.email,
+          companyName: formData.companyName,
+          commissionRate: parseFloat(formData.commissionRate),
+        };
+
         // Now send the agreement email with the actual agent ID
         try {
           const { error: emailError } = await supabase.functions.invoke('send-agent-agreement', {
@@ -126,32 +131,27 @@ export function AddClientDialog({ open, onOpenChange, onAddClient, onFetchClient
           if (emailError) {
             console.error('Error sending agent agreement email:', emailError);
             toast({
-              title: "Agent added but email failed",
-              description: "The agent was added successfully, but we couldn't send the agreement email. Please try again later.",
-              variant: "destructive"
+              title: "Agent added successfully!",
+              description: `${formData.firstName} ${formData.lastName} has been added, but we couldn't send the agreement email. You can resend it later.`,
             });
-            // Still call the parent's onAddClient callback since agent was added
-            await onAddClient(newClient);
           } else {
             toast({
-              title: "Agent added and email sent!",
+              title: "Success!",
               description: `${formData.firstName} ${formData.lastName} has been added and will receive an agreement email shortly.`,
             });
-            // Call the parent's onAddClient callback
-            await onAddClient(newClient);
           }
         } catch (emailError) {
           console.error('Error sending agreement email:', emailError);
           toast({
-            title: "Agent added but email failed",
-            description: "The agent was added successfully, but we couldn't send the agreement email.",
-            variant: "destructive"
+            title: "Agent added successfully!",
+            description: `${formData.firstName} ${formData.lastName} has been added, but we couldn't send the agreement email. You can resend it later.`,
           });
-          // Still call the parent's onAddClient callback since agent was added
-          await onAddClient(newClient);
         }
 
-        // Reset form and close dialog regardless of email success/failure
+        // Update the parent component's state
+        onFetchClients();
+        
+        // Reset form and close dialog
         setFormData({
           firstName: "",
           lastName: "",
