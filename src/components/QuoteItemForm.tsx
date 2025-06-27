@@ -7,6 +7,8 @@ import { Item } from "@/types/items";
 import { useCarrierQuoteItems } from "@/hooks/useCarrierQuoteItems";
 import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/context/AuthContext";
+import { useCategories } from "@/hooks/useCategories";
+import { useClients } from "@/hooks/useClients";
 
 interface QuoteItemFormProps {
   selectedItemId: string;
@@ -28,7 +30,38 @@ export const QuoteItemForm = ({
   clientInfoId
 }: QuoteItemFormProps) => {
   const { carrierQuoteItems, loading: carrierLoading } = useCarrierQuoteItems(clientInfoId || null);
-  const { isAdmin } = useAuth();
+  const { isAdmin, user } = useAuth();
+  const { categories } = useCategories();
+  const { clients } = useClients();
+
+  // Get agent commission rate from clients data
+  const currentAgent = clients.find(client => client.id === user?.id);
+  const agentCommissionRate = currentAgent?.commissionRate || 15;
+
+  const calculateSellPrice = (cost: number, categoryType?: string, commissionRate: number = agentCommissionRate) => {
+    if (!categoryType || !categories.length) {
+      return cost; // If no category or categories not loaded, return cost as sell price
+    }
+
+    // Find the category that matches the carrier quote type
+    const matchingCategory = categories.find(cat => 
+      cat.type?.toLowerCase() === categoryType.toLowerCase() ||
+      cat.name.toLowerCase().includes(categoryType.toLowerCase())
+    );
+
+    if (matchingCategory && matchingCategory.minimum_markup && matchingCategory.minimum_markup > 0) {
+      // Calculate effective minimum markup after commission reduction
+      const originalMinimumMarkup = matchingCategory.minimum_markup;
+      const commissionReduction = agentCommissionRate - commissionRate;
+      const effectiveMinimumMarkup = Math.max(0, originalMinimumMarkup - commissionReduction);
+      
+      // Apply the effective minimum markup: sell price = cost * (1 + effectiveMinimumMarkup/100)
+      const markup = effectiveMinimumMarkup / 100;
+      return Math.round(cost * (1 + markup) * 100) / 100; // Round to 2 decimal places
+    }
+
+    return cost; // If no matching category or no minimum markup, return cost
+  };
 
   console.log('[QuoteItemForm] Debug info:', {
     clientInfoId,
@@ -122,30 +155,33 @@ export const QuoteItemForm = ({
               </SelectTrigger>
               <SelectContent className="bg-white z-50 min-w-[700px]">
                 {hasCarrierItems ? (
-                  availableCarrierItems.map((carrierItem) => (
-                    <SelectItem key={`carrier-${carrierItem.id}`} value={`carrier-${carrierItem.id}`}>
-                      <div className="flex items-center gap-3 w-full min-w-0 whitespace-nowrap">
-                        <span className="font-medium text-sm">{carrierItem.carrier}</span>
-                        <span className="text-xs text-gray-600">•</span>
-                        <span className="text-xs text-gray-600">{carrierItem.type}</span>
-                        <span className="text-xs text-gray-600">•</span>
-                        <span className="text-xs text-gray-600">{carrierItem.speed}</span>
-                        <span className="text-xs text-gray-600">•</span>
-                        <span className="text-xs text-green-600 font-medium">${carrierItem.sell_price ? carrierItem.sell_price.toFixed(2) : carrierItem.price.toFixed(2)}/month</span>
-                        {isAdmin && (
-                          <>
-                            <span className="text-xs text-gray-600">•</span>
-                            <span className="text-xs text-orange-600">Cost: ${carrierItem.price.toFixed(2)}</span>
-                          </>
-                        )}
-                        <span className="text-xs text-gray-600">•</span>
-                        <span className="text-xs text-blue-600">{carrierItem.location}</span>
-                        <Badge variant="outline" className="text-xs whitespace-nowrap ml-auto">
-                          Circuit Quote
-                        </Badge>
-                      </div>
-                    </SelectItem>
-                  ))
+                  availableCarrierItems.map((carrierItem) => {
+                    const sellPrice = calculateSellPrice(carrierItem.price, carrierItem.type, agentCommissionRate);
+                    return (
+                      <SelectItem key={`carrier-${carrierItem.id}`} value={`carrier-${carrierItem.id}`}>
+                        <div className="flex items-center gap-3 w-full min-w-0 whitespace-nowrap">
+                          <span className="font-medium text-sm">{carrierItem.carrier}</span>
+                          <span className="text-xs text-gray-600">•</span>
+                          <span className="text-xs text-gray-600">{carrierItem.type}</span>
+                          <span className="text-xs text-gray-600">•</span>
+                          <span className="text-xs text-gray-600">{carrierItem.speed}</span>
+                          <span className="text-xs text-gray-600">•</span>
+                          <span className="text-xs text-green-600 font-medium">${sellPrice.toFixed(2)}/month</span>
+                          {isAdmin && (
+                            <>
+                              <span className="text-xs text-gray-600">•</span>
+                              <span className="text-xs text-orange-600">Cost: ${carrierItem.price.toFixed(2)}</span>
+                            </>
+                          )}
+                          <span className="text-xs text-gray-600">•</span>
+                          <span className="text-xs text-blue-600">{carrierItem.location}</span>
+                          <Badge variant="outline" className="text-xs whitespace-nowrap ml-auto">
+                            Circuit Quote
+                          </Badge>
+                        </div>
+                      </SelectItem>
+                    );
+                  })
                 ) : (
                   <SelectItem value="no-carrier-items" disabled>
                     No carrier quotes available
