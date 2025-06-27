@@ -70,7 +70,6 @@ export const useClientActions = (
         
         console.log('🚀 About to call send-agent-agreement function');
         console.log('📧 Payload:', emailPayload);
-        console.log('🔗 Supabase URL:', supabase.supabaseUrl);
 
         try {
           // Call the edge function to send agreement email
@@ -118,8 +117,7 @@ export const useClientActions = (
           console.error('💥 Exception details:', {
             name: emailError instanceof Error ? emailError.name : 'Unknown',
             message: emailError instanceof Error ? emailError.message : 'Unknown error',
-            stack: emailError instanceof Error ? emailError.stack : 'No stack trace',
-            cause: emailError instanceof Error ? emailError.cause : 'No cause'
+            stack: emailError instanceof Error ? emailError.stack : 'No stack trace'
           });
           
           toast({
