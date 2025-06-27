@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { NavigationBar } from '@/components/NavigationBar';
@@ -39,6 +40,12 @@ interface Agent {
   company_name: string | null;
 }
 
+interface AuthUser {
+  id: string;
+  last_sign_in_at?: string;
+  email?: string;
+}
+
 export default function Admin() {
   const { isAdmin, user } = useAuth();
   const { toast } = useToast();
@@ -71,12 +78,17 @@ export default function Admin() {
 
       if (usersError) throw usersError;
 
-      // Fetch auth users to get last_sign_in_at
-      const { data: authUsers, error: authError } = await supabase.auth.admin.listUsers();
-      
-      if (authError) {
-        console.error('Error fetching auth users:', authError);
-        // Continue without auth data if there's an error
+      // Try to fetch auth users to get last_sign_in_at - this might fail due to permissions
+      let authUsers: { users?: AuthUser[] } | null = null;
+      try {
+        const { data: authData, error: authError } = await supabase.auth.admin.listUsers();
+        if (authError) {
+          console.error('Error fetching auth users:', authError);
+        } else {
+          authUsers = authData;
+        }
+      } catch (error) {
+        console.error('Failed to fetch auth users (insufficient permissions):', error);
       }
 
       // Fetch agents data to get company names
@@ -89,7 +101,7 @@ export default function Admin() {
       // Merge the data to include company names as associated_agent_name and last login
       const usersWithAgentInfo = usersData?.map(user => {
         const agent = agentsData?.find(a => a.id === user.associated_agent_id);
-        const authUser = authUsers?.users?.find(au => au.id === user.id);
+        const authUser = authUsers?.users?.find((au: AuthUser) => au.id === user.id);
         
         return {
           ...user,
@@ -395,7 +407,7 @@ export default function Admin() {
                           onClick={() => sendResetEmail(userProfile)}
                           className="text-purple-600 hover:bg-purple-50"
                         >
-                          <Mail className="w-4 w-4 mr-1" />
+                          <Mail className="w-4 h-4 mr-1" />
                           Reset
                         </Button>
                         
