@@ -29,7 +29,18 @@ export function AddClientDialog({ open, onOpenChange, onAddClient, onFetchClient
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    if (!formData.firstName || !formData.lastName || !formData.email) {
+      toast({
+        title: "Missing required fields",
+        description: "Please fill in all required fields.",
+        variant: "destructive"
+      });
+      return;
+    }
+    
     try {
+      setIsSubmitting(true);
+      
       const newClient: Omit<Client, "id" | "totalEarnings" | "lastPayment"> = {
         firstName: formData.firstName,
         lastName: formData.lastName,
@@ -39,51 +50,78 @@ export function AddClientDialog({ open, onOpenChange, onAddClient, onFetchClient
         commissionRate: parseFloat(formData.commissionRate),
       };
 
-      // Add the client first
-      await onAddClient(newClient);
-      
-      // If client was added successfully, send agent agreement email
-      try {
-        const { data, error } = await supabase.functions.invoke('send-agent-agreement', {
-          body: {
-            agentId: 'temp-id', // This will be updated after we refactor to get the actual ID
-            agentEmail: formData.email,
-            agentName: `${formData.firstName} ${formData.lastName}`,
-            commissionRate: parseFloat(formData.commissionRate)
-          }
-        });
+      // Add the client to the database first
+      const { data, error } = await supabase
+        .from('agents')
+        .insert({
+          first_name: formData.firstName,
+          last_name: formData.lastName,
+          email: formData.email,
+          company_name: formData.companyName,
+          commission_rate: parseFloat(formData.commissionRate),
+          total_earnings: 0,
+          last_payment: new Date().toISOString()
+        })
+        .select('*')
+        .single();
 
-        if (error) {
-          console.error('Error sending agent agreement email:', error);
-          toast({
-            title: "Agent added but email failed",
-            description: "The agent was added successfully, but we couldn't send the agreement email. Please try again later.",
-            variant: "destructive"
-          });
-        } else {
-          toast({
-            title: "Agent added and email sent!",
-            description: `${formData.firstName} ${formData.lastName} has been added and will receive an agreement email shortly.`,
-          });
-        }
-      } catch (emailError) {
-        console.error('Error sending agreement email:', emailError);
+      if (error) {
+        console.error('Error adding agent:', error);
         toast({
-          title: "Agent added but email failed",
-          description: "The agent was added successfully, but we couldn't send the agreement email.",
+          title: "Failed to add agent",
+          description: error.message,
           variant: "destructive"
         });
+        return;
       }
-      
-      // Reset form and close dialog
-      setFormData({
-        firstName: "",
-        lastName: "",
-        email: "",
-        companyName: "",
-        commissionRate: "15",
-      });
-      onOpenChange(false);
+
+      if (data) {
+        // Now send the agreement email with the actual agent ID
+        try {
+          const { error: emailError } = await supabase.functions.invoke('send-agent-agreement', {
+            body: {
+              agentId: data.id, // Use the actual agent ID from the database
+              agentEmail: data.email,
+              agentName: `${data.first_name} ${data.last_name}`,
+              commissionRate: data.commission_rate
+            }
+          });
+
+          if (emailError) {
+            console.error('Error sending agent agreement email:', emailError);
+            toast({
+              title: "Agent added but email failed",
+              description: "The agent was added successfully, but we couldn't send the agreement email. Please try again later.",
+              variant: "destructive"
+            });
+          } else {
+            toast({
+              title: "Agent added and email sent!",
+              description: `${formData.firstName} ${formData.lastName} has been added and will receive an agreement email shortly.`,
+            });
+          }
+        } catch (emailError) {
+          console.error('Error sending agreement email:', emailError);
+          toast({
+            title: "Agent added but email failed",
+            description: "The agent was added successfully, but we couldn't send the agreement email.",
+            variant: "destructive"
+          });
+        }
+
+        // Call the parent's onAddClient callback
+        await onAddClient(newClient);
+        
+        // Reset form and close dialog
+        setFormData({
+          firstName: "",
+          lastName: "",
+          email: "",
+          companyName: "",
+          commissionRate: "15",
+        });
+        onOpenChange(false);
+      }
       
     } catch (error) {
       console.error('Error in form submission:', error);
@@ -92,6 +130,8 @@ export function AddClientDialog({ open, onOpenChange, onAddClient, onFetchClient
         description: "There was an error adding the agent. Please try again.",
         variant: "destructive"
       });
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -103,7 +143,7 @@ export function AddClientDialog({ open, onOpenChange, onAddClient, onFetchClient
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <Label htmlFor="firstName">First Name</Label>
+            <Label htmlFor="firstName">First Name *</Label>
             <Input
               id="firstName"
               type="text"
@@ -113,7 +153,7 @@ export function AddClientDialog({ open, onOpenChange, onAddClient, onFetchClient
             />
           </div>
           <div>
-            <Label htmlFor="lastName">Last Name</Label>
+            <Label htmlFor="lastName">Last Name *</Label>
             <Input
               id="lastName"
               type="text"
@@ -123,7 +163,7 @@ export function AddClientDialog({ open, onOpenChange, onAddClient, onFetchClient
             />
           </div>
           <div>
-            <Label htmlFor="email">Email</Label>
+            <Label htmlFor="email">Email *</Label>
             <Input
               id="email"
               type="email"
@@ -142,7 +182,7 @@ export function AddClientDialog({ open, onOpenChange, onAddClient, onFetchClient
             />
           </div>
           <div>
-            <Label htmlFor="commissionRate">Commission Rate (%)</Label>
+            <Label htmlFor="commissionRate">Commission Rate (%) *</Label>
             <Input
               id="commissionRate"
               type="number"
