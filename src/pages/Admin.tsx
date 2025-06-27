@@ -28,6 +28,7 @@ interface UserProfile {
   created_at: string;
   associated_agent_name: string | null;
   associated_agent_id: string | null;
+  last_sign_in_at: string | null;
 }
 
 interface Agent {
@@ -70,6 +71,14 @@ export default function Admin() {
 
       if (usersError) throw usersError;
 
+      // Fetch auth users to get last_sign_in_at
+      const { data: authUsers, error: authError } = await supabase.auth.admin.listUsers();
+      
+      if (authError) {
+        console.error('Error fetching auth users:', authError);
+        // Continue without auth data if there's an error
+      }
+
       // Fetch agents data to get company names
       const { data: agentsData, error: agentsError } = await supabase
         .from('agents')
@@ -77,12 +86,15 @@ export default function Admin() {
 
       if (agentsError) throw agentsError;
 
-      // Merge the data to include company names as associated_agent_name
+      // Merge the data to include company names as associated_agent_name and last login
       const usersWithAgentInfo = usersData?.map(user => {
         const agent = agentsData?.find(a => a.id === user.associated_agent_id);
+        const authUser = authUsers?.users?.find(au => au.id === user.id);
+        
         return {
           ...user,
-          associated_agent_name: agent?.company_name || null
+          associated_agent_name: agent?.company_name || null,
+          last_sign_in_at: authUser?.last_sign_in_at || null
         };
       }) || [];
 
@@ -116,6 +128,25 @@ export default function Admin() {
         description: `Failed to fetch agents: ${error.message}`,
         variant: "destructive"
       });
+    }
+  };
+
+  const formatLastLogin = (lastSignInAt: string | null) => {
+    if (!lastSignInAt) return 'Never';
+    
+    const date = new Date(lastSignInAt);
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+    
+    if (diffDays === 0) {
+      return `Today at ${date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
+    } else if (diffDays === 1) {
+      return 'Yesterday';
+    } else if (diffDays < 7) {
+      return `${diffDays} days ago`;
+    } else {
+      return date.toLocaleDateString();
     }
   };
 
@@ -291,13 +322,14 @@ export default function Admin() {
                 <TableHead>Role</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>Associated With</TableHead>
+                <TableHead>Last Login</TableHead>
                 <TableHead>Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {users.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={6} className="text-center py-8">
+                  <TableCell colSpan={7} className="text-center py-8">
                     No users found
                   </TableCell>
                 </TableRow>
@@ -341,6 +373,11 @@ export default function Admin() {
                       )}
                     </TableCell>
                     <TableCell>
+                      <span className="text-sm text-gray-600">
+                        {formatLastLogin(userProfile.last_sign_in_at)}
+                      </span>
+                    </TableCell>
+                    <TableCell>
                       <div className="flex space-x-2">
                         <Button
                           variant="ghost"
@@ -358,7 +395,7 @@ export default function Admin() {
                           onClick={() => sendResetEmail(userProfile)}
                           className="text-purple-600 hover:bg-purple-50"
                         >
-                          <Mail className="w-4 h-4 mr-1" />
+                          <Mail className="w-4 w-4 mr-1" />
                           Reset
                         </Button>
                         
