@@ -77,7 +77,20 @@ export const QuoteItemForm = ({
 
   // Filter out carrier items that have no_service set to true
   const availableCarrierItems = carrierQuoteItems.filter(item => !item.no_service);
-  const hasCarrierItems = availableCarrierItems.length > 0;
+  
+  // Sort by vendor/carrier first, then by speed
+  const sortedCarrierItems = availableCarrierItems.sort((a, b) => {
+    // First sort by carrier name
+    const carrierComparison = a.carrier.localeCompare(b.carrier);
+    if (carrierComparison !== 0) {
+      return carrierComparison;
+    }
+    
+    // If carriers are the same, sort by speed
+    return a.speed.localeCompare(b.speed);
+  });
+  
+  const hasCarrierItems = sortedCarrierItems.length > 0;
 
   console.log('[QuoteItemForm] After filtering no_service items:', {
     originalCount: carrierQuoteItems.length,
@@ -155,7 +168,7 @@ export const QuoteItemForm = ({
               </SelectTrigger>
               <SelectContent className="bg-white z-50 min-w-[700px]">
                 {hasCarrierItems ? (
-                  availableCarrierItems.map((carrierItem) => {
+                  sortedCarrierItems.map((carrierItem) => {
                     const sellPrice = calculateSellPrice(carrierItem.price, carrierItem.type, agentCommissionRate);
                     return (
                       <SelectItem key={`carrier-${carrierItem.id}`} value={`carrier-${carrierItem.id}`}>
@@ -199,7 +212,7 @@ export const QuoteItemForm = ({
           
           {clientInfoId && hasCarrierItems && (
             <p className="text-sm text-blue-600">
-              {availableCarrierItems.length} carrier option(s) available from completed circuit quotes
+              {sortedCarrierItems.length} carrier option(s) available from completed circuit quotes
             </p>
           )}
           
