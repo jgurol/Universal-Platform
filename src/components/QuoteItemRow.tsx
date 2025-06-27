@@ -32,23 +32,41 @@ export const QuoteItemRow = ({ quoteItem, addresses, onUpdateItem, onRemoveItem,
   const { user, isAdmin } = useAuth();
   const { clients, refetch: refetchClients } = useClients();
 
-  // Force refresh of clients data on component mount to get latest commission rates
+  // Force refresh of clients data periodically to ensure we have latest commission rates
   useEffect(() => {
-    refetchClients();
+    const refreshData = async () => {
+      await refetchClients();
+    };
+    refreshData();
+    
+    // Set up interval to refresh every 5 seconds to catch database changes
+    const interval = setInterval(refreshData, 5000);
+    
+    return () => clearInterval(interval);
   }, [refetchClients]);
 
   // Get agent commission rate from clients data - match by email instead of ID
   const currentAgent = clients.find(client => client.email === user?.email);
-  const agentCommissionRate = currentAgent?.commissionRate || 15;
+  const agentCommissionRate = currentAgent?.commissionRate || 0; // Default to 0 if not found
   const isAgentOptedOut = agentCommissionRate === 0;
   
-  console.log('[QuoteItemRow] Debug agent commission:', {
+  console.log('[QuoteItemRow] UPDATED Debug agent commission:', {
     userEmail: user?.email,
     currentAgent: currentAgent?.name,
+    currentAgentId: currentAgent?.id,
     agentCommissionRate,
     isAgentOptedOut,
-    allClientsEmails: clients.map(c => c.email),
-    allClientsData: clients.map(c => ({ name: c.name, email: c.email, commissionRate: c.commissionRate }))
+    clientsCount: clients.length,
+    matchingClientData: currentAgent ? {
+      name: currentAgent.name,
+      email: currentAgent.email,
+      commissionRate: currentAgent.commissionRate
+    } : 'NO MATCH FOUND',
+    allClientsData: clients.map(c => ({ 
+      name: c.name, 
+      email: c.email, 
+      commissionRate: c.commissionRate 
+    }))
   });
 
   // Initialize commission rate with agent's rate, but don't use it if opted out
