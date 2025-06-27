@@ -51,7 +51,7 @@ export const EditDealDialog = ({
   const [agents, setAgents] = useState<Agent[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
-  const { register, handleSubmit, reset, setValue, watch, formState: { errors } } = useForm<DealRegistration>();
+  const { register, handleSubmit, reset, setValue, watch, getValues, formState: { errors } } = useForm<DealRegistration>();
 
   const selectedStage = watch('stage');
   const selectedStatus = watch('status');
@@ -69,8 +69,18 @@ export const EditDealDialog = ({
         client_info_id: deal.client_info_id || null
       };
       reset(formData);
+      
+      // Force set the values after reset to ensure they're properly tracked
+      setTimeout(() => {
+        if (deal.agent_id) {
+          setValue('agent_id', deal.agent_id);
+        }
+        if (deal.client_info_id) {
+          setValue('client_info_id', deal.client_info_id);
+        }
+      }, 0);
     }
-  }, [deal, open, reset]);
+  }, [deal, open, reset, setValue]);
 
   useEffect(() => {
     if (open) {
@@ -124,6 +134,10 @@ export const EditDealDialog = ({
   console.log('Current deal agent_id:', deal.agent_id);
   console.log('Selected agent_id from form:', selectedAgentId);
 
+  // Get the current agent_id value, either from watch or from the form values
+  const currentAgentId = selectedAgentId || getValues('agent_id') || deal.agent_id;
+  const currentClientId = selectedClientId || getValues('client_info_id') || deal.client_info_id;
+
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
@@ -170,7 +184,7 @@ export const EditDealDialog = ({
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="space-y-2">
               <Label htmlFor="stage">Deal Stage</Label>
-              <Select value={selectedStage || ''} onValueChange={(value) => setValue("stage", value)}>
+              <Select value={selectedStage || deal.stage || ''} onValueChange={(value) => setValue("stage", value)}>
                 <SelectTrigger>
                   <SelectValue placeholder="Select stage" />
                 </SelectTrigger>
@@ -204,7 +218,7 @@ export const EditDealDialog = ({
 
             <div className="space-y-2">
               <Label htmlFor="status">Status</Label>
-              <Select value={selectedStatus || ''} onValueChange={(value) => setValue("status", value)}>
+              <Select value={selectedStatus || deal.status || ''} onValueChange={(value) => setValue("status", value)}>
                 <SelectTrigger>
                   <SelectValue placeholder="Select status" />
                 </SelectTrigger>
@@ -232,7 +246,7 @@ export const EditDealDialog = ({
             <div className="space-y-2">
               <Label htmlFor="client_info_id">Client</Label>
               <Select 
-                value={selectedClientId || "none"} 
+                value={currentClientId || "none"} 
                 onValueChange={(value) => setValue("client_info_id", value === "none" ? null : value)}
               >
                 <SelectTrigger>
@@ -252,7 +266,7 @@ export const EditDealDialog = ({
             <div className="space-y-2">
               <Label htmlFor="agent_id">Associated Agent</Label>
               <Select 
-                value={selectedAgentId || "none"} 
+                value={currentAgentId || "none"} 
                 onValueChange={(value) => {
                   console.log('Agent selection changed to:', value);
                   setValue("agent_id", value === "none" ? null : value);
