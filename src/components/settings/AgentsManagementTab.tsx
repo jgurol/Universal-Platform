@@ -8,6 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/context/AuthContext";
 import { Badge } from "@/components/ui/badge";
+import { useClientActions } from "@/hooks/useClientActions";
 
 interface Agent {
   id: string;
@@ -26,6 +27,21 @@ export const AgentsManagementTab = () => {
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
   const { user } = useAuth();
+
+  // Convert agents to clients format for useClientActions
+  const clientsFromAgents = agents.map(agent => ({
+    id: agent.id,
+    firstName: agent.first_name,
+    lastName: agent.last_name,
+    name: `${agent.first_name} ${agent.last_name}`,
+    email: agent.email,
+    companyName: agent.company_name,
+    commissionRate: agent.commission_rate,
+    totalEarnings: agent.total_earnings || 0,
+    lastPayment: agent.last_payment ? new Date(agent.last_payment).toISOString() : new Date().toISOString()
+  }));
+
+  const { addClient } = useClientActions(clientsFromAgents, () => {}, fetchAgents);
 
   useEffect(() => {
     fetchAgents();
@@ -64,46 +80,16 @@ export const AgentsManagementTab = () => {
     }
   };
 
-  const addAgent = async (newAgent: any) => {
-    if (!user) return;
+  const handleAddAgent = async (newAgent: any) => {
+    console.log('🎯 AgentsManagementTab handleAddAgent called with:', newAgent);
     
     try {
-      const { data, error } = await supabase
-        .from('agents')
-        .insert({
-          first_name: newAgent.firstName,
-          last_name: newAgent.lastName,
-          email: newAgent.email,
-          company_name: newAgent.companyName,
-          commission_rate: newAgent.commissionRate,
-          user_id: user.id,
-          total_earnings: 0,
-          last_payment: new Date().toISOString()
-        })
-        .select('*')
-        .single();
-
-      if (error) {
-        console.error('Error adding agent:', error);
-        toast({
-          title: "Failed to add agent",
-          description: error.message,
-          variant: "destructive"
-        });
-      } else if (data) {
-        setAgents([...agents, data]);
-        toast({
-          title: "Agent added",
-          description: `${data.first_name} ${data.last_name} has been added successfully.`,
-        });
-      }
-    } catch (err) {
-      console.error('Error in add agent operation:', err);
-      toast({
-        title: "Error",
-        description: "Failed to add agent",
-        variant: "destructive"
-      });
+      // Use the addClient function from useClientActions which includes email sending
+      await addClient(newAgent);
+      console.log('✅ Agent added successfully via useClientActions');
+    } catch (error) {
+      console.error('❌ Error in handleAddAgent:', error);
+      // Error handling is already done in useClientActions
     }
   };
 
@@ -224,7 +210,7 @@ export const AgentsManagementTab = () => {
       <AddClientDialog 
         open={isAddAgentOpen}
         onOpenChange={setIsAddAgentOpen}
-        onAddClient={addAgent}
+        onAddClient={handleAddAgent}
         onFetchClients={fetchAgents}
       />
     </Card>
