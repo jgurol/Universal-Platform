@@ -60,9 +60,13 @@ export const EditDealDialog = ({
 
   useEffect(() => {
     if (deal && open) {
+      console.log('Setting form data for deal:', deal);
       reset({
         ...deal,
-        expected_close_date: deal.expected_close_date || null
+        expected_close_date: deal.expected_close_date || null,
+        // Ensure agent_id is properly set
+        agent_id: deal.agent_id || null,
+        client_info_id: deal.client_info_id || null
       });
     }
   }, [deal, open, reset]);
@@ -85,6 +89,7 @@ export const EditDealDialog = ({
         console.error('Error fetching agents:', error);
         setAgents([]);
       } else {
+        console.log('Fetched agents:', data);
         setAgents(data || []);
       }
     } catch (err) {
@@ -103,6 +108,7 @@ export const EditDealDialog = ({
   };
 
   const onSubmit = (data: DealRegistration) => {
+    console.log('Submitting deal update:', data);
     if (deal) {
       onUpdateDeal({
         ...deal,
@@ -113,6 +119,9 @@ export const EditDealDialog = ({
   };
 
   if (!deal) return null;
+
+  console.log('Current deal agent_id:', deal.agent_id);
+  console.log('Selected agent_id from form:', selectedAgentId);
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
@@ -160,7 +169,7 @@ export const EditDealDialog = ({
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="space-y-2">
               <Label htmlFor="stage">Deal Stage</Label>
-              <Select value={selectedStage} onValueChange={(value) => setValue("stage", value)}>
+              <Select value={selectedStage || ''} onValueChange={(value) => setValue("stage", value)}>
                 <SelectTrigger>
                   <SelectValue placeholder="Select stage" />
                 </SelectTrigger>
@@ -194,7 +203,7 @@ export const EditDealDialog = ({
 
             <div className="space-y-2">
               <Label htmlFor="status">Status</Label>
-              <Select value={selectedStatus} onValueChange={(value) => setValue("status", value)}>
+              <Select value={selectedStatus || ''} onValueChange={(value) => setValue("status", value)}>
                 <SelectTrigger>
                   <SelectValue placeholder="Select status" />
                 </SelectTrigger>
@@ -243,12 +252,15 @@ export const EditDealDialog = ({
               <Label htmlFor="agent_id">Associated Agent</Label>
               <Select 
                 value={selectedAgentId || "none"} 
-                onValueChange={(value) => setValue("agent_id", value === "none" ? null : value)}
+                onValueChange={(value) => {
+                  console.log('Agent selection changed to:', value);
+                  setValue("agent_id", value === "none" ? null : value);
+                }}
               >
                 <SelectTrigger>
                   <SelectValue placeholder={isLoading ? "Loading agents..." : "Select agent"} />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="bg-white z-50">
                   <SelectItem value="none">None</SelectItem>
                   {agents.map((agent) => (
                     <SelectItem key={agent.id} value={agent.id}>
