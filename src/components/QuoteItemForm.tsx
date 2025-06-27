@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/context/AuthContext";
 import { useCategories } from "@/hooks/useCategories";
 import { useClients } from "@/hooks/useClients";
+import { useState, useMemo } from "react";
 
 interface QuoteItemFormProps {
   selectedItemId: string;
@@ -33,6 +34,11 @@ export const QuoteItemForm = ({
   const { isAdmin, user } = useAuth();
   const { categories } = useCategories();
   const { clients } = useClients();
+
+  // Multi-step selection state
+  const [selectedAddress, setSelectedAddress] = useState<string>("");
+  const [selectedCarrier, setSelectedCarrier] = useState<string>("");
+  const [selectedSpeed, setSelectedSpeed] = useState<string>("");
 
   // Get agent commission rate from clients data
   const currentAgent = clients.find(client => client.id === user?.id);
@@ -122,25 +128,68 @@ export const QuoteItemForm = ({
   // Filter out carrier items that have no_service set to true
   const availableCarrierItems = carrierQuoteItems.filter(item => !item.no_service);
   
-  // Sort by vendor/carrier first, then by speed
-  const sortedCarrierItems = availableCarrierItems.sort((a, b) => {
-    // First sort by carrier name
-    const carrierComparison = a.carrier.localeCompare(b.carrier);
-    if (carrierComparison !== 0) {
-      return carrierComparison;
-    }
-    
-    // If carriers are the same, sort by speed
-    return a.speed.localeCompare(b.speed);
-  });
-  
-  const hasCarrierItems = sortedCarrierItems.length > 0;
+  const hasCarrierItems = availableCarrierItems.length > 0;
 
   console.log('[QuoteItemForm] After filtering no_service items:', {
     originalCount: carrierQuoteItems.length,
     filteredCount: availableCarrierItems.length,
     hasCarrierItems
   });
+
+  // Get unique addresses from carrier quote items
+  const uniqueAddresses = useMemo(() => {
+    const addresses = [...new Set(availableCarrierItems.map(item => item.location))];
+    return addresses.sort();
+  }, [availableCarrierItems]);
+
+  // Get carriers for selected address
+  const carriersForAddress = useMemo(() => {
+    if (!selectedAddress) return [];
+    const carriers = [...new Set(availableCarrierItems
+      .filter(item => item.location === selectedAddress)
+      .map(item => item.carrier))];
+    return carriers.sort();
+  }, [availableCarrierItems, selectedAddress]);
+
+  // Get speeds for selected address and carrier
+  const speedsForSelection = useMemo(() => {
+    if (!selectedAddress || !selectedCarrier) return [];
+    return availableCarrierItems
+      .filter(item => item.location === selectedAddress && item.carrier === selectedCarrier)
+      .sort((a, b) => a.speed.localeCompare(b.speed));
+  }, [availableCarrierItems, selectedAddress, selectedCarrier]);
+
+  // Handle address selection
+  const handleAddressChange = (address: string) => {
+    setSelectedAddress(address);
+    setSelectedCarrier("");
+    setSelectedSpeed("");
+    onSelectedItemIdChange("");
+  };
+
+  // Handle carrier selection
+  const handleCarrierChange = (carrier: string) => {
+    setSelectedCarrier(carrier);
+    setSelectedSpeed("");
+    onSelectedItemIdChange("");
+  };
+
+  // Handle speed selection
+  const handleSpeedChange = (speed: string) => {
+    setSelectedSpeed(speed);
+    const selectedItem = speedsForSelection.find(item => item.speed === speed);
+    if (selectedItem) {
+      onSelectedItemIdChange(`carrier-${selectedItem.id}`);
+    }
+  };
+
+  // Reset multi-step selection when switching between catalog and carrier items
+  const handleCatalogItemChange = (value: string) => {
+    setSelectedAddress("");
+    setSelectedCarrier("");
+    setSelectedSpeed("");
+    onSelectedItemIdChange(value);
+  };
 
   return (
     <div className="space-y-4 p-4 border rounded-lg bg-card text-card-foreground">
@@ -153,7 +202,7 @@ export const QuoteItemForm = ({
           <div className="flex gap-2">
             <Select 
               value={selectedItemId.startsWith('carrier-') ? '' : selectedItemId} 
-              onValueChange={onSelectedItemIdChange}
+              onValueChange={handleCatalogItemChange}
             >
               <SelectTrigger className="flex-1">
                 <SelectValue placeholder={isLoading ? "Loading catalog items..." : "Select from catalog"} />
@@ -190,64 +239,9 @@ export const QuoteItemForm = ({
           </div>
         </div>
 
-        {/* Carrier Quote Items Dropdown */}
+        {/* Carrier Quote Items Multi-Step Selection */}
         <div className="space-y-2">
           <Label className="text-sm font-medium">From Completed Circuit Quotes</Label>
-          <div className="flex gap-2">
-            <Select 
-              value={selectedItemId.startsWith('carrier-') ? selectedItemId : ''} 
-              onValueChange={onSelectedItemIdChange}
-              disabled={!clientInfoId || !hasCarrierItems}
-            >
-              <SelectTrigger className="flex-1">
-                <SelectValue placeholder={
-                  !clientInfoId 
-                    ? "Select a client company first" 
-                    : carrierLoading 
-                      ? "Loading carrier quotes..." 
-                      : !hasCarrierItems 
-                        ? "No carrier quotes available" 
-                        : "Select from carrier quotes"
-                } />
-              </SelectTrigger>
-              <SelectContent className="bg-popover z-50 min-w-[700px]">
-                {hasCarrierItems ? (
-                  sortedCarrierItems.map((carrierItem) => {
-                    const sellPrice = calculateSellPrice(carrierItem, agentCommissionRate);
-                    const baseCost = carrierItem.price;
-                    return (
-                      <SelectItem key={`carrier-${carrierItem.id}`} value={`carrier-${carrierItem.id}`}>
-                        <div className="flex items-center gap-3 w-full min-w-0 whitespace-nowrap">
-                          <span className="font-medium text-sm">{carrierItem.carrier}</span>
-                          <span className="text-xs text-muted-foreground">•</span>
-                          <span className="text-xs text-muted-foreground">{carrierItem.type}</span>
-                          <span className="text-xs text-muted-foreground">•</span>
-                          <span className="text-xs text-muted-foreground">{carrierItem.speed}</span>
-                          <span className="text-xs text-muted-foreground">•</span>
-                          <span className="text-xs text-green-600 font-medium">${sellPrice.toFixed(2)}/month</span>
-                          {isAdmin && (
-                            <>
-                              <span className="text-xs text-muted-foreground">•</span>
-                              <span className="text-xs text-orange-600">Base Cost: ${baseCost.toFixed(2)}</span>
-                            </>
-                          )}
-                          <span className="text-xs text-muted-foreground">•</span>
-                          <span className="text-xs text-blue-600">{carrierItem.location}</span>
-                          <Badge variant="outline" className="text-xs whitespace-nowrap ml-auto">
-                            Circuit Quote
-                          </Badge>
-                        </div>
-                      </SelectItem>
-                    );
-                  })
-                ) : (
-                  <SelectItem value="no-carrier-items" disabled>
-                    No carrier quotes available
-                  </SelectItem>
-                )}
-              </SelectContent>
-            </Select>
-          </div>
           
           {!clientInfoId && (
             <p className="text-sm text-orange-600">
@@ -255,15 +249,103 @@ export const QuoteItemForm = ({
             </p>
           )}
           
-          {clientInfoId && hasCarrierItems && (
-            <p className="text-sm text-blue-600">
-              {sortedCarrierItems.length} carrier option(s) available from completed circuit quotes
-            </p>
-          )}
-          
           {clientInfoId && !hasCarrierItems && !carrierLoading && (
             <p className="text-sm text-red-600">
               No carrier quotes found. Make sure you have completed circuit quotes for this client.
+            </p>
+          )}
+
+          {clientInfoId && hasCarrierItems && (
+            <div className="space-y-3">
+              {/* Step 1: Select Address */}
+              <div>
+                <Label className="text-xs text-gray-600">Step 1: Select Location</Label>
+                <Select 
+                  value={selectedAddress} 
+                  onValueChange={handleAddressChange}
+                  disabled={carrierLoading}
+                >
+                  <SelectTrigger className="flex-1">
+                    <SelectValue placeholder={carrierLoading ? "Loading locations..." : "Select location"} />
+                  </SelectTrigger>
+                  <SelectContent className="bg-popover z-50 min-w-[400px]">
+                    {uniqueAddresses.map((address) => (
+                      <SelectItem key={address} value={address}>
+                        {address}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Step 2: Select Carrier */}
+              {selectedAddress && (
+                <div>
+                  <Label className="text-xs text-gray-600">Step 2: Select Carrier</Label>
+                  <Select 
+                    value={selectedCarrier} 
+                    onValueChange={handleCarrierChange}
+                  >
+                    <SelectTrigger className="flex-1">
+                      <SelectValue placeholder="Select carrier" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-popover z-50 min-w-[300px]">
+                      {carriersForAddress.map((carrier) => (
+                        <SelectItem key={carrier} value={carrier}>
+                          {carrier}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+
+              {/* Step 3: Select Speed */}
+              {selectedAddress && selectedCarrier && (
+                <div>
+                  <Label className="text-xs text-gray-600">Step 3: Select Speed & Service</Label>
+                  <Select 
+                    value={selectedSpeed} 
+                    onValueChange={handleSpeedChange}
+                  >
+                    <SelectTrigger className="flex-1">
+                      <SelectValue placeholder="Select speed and service type" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-popover z-50 min-w-[600px]">
+                      {speedsForSelection.map((carrierItem) => {
+                        const sellPrice = calculateSellPrice(carrierItem, agentCommissionRate);
+                        const baseCost = carrierItem.price;
+                        return (
+                          <SelectItem key={carrierItem.id} value={carrierItem.speed}>
+                            <div className="flex items-center gap-3 w-full min-w-0 whitespace-nowrap">
+                              <span className="font-medium text-sm">{carrierItem.speed}</span>
+                              <span className="text-xs text-muted-foreground">•</span>
+                              <span className="text-xs text-muted-foreground">{carrierItem.type}</span>
+                              <span className="text-xs text-muted-foreground">•</span>
+                              <span className="text-xs text-green-600 font-medium">${sellPrice.toFixed(2)}/month</span>
+                              {isAdmin && (
+                                <>
+                                  <span className="text-xs text-muted-foreground">•</span>
+                                  <span className="text-xs text-orange-600">Base Cost: ${baseCost.toFixed(2)}</span>
+                                </>
+                              )}
+                              <Badge variant="outline" className="text-xs whitespace-nowrap ml-auto">
+                                Circuit Quote
+                              </Badge>
+                            </div>
+                          </SelectItem>
+                        );
+                      })}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+            </div>
+          )}
+
+          {clientInfoId && hasCarrierItems && (
+            <p className="text-sm text-blue-600">
+              {availableCarrierItems.length} carrier option(s) available from completed circuit quotes
             </p>
           )}
         </div>
