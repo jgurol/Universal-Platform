@@ -35,6 +35,7 @@ export const QuoteItemRow = ({ quoteItem, addresses, onUpdateItem, onRemoveItem,
   // Get agent commission rate from clients data
   const currentAgent = clients.find(client => client.id === user?.id);
   const agentCommissionRate = currentAgent?.commissionRate || 15;
+  const isAgentOptedOut = agentCommissionRate === 0;
   
   // Initialize commission rate with agent's rate
   const [commissionRate, setCommissionRate] = useState<number>(agentCommissionRate);
@@ -66,11 +67,14 @@ export const QuoteItemRow = ({ quoteItem, addresses, onUpdateItem, onRemoveItem,
 
   // Calculate the commission amount for this line item
   const calculateCommissionAmount = (): number => {
+    if (isAgentOptedOut) return 0;
     return (quoteItem.total_price * commissionRate) / 100;
   };
 
   // Calculate what the minimum sell price would be for 0% commission
   const calculateMinimumSellPrice = (): number => {
+    if (isAgentOptedOut) return 0; // No minimum when opted out
+    
     let minimumSellPrice = cost;
     if (itemCategory?.minimum_markup && cost > 0) {
       minimumSellPrice = cost * (1 + itemCategory.minimum_markup / 100);
@@ -102,6 +106,12 @@ export const QuoteItemRow = ({ quoteItem, addresses, onUpdateItem, onRemoveItem,
 
   // Handle sell price changes - allow temporary empty values
   const handleSellPriceChange = (newSellPrice: number) => {
+    if (isAgentOptedOut) {
+      // If agent is opted out, allow any sell price without restrictions
+      onUpdateItem(quoteItem.id, 'unit_price', newSellPrice);
+      return;
+    }
+    
     const minimumSellPrice = calculateMinimumSellPrice();
     
     // If the entered price is below minimum, reset to minimum
@@ -150,13 +160,19 @@ export const QuoteItemRow = ({ quoteItem, addresses, onUpdateItem, onRemoveItem,
   // Handle blur - validate and reset if needed
   const handleSellPriceBlur = () => {
     const numericValue = parseFloat(tempSellPrice);
-    const minimumSellPrice = calculateMinimumSellPrice();
     
     // If empty or invalid, reset to current value
     if (!tempSellPrice || isNaN(numericValue)) {
       setTempSellPrice(quoteItem.unit_price.toString());
       return;
     }
+    
+    // If agent is opted out, no validation needed
+    if (isAgentOptedOut) {
+      return;
+    }
+    
+    const minimumSellPrice = calculateMinimumSellPrice();
     
     // If below minimum, reset to minimum
     if (numericValue < minimumSellPrice) {
@@ -168,6 +184,8 @@ export const QuoteItemRow = ({ quoteItem, addresses, onUpdateItem, onRemoveItem,
 
   // Handle commission rate change and update sell price accordingly
   const handleCommissionRateChange = (newCommissionRate: number) => {
+    if (isAgentOptedOut) return; // Don't allow changes if opted out
+    
     // Don't allow commission to go below 0 or above agent's max rate
     const clampedCommissionRate = Math.max(0, Math.min(newCommissionRate, agentCommissionRate));
     
@@ -197,7 +215,7 @@ export const QuoteItemRow = ({ quoteItem, addresses, onUpdateItem, onRemoveItem,
 
   // Calculate the effective minimum markup after commission reduction
   const getEffectiveMinimumMarkup = (): number => {
-    if (!itemCategory?.minimum_markup) return 0;
+    if (!itemCategory?.minimum_markup || isAgentOptedOut) return 0;
     
     const originalMinimumMarkup = itemCategory.minimum_markup;
     const commissionReduction = agentCommissionRate - commissionRate;
@@ -251,12 +269,12 @@ export const QuoteItemRow = ({ quoteItem, addresses, onUpdateItem, onRemoveItem,
           {/* Drag Handle Space */}
           <div className="w-4"></div>
           
-          {/* Main Content Grid Headers - Adjust columns based on admin status */}
-          <div className={`grid ${isAdmin ? 'grid-cols-7' : 'grid-cols-6'} gap-2 flex-1`}>
+          {/* Main Content Grid Headers - Adjust columns based on admin status and commission opt-out */}
+          <div className={`grid ${isAdmin ? (isAgentOptedOut ? 'grid-cols-6' : 'grid-cols-7') : (isAgentOptedOut ? 'grid-cols-5' : 'grid-cols-6')} gap-2 flex-1`}>
             <div className="col-span-2">Product</div>
             <div>Qty</div>
             <div>Sell</div>
-            <div>Commission</div>
+            {!isAgentOptedOut && <div>Commission</div>}
             <div>Extended</div>
             <div>Type</div>
           </div>
@@ -270,8 +288,8 @@ export const QuoteItemRow = ({ quoteItem, addresses, onUpdateItem, onRemoveItem,
           <GripVertical className="w-4 h-4 text-gray-400 cursor-grab active:cursor-grabbing" />
         </div>
 
-        {/* Main Content Grid - Adjust columns based on admin status */}
-        <div className={`grid ${isAdmin ? 'grid-cols-7' : 'grid-cols-6'} gap-2 items-start flex-1`}>
+        {/* Main Content Grid - Adjust columns based on admin status and commission opt-out */}
+        <div className={`grid ${isAdmin ? (isAgentOptedOut ? 'grid-cols-6' : 'grid-cols-7') : (isAgentOptedOut ? 'grid-cols-5' : 'grid-cols-6')} gap-2 items-start flex-1`}>
           {/* Item & Location Column */}
           <div className="col-span-2 space-y-2">
             <Input
@@ -394,49 +412,51 @@ export const QuoteItemRow = ({ quoteItem, addresses, onUpdateItem, onRemoveItem,
             )}
           </div>
 
-          {/* Commission & Markup Control - Always Show */}
-          <div className="space-y-1">
-            <div className="flex items-center gap-1">
-              <Percent className="w-3 h-3 text-blue-600" />
-              <Input
-                type="number"
-                step="0.1"
-                min="0"
-                max={agentCommissionRate}
-                value={commissionRate}
-                onChange={(e) => handleCommissionRateChange(parseFloat(e.target.value) || 0)}
-                className="text-xs h-8"
-                placeholder="Comm %"
-              />
-            </div>
-            
-            {/* Show commission reduction info for agents only if there's a reduction */}
-            {!isAdmin && agentCommissionRate - commissionRate > 0 && (
-              <div className="text-xs text-red-600">
-                -{(agentCommissionRate - commissionRate).toFixed(1)}% price reduction
+          {/* Commission & Markup Control - Only show if agent is not opted out */}
+          {!isAgentOptedOut && (
+            <div className="space-y-1">
+              <div className="flex items-center gap-1">
+                <Percent className="w-3 h-3 text-blue-600" />
+                <Input
+                  type="number"
+                  step="0.1"
+                  min="0"
+                  max={agentCommissionRate}
+                  value={commissionRate}
+                  onChange={(e) => handleCommissionRateChange(parseFloat(e.target.value) || 0)}
+                  className="text-xs h-8"
+                  placeholder="Comm %"
+                />
               </div>
-            )}
-            
-            {/* Show markup info only if category has minimum markup and user is admin */}
-            {isAdmin && itemCategory?.minimum_markup && (
-              <>
-                <div className="text-xs text-gray-500 mb-1">
-                  Effective Min Markup: {getEffectiveMinimumMarkup().toFixed(1)}%
+              
+              {/* Show commission reduction info for agents only if there's a reduction */}
+              {!isAdmin && agentCommissionRate - commissionRate > 0 && (
+                <div className="text-xs text-red-600">
+                  -{(agentCommissionRate - commissionRate).toFixed(1)}% price reduction
                 </div>
-                <div className="text-xs text-orange-600 mb-1">
-                  Current: {markupCalculation.currentMarkup.toFixed(1)}%
-                </div>
-                <div className="text-xs text-blue-600">
-                  Final: {markupCalculation.finalCommissionRate.toFixed(1)}%
-                </div>
-                {!markupCalculation.isValid && (
-                  <div className="text-xs text-red-600">
-                    {markupCalculation.errorMessage}
+              )}
+              
+              {/* Show markup info only if category has minimum markup and user is admin */}
+              {isAdmin && itemCategory?.minimum_markup && (
+                <>
+                  <div className="text-xs text-gray-500 mb-1">
+                    Effective Min Markup: {getEffectiveMinimumMarkup().toFixed(1)}%
                   </div>
-                )}
-              </>
-            )}
-          </div>
+                  <div className="text-xs text-orange-600 mb-1">
+                    Current: {markupCalculation.currentMarkup.toFixed(1)}%
+                  </div>
+                  <div className="text-xs text-blue-600">
+                    Final: {markupCalculation.finalCommissionRate.toFixed(1)}%
+                  </div>
+                  {!markupCalculation.isValid && (
+                    <div className="text-xs text-red-600">
+                      {markupCalculation.errorMessage}
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
+          )}
 
           {/* Total & Commission */}
           <div className="space-y-1">
@@ -454,9 +474,11 @@ export const QuoteItemRow = ({ quoteItem, addresses, onUpdateItem, onRemoveItem,
                 <Trash2 className="w-3 h-3" />
               </Button>
             </div>
-            <div className="text-xs text-gray-600">
-              Commission: ${calculateCommissionAmount().toFixed(2)}
-            </div>
+            {!isAgentOptedOut && (
+              <div className="text-xs text-gray-600">
+                Commission: ${calculateCommissionAmount().toFixed(2)}
+              </div>
+            )}
           </div>
 
           {/* Type Column */}
