@@ -15,22 +15,33 @@ interface RequestBody {
 }
 
 Deno.serve(async (req) => {
+  console.log('🔥 send-agent-agreement function called!');
+  console.log('Request method:', req.method);
+  console.log('Request headers:', Object.fromEntries(req.headers.entries()));
+
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
+    console.log('Handling CORS preflight request');
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
+    console.log('Creating Supabase client...');
     const supabaseClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    const { agentId, agentEmail, agentName, commissionRate, templateId }: RequestBody = await req.json();
+    console.log('Parsing request body...');
+    const requestBody = await req.json();
+    console.log('Request body received:', requestBody);
     
-    console.log('Received request for agent:', { agentId, agentEmail, agentName, commissionRate, templateId });
+    const { agentId, agentEmail, agentName, commissionRate, templateId }: RequestBody = requestBody;
+    
+    console.log('Processing request for agent:', { agentId, agentEmail, agentName, commissionRate, templateId });
     
     // Verify the agent exists
+    console.log('Verifying agent exists in database...');
     const { data: existingAgent, error: agentCheckError } = await supabaseClient
       .from('agents')
       .select('id, first_name, last_name, email')
@@ -47,7 +58,7 @@ Deno.serve(async (req) => {
       throw new Error('Agent not found in database');
     }
 
-    console.log('Agent verified:', existingAgent);
+    console.log('Agent verified successfully:', existingAgent);
 
     // Get template content
     let templateContent = '';
@@ -62,15 +73,15 @@ Deno.serve(async (req) => {
 
       if (!templateError && selectedTemplate) {
         templateContent = selectedTemplate.content;
-        console.log('Using selected template');
+        console.log('Using selected template, content length:', templateContent.length);
       } else {
-        console.log('Selected template not found, will try default');
+        console.log('Selected template not found, will try default. Error:', templateError);
       }
     }
 
     // If no template content yet, try to get the default template
     if (!templateContent) {
-      console.log('Fetching default template');
+      console.log('Fetching default template...');
       const { data: defaultTemplate, error: defaultError } = await supabaseClient
         .from('agent_agreement_templates')
         .select('content')
@@ -79,9 +90,9 @@ Deno.serve(async (req) => {
 
       if (!defaultError && defaultTemplate) {
         templateContent = defaultTemplate.content;
-        console.log('Using default template');
+        console.log('Using default template, content length:', templateContent.length);
       } else {
-        console.log('No default template found, using fallback');
+        console.log('No default template found, error:', defaultError);
       }
     }
 
@@ -106,7 +117,7 @@ Deno.serve(async (req) => {
     const expiresAt = new Date();
     expiresAt.setDate(expiresAt.getDate() + 30); // Token expires in 30 days
 
-    console.log('Creating token for agent:', agentId, 'Token expires at:', expiresAt.toISOString());
+    console.log('Creating agreement token for agent:', agentId, 'Token expires at:', expiresAt.toISOString());
 
     // Store the token in database
     const { error: tokenError } = await supabaseClient
@@ -126,12 +137,13 @@ Deno.serve(async (req) => {
     const agreementUrl = `${req.headers.get('origin') || 'https://tsvvpssyzthwbkygrlgw.supabase.co'}/agent-agreement/${token}`;
     console.log('Agreement URL created:', agreementUrl);
 
-    // Send email using Resend
+    // Check if Resend API key is configured
     const resendApiKey = Deno.env.get('RESEND_API_KEY');
     if (!resendApiKey) {
-      console.error('RESEND_API_KEY not configured');
+      console.error('RESEND_API_KEY not configured in environment variables');
       throw new Error('RESEND_API_KEY not configured');
     }
+    console.log('Resend API key found, length:', resendApiKey.length);
 
     const emailBody = `
       <h2>Welcome to Our Agent Program!</h2>
@@ -153,7 +165,17 @@ Deno.serve(async (req) => {
       <p>Best regards,<br>The Team</p>
     `;
 
-    console.log('Sending email to:', agentEmail);
+    console.log('Preparing to send email to:', agentEmail);
+    console.log('Email body length:', emailBody.length);
+
+    const emailPayload = {
+      from: 'sales@californiatelecom.com',
+      to: [agentEmail],
+      subject: 'Complete Your Agent Agreement - Commission Rate: ' + commissionRate + '%',
+      html: emailBody,
+    };
+
+    console.log('Email payload prepared:', { ...emailPayload, html: '[HTML_CONTENT]' });
 
     const emailResponse = await fetch('https://api.resend.com/emails', {
       method: 'POST',
@@ -161,13 +183,11 @@ Deno.serve(async (req) => {
         'Authorization': `Bearer ${resendApiKey}`,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({
-        from: 'sales@californiatelecom.com',
-        to: [agentEmail],
-        subject: 'Complete Your Agent Agreement - Commission Rate: ' + commissionRate + '%',
-        html: emailBody,
-      }),
+      body: JSON.stringify(emailPayload),
     });
+
+    console.log('Resend API response status:', emailResponse.status);
+    console.log('Resend API response headers:', Object.fromEntries(emailResponse.headers.entries()));
 
     if (!emailResponse.ok) {
       const errorData = await emailResponse.text();
@@ -176,15 +196,19 @@ Deno.serve(async (req) => {
     }
 
     const emailResult = await emailResponse.json();
-    console.log('Email sent successfully:', emailResult);
+    console.log('Email sent successfully! Resend response:', emailResult);
+
+    const successResponse = { 
+      success: true, 
+      message: 'Agent agreement email sent successfully',
+      agreementUrl: agreementUrl,
+      emailId: emailResult.id
+    };
+
+    console.log('Returning success response:', successResponse);
 
     return new Response(
-      JSON.stringify({ 
-        success: true, 
-        message: 'Agent agreement email sent successfully',
-        agreementUrl: agreementUrl,
-        emailId: emailResult.id
-      }),
+      JSON.stringify(successResponse),
       { 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 200 
@@ -192,12 +216,18 @@ Deno.serve(async (req) => {
     );
 
   } catch (error) {
-    console.error('Error sending agent agreement email:', error);
+    console.error('🚨 ERROR in send-agent-agreement function:', error);
+    console.error('Error stack:', error.stack);
+    
+    const errorResponse = { 
+      success: false, 
+      error: error.message || 'Unknown error occurred'
+    };
+    
+    console.log('Returning error response:', errorResponse);
+    
     return new Response(
-      JSON.stringify({ 
-        success: false, 
-        error: error.message || 'Unknown error occurred'
-      }),
+      JSON.stringify(errorResponse),
       { 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 500 

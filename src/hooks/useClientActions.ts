@@ -17,6 +17,7 @@ export const useClientActions = (
     if (!user) return;
     
     try {
+      console.log('Starting to add new agent...');
       const { data, error } = await supabase
         .from('agents')
         .insert({
@@ -33,7 +34,7 @@ export const useClientActions = (
         .single();
 
       if (error) {
-        console.error('Error adding agent:', error);
+        console.error('Error adding agent to database:', error);
         toast({
           title: "Failed to add agent",
           description: error.message,
@@ -41,6 +42,8 @@ export const useClientActions = (
         });
         throw error;
       } else if (data) {
+        console.log('Agent added to database successfully:', data);
+        
         // Map the returned data to our Client interface
         const newClientWithId: Client = {
           id: data.id,
@@ -58,40 +61,38 @@ export const useClientActions = (
 
         // Send agent agreement email with proper error handling
         try {
-          console.log('Calling send-agent-agreement function with:', {
+          const emailPayload = {
             agentId: data.id,
             agentEmail: data.email,
             agentName: `${data.first_name} ${data.last_name}`,
             commissionRate: data.commission_rate,
             templateId: newClient.selectedTemplateId || null
-          });
+          };
+          
+          console.log('About to call send-agent-agreement function with payload:', emailPayload);
 
           const { data: emailResult, error: emailError } = await supabase.functions.invoke('send-agent-agreement', {
-            body: {
-              agentId: data.id,
-              agentEmail: data.email,
-              agentName: `${data.first_name} ${data.last_name}`,
-              commissionRate: data.commission_rate,
-              templateId: newClient.selectedTemplateId || null
-            }
+            body: emailPayload
           });
 
-          console.log('Email function response:', { emailResult, emailError });
+          console.log('Email function response - data:', emailResult);
+          console.log('Email function response - error:', emailError);
 
           if (emailError) {
-            console.error('Error sending agent agreement email:', emailError);
+            console.error('Supabase function invocation error:', emailError);
             toast({
               title: "Agent added but email failed",
               description: `The agent was added successfully, but we couldn't send the agreement email: ${emailError.message}`,
               variant: "destructive"
             });
           } else if (emailResult?.success) {
+            console.log('Email sent successfully:', emailResult);
             toast({
               title: "Agent added and email sent!",
               description: `${newClientWithId.name} has been added and will receive an agreement email shortly.`,
             });
           } else {
-            console.error('Email function returned error:', emailResult);
+            console.error('Email function returned failure:', emailResult);
             toast({
               title: "Agent added but email failed",
               description: `The agent was added successfully, but the email service returned an error: ${emailResult?.error || 'Unknown error'}`,
@@ -99,10 +100,10 @@ export const useClientActions = (
             });
           }
         } catch (emailError) {
-          console.error('Exception sending agreement email:', emailError);
+          console.error('Exception when calling email function:', emailError);
           toast({
             title: "Agent added but email failed",
-            description: `The agent was added successfully, but we couldn't send the agreement email: ${emailError instanceof Error ? emailError.message : 'Unknown error'}`,
+            description: `The agent was added successfully, but there was an exception calling the email service: ${emailError instanceof Error ? emailError.message : 'Unknown error'}`,
             variant: "destructive"
           });
         }
