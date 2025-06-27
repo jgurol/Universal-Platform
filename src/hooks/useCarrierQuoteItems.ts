@@ -15,6 +15,13 @@ export interface CarrierQuoteItem {
   client_name: string;
   location: string;
   no_service: boolean;
+  static_ip: boolean;
+  static_ip_fee_amount: number;
+  static_ip_5: boolean;
+  static_ip_5_fee_amount: number;
+  install_fee: boolean;
+  install_fee_amount: number;
+  other_costs: number;
 }
 
 export const useCarrierQuoteItems = (clientInfoId: string | null) => {
@@ -92,7 +99,14 @@ export const useCarrierQuoteItems = (clientInfoId: string | null) => {
               circuit_quote_id: cq.circuit_quote_id,
               client_name: circuitQuote?.client_name || '',
               location: circuitQuote?.location || '',
-              no_service: cq.no_service || false
+              no_service: cq.no_service || false,
+              static_ip: cq.static_ip || false,
+              static_ip_fee_amount: cq.static_ip_fee_amount || 0,
+              static_ip_5: cq.static_ip_5 || false,
+              static_ip_5_fee_amount: cq.static_ip_5_fee_amount || 0,
+              install_fee: cq.install_fee || false,
+              install_fee_amount: cq.install_fee_amount || 0,
+              other_costs: cq.other_costs || 0
             };
           });
           
