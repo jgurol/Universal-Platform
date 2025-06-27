@@ -38,15 +38,59 @@ export const QuoteItemForm = ({
   const currentAgent = clients.find(client => client.id === user?.id);
   const agentCommissionRate = currentAgent?.commissionRate || 15;
 
-  const calculateSellPrice = (cost: number, categoryType?: string, commissionRate: number = agentCommissionRate) => {
-    if (!categoryType || !categories.length) {
-      return cost; // If no category or categories not loaded, return cost as sell price
+  // Helper function to extract term months from term string
+  const getTermMonths = (term: string | undefined): number => {
+    if (!term) return 36; // Default to 36 months if no term specified
+    
+    const termLower = term.toLowerCase();
+    const monthMatch = termLower.match(/(\d+)\s*month/);
+    const yearMatch = termLower.match(/(\d+)\s*year/);
+    
+    if (monthMatch) {
+      return parseInt(monthMatch[1]);
+    } else if (yearMatch) {
+      return parseInt(yearMatch[1]) * 12;
+    }
+    
+    return 36; // Default fallback
+  };
+
+  const calculateSellPrice = (carrierItem: any, commissionRate: number = agentCommissionRate) => {
+    const termMonths = getTermMonths(carrierItem.term);
+    
+    // Start with base price
+    let totalCost = carrierItem.price;
+    
+    // Add static IP fees
+    if (carrierItem.static_ip && carrierItem.static_ip_fee_amount) {
+      totalCost += carrierItem.static_ip_fee_amount;
+    }
+    if (carrierItem.static_ip_5 && carrierItem.static_ip_5_fee_amount) {
+      totalCost += carrierItem.static_ip_5_fee_amount;
+    }
+    
+    // Add amortized install fee (divided by contract term in months)
+    if (carrierItem.install_fee && carrierItem.install_fee_amount) {
+      totalCost += carrierItem.install_fee_amount / termMonths;
+    }
+    
+    // Add other costs
+    if (carrierItem.other_costs) {
+      totalCost += carrierItem.other_costs;
+    }
+
+    if (isAdmin) {
+      return totalCost;
+    }
+
+    if (!carrierItem.type || !categories.length) {
+      return totalCost; // If no category or categories not loaded, return total cost as sell price
     }
 
     // Find the category that matches the carrier quote type
     const matchingCategory = categories.find(cat => 
-      cat.type?.toLowerCase() === categoryType.toLowerCase() ||
-      cat.name.toLowerCase().includes(categoryType.toLowerCase())
+      cat.type?.toLowerCase() === carrierItem.type.toLowerCase() ||
+      cat.name.toLowerCase().includes(carrierItem.type.toLowerCase())
     );
 
     if (matchingCategory && matchingCategory.minimum_markup && matchingCategory.minimum_markup > 0) {
@@ -57,10 +101,10 @@ export const QuoteItemForm = ({
       
       // Apply the effective minimum markup: sell price = cost * (1 + effectiveMinimumMarkup/100)
       const markup = effectiveMinimumMarkup / 100;
-      return Math.round(cost * (1 + markup) * 100) / 100; // Round to 2 decimal places
+      return Math.round(totalCost * (1 + markup) * 100) / 100; // Round to 2 decimal places
     }
 
-    return cost; // If no matching category or no minimum markup, return cost
+    return totalCost; // If no matching category or no minimum markup, return total cost
   };
 
   console.log('[QuoteItemForm] Debug info:', {
@@ -169,7 +213,8 @@ export const QuoteItemForm = ({
               <SelectContent className="bg-white z-50 min-w-[700px]">
                 {hasCarrierItems ? (
                   sortedCarrierItems.map((carrierItem) => {
-                    const sellPrice = calculateSellPrice(carrierItem.price, carrierItem.type, agentCommissionRate);
+                    const sellPrice = calculateSellPrice(carrierItem, agentCommissionRate);
+                    const baseCost = carrierItem.price;
                     return (
                       <SelectItem key={`carrier-${carrierItem.id}`} value={`carrier-${carrierItem.id}`}>
                         <div className="flex items-center gap-3 w-full min-w-0 whitespace-nowrap">
@@ -183,7 +228,7 @@ export const QuoteItemForm = ({
                           {isAdmin && (
                             <>
                               <span className="text-xs text-gray-600">•</span>
-                              <span className="text-xs text-orange-600">Cost: ${carrierItem.price.toFixed(2)}</span>
+                              <span className="text-xs text-orange-600">Base Cost: ${baseCost.toFixed(2)}</span>
                             </>
                           )}
                           <span className="text-xs text-gray-600">•</span>
