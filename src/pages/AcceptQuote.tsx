@@ -605,6 +605,16 @@ const AcceptQuote = () => {
               </div>
             </div>
 
+            {/* Initial Term */}
+            {quote.term && (
+              <div className="space-y-4">
+                <h3 className="text-lg font-semibold text-gray-900">Initial Term</h3>
+                <div className="bg-gray-50 border rounded-lg p-4">
+                  <p className="text-sm font-medium text-gray-800">{quote.term}</p>
+                </div>
+              </div>
+            )}
+
             {/* Terms and Conditions */}
             {templateContent && (
               <div className="space-y-4">
