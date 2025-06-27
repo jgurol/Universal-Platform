@@ -53,12 +53,17 @@ export const dealRegistrationService = {
   },
 
   async addDeal(dealData: AddDealData, userId: string): Promise<DealRegistration> {
+    // Convert empty strings to null for UUID fields
+    const cleanedData = {
+      ...dealData,
+      client_info_id: dealData.client_info_id === '' ? null : dealData.client_info_id,
+      agent_id: dealData.agent_id === '' ? null : dealData.agent_id,
+      user_id: userId
+    };
+
     const { data, error } = await supabase
       .from('deal_registrations')
-      .insert({
-        ...dealData,
-        user_id: userId
-      })
+      .insert(cleanedData)
       .select('*')
       .single();
 
@@ -71,21 +76,24 @@ export const dealRegistrationService = {
   },
 
   async updateDeal(dealData: DealRegistration): Promise<DealRegistration> {
+    // Convert empty strings to null for UUID fields
+    const cleanedData = {
+      deal_name: dealData.deal_name,
+      deal_value: dealData.deal_value,
+      expected_close_date: dealData.expected_close_date,
+      probability: dealData.probability,
+      stage: dealData.stage,
+      description: dealData.description,
+      notes: dealData.notes,
+      client_info_id: dealData.client_info_id === '' ? null : dealData.client_info_id,
+      agent_id: dealData.agent_id === '' ? null : dealData.agent_id,
+      status: dealData.status,
+      updated_at: new Date().toISOString()
+    };
+
     const { data, error } = await supabase
       .from('deal_registrations')
-      .update({
-        deal_name: dealData.deal_name,
-        deal_value: dealData.deal_value,
-        expected_close_date: dealData.expected_close_date,
-        probability: dealData.probability,
-        stage: dealData.stage,
-        description: dealData.description,
-        notes: dealData.notes,
-        client_info_id: dealData.client_info_id,
-        agent_id: dealData.agent_id,
-        status: dealData.status,
-        updated_at: new Date().toISOString()
-      })
+      .update(cleanedData)
       .eq('id', dealData.id)
       .select('*')
       .single();
