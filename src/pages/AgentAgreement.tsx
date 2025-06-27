@@ -33,6 +33,7 @@ export default function AgentAgreement() {
   const [isValidToken, setIsValidToken] = useState<boolean | null>(null);
   const [agentData, setAgentData] = useState<AgentData | null>(null);
   const [tokenData, setTokenData] = useState<TokenData | null>(null);
+  const [agreementTemplate, setAgreementTemplate] = useState<string>('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [validationError, setValidationError] = useState<string>('');
@@ -131,6 +132,10 @@ export default function AgentAgreement() {
         ...prev,
         fullName: `${agent.first_name} ${agent.last_name}`,
       }));
+
+      // Load the default agreement template
+      await loadAgreementTemplate();
+      
       setIsValidToken(true);
 
     } catch (error) {
@@ -138,6 +143,75 @@ export default function AgentAgreement() {
       setValidationError(`Unexpected error occurred: ${error instanceof Error ? error.message : 'Unknown error'}`);
       setIsValidToken(false);
     }
+  };
+
+  const loadAgreementTemplate = async () => {
+    try {
+      // Try to get the default template first
+      let { data: template, error } = await supabase
+        .from('agent_agreement_templates')
+        .select('content')
+        .eq('is_default', true)
+        .maybeSingle();
+
+      // If no default template, get the first available template
+      if (!template) {
+        const { data: firstTemplate, error: firstError } = await supabase
+          .from('agent_agreement_templates')
+          .select('content')
+          .limit(1)
+          .maybeSingle();
+        
+        template = firstTemplate;
+        error = firstError;
+      }
+
+      if (error) {
+        console.error('Error loading agreement template:', error);
+        // Use fallback content if no template is found
+        setAgreementTemplate(getDefaultAgreementContent());
+        return;
+      }
+
+      if (template) {
+        setAgreementTemplate(template.content);
+      } else {
+        // Use fallback content if no templates exist
+        setAgreementTemplate(getDefaultAgreementContent());
+      }
+    } catch (error) {
+      console.error('Error in loadAgreementTemplate:', error);
+      setAgreementTemplate(getDefaultAgreementContent());
+    }
+  };
+
+  const getDefaultAgreementContent = () => {
+    return `
+      <p><strong>INDEPENDENT SALES AGENT AGREEMENT</strong></p>
+      <p>This Agreement is entered into between the Company and the Agent named below.</p>
+      
+      <p><strong>1. APPOINTMENT:</strong> Company hereby appoints Agent as an independent sales representative to solicit orders for Company's products and services.</p>
+      
+      <p><strong>2. COMMISSION:</strong> Agent shall receive a commission of {{commission_rate}}% on all accepted orders procured by Agent.</p>
+      
+      <p><strong>3. TERRITORY:</strong> Agent's territory shall be as mutually agreed upon in writing.</p>
+      
+      <p><strong>4. INDEPENDENT CONTRACTOR:</strong> Agent is an independent contractor and not an employee of Company.</p>
+      
+      <p><strong>5. CONFIDENTIALITY:</strong> Agent agrees to maintain confidentiality of all Company information.</p>
+      
+      <p><strong>6. TERMINATION:</strong> Either party may terminate this agreement with 30 days written notice.</p>
+      
+      <p><strong>7. RELATIONSHIP OF PARTIES:</strong> Both parties shall remain independent contractors, and nothing in this Agreement will be construed to create any other relationship. Partner shall not have authority to make any agreement or incur any liability on behalf of California Telecom. Partner shall not make any oral and/or written representations or warranties to any potential Customer or any third party on behalf of California Telecom or with respect to the Service.</p>
+      
+      <p><strong>8. COMPLIANCE WITH LAWS:</strong> Each party agrees to comply with all applicable laws, rules and regulations in its performance under this Agreement.</p>
+      
+      <p><strong>9. TERM AND TERMINATION:</strong> Either party may terminate this Agreement without Cause by giving the other party at least 30 days written notice of such termination, or earlier, for convenience. California Telecom may terminate this Agreement immediately upon failure to cure a material breach of or default under this Agreement, if capable of cure, within ten (10) days of receipt of a written notice from the other party describing the breach. To avoid doubt, any breach by Partner of Sections 10 or 11 of this Agreement will be deemed a material non-curable breach, entitling California Telecom to terminate this Agreement immediately.</p>
+      
+      <p><strong>10. EFFECT OF TERMINATION:</strong> Upon termination of this Agreement, Partner shall immediately cease all efforts to promote and market California Telecom's Services, and Partner shall promptly return all California Telecom property in Partner's possession or control, including all Customer lists and information. Neither party shall incur any liability whatsoever for any damage, loss or expenses of any kind suffered or incurred by the other because of the termination or the expiration of this Agreement, provided that such termination or expiration does not breach any term or condition of this Agreement.</p>
+      
+      <p><strong>11. LIMITATION OF LIABILITY:</strong> IN NO EVENT WILL EITHER PARTY BE LIABLE TO THE OTHER FOR ANY INDIRECT, INCIDENTAL, CONSEQUENTIAL, SPECIAL OR PUNITIVE DAMAGES ARISING OUT OF, OR RELATED TO, THIS AGREEMENT OR THE SUBJECT MATTER HEREOF, OR THE USE OF THE SERVICES, WHETHER THE CLAIM IS BASED IN TORT (INCLUDING NEGLIGENCE OR STRICT LIABILITY), OR IN CONTRACT, AT LAW OR IN EQUITY, INCLUDING WITHOUT LIMITATION, LOSS OF PROFIT, INCOME OR SAVINGS, EVEN IF ADVISED OF THE POSSIBILITY THEREOF.</p>
+    `;
   };
 
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -328,32 +402,12 @@ export default function AgentAgreement() {
               <div className="prose max-w-none">
                 <h3>Agent Agreement Terms</h3>
                 <ScrollArea className="h-64 w-full border rounded-lg">
-                  <div className="bg-gray-50 p-4 text-sm">
-                    <p><strong>INDEPENDENT SALES AGENT AGREEMENT</strong></p>
-                    <p>This Agreement is entered into between the Company and the Agent named below.</p>
-                    
-                    <p><strong>1. APPOINTMENT:</strong> Company hereby appoints Agent as an independent sales representative to solicit orders for Company's products and services.</p>
-                    
-                    <p><strong>2. COMMISSION:</strong> Agent shall receive a commission of {agentData?.commission_rate}% on all accepted orders procured by Agent.</p>
-                    
-                    <p><strong>3. TERRITORY:</strong> Agent's territory shall be as mutually agreed upon in writing.</p>
-                    
-                    <p><strong>4. INDEPENDENT CONTRACTOR:</strong> Agent is an independent contractor and not an employee of Company.</p>
-                    
-                    <p><strong>5. CONFIDENTIALITY:</strong> Agent agrees to maintain confidentiality of all Company information.</p>
-                    
-                    <p><strong>6. TERMINATION:</strong> Either party may terminate this agreement with 30 days written notice.</p>
-                    
-                    <p><strong>7. RELATIONSHIP OF PARTIES:</strong> Both parties shall remain independent contractors, and nothing in this Agreement will be construed to create any other relationship. Partner shall not have authority to make any agreement or incur any liability on behalf of California Telecom. Partner shall not make any oral and/or written representations or warranties to any potential Customer or any third party on behalf of California Telecom or with respect to the Service.</p>
-                    
-                    <p><strong>8. COMPLIANCE WITH LAWS:</strong> Each party agrees to comply with all applicable laws, rules and regulations in its performance under this Agreement.</p>
-                    
-                    <p><strong>9. TERM AND TERMINATION:</strong> Either party may terminate this Agreement without Cause by giving the other party at least 30 days written notice of such termination, or earlier, for convenience. California Telecom may terminate this Agreement immediately upon failure to cure a material breach of or default under this Agreement, if capable of cure, within ten (10) days of receipt of a written notice from the other party describing the breach. To avoid doubt, any breach by Partner of Sections 10 or 11 of this Agreement will be deemed a material non-curable breach, entitling California Telecom to terminate this Agreement immediately.</p>
-                    
-                    <p><strong>10. EFFECT OF TERMINATION:</strong> Upon termination of this Agreement, Partner shall immediately cease all efforts to promote and market California Telecom's Services, and Partner shall promptly return all California Telecom property in Partner's possession or control, including all Customer lists and information. Neither party shall incur any liability whatsoever for any damage, loss or expenses of any kind suffered or incurred by the other because of the termination or the expiration of this Agreement, provided that such termination or expiration does not breach any term or condition of this Agreement.</p>
-                    
-                    <p><strong>11. LIMITATION OF LIABILITY:</strong> IN NO EVENT WILL EITHER PARTY BE LIABLE TO THE OTHER FOR ANY INDIRECT, INCIDENTAL, CONSEQUENTIAL, SPECIAL OR PUNITIVE DAMAGES ARISING OUT OF, OR RELATED TO, THIS AGREEMENT OR THE SUBJECT MATTER HEREOF, OR THE USE OF THE SERVICES, WHETHER THE CLAIM IS BASED IN TORT (INCLUDING NEGLIGENCE OR STRICT LIABILITY), OR IN CONTRACT, AT LAW OR IN EQUITY, INCLUDING WITHOUT LIMITATION, LOSS OF PROFIT, INCOME OR SAVINGS, EVEN IF ADVISED OF THE POSSIBILITY THEREOF.</p>
-                  </div>
+                  <div 
+                    className="bg-gray-50 p-4 text-sm"
+                    dangerouslySetInnerHTML={{ 
+                      __html: agreementTemplate.replace(/\{\{commission_rate\}\}/g, agentData?.commission_rate?.toString() || '0')
+                    }}
+                  />
                 </ScrollArea>
               </div>
 
