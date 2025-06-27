@@ -222,7 +222,7 @@ export default function AgentAgreement() {
       
       <p><strong>10. EFFECT OF TERMINATION:</strong> Upon termination of this Agreement, Partner shall immediately cease all efforts to promote and market California Telecom's Services, and Partner shall promptly return all California Telecom property in Partner's possession or control, including all Customer lists and information. Neither party shall incur any liability whatsoever for any damage, loss or expenses of any kind suffered or incurred by the other because of the termination or the expiration of this Agreement, provided that such termination or expiration does not breach any term or condition of this Agreement.</p>
       
-      <p><strong>11. LIMITATION OF LIABILITY:</strong> IN NO EVENT WILL EITHER PARTY BE LIABLE TO THE OTHER FOR ANY INDIRECT, INCIDENTAL, CONSEQUENTIAL, SPECIAL OR PUNITIVE DAMAGES ARISING OUT OF, OR RELATED TO, THIS AGREEMENT OR THE SUBJECT MATTER HEREOF, OR THE USE OF THE SERVICES, WHETHER THE CLAIM IS BASED IN TORT (INCLUDING NEGLIGENCE OR STRICT LIABILITY), OR IN CONTRACT, AT LAW OR IN EQUITY, INCLUDING WITHOUT LIMITATION, LOSS OF PROFIT, INCOME OR SAVINGS, EVEN IF ADVISED OF THE POSSIBILITY THEREOF.</p>
+      <p><strong>11. LIMITATION OF LIABILITY:</strong> IN NO EVENT WILL EITHER PARTY BE LIABLE TO THE OTHER FOR ANY INDIRECT, INCIDENTAL, CONSEQUENTIAL, SPECIAL OR PUNITIVE DAMAGES ARISING OUT OF, OR RELATED TO, THIS AGREEMENT OR THE SUBJECT MATTER HEREOF, OR THE USE OF THE SERVICES, WHETHER THE CLAIM IS BASED IN TORT (INCLUDING NEGLIGENCE OR STRICT LIABILITY), OR IN CONTRACT, AT LAW OR IN EQUITY, INCLUDING WITHOUT LIMITATION, LOSS OF PROFIT, INCOME OR SAVINGS, EVEN IF ADVISED OF THE POSSIBILITY OF THEREOF.</p>
     `;
   };
 
@@ -411,10 +411,10 @@ export default function AgentAgreement() {
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-6">
               {/* Agent Agreement Terms */}
-              <div className="prose max-w-none">
-                <h3>Agent Agreement Terms</h3>
-                <ScrollArea className="h-64 w-full border rounded-lg">
-                  <div className="bg-gray-50 p-4 text-sm">
+              <div className="space-y-4">
+                <h3 className="text-lg font-semibold">Agent Agreement Terms & Conditions</h3>
+                <div className="border rounded-lg">
+                  <ScrollArea className="h-80 w-full p-4">
                     {templateLoading ? (
                       <div className="text-center py-8">
                         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto mb-4"></div>
@@ -422,13 +422,17 @@ export default function AgentAgreement() {
                       </div>
                     ) : (
                       <div 
+                        className="prose prose-sm max-w-none text-sm leading-relaxed"
                         dangerouslySetInnerHTML={{ 
                           __html: agreementTemplate.replace(/\{\{commission_rate\}\}/g, agentData?.commission_rate?.toString() || '0')
                         }}
                       />
                     )}
-                  </div>
-                </ScrollArea>
+                  </ScrollArea>
+                </div>
+                <p className="text-xs text-gray-500">
+                  Please review all terms and conditions above before proceeding with the agreement.
+                </p>
               </div>
 
               {/* Personal Information */}
@@ -549,7 +553,7 @@ export default function AgentAgreement() {
               </div>
 
               {/* Agreement Checkbox */}
-              <div className="flex items-center space-x-2">
+              <div className="flex items-start space-x-2">
                 <Checkbox
                   id="agreesToTerms"
                   checked={formData.agreesToTerms}
@@ -557,8 +561,8 @@ export default function AgentAgreement() {
                     setFormData(prev => ({ ...prev, agreesToTerms: checked as boolean }))
                   }
                 />
-                <Label htmlFor="agreesToTerms" className="text-sm">
-                  I agree to the terms and conditions of this Agent Agreement and certify that the information provided is accurate.
+                <Label htmlFor="agreesToTerms" className="text-sm leading-relaxed">
+                  I have read and agree to the terms and conditions of this Agent Agreement displayed above, and I certify that the information provided is accurate and complete.
                 </Label>
               </div>
 
