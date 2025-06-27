@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerClose } from "@/components/ui/drawer";
 import { Button } from "@/components/ui/button";
@@ -43,6 +44,7 @@ export const CircuitQuoteNotesDialog = ({
   const [uploadingFiles, setUploadingFiles] = useState<File[]>([]);
   const [loading, setLoading] = useState(false);
   const [loadingNotes, setLoadingNotes] = useState(true);
+  const [isDragOver, setIsDragOver] = useState(false);
   const { toast } = useToast();
   const { user } = useAuth();
 
@@ -108,6 +110,69 @@ export const CircuitQuoteNotesDialog = ({
       });
     } finally {
       setLoadingNotes(false);
+    }
+  };
+
+  const addFiles = (files: File[]) => {
+    // Validate file types and sizes
+    const validFiles = files.filter(file => {
+      const maxSize = 10 * 1024 * 1024; // 10MB
+      const allowedTypes = ['image/', 'application/pdf', 'text/', 'application/msword', 'application/vnd.openxmlformats-officedocument'];
+      
+      if (file.size > maxSize) {
+        toast({
+          title: "File too large",
+          description: `${file.name} is larger than 10MB and will be skipped`,
+          variant: "destructive"
+        });
+        return false;
+      }
+      
+      const isValidType = allowedTypes.some(type => file.type.startsWith(type));
+      if (!isValidType) {
+        toast({
+          title: "Invalid file type",
+          description: `${file.name} is not a supported file type and will be skipped`,
+          variant: "destructive"
+        });
+        return false;
+      }
+      
+      return true;
+    });
+
+    if (validFiles.length > 0) {
+      setUploadingFiles([...uploadingFiles, ...validFiles]);
+      
+      if (validFiles.length < files.length) {
+        toast({
+          title: "Some files skipped",
+          description: `${validFiles.length} of ${files.length} files added`,
+        });
+      }
+    }
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragOver(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragOver(false);
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragOver(false);
+
+    const files = Array.from(e.dataTransfer.files);
+    if (files.length > 0) {
+      addFiles(files);
     }
   };
 
@@ -274,7 +339,7 @@ export const CircuitQuoteNotesDialog = ({
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(event.target.files || []);
-    setUploadingFiles(prev => [...prev, ...files]);
+    addFiles(files);
   };
 
   const removeUploadingFile = (index: number) => {
@@ -324,50 +389,63 @@ export const CircuitQuoteNotesDialog = ({
               rows={3}
             />
 
-            {/* File Upload Section */}
-            <div className="space-y-3">
-              <div className="flex items-center gap-2">
-                <Input
-                  type="file"
-                  multiple
-                  onChange={handleFileSelect}
-                  className="hidden"
-                  id="file-upload"
-                />
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => document.getElementById('file-upload')?.click()}
-                >
-                  <Upload className="h-4 w-4 mr-1" />
-                  Attach Files
-                </Button>
-                <span className="text-sm text-gray-500">
-                  {uploadingFiles.length > 0 && `${uploadingFiles.length} file(s) selected`}
-                </span>
-              </div>
+            {/* Drag and Drop Zone */}
+            <div
+              className={`border-2 border-dashed rounded-lg p-6 text-center transition-colors cursor-pointer mb-3 ${
+                isDragOver 
+                  ? 'border-blue-500 bg-blue-50 dark:bg-blue-950' 
+                  : 'border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500'
+              }`}
+              onDragOver={handleDragOver}
+              onDragLeave={handleDragLeave}
+              onDrop={handleDrop}
+              onClick={() => document.getElementById('file-upload')?.click()}
+            >
+              <Upload className="h-8 w-8 mx-auto mb-2 text-gray-400" />
+              <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">
+                <span className="font-medium">Click to upload</span> or drag and drop files here
+              </p>
+              <p className="text-xs text-gray-500 dark:text-gray-500">
+                Images, PDFs, documents up to 10MB
+              </p>
+            </div>
 
-              {uploadingFiles.length > 0 && (
-                <div className="space-y-2">
+            <Input
+              id="file-upload"
+              type="file"
+              multiple
+              onChange={handleFileSelect}
+              accept="image/*,.pdf,.doc,.docx,.txt"
+              className="hidden"
+            />
+
+            {uploadingFiles.length > 0 && (
+              <div className="space-y-2 mb-3">
+                <Label>Files to upload ({uploadingFiles.length}):</Label>
+                <div className="max-h-32 overflow-y-auto space-y-2">
                   {uploadingFiles.map((file, index) => (
                     <div key={index} className="flex items-center justify-between bg-white p-2 rounded border">
-                      <span className="text-sm truncate">{file.name}</span>
+                      <div className="flex items-center gap-2 min-w-0 flex-1">
+                        <span className="text-sm truncate">{file.name}</span>
+                        <span className="text-xs text-gray-500 whitespace-nowrap">
+                          ({formatFileSize(file.size)})
+                        </span>
+                      </div>
                       <Button
-                        type="button"
                         variant="ghost"
                         size="sm"
                         onClick={() => removeUploadingFile(index)}
+                        className="ml-2 flex-shrink-0"
                       >
                         <Trash2 className="h-4 w-4" />
                       </Button>
                     </div>
                   ))}
                 </div>
-              )}
-            </div>
+              </div>
+            )}
 
-            <div className="flex justify-end mt-4">
+            <div className="flex justify-end">
               <Button 
                 onClick={saveNote}
                 disabled={(!newNote.trim() && uploadingFiles.length === 0) || loading}
