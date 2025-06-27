@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -31,7 +30,12 @@ export const QuoteItemRow = ({ quoteItem, addresses, onUpdateItem, onRemoveItem,
   
   const { categories } = useCategories();
   const { user, isAdmin } = useAuth();
-  const { clients } = useClients();
+  const { clients, refetch: refetchClients } = useClients();
+
+  // Force refresh of clients data on component mount to get latest commission rates
+  useEffect(() => {
+    refetchClients();
+  }, [refetchClients]);
 
   // Get agent commission rate from clients data - match by email instead of ID
   const currentAgent = clients.find(client => client.email === user?.email);
@@ -42,9 +46,11 @@ export const QuoteItemRow = ({ quoteItem, addresses, onUpdateItem, onRemoveItem,
     userEmail: user?.email,
     currentAgent: currentAgent?.name,
     agentCommissionRate,
-    isAgentOptedOut
+    isAgentOptedOut,
+    allClientsEmails: clients.map(c => c.email),
+    allClientsData: clients.map(c => ({ name: c.name, email: c.email, commissionRate: c.commissionRate }))
   });
-  
+
   // Initialize commission rate with agent's rate, but don't use it if opted out
   const [commissionRate, setCommissionRate] = useState<number>(isAgentOptedOut ? 0 : agentCommissionRate);
 
