@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useParams, Navigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -35,6 +34,7 @@ export default function AgentAgreement() {
   const [tokenData, setTokenData] = useState<TokenData | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const [validationError, setValidationError] = useState<string>('');
   
   // Form data
   const [formData, setFormData] = useState({
@@ -57,20 +57,55 @@ export default function AgentAgreement() {
 
   const validateTokenAndLoadAgent = async () => {
     try {
+      console.log('Validating token:', token);
+      
       // Validate token
       const { data: tokenData, error: tokenError } = await supabase
         .from('agent_agreement_tokens')
         .select('*')
         .eq('token', token)
-        .single();
+        .maybeSingle();
 
-      if (tokenError || !tokenData) {
+      console.log('Token query result:', { tokenData, tokenError });
+
+      if (tokenError) {
+        console.error('Token query error:', tokenError);
+        setValidationError('Database error while validating token');
         setIsValidToken(false);
         return;
       }
 
-      // Check if token is expired or used
-      if (tokenData.used || new Date(tokenData.expires_at) < new Date()) {
+      if (!tokenData) {
+        console.log('No token found in database');
+        setValidationError('Token not found');
+        setIsValidToken(false);
+        return;
+      }
+
+      console.log('Token data:', tokenData);
+      console.log('Token used:', tokenData.used);
+      console.log('Token expires at:', tokenData.expires_at);
+      console.log('Current time:', new Date().toISOString());
+
+      // Check if token is already used
+      if (tokenData.used) {
+        console.log('Token has already been used');
+        setValidationError('This agreement has already been completed');
+        setIsValidToken(false);
+        return;
+      }
+
+      // Check if token is expired - be more lenient with timezone issues
+      const expirationDate = new Date(tokenData.expires_at);
+      const currentDate = new Date();
+      
+      console.log('Expiration date parsed:', expirationDate);
+      console.log('Current date:', currentDate);
+      console.log('Is expired?', expirationDate < currentDate);
+
+      if (expirationDate < currentDate) {
+        console.log('Token has expired');
+        setValidationError('This agreement link has expired. Please contact us for a new link.');
         setIsValidToken(false);
         return;
       }
@@ -78,17 +113,30 @@ export default function AgentAgreement() {
       setTokenData(tokenData);
 
       // Load agent data
+      console.log('Loading agent data for ID:', tokenData.agent_id);
       const { data: agent, error: agentError } = await supabase
         .from('agents')
         .select('*')
         .eq('id', tokenData.agent_id)
-        .single();
+        .maybeSingle();
 
-      if (agentError || !agent) {
+      console.log('Agent query result:', { agent, agentError });
+
+      if (agentError) {
+        console.error('Agent query error:', agentError);
+        setValidationError('Error loading agent information');
         setIsValidToken(false);
         return;
       }
 
+      if (!agent) {
+        console.log('Agent not found');
+        setValidationError('Agent not found');
+        setIsValidToken(false);
+        return;
+      }
+
+      console.log('Agent loaded successfully:', agent);
       setAgentData(agent);
       setFormData(prev => ({
         ...prev,
@@ -98,6 +146,7 @@ export default function AgentAgreement() {
 
     } catch (error) {
       console.error('Error validating token:', error);
+      setValidationError('Unexpected error occurred while validating the link');
       setIsValidToken(false);
     }
   };
@@ -240,7 +289,15 @@ export default function AgentAgreement() {
             <CardTitle className="text-red-600">Invalid or Expired Link</CardTitle>
           </CardHeader>
           <CardContent>
-            <p>This agent agreement link is invalid or has expired. Please contact us for a new link.</p>
+            <p className="mb-4">
+              {validationError || 'This agent agreement link is invalid or has expired.'}
+            </p>
+            <p>Please contact us for a new link.</p>
+            {validationError && (
+              <div className="mt-4 p-3 bg-gray-100 rounded text-sm">
+                <strong>Debug info:</strong> {validationError}
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>
@@ -250,7 +307,7 @@ export default function AgentAgreement() {
   if (isValidToken === null) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div>Loading...</div>
+        <div>Loading and validating your agreement link...</div>
       </div>
     );
   }
