@@ -1,8 +1,9 @@
+
 import { useState } from "react";
 import { QuoteItemData } from "@/types/quoteItems";
 import { useItems } from "@/hooks/useItems";
 import { useClientAddresses } from "@/hooks/useClientAddresses";
-import { useCarrierQuoteItems } from "@/hooks/useCarrierQuoteItems";
+import { useCircuitQuotes } from "@/hooks/useCircuitQuotes";
 import { useCategories } from "@/hooks/useCategories";
 import { useAuth } from "@/context/AuthContext";
 import { useClients } from "@/hooks/useClients";
@@ -12,7 +13,7 @@ import { CarrierQuote } from "@/hooks/useCircuitQuotes/types";
 export const useQuoteItemActions = (clientInfoId?: string) => {
   const { items: availableItems, isLoading } = useItems();
   const { addresses, addAddress } = useClientAddresses(clientInfoId || null);
-  const { carrierQuoteItems } = useCarrierQuoteItems(clientInfoId || null);
+  const { quotes: circuitQuotes } = useCircuitQuotes();
   const { categories } = useCategories();
   const { user, isAdmin } = useAuth();
   const { clients } = useClients();
@@ -22,6 +23,14 @@ export const useQuoteItemActions = (clientInfoId?: string) => {
   // Get agent commission rate from clients data
   const currentAgent = clients.find(client => client.id === user?.id);
   const agentCommissionRate = currentAgent?.commissionRate || 15;
+
+  // Get carrier quotes for the specific client
+  const clientCircuitQuotes = circuitQuotes.filter(quote => 
+    quote.client_info_id === clientInfoId && quote.status === 'completed'
+  );
+  
+  // Extract all carrier quotes from completed circuit quotes
+  const carrierQuoteItems = clientCircuitQuotes.flatMap(quote => quote.carriers);
 
   // Helper function to extract term months from term string
   const getTermMonths = (term: string | undefined): number => {
