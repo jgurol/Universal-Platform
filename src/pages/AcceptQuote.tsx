@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { CheckCircle, AlertCircle, Clock, Building, Mail, Phone, MapPin } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import SignatureCanvas from 'react-signature-canvas';
@@ -88,6 +89,8 @@ const AcceptQuote = () => {
   const [isAccepted, setIsAccepted] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [acceptedAt, setAcceptedAt] = useState<string | null>(null);
+  const [templateContent, setTemplateContent] = useState<string>('');
+  const [templateLoading, setTemplateLoading] = useState(false);
   
   // Form data
   const [clientName, setClientName] = useState('');
@@ -128,6 +131,21 @@ const AcceptQuote = () => {
 
       console.log('Quote data fetched:', quoteData);
       setQuote(quoteData);
+
+      // Fetch template content if template_id exists
+      if (quoteData.template_id) {
+        setTemplateLoading(true);
+        const { data: template, error: templateError } = await supabase
+          .from('quote_templates')
+          .select('content')
+          .eq('id', quoteData.template_id)
+          .single();
+
+        if (!templateError && template) {
+          setTemplateContent(template.content);
+        }
+        setTemplateLoading(false);
+      }
 
       // Check if quote is already accepted by checking quote_acceptances table
       const { data: acceptanceData, error: acceptanceError } = await supabase
@@ -463,187 +481,232 @@ const AcceptQuote = () => {
                 <h1 className="text-2xl font-bold text-gray-900">Quote Acceptance</h1>
                 <p className="text-gray-600 mt-1">Please review and accept this quote</p>
               </div>
-              <div className="text-right">
-                {quote.quote_number && (
-                  <p className="text-sm text-gray-500">Quote #{quote.quote_number}</p>
-                )}
-                <p className="text-sm text-gray-500">
-                  Date: {new Date(quote.date).toLocaleDateString()}
-                </p>
-                {quote.expires_at && (
-                  <p className="text-sm text-red-600 flex items-center justify-end gap-1">
-                    <Clock className="h-4 w-4" />
-                    Expires: {new Date(quote.expires_at).toLocaleDateString()}
-                  </p>
-                )}
-              </div>
+              <Badge variant={quote.status === 'pending' ? 'secondary' : 'default'}>
+                {quote.status}
+              </Badge>
             </div>
           </div>
 
-          {/* Company Info */}
-          {clientInfo && (
-            <div className="border-b border-gray-200 p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-                <Building className="h-5 w-5" />
-                Company Information
-              </h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <h4 className="font-medium text-gray-900">{clientInfo.company_name}</h4>
-                  {primaryContact && (
-                    <div className="mt-2 space-y-1 text-sm text-gray-600">
-                      <p>{primaryContact.first_name} {primaryContact.last_name}</p>
-                      {primaryContact.email && (
-                        <p className="flex items-center gap-1">
-                          <Mail className="h-4 w-4" />
-                          {primaryContact.email}
-                        </p>
-                      )}
-                      {primaryContact.phone && (
-                        <p className="flex items-center gap-1">
-                          <Phone className="h-4 w-4" />
-                          {primaryContact.phone}
-                        </p>
-                      )}
-                    </div>
-                  )}
-                </div>
-                <div>
-                  {quote.billing_address && (
-                    <div>
-                      <h5 className="font-medium text-gray-700 flex items-center gap-1">
-                        <MapPin className="h-4 w-4" />
-                        Billing Address
-                      </h5>
-                      <p className="text-sm text-gray-600 mt-1">{quote.billing_address}</p>
-                    </div>
-                  )}
-                  {quote.service_address && (
-                    <div className="mt-3">
-                      <h5 className="font-medium text-gray-700 flex items-center gap-1">
-                        <MapPin className="h-4 w-4" />
-                        Service Address
-                      </h5>
-                      <p className="text-sm text-gray-600 mt-1">{quote.service_address}</p>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Quote Items */}
-          <div className="border-b border-gray-200 p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Quote Items</h3>
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-gray-200">
-                    <th className="text-left py-2">Description</th>
-                    <th className="text-center py-2">Qty</th>
-                    <th className="text-right py-2">Unit Price</th>
-                    <th className="text-center py-2">Type</th>
-                    <th className="text-right py-2">Total</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {quoteItems.map((item) => (
-                    <tr key={item.id} className="border-b border-gray-100">
-                      <td className="py-3">
-                        <div>
-                          <p className="font-medium">{item.item?.name}</p>
-                          {item.item?.description && (
-                            <p className="text-gray-600 text-xs">{item.item.description}</p>
-                          )}
-                        </div>
-                      </td>
-                      <td className="text-center py-3">{item.quantity}</td>
-                      <td className="text-right py-3">${Number(item.unit_price).toFixed(2)}</td>
-                      <td className="text-center py-3">
-                        <Badge variant={item.charge_type === 'MRC' ? 'default' : 'secondary'}>
-                          {item.charge_type}
-                        </Badge>
-                      </td>
-                      <td className="text-right py-3 font-medium">${Number(item.total_price).toFixed(2)}</td>
-                    </tr>
-                  ))}
-                </tbody>
-                <tfoot>
-                  <tr className="border-t-2 border-gray-300">
-                    <td colSpan={4} className="text-right py-3 font-semibold">Total Amount:</td>
-                    <td className="text-right py-3 font-bold text-lg">${totalAmount.toFixed(2)}</td>
-                  </tr>
-                </tfoot>
-              </table>
-            </div>
-          </div>
-
-          {/* Acceptance Form */}
-          <div className="p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Accept Quote</h3>
-            <div className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="clientName">Full Name *</Label>
-                  <Input
-                    id="clientName"
-                    value={clientName}
-                    onChange={(e) => setClientName(e.target.value)}
-                    placeholder="Enter your full name"
-                    required
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="clientEmail">Email Address *</Label>
-                  <Input
-                    id="clientEmail"
-                    type="email"
-                    value={clientEmail}
-                    onChange={(e) => setClientEmail(e.target.value)}
-                    placeholder="Enter your email address"
-                    required
-                  />
-                </div>
-              </div>
-
+          {/* Quote Details */}
+          <div className="p-6 space-y-6">
+            {/* Company Info */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               <div>
-                <Label>Digital Signature *</Label>
-                <div className="border-2 border-gray-300 rounded-lg p-4 bg-white">
-                  <SignatureCanvas
-                    ref={(ref) => setSignaturePad(ref)}
-                    canvasProps={{
-                      width: 500,
-                      height: 200,
-                      className: 'signature-canvas w-full'
-                    }}
-                    onEnd={saveSignature}
-                  />
-                  <div className="flex justify-between items-center mt-2">
-                    <p className="text-sm text-gray-600">Please sign above</p>
-                    <Button type="button" variant="outline" size="sm" onClick={clearSignature}>
-                      Clear
-                    </Button>
+                <h3 className="text-lg font-medium text-gray-900 mb-3">Quote Information</h3>
+                <div className="space-y-2 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Quote Number:</span>
+                    <span className="font-medium">{quote.quote_number || `Q-${quote.id.slice(0, 8)}`}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Date:</span>
+                    <span className="font-medium">{new Date(quote.date).toLocaleDateString()}</span>
+                  </div>
+                  {quote.expires_at && (
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Expires:</span>
+                      <span className="font-medium">{new Date(quote.expires_at).toLocaleDateString()}</span>
+                    </div>
+                  )}
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Description:</span>
+                    <span className="font-medium">{quote.description || 'Service Agreement'}</span>
                   </div>
                 </div>
               </div>
 
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                <p className="text-blue-800 text-sm">
-                  <strong>Legal Notice:</strong> By signing this quote, you agree to the terms and conditions 
-                  outlined in this proposal. This constitutes a legally binding agreement.
-                </p>
+              {/* Client Info */}
+              {clientInfo && (
+                <div>
+                  <h3 className="text-lg font-medium text-gray-900 mb-3">Company Information</h3>
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2">
+                      <Building className="h-4 w-4 text-gray-400" />
+                      <span className="font-medium">{clientInfo.company_name}</span>
+                    </div>
+                    {primaryContact && (
+                      <>
+                        <div className="flex items-center gap-2">
+                          <Mail className="h-4 w-4 text-gray-400" />
+                          <span>{primaryContact.email}</span>
+                        </div>
+                        {primaryContact.phone && (
+                          <div className="flex items-center gap-2">
+                            <Phone className="h-4 w-4 text-gray-400" />
+                            <span>{primaryContact.phone}</span>
+                          </div>
+                        )}
+                      </>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Quote Items */}
+            <div>
+              <h3 className="text-lg font-medium text-gray-900 mb-4">Quote Items</h3>
+              <div className="overflow-x-auto">
+                <table className="w-full border-collapse border border-gray-300">
+                  <thead>
+                    <tr className="bg-gray-50">
+                      <th className="border border-gray-300 px-4 py-2 text-left">Item</th>
+                      <th className="border border-gray-300 px-4 py-2 text-center">Qty</th>
+                      <th className="border border-gray-300 px-4 py-2 text-right">Unit Price</th>
+                      <th className="border border-gray-300 px-4 py-2 text-center">Type</th>
+                      <th className="border border-gray-300 px-4 py-2 text-right">Total</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {quoteItems.map((item) => (
+                      <tr key={item.id}>
+                        <td className="border border-gray-300 px-4 py-2">
+                          <div>
+                            <div className="font-medium">{item.item?.name || 'Item'}</div>
+                            {item.item?.description && (
+                              <div className="text-sm text-gray-600">{item.item.description}</div>
+                            )}
+                          </div>
+                        </td>
+                        <td className="border border-gray-300 px-4 py-2 text-center">{item.quantity}</td>
+                        <td className="border border-gray-300 px-4 py-2 text-right">${Number(item.unit_price).toFixed(2)}</td>
+                        <td className="border border-gray-300 px-4 py-2 text-center">
+                          <Badge variant={item.charge_type === 'MRC' ? 'default' : 'secondary'}>
+                            {item.charge_type}
+                          </Badge>
+                        </td>
+                        <td className="border border-gray-300 px-4 py-2 text-right font-medium">
+                          ${Number(item.total_price).toFixed(2)}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
 
-              <div className="flex justify-end">
-                <Button 
-                  onClick={handleAcceptQuote}
-                  disabled={isSubmitting || !clientName.trim() || !clientEmail.trim() || !signatureData}
-                  className="bg-green-600 hover:bg-green-700"
-                >
-                  {isSubmitting ? 'Processing...' : 'Accept Quote'}
-                </Button>
+              {/* Totals */}
+              <div className="mt-4 space-y-2">
+                {getMRCTotal() > 0 && (
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-gray-600">Monthly Recurring Charges (MRC):</span>
+                    <span className="font-medium">${getMRCTotal().toFixed(2)}/month</span>
+                  </div>
+                )}
+                {getNRCTotal() > 0 && (
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-gray-600">Non-Recurring Charges (NRC):</span>
+                    <span className="font-medium">${getNRCTotal().toFixed(2)}</span>
+                  </div>
+                )}
+                <div className="flex justify-between items-center text-lg font-bold border-t border-gray-200 pt-2">
+                  <span>Total Quote Value:</span>
+                  <span>${totalAmount.toFixed(2)}</span>
+                </div>
               </div>
             </div>
+
+            {/* Terms and Conditions */}
+            {templateContent && (
+              <div className="space-y-4">
+                <h3 className="text-lg font-semibold text-gray-900">Terms & Conditions</h3>
+                <div className="border rounded-lg">
+                  <ScrollArea className="h-80 w-full p-4">
+                    {templateLoading ? (
+                      <div className="text-center py-8">
+                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto mb-4"></div>
+                        <p>Loading terms and conditions...</p>
+                      </div>
+                    ) : (
+                      <div 
+                        className="prose prose-sm max-w-none text-sm leading-relaxed"
+                        dangerouslySetInnerHTML={{ __html: templateContent }}
+                      />
+                    )}
+                  </ScrollArea>
+                </div>
+                <p className="text-xs text-gray-500">
+                  Please review all terms and conditions above before accepting this quote.
+                </p>
+              </div>
+            )}
+
+            {/* Acceptance Form */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Accept Quote</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="clientName">Full Name *</Label>
+                    <Input
+                      id="clientName"
+                      value={clientName}
+                      onChange={(e) => setClientName(e.target.value)}
+                      placeholder="Enter your full name"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="clientEmail">Email Address *</Label>
+                    <Input
+                      id="clientEmail"
+                      type="email"
+                      value={clientEmail}
+                      onChange={(e) => setClientEmail(e.target.value)}
+                      placeholder="Enter your email address"
+                      required
+                    />
+                  </div>
+                </div>
+
+                {/* Digital Signature */}
+                <div>
+                  <Label>Digital Signature *</Label>
+                  <div className="mt-2 border-2 border-gray-300 rounded-lg">
+                    <SignatureCanvas
+                      ref={(ref) => setSignaturePad(ref)}
+                      canvasProps={{
+                        width: 500,
+                        height: 200,
+                        className: 'signature-canvas w-full'
+                      }}
+                      onEnd={() => saveSignature()}
+                    />
+                  </div>
+                  <div className="flex justify-between items-center mt-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={clearSignature}
+                    >
+                      Clear Signature
+                    </Button>
+                    <p className="text-xs text-gray-500">Please sign above to accept this quote</p>
+                  </div>
+                </div>
+
+                <Button
+                  onClick={handleAcceptQuote}
+                  disabled={isSubmitting || !clientName.trim() || !clientEmail.trim() || !signatureData}
+                  className="w-full bg-green-600 hover:bg-green-700"
+                  size="lg"
+                >
+                  {isSubmitting ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
+                      Processing...
+                    </>
+                  ) : (
+                    <>
+                      <CheckCircle className="h-4 w-4 mr-2" />
+                      Accept Quote
+                    </>
+                  )}
+                </Button>
+              </CardContent>
+            </Card>
           </div>
         </div>
       </div>
