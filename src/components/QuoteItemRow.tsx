@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -32,42 +33,15 @@ export const QuoteItemRow = ({ quoteItem, addresses, onUpdateItem, onRemoveItem,
   const { user, isAdmin } = useAuth();
   const { clients, refetch: refetchClients } = useClients();
 
-  // Force refresh of clients data periodically to ensure we have latest commission rates
+  // Force refresh of clients data on component mount to get latest commission rates
   useEffect(() => {
-    const refreshData = async () => {
-      await refetchClients();
-    };
-    refreshData();
-    
-    // Set up interval to refresh every 5 seconds to catch database changes
-    const interval = setInterval(refreshData, 5000);
-    
-    return () => clearInterval(interval);
+    refetchClients();
   }, [refetchClients]);
 
   // Get agent commission rate from clients data - match by email instead of ID
   const currentAgent = clients.find(client => client.email === user?.email);
   const agentCommissionRate = currentAgent?.commissionRate || 0; // Default to 0 if not found
   const isAgentOptedOut = agentCommissionRate === 0;
-  
-  console.log('[QuoteItemRow] UPDATED Debug agent commission:', {
-    userEmail: user?.email,
-    currentAgent: currentAgent?.name,
-    currentAgentId: currentAgent?.id,
-    agentCommissionRate,
-    isAgentOptedOut,
-    clientsCount: clients.length,
-    matchingClientData: currentAgent ? {
-      name: currentAgent.name,
-      email: currentAgent.email,
-      commissionRate: currentAgent.commissionRate
-    } : 'NO MATCH FOUND',
-    allClientsData: clients.map(c => ({ 
-      name: c.name, 
-      email: c.email, 
-      commissionRate: c.commissionRate 
-    }))
-  });
 
   // Initialize commission rate with agent's rate, but don't use it if opted out
   const [commissionRate, setCommissionRate] = useState<number>(isAgentOptedOut ? 0 : agentCommissionRate);
@@ -127,6 +101,14 @@ export const QuoteItemRow = ({ quoteItem, addresses, onUpdateItem, onRemoveItem,
     
     const margin = ((sellPrice - cost) / cost) * 100;
     return `${margin >= 0 ? '+' : ''}${margin.toFixed(1)}%`;
+  };
+
+  // Calculate dollar profit amount (only show to admin)
+  const calculateDollarProfit = (): string => {
+    if (!isAdmin) return '$0.00';
+    
+    const profit = sellPrice - cost;
+    return `${profit >= 0 ? '+' : ''}$${Math.abs(profit).toFixed(2)}`;
   };
 
   const getProfitMarginColor = (): string => {
@@ -448,9 +430,12 @@ export const QuoteItemRow = ({ quoteItem, addresses, onUpdateItem, onRemoveItem,
                     placeholder="$"
                   />
                 </div>
-                <div className="flex items-center justify-center">
+                <div className="flex flex-col items-center justify-center space-y-1">
                   <span className={`text-xs font-medium ${getProfitMarginColor()}`}>
                     {calculateProfitMargin()}
+                  </span>
+                  <span className={`text-xs font-medium ${getProfitMarginColor()}`}>
+                    {calculateDollarProfit()}
                   </span>
                 </div>
               </>
