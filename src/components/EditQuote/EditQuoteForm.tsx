@@ -25,6 +25,7 @@ export const EditQuoteForm = ({ quote, clientInfo, onSave, onCancel }: EditQuote
   const [selectedTemplateId, setSelectedTemplateId] = useState<string>("");
   const [selectedBillingAddressId, setSelectedBillingAddressId] = useState<string | null>(null);
   const [selectedServiceAddressId, setSelectedServiceAddressId] = useState<string | null>(null);
+  const [term, setTerm] = useState<string>("");
 
   const {
     clientId,
@@ -57,6 +58,7 @@ export const EditQuoteForm = ({ quote, clientInfo, onSave, onCancel }: EditQuote
       setSelectedTemplateId(quote.templateId || "");
       setSelectedBillingAddressId(quote.billingAddress || null);
       setSelectedServiceAddressId(quote.serviceAddress || null);
+      setTerm(quote.term || "");
     }
   }, [quote]);
 
@@ -88,6 +90,7 @@ export const EditQuoteForm = ({ quote, clientInfo, onSave, onCancel }: EditQuote
         status,
         expiresAt,
         notes,
+        term,
         commissionOverride: commissionOverride ? parseFloat(commissionOverride) : undefined,
         templateId: selectedTemplateId,
         billingAddress: selectedBillingAddressId,
@@ -144,6 +147,8 @@ export const EditQuoteForm = ({ quote, clientInfo, onSave, onCancel }: EditQuote
         onCommissionOverrideChange={setCommissionOverride}
         notes={notes}
         onNotesChange={setNotes}
+        term={term}
+        onTermChange={setTerm}
       />
 
       <EditQuoteAddressSection

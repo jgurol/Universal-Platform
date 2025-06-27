@@ -1,8 +1,8 @@
 
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ClientInfo } from "@/pages/Index";
 
 interface EditQuoteFormFieldsProps {
@@ -17,6 +17,8 @@ interface EditQuoteFormFieldsProps {
   onCommissionOverrideChange: (value: string) => void;
   notes: string;
   onNotesChange: (value: string) => void;
+  term?: string;
+  onTermChange?: (value: string) => void;
 }
 
 export const EditQuoteFormFields = ({
@@ -30,31 +32,33 @@ export const EditQuoteFormFields = ({
   commissionOverride,
   onCommissionOverrideChange,
   notes,
-  onNotesChange
+  onNotesChange,
+  term,
+  onTermChange
 }: EditQuoteFormFieldsProps) => {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
       <div className="space-y-2">
-        <Label htmlFor="description">Quote Name</Label>
+        <Label htmlFor="description">Description *</Label>
         <Input
           id="description"
           value={description}
           onChange={(e) => onDescriptionChange(e.target.value)}
-          placeholder="Enter quote name..."
+          placeholder="Enter quote description"
+          required
         />
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="clientInfo">Client Company</Label>
+        <Label htmlFor="clientInfo">Client Company *</Label>
         <Select value={clientInfoId} onValueChange={onClientInfoIdChange}>
           <SelectTrigger>
-            <SelectValue placeholder="Select a client company" />
+            <SelectValue placeholder="Select client company" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="none">No client company</SelectItem>
-            {clientInfos.map((clientInfo) => (
-              <SelectItem key={clientInfo.id} value={clientInfo.id}>
-                {clientInfo.company_name}
+            {clientInfos.map((client) => (
+              <SelectItem key={client.id} value={client.id}>
+                {client.company_name}
               </SelectItem>
             ))}
           </SelectContent>
@@ -69,10 +73,9 @@ export const EditQuoteFormFields = ({
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="pending">Pending</SelectItem>
-            <SelectItem value="sent">Sent</SelectItem>
             <SelectItem value="approved">Approved</SelectItem>
             <SelectItem value="rejected">Rejected</SelectItem>
-            <SelectItem value="archived">Archived</SelectItem>
+            <SelectItem value="sent">Sent</SelectItem>
           </SelectContent>
         </Select>
       </div>
@@ -82,22 +85,30 @@ export const EditQuoteFormFields = ({
         <Input
           id="commissionOverride"
           type="number"
-          step="0.01"
-          min="0"
-          max="100"
           value={commissionOverride}
           onChange={(e) => onCommissionOverrideChange(e.target.value)}
-          placeholder="Optional commission override"
+          placeholder="Enter commission override"
+          step="0.01"
         />
       </div>
 
-      <div className="col-span-1 md:col-span-2 space-y-2">
+      <div className="md:col-span-2 space-y-2">
+        <Label htmlFor="term">Initial Term</Label>
+        <Input
+          id="term"
+          value={term || ""}
+          onChange={(e) => onTermChange?.(e.target.value)}
+          placeholder="e.g., 36 Months, 24 Months, etc."
+        />
+      </div>
+
+      <div className="md:col-span-2 space-y-2">
         <Label htmlFor="notes">Notes</Label>
         <Textarea
           id="notes"
           value={notes}
           onChange={(e) => onNotesChange(e.target.value)}
-          placeholder="Additional notes about the quote"
+          placeholder="Enter any additional notes"
           rows={3}
         />
       </div>

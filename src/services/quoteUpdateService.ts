@@ -1,45 +1,82 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import { Quote } from "@/pages/Index";
+import { QuoteItemData } from "@/types/quoteItems";
 
-export const updateQuoteInDatabase = async (quote: Quote): Promise<void> => {
-  console.log('[updateQuoteInDatabase] Updating quote with addresses:', {
-    id: quote.id,
-    billingAddress: quote.billingAddress,
-    serviceAddress: quote.serviceAddress,
-    description: quote.description
-  });
+export const updateQuoteInDatabase = async (
+  quoteId: string,
+  updatedQuote: Partial<Quote>,
+  items: QuoteItemData[]
+): Promise<void> => {
+  console.log('Updating quote in database:', { quoteId, updatedQuote, items });
 
-  const { error } = await supabase
+  // Prepare the quote data for database update
+  const quoteUpdateData = {
+    client_id: updatedQuote.clientId,
+    client_info_id: updatedQuote.clientInfoId,
+    date: updatedQuote.date,
+    description: updatedQuote.description,
+    quote_number: updatedQuote.quoteNumber,
+    quote_month: updatedQuote.quoteMonth,
+    quote_year: updatedQuote.quoteYear,
+    status: updatedQuote.status,
+    expires_at: updatedQuote.expiresAt,
+    notes: updatedQuote.notes,
+    term: updatedQuote.term, // Include term field
+    commission_override: updatedQuote.commissionOverride,
+    template_id: updatedQuote.templateId,
+    billing_address: updatedQuote.billingAddress,
+    service_address: updatedQuote.serviceAddress,
+    updated_at: new Date().toISOString()
+  };
+
+  console.log('Quote update data prepared:', quoteUpdateData);
+
+  // Update the quote
+  const { error: quoteError } = await supabase
     .from('quotes')
-    .update({
-      client_id: quote.clientId || null,
-      client_info_id: quote.clientInfoId || null,
-      amount: quote.amount,
-      date: quote.date,
-      description: quote.description,
-      quote_number: quote.quoteNumber,
-      quote_month: quote.quoteMonth,
-      quote_year: quote.quoteYear,
-      status: quote.status,
-      commission: quote.commission,
-      commission_override: quote.commissionOverride,
-      expires_at: quote.expiresAt,
-      notes: quote.notes,
-      billing_address: quote.billingAddress,
-      service_address: quote.serviceAddress,
-      template_id: quote.templateId,
-      updated_at: new Date().toISOString()
-    })
-    .eq('id', quote.id);
+    .update(quoteUpdateData)
+    .eq('id', quoteId);
 
-  if (error) {
-    console.error('Error updating quote:', error);
-    throw error;
+  if (quoteError) {
+    console.error('Error updating quote:', quoteError);
+    throw new Error(`Failed to update quote: ${quoteError.message}`);
   }
-  
-  console.log('[updateQuoteInDatabase] Quote updated successfully with addresses:', {
-    billingAddress: quote.billingAddress,
-    serviceAddress: quote.serviceAddress
-  });
+
+  // Delete existing quote items
+  const { error: deleteItemsError } = await supabase
+    .from('quote_items')
+    .delete()
+    .eq('quote_id', quoteId);
+
+  if (deleteItemsError) {
+    console.error('Error deleting existing quote items:', deleteItemsError);
+    throw new Error(`Failed to delete existing quote items: ${deleteItemsError.message}`);
+  }
+
+  // Insert new quote items if any exist
+  if (items && items.length > 0) {
+    const quoteItemsData = items.map(item => ({
+      quote_id: quoteId,
+      item_id: item.item_id,
+      quantity: item.quantity,
+      unit_price: item.unit_price,
+      total_price: item.total_price,
+      charge_type: item.charge_type,
+      address_id: item.address_id
+    }));
+
+    console.log('Inserting new quote items:', quoteItemsData);
+
+    const { error: itemsError } = await supabase
+      .from('quote_items')
+      .insert(quoteItemsData);
+
+    if (itemsError) {
+      console.error('Error inserting quote items:', itemsError);
+      throw new Error(`Failed to insert quote items: ${itemsError.message}`);
+    }
+  }
+
+  console.log('Quote updated successfully');
 };
