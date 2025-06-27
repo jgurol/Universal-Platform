@@ -185,7 +185,7 @@ export const EditDealDialog = ({
             <div className="space-y-2">
               <Label htmlFor="stage">Deal Stage</Label>
               <Select value={selectedStage || deal.stage || ''} onValueChange={(value) => setValue("stage", value)}>
-                <SelectTrigger>
+                <SelectTrigger className="text-left">
                   <SelectValue placeholder="Select stage" />
                 </SelectTrigger>
                 <SelectContent>
@@ -219,7 +219,7 @@ export const EditDealDialog = ({
             <div className="space-y-2">
               <Label htmlFor="status">Status</Label>
               <Select value={selectedStatus || deal.status || ''} onValueChange={(value) => setValue("status", value)}>
-                <SelectTrigger>
+                <SelectTrigger className="text-left">
                   <SelectValue placeholder="Select status" />
                 </SelectTrigger>
                 <SelectContent>
@@ -249,7 +249,7 @@ export const EditDealDialog = ({
                 value={currentClientId || "none"} 
                 onValueChange={(value) => setValue("client_info_id", value === "none" ? null : value)}
               >
-                <SelectTrigger>
+                <SelectTrigger className="text-left">
                   <SelectValue placeholder="Select client" />
                 </SelectTrigger>
                 <SelectContent>
@@ -272,7 +272,7 @@ export const EditDealDialog = ({
                   setValue("agent_id", value === "none" ? null : value);
                 }}
               >
-                <SelectTrigger>
+                <SelectTrigger className="text-left">
                   <SelectValue placeholder={isLoading ? "Loading agents..." : "Select agent"} />
                 </SelectTrigger>
                 <SelectContent className="bg-white z-50">
