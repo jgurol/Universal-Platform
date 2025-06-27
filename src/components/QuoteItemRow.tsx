@@ -38,13 +38,17 @@ export const QuoteItemRow = ({ quoteItem, addresses, onUpdateItem, onRemoveItem,
   const agentCommissionRate = currentAgent?.commissionRate || 15;
   const isAgentOptedOut = agentCommissionRate === 0;
   
-  // Initialize commission rate with agent's rate
-  const [commissionRate, setCommissionRate] = useState<number>(agentCommissionRate);
+  // Initialize commission rate with agent's rate, but don't use it if opted out
+  const [commissionRate, setCommissionRate] = useState<number>(isAgentOptedOut ? 0 : agentCommissionRate);
 
   // Update commission rate when agent rate changes
   useEffect(() => {
-    setCommissionRate(agentCommissionRate);
-  }, [agentCommissionRate]);
+    if (isAgentOptedOut) {
+      setCommissionRate(0);
+    } else {
+      setCommissionRate(agentCommissionRate);
+    }
+  }, [agentCommissionRate, isAgentOptedOut]);
 
   // Update temp sell price when quote item changes
   useEffect(() => {
