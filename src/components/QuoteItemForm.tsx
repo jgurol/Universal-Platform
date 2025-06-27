@@ -1,4 +1,5 @@
 
+
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
@@ -9,6 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/context/AuthContext";
 import { useCategories } from "@/hooks/useCategories";
 import { useClients } from "@/hooks/useClients";
+import { CarrierQuote } from "@/hooks/useCircuitQuotes/types";
 
 interface QuoteItemFormProps {
   selectedItemId: string;
@@ -55,7 +57,7 @@ export const QuoteItemForm = ({
     return 36; // Default fallback
   };
 
-  const calculateSellPrice = (carrierItem: any, commissionRate: number = agentCommissionRate) => {
+  const calculateSellPrice = (carrierItem: CarrierQuote, commissionRate: number = agentCommissionRate) => {
     const termMonths = getTermMonths(carrierItem.term);
     
     // Start with base price

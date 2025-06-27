@@ -7,6 +7,7 @@ import { useCategories } from "@/hooks/useCategories";
 import { useAuth } from "@/context/AuthContext";
 import { useClients } from "@/hooks/useClients";
 import { parseLocationToAddress } from "@/utils/addressParser";
+import { CarrierQuote } from "@/hooks/useCircuitQuotes/types";
 
 export const useQuoteItemActions = (clientInfoId?: string) => {
   const { items: availableItems, isLoading } = useItems();
@@ -39,7 +40,7 @@ export const useQuoteItemActions = (clientInfoId?: string) => {
     return 36; // Default fallback
   };
 
-  const calculateSellPrice = (carrierItem: any, commissionRate: number = agentCommissionRate) => {
+  const calculateSellPrice = (carrierItem: CarrierQuote, commissionRate: number = agentCommissionRate) => {
     const termMonths = getTermMonths(carrierItem.term);
     
     // Start with base price
