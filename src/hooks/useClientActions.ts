@@ -76,7 +76,45 @@ export const useClientActions = (
       console.log('📧 Selected template ID:', newClient.selectedTemplateId);
       
       try {
-        await sendAgentAgreementEmail(data, newClient.selectedTemplateId);
+        console.log('📡 INVOKING EDGE FUNCTION: send-agent-agreement');
+        console.log('📡 Function payload:', {
+          agentId: data.id,
+          agentEmail: data.email,
+          agentName: `${data.first_name} ${data.last_name}`,
+          commissionRate: data.commission_rate,
+          templateId: newClient.selectedTemplateId || null
+        });
+
+        const functionResponse = await supabase.functions.invoke('send-agent-agreement', {
+          body: {
+            agentId: data.id,
+            agentEmail: data.email,
+            agentName: `${data.first_name} ${data.last_name}`,
+            commissionRate: data.commission_rate,
+            templateId: newClient.selectedTemplateId || null
+          }
+        });
+
+        console.log('📧 EDGE FUNCTION RESPONSE:', functionResponse);
+        console.log('📧 Response data:', functionResponse.data);
+        console.log('📧 Response error:', functionResponse.error);
+
+        if (functionResponse.error) {
+          console.error('❌ Edge function returned error:', functionResponse.error);
+          throw new Error(`Edge function error: ${functionResponse.error.message || JSON.stringify(functionResponse.error)}`);
+        }
+
+        if (!functionResponse.data) {
+          console.error('❌ No data returned from edge function');
+          throw new Error('No response data from edge function');
+        }
+
+        if (!functionResponse.data.success) {
+          console.error('❌ Edge function returned failure:', functionResponse.data);
+          throw new Error(functionResponse.data.error || 'Email service returned an error');
+        }
+
+        console.log('✅ Email sent successfully:', functionResponse.data);
         
         toast({
           title: "Agent added and email sent!",
@@ -84,6 +122,9 @@ export const useClientActions = (
         });
       } catch (emailError) {
         console.error('❌ Email sending failed:', emailError);
+        console.error('❌ Email error type:', typeof emailError);
+        console.error('❌ Email error details:', emailError instanceof Error ? emailError.message : String(emailError));
+        
         toast({
           title: "Agent added but email failed",
           description: `The agent was added successfully, but we couldn't send the agreement email: ${emailError instanceof Error ? emailError.message : 'Unknown error'}`,
@@ -94,6 +135,9 @@ export const useClientActions = (
       return newClientWithId;
     } catch (err) {
       console.error('💥 Error in add client operation:', err);
+      console.error('💥 Error type:', typeof err);
+      console.error('💥 Error details:', err instanceof Error ? err.message : String(err));
+      
       toast({
         title: "Error",
         description: "Failed to add agent",
@@ -101,44 +145,6 @@ export const useClientActions = (
       });
       throw err;
     }
-  };
-
-  // Separate function to handle email sending
-  const sendAgentAgreementEmail = async (agentData: any, templateId?: string) => {
-    console.log('📧 sendAgentAgreementEmail called with:', { agentData, templateId });
-    
-    // Prepare email payload
-    const emailPayload = {
-      agentId: agentData.id,
-      agentEmail: agentData.email,
-      agentName: `${agentData.first_name} ${agentData.last_name}`,
-      commissionRate: agentData.commission_rate,
-      templateId: templateId || null
-    };
-    
-    console.log('📧 Email payload prepared:', emailPayload);
-    console.log('🔧 About to call supabase.functions.invoke...');
-
-    // Call the edge function to send agreement email
-    const functionResponse = await supabase.functions.invoke('send-agent-agreement', {
-      body: emailPayload
-    });
-
-    console.log('📧 Function invocation response:', functionResponse);
-    console.log('📧 Response data:', functionResponse.data);
-    console.log('📧 Response error:', functionResponse.error);
-
-    if (functionResponse.error) {
-      console.error('❌ Function invocation error:', functionResponse.error);
-      throw new Error(functionResponse.error.message || 'Email function failed');
-    }
-
-    if (!functionResponse.data?.success) {
-      console.error('❌ Email function returned failure:', functionResponse.data);
-      throw new Error(functionResponse.data?.error || 'Email service returned an error');
-    }
-
-    console.log('✅ Email sent successfully:', functionResponse.data);
   };
 
   // Function to update a client in Supabase
