@@ -5,12 +5,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Label } from "@/components/ui/label";
 import { Plus, Loader2 } from "lucide-react";
 import { Item } from "@/types/items";
-import { useCarrierQuoteItems } from "@/hooks/useCarrierQuoteItems";
 import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/context/AuthContext";
 import { useCategories } from "@/hooks/useCategories";
 import { useClients } from "@/hooks/useClients";
 import { CarrierQuote } from "@/hooks/useCircuitQuotes/types";
+import { useCircuitQuotes } from "@/hooks/useCircuitQuotes";
 
 interface QuoteItemFormProps {
   selectedItemId: string;
@@ -31,10 +31,15 @@ export const QuoteItemForm = ({
   disabled,
   clientInfoId
 }: QuoteItemFormProps) => {
-  const { carrierQuoteItems, loading: carrierLoading } = useCarrierQuoteItems(clientInfoId || null);
   const { isAdmin, user } = useAuth();
   const { categories } = useCategories();
   const { clients } = useClients();
+  const { circuitQuotes, loading: circuitQuotesLoading } = useCircuitQuotes();
+
+  // Extract carrier quotes from circuit quotes for the specific client
+  const carrierQuoteItems = circuitQuotes
+    .filter(quote => quote.client_info_id === clientInfoId)
+    .flatMap(quote => quote.carriers || []);
 
   // Get agent commission rate from clients data
   const currentAgent = clients.find(client => client.id === user?.id);
@@ -112,7 +117,7 @@ export const QuoteItemForm = ({
   console.log('[QuoteItemForm] Debug info:', {
     clientInfoId,
     carrierQuoteItemsCount: carrierQuoteItems.length,
-    carrierLoading,
+    circuitQuotesLoading,
     carrierQuoteItems: carrierQuoteItems.map(item => ({
       id: item.id,
       carrier: item.carrier,
@@ -205,7 +210,7 @@ export const QuoteItemForm = ({
                 <SelectValue placeholder={
                   !clientInfoId 
                     ? "Select a client company first" 
-                    : carrierLoading 
+                    : circuitQuotesLoading 
                       ? "Loading carrier quotes..." 
                       : !hasCarrierItems 
                         ? "No carrier quotes available" 
@@ -217,6 +222,10 @@ export const QuoteItemForm = ({
                   sortedCarrierItems.map((carrierItem) => {
                     const sellPrice = calculateSellPrice(carrierItem, agentCommissionRate);
                     const baseCost = carrierItem.price;
+                    // Find the circuit quote to get location
+                    const circuitQuote = circuitQuotes.find(q => q.id === carrierItem.circuit_quote_id);
+                    const location = circuitQuote?.location || 'N/A';
+                    
                     return (
                       <SelectItem key={`carrier-${carrierItem.id}`} value={`carrier-${carrierItem.id}`}>
                         <div className="flex items-center gap-3 w-full min-w-0 whitespace-nowrap">
@@ -234,7 +243,7 @@ export const QuoteItemForm = ({
                             </>
                           )}
                           <span className="text-xs text-gray-600">•</span>
-                          <span className="text-xs text-blue-600">{carrierItem.location}</span>
+                          <span className="text-xs text-blue-600">{location}</span>
                           <Badge variant="outline" className="text-xs whitespace-nowrap ml-auto">
                             Circuit Quote
                           </Badge>
@@ -263,7 +272,7 @@ export const QuoteItemForm = ({
             </p>
           )}
           
-          {clientInfoId && !hasCarrierItems && !carrierLoading && (
+          {clientInfoId && !hasCarrierItems && !circuitQuotesLoading && (
             <p className="text-sm text-red-600">
               No carrier quotes found. Make sure you have completed circuit quotes for this client.
             </p>
@@ -273,10 +282,10 @@ export const QuoteItemForm = ({
         {/* Add Button */}
         <Button
           onClick={onAddItem}
-          disabled={disabled || !selectedItemId || isLoading || carrierLoading}
+          disabled={disabled || !selectedItemId || isLoading || circuitQuotesLoading}
           className="bg-blue-700 hover:bg-blue-800 w-full"
         >
-          {isLoading || carrierLoading ? (
+          {isLoading || circuitQuotesLoading ? (
             <Loader2 className="h-4 w-4 animate-spin mr-2" />
           ) : (
             <Plus className="h-4 w-4 mr-2" />

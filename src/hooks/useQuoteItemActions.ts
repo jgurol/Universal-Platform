@@ -2,22 +2,29 @@ import { useState } from "react";
 import { QuoteItemData } from "@/types/quoteItems";
 import { useItems } from "@/hooks/useItems";
 import { useClientAddresses } from "@/hooks/useClientAddresses";
-import { useCarrierQuoteItems } from "@/hooks/useCarrierQuoteItems";
 import { useCategories } from "@/hooks/useCategories";
 import { useAuth } from "@/context/AuthContext";
 import { useClients } from "@/hooks/useClients";
 import { parseLocationToAddress } from "@/utils/addressParser";
 import { CarrierQuote } from "@/hooks/useCircuitQuotes/types";
+import { useCircuitQuotes } from "@/hooks/useCircuitQuotes";
 
 export const useQuoteItemActions = (clientInfoId?: string) => {
   const { items: availableItems, isLoading } = useItems();
   const { addresses, addAddress } = useClientAddresses(clientInfoId || null);
-  const { carrierQuoteItems } = useCarrierQuoteItems(clientInfoId || null);
   const { categories } = useCategories();
   const { user, isAdmin } = useAuth();
   const { clients } = useClients();
   const [selectedItemId, setSelectedItemId] = useState("");
   const [isAddingCarrierItem, setIsAddingCarrierItem] = useState(false);
+
+  // Use circuit quotes to get carrier quotes with all properties
+  const { circuitQuotes, loading: circuitQuotesLoading } = useCircuitQuotes();
+  
+  // Extract carrier quotes from circuit quotes for the specific client
+  const carrierQuoteItems = circuitQuotes
+    .filter(quote => quote.client_info_id === clientInfoId)
+    .flatMap(quote => quote.carriers || []);
 
   // Get agent commission rate from clients data
   const currentAgent = clients.find(client => client.id === user?.id);
@@ -111,37 +118,41 @@ export const useQuoteItemActions = (clientInfoId?: string) => {
       let matchingAddress = null;
       
       // Only try to create/find address if location is provided and meaningful
-      if (carrierItem.location && carrierItem.location.trim() && carrierItem.location.toLowerCase() !== 'n/a') {
-        // Look for an existing address that matches the carrier quote location first
-        matchingAddress = addresses.find(addr => {
-          const addressString = `${addr.street_address}${addr.street_address_2 ? `, ${addr.street_address_2}` : ''}, ${addr.city}, ${addr.state} ${addr.zip_code}`;
-          return addressString.toLowerCase().includes(carrierItem.location.toLowerCase()) ||
-                 carrierItem.location.toLowerCase().includes(addressString.toLowerCase());
-        });
+      if (carrierItem.circuit_quote_id) {
+        // Find the circuit quote to get location
+        const circuitQuote = circuitQuotes.find(q => q.id === carrierItem.circuit_quote_id);
+        if (circuitQuote && circuitQuote.location && circuitQuote.location.trim() && circuitQuote.location.toLowerCase() !== 'n/a') {
+          // Look for an existing address that matches the carrier quote location first
+          matchingAddress = addresses.find(addr => {
+            const addressString = `${addr.street_address}${addr.street_address_2 ? `, ${addr.street_address_2}` : ''}, ${addr.city}, ${addr.state} ${addr.zip_code}`;
+            return addressString.toLowerCase().includes(circuitQuote.location.toLowerCase()) ||
+                   circuitQuote.location.toLowerCase().includes(addressString.toLowerCase());
+          });
 
-        // If no exact match found, try to create a new address
-        if (!matchingAddress) {
-          try {
-            const parsedAddress = parseLocationToAddress(carrierItem.location);
-            
-            // Only create address if we have meaningful parsed data
-            if (parsedAddress.city && parsedAddress.state) {
-              const newAddressData = {
-                client_info_id: clientInfoId,
-                address_type: 'service',
-                street_address: parsedAddress.street_address || carrierItem.location.split(',')[0]?.trim() || 'Service Location',
-                city: parsedAddress.city,
-                state: parsedAddress.state,
-                zip_code: parsedAddress.zip_code || '',
-                country: 'United States',
-                is_primary: false
-              };
+          // If no exact match found, try to create a new address
+          if (!matchingAddress) {
+            try {
+              const parsedAddress = parseLocationToAddress(circuitQuote.location);
+              
+              // Only create address if we have meaningful parsed data
+              if (parsedAddress.city && parsedAddress.state) {
+                const newAddressData = {
+                  client_info_id: clientInfoId,
+                  address_type: 'service',
+                  street_address: parsedAddress.street_address || circuitQuote.location.split(',')[0]?.trim() || 'Service Location',
+                  city: parsedAddress.city,
+                  state: parsedAddress.state,
+                  zip_code: parsedAddress.zip_code || '',
+                  country: 'United States',
+                  is_primary: false
+                };
 
-              matchingAddress = await addAddress(newAddressData);
+                matchingAddress = await addAddress(newAddressData);
+              }
+            } catch (error) {
+              console.error('Error creating address for carrier location:', error);
+              // Don't throw - continue without address
             }
-          } catch (error) {
-            console.error('Error creating address for carrier location:', error);
-            // Don't throw - continue without address
           }
         }
       }
