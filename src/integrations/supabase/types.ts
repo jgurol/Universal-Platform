@@ -9,6 +9,97 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      agent_agreement_tokens: {
+        Row: {
+          agent_id: string | null
+          created_at: string
+          expires_at: string
+          id: string
+          token: string
+          used: boolean
+        }
+        Insert: {
+          agent_id?: string | null
+          created_at?: string
+          expires_at: string
+          id?: string
+          token: string
+          used?: boolean
+        }
+        Update: {
+          agent_id?: string | null
+          created_at?: string
+          expires_at?: string
+          id?: string
+          token?: string
+          used?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "agent_agreement_tokens_agent_id_fkey"
+            columns: ["agent_id"]
+            isOneToOne: false
+            referencedRelation: "agents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      agent_agreements: {
+        Row: {
+          agent_id: string | null
+          agreed_at: string
+          agreement_data: Json
+          created_at: string
+          digital_signature: string
+          id: string
+          ip_address: unknown | null
+          status: string
+          updated_at: string
+          user_agent: string | null
+          w9_file_name: string | null
+          w9_file_path: string | null
+          w9_file_size: number | null
+        }
+        Insert: {
+          agent_id?: string | null
+          agreed_at?: string
+          agreement_data: Json
+          created_at?: string
+          digital_signature: string
+          id?: string
+          ip_address?: unknown | null
+          status?: string
+          updated_at?: string
+          user_agent?: string | null
+          w9_file_name?: string | null
+          w9_file_path?: string | null
+          w9_file_size?: number | null
+        }
+        Update: {
+          agent_id?: string | null
+          agreed_at?: string
+          agreement_data?: Json
+          created_at?: string
+          digital_signature?: string
+          id?: string
+          ip_address?: unknown | null
+          status?: string
+          updated_at?: string
+          user_agent?: string | null
+          w9_file_name?: string | null
+          w9_file_path?: string | null
+          w9_file_size?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "agent_agreements_agent_id_fkey"
+            columns: ["agent_id"]
+            isOneToOne: false
+            referencedRelation: "agents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       agents: {
         Row: {
           commission_rate: number | null

@@ -39,6 +39,7 @@ export const useClientActions = (
           description: error.message,
           variant: "destructive"
         });
+        throw error;
       } else if (data) {
         // Map the returned data to our Client interface
         const newClientWithId: Client = {
@@ -54,10 +55,41 @@ export const useClientActions = (
         };
 
         setClients([...clients, newClientWithId]);
-        toast({
-          title: "Agent added",
-          description: `${newClientWithId.name} has been added successfully.`,
-        });
+
+        // Send agent agreement email with the actual agent ID
+        try {
+          const { error: emailError } = await supabase.functions.invoke('send-agent-agreement', {
+            body: {
+              agentId: data.id,
+              agentEmail: data.email,
+              agentName: `${data.first_name} ${data.last_name}`,
+              commissionRate: data.commission_rate
+            }
+          });
+
+          if (emailError) {
+            console.error('Error sending agent agreement email:', emailError);
+            toast({
+              title: "Agent added but email failed",
+              description: "The agent was added successfully, but we couldn't send the agreement email.",
+              variant: "destructive"
+            });
+          } else {
+            toast({
+              title: "Agent added and email sent!",
+              description: `${newClientWithId.name} has been added and will receive an agreement email shortly.`,
+            });
+          }
+        } catch (emailError) {
+          console.error('Error sending agreement email:', emailError);
+          toast({
+            title: "Agent added but email failed",
+            description: "The agent was added successfully, but we couldn't send the agreement email.",
+            variant: "destructive"
+          });
+        }
+
+        return newClientWithId;
       }
     } catch (err) {
       console.error('Error in add client operation:', err);
@@ -66,6 +98,7 @@ export const useClientActions = (
         description: "Failed to add agent",
         variant: "destructive"
       });
+      throw err;
     }
   };
 
