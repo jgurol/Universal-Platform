@@ -277,8 +277,6 @@ export default function AgentManagement() {
           title: "Agent added and email sent!",
           description: `${newClientWithId.name} has been added and will receive an agreement email shortly.`,
         });
-
-        return newClientWithId;
       }
     } catch (err) {
       console.error('Error in add client operation:', err);
