@@ -38,6 +38,13 @@ export const QuoteItemRow = ({ quoteItem, addresses, onUpdateItem, onRemoveItem,
   const agentCommissionRate = currentAgent?.commissionRate || 15;
   const isAgentOptedOut = agentCommissionRate === 0;
   
+  console.log('[QuoteItemRow] Debug agent commission:', {
+    userId: user?.id,
+    currentAgent: currentAgent?.name,
+    agentCommissionRate,
+    isAgentOptedOut
+  });
+  
   // Initialize commission rate with agent's rate, but don't use it if opted out
   const [commissionRate, setCommissionRate] = useState<number>(isAgentOptedOut ? 0 : agentCommissionRate);
 
@@ -109,7 +116,7 @@ export const QuoteItemRow = ({ quoteItem, addresses, onUpdateItem, onRemoveItem,
     return 'text-red-600';
   };
 
-  // Handle sell price changes - allow temporary empty values
+  // Handle sell price changes - allow any price if opted out
   const handleSellPriceChange = (newSellPrice: number) => {
     if (isAgentOptedOut) {
       // If agent is opted out, allow any sell price without restrictions
@@ -266,6 +273,15 @@ export const QuoteItemRow = ({ quoteItem, addresses, onUpdateItem, onRemoveItem,
 
   const currentDescription = quoteItem.description || quoteItem.item?.description || '';
 
+  // Determine grid columns based on admin status and commission opt-out
+  const getGridColumns = () => {
+    if (isAdmin) {
+      return isAgentOptedOut ? 'grid-cols-6' : 'grid-cols-7';
+    } else {
+      return isAgentOptedOut ? 'grid-cols-5' : 'grid-cols-6';
+    }
+  };
+
   return (
     <div className="space-y-2">
       {/* Headers Row - Only show if showHeaders is true */}
@@ -274,8 +290,8 @@ export const QuoteItemRow = ({ quoteItem, addresses, onUpdateItem, onRemoveItem,
           {/* Drag Handle Space */}
           <div className="w-4"></div>
           
-          {/* Main Content Grid Headers - Adjust columns based on admin status and commission opt-out */}
-          <div className={`grid ${isAdmin ? (isAgentOptedOut ? 'grid-cols-6' : 'grid-cols-7') : (isAgentOptedOut ? 'grid-cols-5' : 'grid-cols-6')} gap-2 flex-1`}>
+          {/* Main Content Grid Headers */}
+          <div className={`grid ${getGridColumns()} gap-2 flex-1`}>
             <div className="col-span-2">Product</div>
             <div>Qty</div>
             <div>Sell</div>
@@ -293,8 +309,8 @@ export const QuoteItemRow = ({ quoteItem, addresses, onUpdateItem, onRemoveItem,
           <GripVertical className="w-4 h-4 text-gray-400 cursor-grab active:cursor-grabbing" />
         </div>
 
-        {/* Main Content Grid - Adjust columns based on admin status and commission opt-out */}
-        <div className={`grid ${isAdmin ? (isAgentOptedOut ? 'grid-cols-6' : 'grid-cols-7') : (isAgentOptedOut ? 'grid-cols-5' : 'grid-cols-6')} gap-2 items-start flex-1`}>
+        {/* Main Content Grid */}
+        <div className={`grid ${getGridColumns()} gap-2 items-start flex-1`}>
           {/* Item & Location Column */}
           <div className="col-span-2 space-y-2">
             <Input
