@@ -9,10 +9,9 @@ interface QuoteItemsManagerProps {
   items: QuoteItemData[];
   onItemsChange: (items: QuoteItemData[]) => void;
   clientInfoId?: string;
-  showHeaders?: boolean;
 }
 
-export const QuoteItemsManager = ({ items, onItemsChange, clientInfoId, showHeaders = false }: QuoteItemsManagerProps) => {
+export const QuoteItemsManager = ({ items, onItemsChange, clientInfoId }: QuoteItemsManagerProps) => {
   const {
     selectedItemId,
     setSelectedItemId,
@@ -109,7 +108,6 @@ export const QuoteItemsManager = ({ items, onItemsChange, clientInfoId, showHead
         onUpdateItem={updateItem}
         onRemoveItem={removeItem}
         onReorderItems={handleDragEnd}
-        showHeaders={showHeaders}
       />
     </div>
   );

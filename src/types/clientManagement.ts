@@ -27,4 +27,4 @@ export interface ClientManagementHook {
 }
 
 // Re-export ClientInfo from the main types
-export { ClientInfo };
+export type { ClientInfo };

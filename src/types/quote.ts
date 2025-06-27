@@ -24,4 +24,4 @@ export interface DatabaseQuote {
 }
 
 // Re-export Quote from the main types
-export { Quote } from "@/pages/Index";
+export type { Quote } from "@/pages/Index";
