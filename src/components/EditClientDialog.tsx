@@ -1,8 +1,10 @@
+
 import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Client, Transaction } from "@/pages/Index";
 import { useToast } from "@/hooks/use-toast";
 
@@ -28,6 +30,7 @@ export const EditClientDialog = ({
   const [lastName, setLastName] = useState(client.lastName || "");
   const [email, setEmail] = useState(client.email);
   const [commissionRate, setCommissionRate] = useState(client.commissionRate.toString());
+  const [optOutOfCommission, setOptOutOfCommission] = useState(client.commissionRate === 0);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -36,15 +39,23 @@ export const EditClientDialog = ({
     setLastName(client.lastName || "");
     setEmail(client.email);
     setCommissionRate(client.commissionRate.toString());
+    setOptOutOfCommission(client.commissionRate === 0);
   }, [client]);
+
+  // Handle commission opt-out
+  useEffect(() => {
+    if (optOutOfCommission) {
+      setCommissionRate("0");
+    }
+  }, [optOutOfCommission]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (firstName && lastName && email && commissionRate) {
-      const parsedRate = parseFloat(commissionRate);
+    if (firstName && lastName && email) {
+      const finalCommissionRate = optOutOfCommission ? 0 : parseFloat(commissionRate);
       
-      if (isNaN(parsedRate) || parsedRate < 0 || parsedRate > 100) {
+      if (!optOutOfCommission && (isNaN(finalCommissionRate) || finalCommissionRate < 0 || finalCommissionRate > 100)) {
         toast({
           title: "Invalid Commission Rate",
           description: "Commission rate must be between 0 and 100",
@@ -60,7 +71,7 @@ export const EditClientDialog = ({
         name: `${firstName} ${lastName}`, // Update full name from first and last name
         companyName,
         email,
-        commissionRate: parsedRate,
+        commissionRate: finalCommissionRate,
       };
       
       // Call the update function which will handle the database update
@@ -68,7 +79,7 @@ export const EditClientDialog = ({
       
       // Update commission calculations for unpaid commissions
       if (onUpdateTransactions && transactions.length > 0) {
-        const newRate = parsedRate;
+        const newRate = finalCommissionRate;
         // Only recalculate for transactions that belong to this client and don't have paid commissions
         const updatedTransactions = transactions.map(transaction => {
           if (transaction.clientId === client.id && !transaction.commissionPaidDate) {
@@ -144,6 +155,19 @@ export const EditClientDialog = ({
               required
             />
           </div>
+          
+          {/* Commission Opt-out Checkbox */}
+          <div className="flex items-center space-x-2">
+            <Checkbox
+              id="edit-optOutOfCommission"
+              checked={optOutOfCommission}
+              onCheckedChange={(checked) => setOptOutOfCommission(checked === true)}
+            />
+            <Label htmlFor="edit-optOutOfCommission" className="text-sm font-medium">
+              Opt out of commission (no commission percentage)
+            </Label>
+          </div>
+          
           <div className="space-y-2">
             <Label htmlFor="edit-commission">Commission Rate (%)</Label>
             <Input
@@ -153,10 +177,21 @@ export const EditClientDialog = ({
               min="0"
               max="100"
               value={commissionRate}
-              onChange={(e) => setCommissionRate(e.target.value)}
+              onChange={(e) => {
+                if (!optOutOfCommission) {
+                  setCommissionRate(e.target.value);
+                }
+              }}
               placeholder="Enter commission rate"
-              required
+              disabled={optOutOfCommission}
+              required={!optOutOfCommission}
+              className={optOutOfCommission ? "bg-gray-100 cursor-not-allowed" : ""}
             />
+            {optOutOfCommission && (
+              <p className="text-xs text-gray-500">
+                Commission is disabled for this salesperson
+              </p>
+            )}
           </div>
           <div className="flex justify-end space-x-2">
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
