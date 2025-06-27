@@ -212,7 +212,7 @@ export default function AgentAgreement() {
       await supabase
         .from('agent_agreement_tokens')
         .update({ used: true })
-        .eq('id', tokenData.id);
+        .eq('token', token);
 
       setIsSubmitted(true);
       toast({

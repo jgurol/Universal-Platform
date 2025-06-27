@@ -1,22 +1,18 @@
-
 import { useState, useEffect } from "react";
 import { NavigationBar } from "@/components/NavigationBar";
 import { Header } from "@/components/Header";
 import { ClientList } from "@/components/ClientList";
-import { AddClientDialog } from "@/components/AddClientDialog";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Client, Transaction } from "@/pages/Index";
 import { useAuth } from "@/context/AuthContext";
-import { Button } from "@/components/ui/button";
-import { Plus, User, Building, Percent } from "lucide-react";
+import { User, Building, Percent } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 
 export default function AgentManagement() {
   const [clients, setClients] = useState<Client[]>([]);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
-  const [isAddClientOpen, setIsAddClientOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [associatedAgentId, setAssociatedAgentId] = useState<string | null>(null);
   const [associatedAgentInfo, setAssociatedAgentInfo] = useState<{
@@ -218,63 +214,6 @@ export default function AgentManagement() {
     }
   };
 
-  // Function to add a new client to Supabase
-  const addClient = async (newClient: Omit<Client, "id" | "totalEarnings" | "lastPayment">) => {
-    if (!user) return;
-    
-    try {
-      const { data, error } = await supabase
-        .from('agents')
-        .insert({
-          first_name: newClient.firstName,
-          last_name: newClient.lastName,
-          email: newClient.email,
-          company_name: newClient.companyName,
-          commission_rate: newClient.commissionRate,
-          user_id: user.id,
-          total_earnings: 0,
-          last_payment: new Date().toISOString()
-        })
-        .select('*')
-        .single();
-
-      if (error) {
-        console.error('Error adding salesperson:', error);
-        toast({
-          title: "Failed to add salesperson",
-          description: error.message,
-          variant: "destructive"
-        });
-      } else if (data) {
-        // Map the returned data to our Client interface
-        const newClientWithId: Client = {
-          id: data.id,
-          firstName: data.first_name,
-          lastName: data.last_name,
-          name: `${data.first_name} ${data.last_name}`,
-          email: data.email,
-          companyName: data.company_name,
-          commissionRate: data.commission_rate,
-          totalEarnings: data.total_earnings || 0,
-          lastPayment: data.last_payment ? new Date(data.last_payment).toISOString() : new Date().toISOString()
-        };
-
-        setClients([...clients, newClientWithId]);
-        toast({
-          title: "Salesperson added",
-          description: `${newClientWithId.name} has been added successfully.`,
-        });
-      }
-    } catch (err) {
-      console.error('Error in add client operation:', err);
-      toast({
-        title: "Error",
-        description: "Failed to add salesperson",
-        variant: "destructive"
-      });
-    }
-  };
-
   // Function to update a client in Supabase
   const updateClient = async (updatedClient: Client) => {
     // Update locally first
@@ -338,21 +277,9 @@ export default function AgentManagement() {
         <Card className="bg-white shadow-lg border-0 mt-8">
           <CardHeader>
             <CardTitle className="text-2xl font-bold text-gray-900">Salesperson Management</CardTitle>
-            <CardDescription>Manage your commission salespersons and their rates</CardDescription>
+            <CardDescription>View and manage commission salespersons and their rates</CardDescription>
           </CardHeader>
           <CardContent>
-            {isAdmin && (
-              <div className="flex justify-end mb-4">
-                <Button 
-                  onClick={() => setIsAddClientOpen(true)}
-                  className="bg-green-600 hover:bg-green-700 text-white"
-                >
-                  <Plus className="w-4 h-4 mr-1" />
-                  Add Salesperson
-                </Button>
-              </div>
-            )}
-            
             <ClientList 
               clients={clients} 
               transactions={transactions}
@@ -363,15 +290,6 @@ export default function AgentManagement() {
             />
           </CardContent>
         </Card>
-
-        {isAdmin && (
-          <AddClientDialog 
-            open={isAddClientOpen}
-            onOpenChange={setIsAddClientOpen}
-            onAddClient={addClient}
-            onFetchClients={fetchClients}
-          />
-        )}
       </div>
     </div>
   );

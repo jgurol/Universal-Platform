@@ -7,6 +7,7 @@ import { SystemSettingsProvider } from "@/context/SystemSettingsContext";
 import { GeneralSettingsTab } from "@/components/settings/GeneralSettingsTab";
 import { DateTimeSettingsTab } from "@/components/settings/DateTimeSettingsTab";
 import { SecuritySettingsTab } from "@/components/settings/SecuritySettingsTab";
+import { AgentsManagementTab } from "@/components/settings/AgentsManagementTab";
 
 export default function SystemSettings() {
   const { user, isAdmin } = useAuth();
@@ -39,10 +40,11 @@ export default function SystemSettings() {
           </div>
 
           <Tabs defaultValue="general" className="space-y-6">
-            <TabsList className="grid w-full grid-cols-3">
+            <TabsList className="grid w-full grid-cols-4">
               <TabsTrigger value="general">General</TabsTrigger>
               <TabsTrigger value="datetime">Date & Time</TabsTrigger>
               <TabsTrigger value="security">Security</TabsTrigger>
+              <TabsTrigger value="agents">Agents</TabsTrigger>
             </TabsList>
 
             <TabsContent value="general">
@@ -55,6 +57,10 @@ export default function SystemSettings() {
 
             <TabsContent value="security">
               <SecuritySettingsTab />
+            </TabsContent>
+
+            <TabsContent value="agents">
+              <AgentsManagementTab />
             </TabsContent>
           </Tabs>
         </div>
