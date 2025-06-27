@@ -151,7 +151,7 @@ const AcceptQuote = () => {
         quoteNumber: quoteData.quote_number,
         quoteMonth: quoteData.quote_month,
         quoteYear: quoteData.quote_year,
-        term: quoteData.term || '', // Handle potential undefined term
+        term: (quoteData as any).term || '', // Safely access term with type assertion
         expiresAt: quoteData.expires_at,
         commission: quoteData.commission,
         commissionOverride: quoteData.commission_override,
