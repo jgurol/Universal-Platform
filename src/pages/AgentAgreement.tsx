@@ -66,8 +66,6 @@ export default function AgentAgreement() {
         .eq('token', token)
         .maybeSingle();
 
-      console.log('Token query result:', { tokenData, tokenError });
-
       if (tokenError) {
         console.error('Token query error:', tokenError);
         setValidationError('Database error while validating token');
@@ -82,11 +80,6 @@ export default function AgentAgreement() {
         return;
       }
 
-      console.log('Token data:', tokenData);
-      console.log('Token used:', tokenData.used);
-      console.log('Token expires at:', tokenData.expires_at);
-      console.log('Current time:', new Date().toISOString());
-
       // Check if token is already used
       if (tokenData.used) {
         console.log('Token has already been used');
@@ -95,14 +88,10 @@ export default function AgentAgreement() {
         return;
       }
 
-      // Check if token is expired - be more lenient with timezone issues
+      // Check if token is expired
       const expirationDate = new Date(tokenData.expires_at);
       const currentDate = new Date();
       
-      console.log('Expiration date parsed:', expirationDate);
-      console.log('Current date:', currentDate);
-      console.log('Is expired?', expirationDate < currentDate);
-
       if (expirationDate < currentDate) {
         console.log('Token has expired');
         setValidationError('This agreement link has expired. Please contact us for a new link.');
@@ -112,17 +101,14 @@ export default function AgentAgreement() {
 
       setTokenData(tokenData);
 
-      // Load agent data - try with service role client to bypass RLS
+      // Load agent data
       console.log('Loading agent data for ID:', tokenData.agent_id);
-      console.log('Using regular supabase client first...');
       
       const { data: agent, error: agentError } = await supabase
         .from('agents')
         .select('id, first_name, last_name, email, company_name, commission_rate')
         .eq('id', tokenData.agent_id)
         .maybeSingle();
-
-      console.log('Agent query result:', { agent, agentError });
 
       if (agentError) {
         console.error('Agent query error:', agentError);
@@ -133,21 +119,7 @@ export default function AgentAgreement() {
 
       if (!agent) {
         console.log('Agent not found with ID:', tokenData.agent_id);
-        
-        // Try to debug by checking what agents exist
-        console.log('Attempting to fetch all agents to debug...');
-        const { data: allAgents, error: allAgentsError } = await supabase
-          .from('agents')
-          .select('id, first_name, last_name, email');
-        
-        console.log('All agents in database:', allAgents);
-        console.log('All agents query error:', allAgentsError);
-        
-        // Check current user session
-        const { data: session } = await supabase.auth.getSession();
-        console.log('Current session:', session);
-        
-        setValidationError(`Agent not found. Agent ID: ${tokenData.agent_id}. Please contact support. Debug: Found ${allAgents?.length || 0} total agents in system.`);
+        setValidationError(`Agent not found. Please contact support.`);
         setIsValidToken(false);
         return;
       }
@@ -309,11 +281,6 @@ export default function AgentAgreement() {
               {validationError || 'This agent agreement link is invalid or has expired.'}
             </p>
             <p>Please contact us for a new link.</p>
-            {validationError && (
-              <div className="mt-4 p-3 bg-gray-100 rounded text-sm">
-                <strong>Debug info:</strong> {validationError}
-              </div>
-            )}
           </CardContent>
         </Card>
       </div>
