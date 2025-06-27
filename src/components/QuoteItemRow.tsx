@@ -1,20 +1,18 @@
 
 import { useState, useEffect } from "react";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Switch } from "@/components/ui/switch";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Trash2, MapPin, FileText, GripVertical, Percent } from "lucide-react";
+import { GripVertical } from "lucide-react";
 import { QuoteItemData } from "@/types/quoteItems";
 import { ClientAddress } from "@/types/clientAddress";
-import { AdvancedTiptapEditor } from "@/components/AdvancedTiptapEditor";
-import { SecureHtmlDisplay } from "@/components/SecureHtmlDisplay";
-import { secureTextSchema } from "@/utils/securityUtils";
 import { useCategories } from "@/hooks/useCategories";
-import { calculateMarkupAndCommission } from "@/services/markupCommissionService";
 import { useAuth } from "@/context/AuthContext";
 import { useClients } from "@/hooks/useClients";
+import { ItemNameAndDescription } from "./QuoteItemRow/ItemNameAndDescription";
+import { AddressSelector } from "./QuoteItemRow/AddressSelector";
+import { PriceAndCostSection } from "./QuoteItemRow/PriceAndCostSection";
+import { CommissionSection } from "./QuoteItemRow/CommissionSection";
+import { TotalAndActions } from "./QuoteItemRow/TotalAndActions";
+import { ChargeTypeToggle } from "./QuoteItemRow/ChargeTypeToggle";
 
 interface QuoteItemRowProps {
   quoteItem: QuoteItemData;
@@ -25,10 +23,6 @@ interface QuoteItemRowProps {
 }
 
 export const QuoteItemRow = ({ quoteItem, addresses, onUpdateItem, onRemoveItem, showHeaders = false }: QuoteItemRowProps) => {
-  const [isDescriptionOpen, setIsDescriptionOpen] = useState(false);
-  const [tempDescription, setTempDescription] = useState(quoteItem.description || quoteItem.item?.description || '');
-  const [tempSellPrice, setTempSellPrice] = useState<string>(quoteItem.unit_price.toString());
-  
   const { categories } = useCategories();
   const { user, isAdmin } = useAuth();
   const { clients, refetch: refetchClients } = useClients();
@@ -55,25 +49,8 @@ export const QuoteItemRow = ({ quoteItem, addresses, onUpdateItem, onRemoveItem,
     }
   }, [agentCommissionRate, isAgentOptedOut]);
 
-  // Update temp sell price when quote item changes
-  useEffect(() => {
-    setTempSellPrice(quoteItem.unit_price.toString());
-  }, [quoteItem.unit_price]);
-
   // Find the category for this item
   const itemCategory = categories.find(cat => cat.id === quoteItem.item?.category_id);
-
-  // Calculate markup and commission based on current values
-  const cost = quoteItem.cost_override || quoteItem.item?.cost || 0;
-  const sellPrice = quoteItem.unit_price || 0;
-  
-  const markupCalculation = calculateMarkupAndCommission(
-    cost,
-    sellPrice,
-    commissionRate,
-    itemCategory,
-    agentCommissionRate
-  );
 
   // Calculate the commission amount for this line item
   const calculateCommissionAmount = (): number => {
@@ -85,6 +62,7 @@ export const QuoteItemRow = ({ quoteItem, addresses, onUpdateItem, onRemoveItem,
   const calculateMinimumSellPrice = (): number => {
     if (isAgentOptedOut) return 0; // No minimum when opted out
     
+    const cost = quoteItem.cost_override || quoteItem.item?.cost || 0;
     let minimumSellPrice = cost;
     if (itemCategory?.minimum_markup && cost > 0) {
       minimumSellPrice = cost * (1 + itemCategory.minimum_markup / 100);
@@ -95,31 +73,14 @@ export const QuoteItemRow = ({ quoteItem, addresses, onUpdateItem, onRemoveItem,
     return minimumSellPrice * (1 - maxCommissionReductionPercentage);
   };
 
-  // Calculate profit margin percentage (only show to admin)
-  const calculateProfitMargin = (): string => {
-    if (!isAdmin || cost === 0) return '0%';
+  // Calculate the effective minimum markup after commission reduction
+  const getEffectiveMinimumMarkup = (): number => {
+    if (!itemCategory?.minimum_markup || isAgentOptedOut) return 0;
     
-    const margin = ((sellPrice - cost) / cost) * 100;
-    return `${margin >= 0 ? '+' : ''}${margin.toFixed(1)}%`;
-  };
-
-  // Calculate dollar profit amount (only show to admin)
-  const calculateDollarProfit = (): string => {
-    if (!isAdmin) return '$0.00';
+    const originalMinimumMarkup = itemCategory.minimum_markup;
+    const commissionReduction = agentCommissionRate - commissionRate;
     
-    const profit = sellPrice - cost;
-    return `${profit >= 0 ? '+' : ''}$${Math.abs(profit).toFixed(2)}`;
-  };
-
-  const getProfitMarginColor = (): string => {
-    if (!isAdmin || cost === 0) return 'text-gray-500';
-    
-    const margin = ((sellPrice - cost) / cost) * 100;
-    
-    if (margin > 20) return 'text-green-600';
-    if (margin > 0) return 'text-blue-600';
-    if (margin === 0) return 'text-gray-500';
-    return 'text-red-600';
+    return Math.max(0, originalMinimumMarkup - commissionReduction);
   };
 
   // Handle sell price changes - allow any price if opted out
@@ -143,6 +104,7 @@ export const QuoteItemRow = ({ quoteItem, addresses, onUpdateItem, onRemoveItem,
     onUpdateItem(quoteItem.id, 'unit_price', newSellPrice);
     
     // Calculate the new effective commission rate based on the sell price
+    const cost = quoteItem.cost_override || quoteItem.item?.cost || 0;
     let basePriceWithMinimumMarkup = cost;
     if (itemCategory?.minimum_markup && cost > 0) {
       basePriceWithMinimumMarkup = cost * (1 + itemCategory.minimum_markup / 100);
@@ -161,42 +123,6 @@ export const QuoteItemRow = ({ quoteItem, addresses, onUpdateItem, onRemoveItem,
       const newCommissionRate = Math.max(0, agentCommissionRate - commissionReduction);
       
       setCommissionRate(newCommissionRate);
-    }
-  };
-
-  // Handle input change - allow empty values temporarily
-  const handleSellPriceInputChange = (value: string) => {
-    setTempSellPrice(value);
-    
-    // Only update if value is not empty
-    if (value && !isNaN(parseFloat(value))) {
-      const numericValue = parseFloat(value);
-      handleSellPriceChange(numericValue);
-    }
-  };
-
-  // Handle blur - validate and reset if needed
-  const handleSellPriceBlur = () => {
-    const numericValue = parseFloat(tempSellPrice);
-    
-    // If empty or invalid, reset to current value
-    if (!tempSellPrice || isNaN(numericValue)) {
-      setTempSellPrice(quoteItem.unit_price.toString());
-      return;
-    }
-    
-    // If agent is opted out, no validation needed
-    if (isAgentOptedOut) {
-      return;
-    }
-    
-    const minimumSellPrice = calculateMinimumSellPrice();
-    
-    // If below minimum, reset to minimum
-    if (numericValue < minimumSellPrice) {
-      const roundedMin = Math.round(minimumSellPrice * 100) / 100;
-      setTempSellPrice(roundedMin.toString());
-      handleSellPriceChange(roundedMin);
     }
   };
 
@@ -219,6 +145,7 @@ export const QuoteItemRow = ({ quoteItem, addresses, onUpdateItem, onRemoveItem,
     const commissionReductionPercentage = commissionReduction / 100; // Convert to decimal
 
     // Calculate the base price with minimum markup (if category has one)
+    const cost = quoteItem.cost_override || quoteItem.item?.cost || 0;
     let basePriceWithMinimumMarkup = cost;
     if (itemCategory?.minimum_markup && cost > 0) {
       basePriceWithMinimumMarkup = cost * (1 + itemCategory.minimum_markup / 100);
@@ -231,53 +158,10 @@ export const QuoteItemRow = ({ quoteItem, addresses, onUpdateItem, onRemoveItem,
     onUpdateItem(quoteItem.id, 'unit_price', Math.round(newSellPrice * 100) / 100);
   };
 
-  // Calculate the effective minimum markup after commission reduction
-  const getEffectiveMinimumMarkup = (): number => {
-    if (!itemCategory?.minimum_markup || isAgentOptedOut) return 0;
-    
-    const originalMinimumMarkup = itemCategory.minimum_markup;
-    const commissionReduction = agentCommissionRate - commissionRate;
-    
-    return Math.max(0, originalMinimumMarkup - commissionReduction);
-  };
-
-  // Update tempDescription when dialog opens or quoteItem changes
-  const handleDialogOpenChange = (open: boolean) => {
-    if (open) {
-      setTempDescription(quoteItem.description || quoteItem.item?.description || '');
-    }
-    setIsDescriptionOpen(open);
-  };
-
-  const formatAddressShort = (address: any) => {
-    if (!address) return 'No address';
-    return `${address.address_type} - ${address.city}, ${address.state}`;
-  };
-
-  const handleDescriptionSave = () => {
-    try {
-      secureTextSchema.parse(tempDescription);
-    } catch (error) {
-      console.error('Description contains potentially unsafe content');
-      return;
-    }
-    
-    console.log('[QuoteItemRow] Saving description:', tempDescription);
-    onUpdateItem(quoteItem.id, 'description', tempDescription);
-    setIsDescriptionOpen(false);
-  };
-
-  const handleDescriptionCancel = () => {
-    setTempDescription(quoteItem.description || quoteItem.item?.description || '');
-    setIsDescriptionOpen(false);
-  };
-
   const handleAddressChange = (addressId: string) => {
     console.log(`[QuoteItemRow] Address changed for item ${quoteItem.id} to address ${addressId}`);
     onUpdateItem(quoteItem.id, 'address_id', addressId);
   };
-
-  const currentDescription = quoteItem.description || quoteItem.item?.description || '';
 
   // Determine grid columns based on admin status and commission opt-out
   const getGridColumns = () => {
@@ -319,76 +203,15 @@ export const QuoteItemRow = ({ quoteItem, addresses, onUpdateItem, onRemoveItem,
         <div className={`grid ${getGridColumns()} gap-2 items-start flex-1`}>
           {/* Item & Location Column */}
           <div className="col-span-2 space-y-2">
-            <Input
-              value={quoteItem.name || quoteItem.item?.name || ''}
-              onChange={(e) => onUpdateItem(quoteItem.id, 'name', e.target.value)}
-              placeholder="Item name"
-              className="text-sm font-medium h-8"
+            <ItemNameAndDescription
+              quoteItem={quoteItem}
+              onUpdateItem={onUpdateItem}
             />
-            <div className="space-y-1">
-              {currentDescription && (
-                <SecureHtmlDisplay 
-                  content={currentDescription}
-                  className="text-xs text-gray-700 p-2 bg-white border rounded prose prose-xs max-w-none"
-                  maxLength={200}
-                />
-              )}
-              <Dialog open={isDescriptionOpen} onOpenChange={handleDialogOpenChange}>
-                <DialogTrigger asChild>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="w-full h-8 justify-start text-xs text-gray-600"
-                  >
-                    <FileText className="w-3 h-3 mr-1" />
-                    {currentDescription ? 'Edit description' : 'Add description'}
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="sm:max-w-[800px]">
-                  <DialogHeader>
-                    <DialogTitle>Edit Item Description</DialogTitle>
-                  </DialogHeader>
-                  <div className="space-y-4">
-                    <AdvancedTiptapEditor
-                      value={tempDescription}
-                      onChange={setTempDescription}
-                      placeholder="Enter item description with formatting and images..."
-                      className="min-h-[200px]"
-                    />
-                    <div className="flex justify-end space-x-2">
-                      <Button variant="outline" onClick={handleDescriptionCancel}>
-                        Cancel
-                      </Button>
-                      <Button onClick={handleDescriptionSave} className="bg-blue-600 hover:bg-blue-700">
-                        Save Description
-                      </Button>
-                    </div>
-                  </div>
-                </DialogContent>
-              </Dialog>
-            </div>
-            <div className="flex items-center gap-1 text-xs text-gray-500">
-              <MapPin className="w-3 h-3" />
-              <Select 
-                value={quoteItem.address_id || ""} 
-                onValueChange={handleAddressChange}
-              >
-                <SelectTrigger className="text-xs h-6 border-gray-300">
-                  <SelectValue placeholder="Select location" />
-                </SelectTrigger>
-                <SelectContent className="bg-white border border-gray-200 shadow-lg z-50">
-                  {addresses.length === 0 ? (
-                    <SelectItem value="no-addresses" disabled>No addresses available</SelectItem>
-                  ) : (
-                    addresses.map((address) => (
-                      <SelectItem key={address.id} value={address.id}>
-                        {formatAddressShort(address)}
-                      </SelectItem>
-                    ))
-                  )}
-                </SelectContent>
-              </Select>
-            </div>
+            <AddressSelector
+              addressId={quoteItem.address_id}
+              addresses={addresses}
+              onAddressChange={handleAddressChange}
+            />
           </div>
 
           {/* Quantity */}
@@ -403,126 +226,38 @@ export const QuoteItemRow = ({ quoteItem, addresses, onUpdateItem, onRemoveItem,
             />
           </div>
 
-          {/* Sell Price / Cost with Profit Margin - Cost only visible to admin */}
-          <div className="space-y-1">
-            <div className="flex items-center gap-1">
-              <Input
-                type="number"
-                step="0.01"
-                value={tempSellPrice}
-                onChange={(e) => handleSellPriceInputChange(e.target.value)}
-                onBlur={handleSellPriceBlur}
-                className="text-xs h-8"
-                placeholder="$"
-              />
-            </div>
-            {isAdmin && (
-              <>
-                <div className="flex items-center gap-1">
-                  <span className="text-xs text-gray-500">Cost:</span>
-                  <Input
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    value={quoteItem.cost_override || 0}
-                    onChange={(e) => onUpdateItem(quoteItem.id, 'cost_override', parseFloat(e.target.value) || 0)}
-                    className="text-xs h-8"
-                    placeholder="$"
-                  />
-                </div>
-                <div className="flex flex-col items-center justify-center space-y-1">
-                  <span className={`text-xs font-medium ${getProfitMarginColor()}`}>
-                    {calculateProfitMargin()}
-                  </span>
-                  <span className={`text-xs font-medium ${getProfitMarginColor()}`}>
-                    {calculateDollarProfit()}
-                  </span>
-                </div>
-              </>
-            )}
-          </div>
+          {/* Sell Price / Cost with Profit Margin */}
+          <PriceAndCostSection
+            quoteItem={quoteItem}
+            onUpdateItem={onUpdateItem}
+            onSellPriceChange={handleSellPriceChange}
+            isAgentOptedOut={isAgentOptedOut}
+            calculateMinimumSellPrice={calculateMinimumSellPrice}
+          />
 
           {/* Commission & Markup Control - Only show if agent is not opted out */}
-          {!isAgentOptedOut && (
-            <div className="space-y-1">
-              <div className="flex items-center gap-1">
-                <Percent className="w-3 h-3 text-blue-600" />
-                <Input
-                  type="number"
-                  step="0.1"
-                  min="0"
-                  max={agentCommissionRate}
-                  value={commissionRate}
-                  onChange={(e) => handleCommissionRateChange(parseFloat(e.target.value) || 0)}
-                  className="text-xs h-8"
-                  placeholder="Comm %"
-                />
-              </div>
-              
-              {/* Show commission reduction info for agents only if there's a reduction */}
-              {!isAdmin && agentCommissionRate - commissionRate > 0 && (
-                <div className="text-xs text-red-600">
-                  -{(agentCommissionRate - commissionRate).toFixed(1)}% price reduction
-                </div>
-              )}
-              
-              {/* Show markup info only if category has minimum markup and user is admin */}
-              {isAdmin && itemCategory?.minimum_markup && (
-                <>
-                  <div className="text-xs text-gray-500 mb-1">
-                    Effective Min Markup: {getEffectiveMinimumMarkup().toFixed(1)}%
-                  </div>
-                  <div className="text-xs text-orange-600 mb-1">
-                    Current: {markupCalculation.currentMarkup.toFixed(1)}%
-                  </div>
-                  <div className="text-xs text-blue-600">
-                    Final: {markupCalculation.finalCommissionRate.toFixed(1)}%
-                  </div>
-                  {!markupCalculation.isValid && (
-                    <div className="text-xs text-red-600">
-                      {markupCalculation.errorMessage}
-                    </div>
-                  )}
-                </>
-              )}
-            </div>
-          )}
+          <CommissionSection
+            quoteItem={quoteItem}
+            commissionRate={commissionRate}
+            agentCommissionRate={agentCommissionRate}
+            isAgentOptedOut={isAgentOptedOut}
+            onCommissionRateChange={handleCommissionRateChange}
+            getEffectiveMinimumMarkup={getEffectiveMinimumMarkup}
+          />
 
           {/* Total & Commission */}
-          <div className="space-y-1">
-            <div className="flex items-center justify-between">
-              <div className="text-sm font-medium">
-                ${quoteItem.total_price.toFixed(2)}
-              </div>
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                onClick={() => onRemoveItem(quoteItem.id)}
-                className="h-6 w-6 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
-              >
-                <Trash2 className="w-3 h-3" />
-              </Button>
-            </div>
-            {!isAgentOptedOut && (
-              <div className="text-xs text-gray-600">
-                Commission: ${calculateCommissionAmount().toFixed(2)}
-              </div>
-            )}
-          </div>
+          <TotalAndActions
+            totalPrice={quoteItem.total_price}
+            commissionAmount={calculateCommissionAmount()}
+            isAgentOptedOut={isAgentOptedOut}
+            onRemoveItem={() => onRemoveItem(quoteItem.id)}
+          />
 
           {/* Type Column */}
-          <div className="flex items-center justify-center">
-            <div className="flex items-center space-x-1">
-              <Switch
-                checked={quoteItem.charge_type === 'MRC'}
-                onCheckedChange={(checked) => onUpdateItem(quoteItem.id, 'charge_type', checked ? 'MRC' : 'NRC')}
-              />
-              <span className="text-xs font-medium">
-                {quoteItem.charge_type}
-              </span>
-            </div>
-          </div>
+          <ChargeTypeToggle
+            chargeType={quoteItem.charge_type}
+            onChargeTypeChange={(checked) => onUpdateItem(quoteItem.id, 'charge_type', checked ? 'MRC' : 'NRC')}
+          />
         </div>
       </div>
     </div>
