@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -27,25 +26,6 @@ export const AgentsManagementTab = () => {
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
   const { user } = useAuth();
-
-  // Convert agents to clients format for useClientActions
-  const clientsFromAgents = agents.map(agent => ({
-    id: agent.id,
-    firstName: agent.first_name,
-    lastName: agent.last_name,
-    name: `${agent.first_name} ${agent.last_name}`,
-    email: agent.email,
-    companyName: agent.company_name,
-    commissionRate: agent.commission_rate,
-    totalEarnings: agent.total_earnings || 0,
-    lastPayment: agent.last_payment ? new Date(agent.last_payment).toISOString() : new Date().toISOString()
-  }));
-
-  const { addClient } = useClientActions(clientsFromAgents, () => {}, fetchAgents);
-
-  useEffect(() => {
-    fetchAgents();
-  }, []);
 
   const fetchAgents = async () => {
     if (!user) return;
@@ -79,6 +59,25 @@ export const AgentsManagementTab = () => {
       setIsLoading(false);
     }
   };
+
+  // Convert agents to clients format for useClientActions
+  const clientsFromAgents = agents.map(agent => ({
+    id: agent.id,
+    firstName: agent.first_name,
+    lastName: agent.last_name,
+    name: `${agent.first_name} ${agent.last_name}`,
+    email: agent.email,
+    companyName: agent.company_name,
+    commissionRate: agent.commission_rate,
+    totalEarnings: agent.total_earnings || 0,
+    lastPayment: agent.last_payment ? new Date(agent.last_payment).toISOString() : new Date().toISOString()
+  }));
+
+  const { addClient } = useClientActions(clientsFromAgents, () => {}, fetchAgents);
+
+  useEffect(() => {
+    fetchAgents();
+  }, []);
 
   const handleAddAgent = async (newAgent: any) => {
     console.log('🎯 AgentsManagementTab handleAddAgent called with:', newAgent);
