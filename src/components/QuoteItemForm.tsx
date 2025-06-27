@@ -113,8 +113,13 @@ export const QuoteItemForm = ({
     quote.client_info_id === clientInfoId && quote.status === 'completed'
   );
   
-  // Extract all carrier quotes from completed circuit quotes
-  const carrierQuoteItems = clientCircuitQuotes.flatMap(quote => quote.carriers);
+  // Extract all carrier quotes from completed circuit quotes with location info
+  const carrierQuoteItems = clientCircuitQuotes.flatMap(quote => 
+    quote.carriers.map(carrier => ({
+      ...carrier,
+      circuitQuoteLocation: quote.location // Add location from parent circuit quote
+    }))
+  );
   
   console.log('[QuoteItemForm] Debug info:', {
     clientInfoId,
@@ -241,7 +246,7 @@ export const QuoteItemForm = ({
                             </>
                           )}
                           <span className="text-xs text-muted-foreground">•</span>
-                          <span className="text-xs text-blue-600">{carrierItem.location}</span>
+                          <span className="text-xs text-blue-600">{carrierItem.circuitQuoteLocation}</span>
                           <Badge variant="outline" className="text-xs whitespace-nowrap ml-auto">
                             Circuit Quote
                           </Badge>
