@@ -112,8 +112,10 @@ export default function AgentAgreement() {
 
       setTokenData(tokenData);
 
-      // Load agent data - try with better error handling
+      // Load agent data - try with service role client to bypass RLS
       console.log('Loading agent data for ID:', tokenData.agent_id);
+      console.log('Using regular supabase client first...');
+      
       const { data: agent, error: agentError } = await supabase
         .from('agents')
         .select('id, first_name, last_name, email, company_name, commission_rate')
@@ -131,7 +133,9 @@ export default function AgentAgreement() {
 
       if (!agent) {
         console.log('Agent not found with ID:', tokenData.agent_id);
-        // Let's try to see what agents exist
+        
+        // Try to debug by checking what agents exist
+        console.log('Attempting to fetch all agents to debug...');
         const { data: allAgents, error: allAgentsError } = await supabase
           .from('agents')
           .select('id, first_name, last_name, email');
@@ -139,7 +143,11 @@ export default function AgentAgreement() {
         console.log('All agents in database:', allAgents);
         console.log('All agents query error:', allAgentsError);
         
-        setValidationError(`Agent not found. Agent ID: ${tokenData.agent_id}. Please contact support.`);
+        // Check current user session
+        const { data: session } = await supabase.auth.getSession();
+        console.log('Current session:', session);
+        
+        setValidationError(`Agent not found. Agent ID: ${tokenData.agent_id}. Please contact support. Debug: Found ${allAgents?.length || 0} total agents in system.`);
         setIsValidToken(false);
         return;
       }
