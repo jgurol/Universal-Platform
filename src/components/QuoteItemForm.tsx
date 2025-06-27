@@ -1,5 +1,3 @@
-
-
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
@@ -34,7 +32,7 @@ export const QuoteItemForm = ({
   const { isAdmin, user } = useAuth();
   const { categories } = useCategories();
   const { clients } = useClients();
-  const { circuitQuotes, loading: circuitQuotesLoading } = useCircuitQuotes();
+  const { quotes: circuitQuotes, loading: circuitQuotesLoading } = useCircuitQuotes();
 
   // Extract carrier quotes from circuit quotes for the specific client
   const carrierQuoteItems = circuitQuotes

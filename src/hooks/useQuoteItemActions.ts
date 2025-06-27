@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { QuoteItemData } from "@/types/quoteItems";
 import { useItems } from "@/hooks/useItems";
@@ -19,7 +20,7 @@ export const useQuoteItemActions = (clientInfoId?: string) => {
   const [isAddingCarrierItem, setIsAddingCarrierItem] = useState(false);
 
   // Use circuit quotes to get carrier quotes with all properties
-  const { circuitQuotes, loading: circuitQuotesLoading } = useCircuitQuotes();
+  const { quotes: circuitQuotes, loading: circuitQuotesLoading } = useCircuitQuotes();
   
   // Extract carrier quotes from circuit quotes for the specific client
   const carrierQuoteItems = circuitQuotes
