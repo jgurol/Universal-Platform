@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
@@ -22,6 +23,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 export function NavigationBar() {
   const { isAdmin, user, signOut, userProfile } = useAuth();
@@ -52,7 +54,7 @@ export function NavigationBar() {
   };
 
   return (
-    <div className="w-full bg-white border-b border-gray-200 py-2 px-4 mb-6">
+    <div className="w-full bg-background border-b border-border py-2 px-4 mb-6">
       <div className="container mx-auto flex justify-between items-center">
         <Link to="/" className="flex items-center gap-3">
           <img 
@@ -60,7 +62,7 @@ export function NavigationBar() {
             alt="California Telecom" 
             className="h-12 w-auto"
           />
-          <h1 className="text-2xl font-bold text-gray-900">Universal Platform</h1>
+          <h1 className="text-2xl font-bold text-foreground">Universal Platform</h1>
         </Link>
 
         <div className="flex items-center gap-4">
@@ -109,18 +111,20 @@ export function NavigationBar() {
             </NavigationMenuList>
           </NavigationMenu>
 
+          <ThemeToggle />
+
           {user && (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" className="relative h-10 w-10 rounded-full">
                   <Avatar className="h-10 w-10">
-                    <AvatarFallback className="bg-blue-100 text-blue-700 font-medium">
+                    <AvatarFallback className="bg-primary/10 text-primary font-medium">
                       {getUserInitials(getDisplayName())}
                     </AvatarFallback>
                   </Avatar>
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent className="w-56" align="end" forceMount>
+              <DropdownMenuContent className="w-56 bg-background border-border" align="end" forceMount>
                 <DropdownMenuLabel className="font-normal">
                   <div className="flex flex-col space-y-1">
                     <p className="text-sm font-medium leading-none">
@@ -165,13 +169,13 @@ const ListItem = ({ href, title, children, Icon }: ListItemProps) => {
       <NavigationMenuLink asChild>
         <Link
           to={href}
-          className="block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-blue-50 hover:text-blue-900 focus:bg-blue-50 focus:text-blue-900"
+          className="block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground"
         >
           <div className="flex items-center gap-2">
-            <Icon className="h-4 w-4 text-blue-600" />
+            <Icon className="h-4 w-4 text-primary" />
             <div className="text-sm font-medium leading-none">{title}</div>
           </div>
-          <p className="line-clamp-2 text-sm leading-snug text-gray-500">
+          <p className="line-clamp-2 text-sm leading-snug text-muted-foreground">
             {children}
           </p>
         </Link>
