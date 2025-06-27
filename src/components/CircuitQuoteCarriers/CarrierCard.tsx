@@ -316,15 +316,15 @@ export const CarrierCard = ({ carrier, onEdit, onDelete, onCopy, dragHandleProps
             </div>
             
             <div>
-              <div className="font-medium">{carrier.type}</div>
+              <div className="text-sm">{carrier.type}</div>
             </div>
             
             <div>
-              <div className="font-medium">{carrier.speed}</div>
+              <div className="text-sm">{carrier.speed}</div>
             </div>
             
             <div>
-              <div className={`font-semibold text-lg ${isNoService ? 'text-red-600' : ''}`}>
+              <div className={`text-sm ${isNoService ? 'text-red-600' : 'font-semibold'}`}>
                 {isNoService ? 'No Service' : (
                   // For agents, only show price if data is ready and price > 0
                   (!isAdmin && !isDataReady) ? (
@@ -346,7 +346,7 @@ export const CarrierCard = ({ carrier, onEdit, onDelete, onCopy, dragHandleProps
             
             <div>
               <div className="text-sm">
-                {carrier.term && <div className="font-medium">{carrier.term}</div>}
+                {carrier.term && <div>{carrier.term}</div>}
               </div>
             </div>
             
