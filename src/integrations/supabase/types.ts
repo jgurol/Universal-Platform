@@ -963,6 +963,33 @@ export type Database = {
           },
         ]
       }
+      login_logs: {
+        Row: {
+          created_at: string
+          id: string
+          ip_address: unknown | null
+          login_at: string
+          user_agent: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          ip_address?: unknown | null
+          login_at?: string
+          user_agent?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          ip_address?: unknown | null
+          login_at?: string
+          user_agent?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       orders: {
         Row: {
           amount: number
@@ -1664,6 +1691,10 @@ export type Database = {
       get_next_quote_number: {
         Args: Record<PropertyKey, never>
         Returns: number
+      }
+      get_user_last_login: {
+        Args: { user_uuid: string }
+        Returns: string
       }
       get_user_profile: {
         Args: { user_id: string }

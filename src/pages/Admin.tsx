@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { NavigationBar } from '@/components/NavigationBar';
@@ -78,19 +77,6 @@ export default function Admin() {
 
       if (usersError) throw usersError;
 
-      // Try to fetch auth users to get last_sign_in_at - this might fail due to permissions
-      let authUsers: { users?: AuthUser[] } | null = null;
-      try {
-        const { data: authData, error: authError } = await supabase.auth.admin.listUsers();
-        if (authError) {
-          console.error('Error fetching auth users:', authError);
-        } else {
-          authUsers = authData;
-        }
-      } catch (error) {
-        console.error('Failed to fetch auth users (insufficient permissions):', error);
-      }
-
       // Fetch agents data to get company names
       const { data: agentsData, error: agentsError } = await supabase
         .from('agents')
@@ -98,17 +84,22 @@ export default function Admin() {
 
       if (agentsError) throw agentsError;
 
-      // Merge the data to include company names as associated_agent_name and last login
-      const usersWithAgentInfo = usersData?.map(user => {
-        const agent = agentsData?.find(a => a.id === user.associated_agent_id);
-        const authUser = authUsers?.users?.find((au: AuthUser) => au.id === user.id);
-        
-        return {
-          ...user,
-          associated_agent_name: agent?.company_name || null,
-          last_sign_in_at: authUser?.last_sign_in_at || null
-        };
-      }) || [];
+      // Fetch last login data for each user
+      const usersWithAgentInfo = await Promise.all(
+        (usersData || []).map(async (user) => {
+          const agent = agentsData?.find(a => a.id === user.associated_agent_id);
+          
+          // Get last login from login_logs table
+          const { data: lastLoginData } = await supabase
+            .rpc('get_user_last_login', { user_uuid: user.id });
+          
+          return {
+            ...user,
+            associated_agent_name: agent?.company_name || null,
+            last_sign_in_at: lastLoginData || null
+          };
+        })
+      );
 
       setUsers(usersWithAgentInfo);
     } catch (error: any) {
