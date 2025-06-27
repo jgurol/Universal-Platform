@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -37,13 +36,27 @@ export const VendorAttachmentsDialog = ({ open, onOpenChange, vendor }: VendorAt
 
   // Function to count attachments in a folder (including subfolders)
   const countAttachmentsInFolder = (folderId: string): number => {
-    const directAttachments = attachments.filter(a => a.folder_id === folderId).length;
+    console.log(`[VendorAttachmentsDialog] Counting attachments for folder ${folderId}`);
+    
+    // Count direct attachments in this folder
+    const directAttachments = attachments.filter(a => a.folder_id === folderId);
+    console.log(`[VendorAttachmentsDialog] Direct attachments in folder ${folderId}:`, directAttachments.length);
+    
+    // Count attachments in subfolders recursively
     const subfolders = folders.filter(f => f.parent_folder_id === folderId);
     const subfolderAttachments = subfolders.reduce((count, subfolder) => 
       count + countAttachmentsInFolder(subfolder.id), 0
     );
-    return directAttachments + subfolderAttachments;
+    
+    const totalCount = directAttachments.length + subfolderAttachments;
+    console.log(`[VendorAttachmentsDialog] Total attachments in folder ${folderId} (including subfolders): ${totalCount}`);
+    
+    return totalCount;
   };
+
+  // Debug logging for vendor attachments
+  console.log(`[VendorAttachmentsDialog] Vendor: ${vendor?.name}, Attachments:`, attachments);
+  console.log(`[VendorAttachmentsDialog] Folders:`, folders);
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     if (!isAdmin) return; // Prevent non-admins from uploading
