@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { NavigationBar } from "@/components/NavigationBar";
 import { Header } from "@/components/Header";
@@ -7,6 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Client, Transaction } from "@/pages/Index";
 import { useAuth } from "@/context/AuthContext";
+import { useClientActions } from "@/hooks/useClientActions";
 import { User, Building, Percent, Plus } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -26,6 +28,66 @@ export default function AgentManagement() {
   } | null>(null);
   const { toast } = useToast();
   const { user, isAdmin } = useAuth();
+
+  // Function to fetch clients from Supabase
+  const fetchClients = async () => {
+    if (!user) return;
+    
+    try {
+      setIsLoading(true);
+      
+      // If admin, fetch all agents, otherwise fetch only the associated agent
+      let query = supabase.from('agents').select('*');
+      
+      // If user is not admin and has an associated agent, filter by that agent ID
+      if (!isAdmin && associatedAgentId) {
+        query = query.eq('id', associatedAgentId);
+      }
+      
+      query = query.order('last_name', { ascending: true });
+      
+      const { data, error } = await query;
+
+      if (error) {
+        console.error('[fetchClients] Error fetching agents:', error);
+        toast({
+          title: "Failed to load agents",
+          description: error.message,
+          variant: "destructive"
+        });
+        return;
+      }
+
+      console.log("[fetchClients] Fetched agents:", data);
+
+      // Map the data to match our Client interface
+      const mappedClients: Client[] = data?.map(agent => ({
+        id: agent.id,
+        firstName: agent.first_name,
+        lastName: agent.last_name,
+        name: `${agent.first_name} ${agent.last_name}`,
+        email: agent.email,
+        companyName: agent.company_name,
+        commissionRate: agent.commission_rate,
+        totalEarnings: agent.total_earnings || 0,
+        lastPayment: agent.last_payment ? new Date(agent.last_payment).toISOString() : new Date().toISOString()
+      })) || [];
+
+      setClients(mappedClients);
+    } catch (err) {
+      console.error('[fetchClients] Error in client fetch:', err);
+      toast({
+        title: "Error",
+        description: "Failed to load agent data",
+        variant: "destructive"
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Use the useClientActions hook which includes email sending
+  const { addClient } = useClientActions(clients, setClients, fetchClients);
 
   // Fetch the associated agent ID for the current user
   useEffect(() => {
@@ -101,63 +163,6 @@ export default function AgentManagement() {
     }
   }, [clients]);
 
-  // Function to fetch clients from Supabase
-  const fetchClients = async () => {
-    if (!user) return;
-    
-    try {
-      setIsLoading(true);
-      
-      // If admin, fetch all agents, otherwise fetch only the associated agent
-      let query = supabase.from('agents').select('*');
-      
-      // If user is not admin and has an associated agent, filter by that agent ID
-      if (!isAdmin && associatedAgentId) {
-        query = query.eq('id', associatedAgentId);
-      }
-      
-      query = query.order('last_name', { ascending: true });
-      
-      const { data, error } = await query;
-
-      if (error) {
-        console.error('[fetchClients] Error fetching agents:', error);
-        toast({
-          title: "Failed to load agents",
-          description: error.message,
-          variant: "destructive"
-        });
-        return;
-      }
-
-      console.log("[fetchClients] Fetched agents:", data);
-
-      // Map the data to match our Client interface
-      const mappedClients: Client[] = data?.map(agent => ({
-        id: agent.id,
-        firstName: agent.first_name,
-        lastName: agent.last_name,
-        name: `${agent.first_name} ${agent.last_name}`,
-        email: agent.email,
-        companyName: agent.company_name,
-        commissionRate: agent.commission_rate,
-        totalEarnings: agent.total_earnings || 0,
-        lastPayment: agent.last_payment ? new Date(agent.last_payment).toISOString() : new Date().toISOString()
-      })) || [];
-
-      setClients(mappedClients);
-    } catch (err) {
-      console.error('[fetchClients] Error in client fetch:', err);
-      toast({
-        title: "Error",
-        description: "Failed to load agent data",
-        variant: "destructive"
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   // Function to fetch transactions from Supabase (using quotes table)
   const fetchTransactions = async () => {
     if (!user) return;
@@ -230,62 +235,17 @@ export default function AgentManagement() {
     setClients(clients.filter(client => client.id !== clientId));
   };
 
-  // Function to add a new client to Supabase
-  const addClient = async (newClient: Omit<Client, "id" | "totalEarnings" | "lastPayment">) => {
-    if (!user) return;
+  // Use the addClient from useClientActions which includes email sending
+  const handleAddAgent = async (newAgent: any) => {
+    console.log('🎯 AgentManagement handleAddAgent called with:', newAgent);
     
     try {
-      const { data, error } = await supabase
-        .from('agents')
-        .insert({
-          first_name: newClient.firstName,
-          last_name: newClient.lastName,
-          email: newClient.email,
-          company_name: newClient.companyName,
-          commission_rate: newClient.commissionRate,
-          user_id: user.id,
-          total_earnings: 0,
-          last_payment: new Date().toISOString()
-        })
-        .select('*')
-        .single();
-
-      if (error) {
-        console.error('Error adding agent:', error);
-        toast({
-          title: "Failed to add agent",
-          description: error.message,
-          variant: "destructive"
-        });
-        throw error;
-      } else if (data) {
-        // Map the returned data to our Client interface
-        const newClientWithId: Client = {
-          id: data.id,
-          firstName: data.first_name,
-          lastName: data.last_name,
-          name: `${data.first_name} ${data.last_name}`,
-          email: data.email,
-          companyName: data.company_name,
-          commissionRate: data.commission_rate,
-          totalEarnings: data.total_earnings || 0,
-          lastPayment: data.last_payment ? new Date(data.last_payment).toISOString() : new Date().toISOString()
-        };
-
-        setClients([...clients, newClientWithId]);
-        toast({
-          title: "Agent added and email sent!",
-          description: `${newClientWithId.name} has been added and will receive an agreement email shortly.`,
-        });
-      }
-    } catch (err) {
-      console.error('Error in add client operation:', err);
-      toast({
-        title: "Error",
-        description: "Failed to add agent",
-        variant: "destructive"
-      });
-      throw err;
+      // Use the addClient function from useClientActions which includes email sending
+      await addClient(newAgent);
+      console.log('✅ Agent added successfully via useClientActions');
+    } catch (error) {
+      console.error('❌ Error in handleAddAgent:', error);
+      // Error handling is already done in useClientActions
     }
   };
 
@@ -372,7 +332,7 @@ export default function AgentManagement() {
         <AddClientDialog 
           open={isAddClientOpen}
           onOpenChange={setIsAddClientOpen}
-          onAddClient={addClient}
+          onAddClient={handleAddAgent}
           onFetchClients={fetchClients}
         />
       )}
