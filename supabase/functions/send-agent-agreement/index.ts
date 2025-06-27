@@ -82,7 +82,7 @@ Deno.serve(async (req) => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        from: 'noreply@yourdomain.com',
+        from: 'sales@californiatelecom.com',
         to: [agentEmail],
         subject: 'Complete Your Agent Agreement - Commission Rate: ' + commissionRate + '%',
         html: emailBody,
