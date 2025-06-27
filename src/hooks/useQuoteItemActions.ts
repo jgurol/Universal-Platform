@@ -1,9 +1,8 @@
-
 import { useState } from "react";
 import { QuoteItemData } from "@/types/quoteItems";
 import { useItems } from "@/hooks/useItems";
 import { useClientAddresses } from "@/hooks/useClientAddresses";
-import { useCircuitQuotes } from "@/hooks/useCircuitQuotes";
+import { useCarrierQuoteItems } from "@/hooks/useCarrierQuoteItems";
 import { useCategories } from "@/hooks/useCategories";
 import { useAuth } from "@/context/AuthContext";
 import { useClients } from "@/hooks/useClients";
@@ -13,7 +12,7 @@ import { CarrierQuote } from "@/hooks/useCircuitQuotes/types";
 export const useQuoteItemActions = (clientInfoId?: string) => {
   const { items: availableItems, isLoading } = useItems();
   const { addresses, addAddress } = useClientAddresses(clientInfoId || null);
-  const { quotes: circuitQuotes } = useCircuitQuotes();
+  const { carrierQuoteItems } = useCarrierQuoteItems(clientInfoId || null);
   const { categories } = useCategories();
   const { user, isAdmin } = useAuth();
   const { clients } = useClients();
@@ -23,19 +22,6 @@ export const useQuoteItemActions = (clientInfoId?: string) => {
   // Get agent commission rate from clients data
   const currentAgent = clients.find(client => client.id === user?.id);
   const agentCommissionRate = currentAgent?.commissionRate || 15;
-
-  // Get carrier quotes for the specific client
-  const clientCircuitQuotes = circuitQuotes.filter(quote => 
-    quote.client_info_id === clientInfoId && quote.status === 'completed'
-  );
-  
-  // Extract all carrier quotes from completed circuit quotes with location info
-  const carrierQuoteItems = clientCircuitQuotes.flatMap(quote => 
-    quote.carriers.map(carrier => ({
-      ...carrier,
-      circuitQuoteLocation: quote.location // Add location from parent circuit quote
-    }))
-  );
 
   // Helper function to extract term months from term string
   const getTermMonths = (term: string | undefined): number => {
@@ -115,36 +101,35 @@ export const useQuoteItemActions = (clientInfoId?: string) => {
     setIsAddingCarrierItem(true);
     
     try {
-      const carrierItemWithLocation = carrierQuoteItems.find(item => item.id === carrierQuoteId);
+      const carrierItem = carrierQuoteItems.find(item => item.id === carrierQuoteId);
       
-      if (!carrierItemWithLocation) {
+      if (!carrierItem) {
         console.error('Carrier item not found:', carrierQuoteId);
         return;
       }
 
       let matchingAddress = null;
-      const locationToUse = carrierItemWithLocation.circuitQuoteLocation;
       
       // Only try to create/find address if location is provided and meaningful
-      if (locationToUse && locationToUse.trim() && locationToUse.toLowerCase() !== 'n/a') {
+      if (carrierItem.location && carrierItem.location.trim() && carrierItem.location.toLowerCase() !== 'n/a') {
         // Look for an existing address that matches the carrier quote location first
         matchingAddress = addresses.find(addr => {
           const addressString = `${addr.street_address}${addr.street_address_2 ? `, ${addr.street_address_2}` : ''}, ${addr.city}, ${addr.state} ${addr.zip_code}`;
-          return addressString.toLowerCase().includes(locationToUse.toLowerCase()) ||
-                 locationToUse.toLowerCase().includes(addressString.toLowerCase());
+          return addressString.toLowerCase().includes(carrierItem.location.toLowerCase()) ||
+                 carrierItem.location.toLowerCase().includes(addressString.toLowerCase());
         });
 
         // If no exact match found, try to create a new address
         if (!matchingAddress) {
           try {
-            const parsedAddress = parseLocationToAddress(locationToUse);
+            const parsedAddress = parseLocationToAddress(carrierItem.location);
             
             // Only create address if we have meaningful parsed data
             if (parsedAddress.city && parsedAddress.state) {
               const newAddressData = {
                 client_info_id: clientInfoId,
                 address_type: 'service',
-                street_address: parsedAddress.street_address || locationToUse.split(',')[0]?.trim() || 'Service Location',
+                street_address: parsedAddress.street_address || carrierItem.location.split(',')[0]?.trim() || 'Service Location',
                 city: parsedAddress.city,
                 state: parsedAddress.state,
                 zip_code: parsedAddress.zip_code || '',
@@ -168,46 +153,46 @@ export const useQuoteItemActions = (clientInfoId?: string) => {
 
       // Find matching category for the carrier type to get category_id
       const matchingCategory = categories.find(cat => 
-        cat.type?.toLowerCase() === carrierItemWithLocation.type.toLowerCase() ||
-        cat.name.toLowerCase().includes(carrierItemWithLocation.type.toLowerCase())
+        cat.type?.toLowerCase() === carrierItem.type.toLowerCase() ||
+        cat.name.toLowerCase().includes(carrierItem.type.toLowerCase())
       );
 
       // Calculate sell price using category markup with current agent commission rate and including add-ons
-      const sellPrice = calculateSellPrice(carrierItemWithLocation, agentCommissionRate);
+      const sellPrice = calculateSellPrice(carrierItem, agentCommissionRate);
       
       // Calculate the total cost including add-ons for cost_override (admin only)
-      const termMonths = getTermMonths(carrierItemWithLocation.term);
-      let totalCostWithAddons = carrierItemWithLocation.price;
+      const termMonths = getTermMonths(carrierItem.term);
+      let totalCostWithAddons = carrierItem.price;
       
-      if (carrierItemWithLocation.static_ip && carrierItemWithLocation.static_ip_fee_amount) {
-        totalCostWithAddons += carrierItemWithLocation.static_ip_fee_amount;
+      if (carrierItem.static_ip && carrierItem.static_ip_fee_amount) {
+        totalCostWithAddons += carrierItem.static_ip_fee_amount;
       }
-      if (carrierItemWithLocation.static_ip_5 && carrierItemWithLocation.static_ip_5_fee_amount) {
-        totalCostWithAddons += carrierItemWithLocation.static_ip_5_fee_amount;
+      if (carrierItem.static_ip_5 && carrierItem.static_ip_5_fee_amount) {
+        totalCostWithAddons += carrierItem.static_ip_5_fee_amount;
       }
-      if (carrierItemWithLocation.install_fee && carrierItemWithLocation.install_fee_amount) {
-        totalCostWithAddons += carrierItemWithLocation.install_fee_amount / termMonths;
+      if (carrierItem.install_fee && carrierItem.install_fee_amount) {
+        totalCostWithAddons += carrierItem.install_fee_amount / termMonths;
       }
-      if (carrierItemWithLocation.other_costs) {
-        totalCostWithAddons += carrierItemWithLocation.other_costs;
+      if (carrierItem.other_costs) {
+        totalCostWithAddons += carrierItem.other_costs;
       }
 
       // Create a temporary quote item for the carrier quote
       const quoteItem: QuoteItemData = {
         id: `temp-carrier-${Date.now()}`,
-        item_id: `carrier-${carrierItemWithLocation.id}`,
+        item_id: `carrier-${carrierItem.id}`,
         quantity: 1,
         unit_price: sellPrice,
         cost_override: isAdmin ? totalCostWithAddons : undefined, // Only set cost for admins, include add-ons
         total_price: sellPrice,
         charge_type: 'MRC',
         address_id: matchingAddress?.id,
-        name: `${carrierItemWithLocation.carrier} - ${carrierItemWithLocation.type} - ${carrierItemWithLocation.speed}`,
+        name: `${carrierItem.carrier} - ${carrierItem.type} - ${carrierItem.speed}`,
         description: '',
         item: {
-          id: `carrier-${carrierItemWithLocation.id}`,
+          id: `carrier-${carrierItem.id}`,
           user_id: '',
-          name: `${carrierItemWithLocation.carrier} - ${carrierItemWithLocation.type} - ${carrierItemWithLocation.speed}`,
+          name: `${carrierItem.carrier} - ${carrierItem.type} - ${carrierItem.speed}`,
           description: '',
           price: sellPrice,
           cost: isAdmin ? totalCostWithAddons : sellPrice, // Hide actual cost from agents, include add-ons for admins

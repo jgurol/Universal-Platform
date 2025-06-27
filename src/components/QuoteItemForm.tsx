@@ -1,10 +1,11 @@
 
+
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { Plus, Loader2 } from "lucide-react";
 import { Item } from "@/types/items";
-import { useCircuitQuotes } from "@/hooks/useCircuitQuotes";
+import { useCarrierQuoteItems } from "@/hooks/useCarrierQuoteItems";
 import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/context/AuthContext";
 import { useCategories } from "@/hooks/useCategories";
@@ -30,7 +31,7 @@ export const QuoteItemForm = ({
   disabled,
   clientInfoId
 }: QuoteItemFormProps) => {
-  const { quotes: circuitQuotes, loading: carrierLoading } = useCircuitQuotes();
+  const { carrierQuoteItems, loading: carrierLoading } = useCarrierQuoteItems(clientInfoId || null);
   const { isAdmin, user } = useAuth();
   const { categories } = useCategories();
   const { clients } = useClients();
@@ -108,19 +109,6 @@ export const QuoteItemForm = ({
     return totalCost; // If no matching category or no minimum markup, return total cost
   };
 
-  // Get carrier quotes for the specific client
-  const clientCircuitQuotes = circuitQuotes.filter(quote => 
-    quote.client_info_id === clientInfoId && quote.status === 'completed'
-  );
-  
-  // Extract all carrier quotes from completed circuit quotes with location info
-  const carrierQuoteItems = clientCircuitQuotes.flatMap(quote => 
-    quote.carriers.map(carrier => ({
-      ...carrier,
-      circuitQuoteLocation: quote.location // Add location from parent circuit quote
-    }))
-  );
-  
   console.log('[QuoteItemForm] Debug info:', {
     clientInfoId,
     carrierQuoteItemsCount: carrierQuoteItems.length,
@@ -157,7 +145,7 @@ export const QuoteItemForm = ({
   });
 
   return (
-    <div className="space-y-4 p-4 border rounded-lg bg-card">
+    <div className="space-y-4 p-4 border rounded-lg bg-blue-50">
       <div className="space-y-4">
         <Label>Add Item to Quote</Label>
         
@@ -172,19 +160,19 @@ export const QuoteItemForm = ({
               <SelectTrigger className="flex-1">
                 <SelectValue placeholder={isLoading ? "Loading catalog items..." : "Select from catalog"} />
               </SelectTrigger>
-              <SelectContent className="bg-popover z-50 min-w-[500px]">
+              <SelectContent className="bg-white z-50 min-w-[500px]">
                 {availableItems.length > 0 ? (
                   availableItems.map((item) => (
                     <SelectItem key={item.id} value={item.id}>
                       <div className="flex items-center gap-3 w-full min-w-0">
                         <span className="font-medium text-sm">{item.name}</span>
-                        <span className="text-xs text-muted-foreground">•</span>
-                        <span className="text-xs text-muted-foreground">{item.charge_type}</span>
-                        <span className="text-xs text-muted-foreground">•</span>
+                        <span className="text-xs text-gray-600">•</span>
+                        <span className="text-xs text-gray-600">{item.charge_type}</span>
+                        <span className="text-xs text-gray-600">•</span>
                         <span className="text-xs text-green-600 font-medium">${item.price}</span>
                         {isAdmin && (
                           <>
-                            <span className="text-xs text-muted-foreground">•</span>
+                            <span className="text-xs text-gray-600">•</span>
                             <span className="text-xs text-orange-600">Cost: ${item.cost}</span>
                           </>
                         )}
@@ -224,7 +212,7 @@ export const QuoteItemForm = ({
                         : "Select from carrier quotes"
                 } />
               </SelectTrigger>
-              <SelectContent className="bg-popover z-50 min-w-[700px]">
+              <SelectContent className="bg-white z-50 min-w-[700px]">
                 {hasCarrierItems ? (
                   sortedCarrierItems.map((carrierItem) => {
                     const sellPrice = calculateSellPrice(carrierItem, agentCommissionRate);
@@ -233,20 +221,20 @@ export const QuoteItemForm = ({
                       <SelectItem key={`carrier-${carrierItem.id}`} value={`carrier-${carrierItem.id}`}>
                         <div className="flex items-center gap-3 w-full min-w-0 whitespace-nowrap">
                           <span className="font-medium text-sm">{carrierItem.carrier}</span>
-                          <span className="text-xs text-muted-foreground">•</span>
-                          <span className="text-xs text-muted-foreground">{carrierItem.type}</span>
-                          <span className="text-xs text-muted-foreground">•</span>
-                          <span className="text-xs text-muted-foreground">{carrierItem.speed}</span>
-                          <span className="text-xs text-muted-foreground">•</span>
+                          <span className="text-xs text-gray-600">•</span>
+                          <span className="text-xs text-gray-600">{carrierItem.type}</span>
+                          <span className="text-xs text-gray-600">•</span>
+                          <span className="text-xs text-gray-600">{carrierItem.speed}</span>
+                          <span className="text-xs text-gray-600">•</span>
                           <span className="text-xs text-green-600 font-medium">${sellPrice.toFixed(2)}/month</span>
                           {isAdmin && (
                             <>
-                              <span className="text-xs text-muted-foreground">•</span>
+                              <span className="text-xs text-gray-600">•</span>
                               <span className="text-xs text-orange-600">Base Cost: ${baseCost.toFixed(2)}</span>
                             </>
                           )}
-                          <span className="text-xs text-muted-foreground">•</span>
-                          <span className="text-xs text-blue-600">{carrierItem.circuitQuoteLocation}</span>
+                          <span className="text-xs text-gray-600">•</span>
+                          <span className="text-xs text-blue-600">{carrierItem.location}</span>
                           <Badge variant="outline" className="text-xs whitespace-nowrap ml-auto">
                             Circuit Quote
                           </Badge>
