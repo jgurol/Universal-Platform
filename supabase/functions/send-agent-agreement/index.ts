@@ -27,10 +27,31 @@ Deno.serve(async (req) => {
 
     const { agentId, agentEmail, agentName, commissionRate }: RequestBody = await req.json();
     
+    console.log('Received request for agent:', { agentId, agentEmail, agentName });
+    
+    // First, let's verify the agent exists before creating the token
+    const { data: existingAgent, error: agentCheckError } = await supabaseClient
+      .from('agents')
+      .select('id, first_name, last_name, email')
+      .eq('id', agentId)
+      .maybeSingle();
+
+    if (agentCheckError) {
+      console.error('Error checking agent existence:', agentCheckError);
+      throw new Error('Failed to verify agent exists');
+    }
+
+    if (!existingAgent) {
+      console.error('Agent not found in database:', agentId);
+      throw new Error('Agent not found in database');
+    }
+
+    console.log('Agent verified:', existingAgent);
+    
     // Generate secure token for agent agreement access
     const token = crypto.randomUUID();
     const expiresAt = new Date();
-    expiresAt.setDate(expiresAt.getDate() + 30); // Token expires in 30 days (increased from 7)
+    expiresAt.setDate(expiresAt.getDate() + 30); // Token expires in 30 days
 
     console.log('Creating token for agent:', agentId, 'Token expires at:', expiresAt.toISOString());
 
