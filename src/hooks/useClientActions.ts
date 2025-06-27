@@ -59,40 +59,41 @@ export const useClientActions = (
 
         setClients([...clients, newClientWithId]);
 
-        // Send agent agreement email with proper error handling
-        try {
-          const emailPayload = {
-            agentId: data.id,
-            agentEmail: data.email,
-            agentName: `${data.first_name} ${data.last_name}`,
-            commissionRate: data.commission_rate,
-            templateId: newClient.selectedTemplateId || null
-          };
-          
-          console.log('About to call send-agent-agreement function with payload:', emailPayload);
+        // Prepare email payload
+        const emailPayload = {
+          agentId: data.id,
+          agentEmail: data.email,
+          agentName: `${data.first_name} ${data.last_name}`,
+          commissionRate: data.commission_rate,
+          templateId: newClient.selectedTemplateId || null
+        };
+        
+        console.log('🚀 About to call send-agent-agreement function with payload:', emailPayload);
 
+        try {
+          // Call the edge function to send agreement email
           const { data: emailResult, error: emailError } = await supabase.functions.invoke('send-agent-agreement', {
             body: emailPayload
           });
 
-          console.log('Email function response - data:', emailResult);
-          console.log('Email function response - error:', emailError);
+          console.log('📧 Email function response - data:', emailResult);
+          console.log('📧 Email function response - error:', emailError);
 
           if (emailError) {
-            console.error('Supabase function invocation error:', emailError);
+            console.error('❌ Supabase function invocation error:', emailError);
             toast({
               title: "Agent added but email failed",
               description: `The agent was added successfully, but we couldn't send the agreement email: ${emailError.message}`,
               variant: "destructive"
             });
           } else if (emailResult?.success) {
-            console.log('Email sent successfully:', emailResult);
+            console.log('✅ Email sent successfully:', emailResult);
             toast({
               title: "Agent added and email sent!",
               description: `${newClientWithId.name} has been added and will receive an agreement email shortly.`,
             });
           } else {
-            console.error('Email function returned failure:', emailResult);
+            console.error('❌ Email function returned failure:', emailResult);
             toast({
               title: "Agent added but email failed",
               description: `The agent was added successfully, but the email service returned an error: ${emailResult?.error || 'Unknown error'}`,
@@ -100,7 +101,13 @@ export const useClientActions = (
             });
           }
         } catch (emailError) {
-          console.error('Exception when calling email function:', emailError);
+          console.error('💥 Exception when calling email function:', emailError);
+          console.error('💥 Exception details:', {
+            name: emailError instanceof Error ? emailError.name : 'Unknown',
+            message: emailError instanceof Error ? emailError.message : 'Unknown error',
+            stack: emailError instanceof Error ? emailError.stack : 'No stack trace'
+          });
+          
           toast({
             title: "Agent added but email failed",
             description: `The agent was added successfully, but there was an exception calling the email service: ${emailError instanceof Error ? emailError.message : 'Unknown error'}`,
@@ -111,7 +118,7 @@ export const useClientActions = (
         return newClientWithId;
       }
     } catch (err) {
-      console.error('Error in add client operation:', err);
+      console.error('💥 Error in add client operation:', err);
       toast({
         title: "Error",
         description: "Failed to add agent",
