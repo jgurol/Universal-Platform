@@ -68,19 +68,30 @@ export const useClientActions = (
           templateId: newClient.selectedTemplateId || null
         };
         
-        console.log('🚀 About to call send-agent-agreement function with payload:', emailPayload);
+        console.log('🚀 About to call send-agent-agreement function');
+        console.log('📧 Payload:', emailPayload);
+        console.log('🔗 Supabase URL:', supabase.supabaseUrl);
 
         try {
           // Call the edge function to send agreement email
+          console.log('📡 Invoking Supabase function...');
+          
           const { data: emailResult, error: emailError } = await supabase.functions.invoke('send-agent-agreement', {
             body: emailPayload
           });
 
-          console.log('📧 Email function response - data:', emailResult);
-          console.log('📧 Email function response - error:', emailError);
+          console.log('📧 Email function response received');
+          console.log('📧 Response data:', emailResult);
+          console.log('📧 Response error:', emailError);
 
           if (emailError) {
             console.error('❌ Supabase function invocation error:', emailError);
+            console.error('❌ Error details:', {
+              message: emailError.message,
+              code: emailError.code,
+              details: emailError.details,
+              hint: emailError.hint
+            });
             toast({
               title: "Agent added but email failed",
               description: `The agent was added successfully, but we couldn't send the agreement email: ${emailError.message}`,
@@ -102,15 +113,18 @@ export const useClientActions = (
           }
         } catch (emailError) {
           console.error('💥 Exception when calling email function:', emailError);
+          console.error('💥 Exception type:', typeof emailError);
+          console.error('💥 Exception constructor:', emailError?.constructor?.name);
           console.error('💥 Exception details:', {
             name: emailError instanceof Error ? emailError.name : 'Unknown',
             message: emailError instanceof Error ? emailError.message : 'Unknown error',
-            stack: emailError instanceof Error ? emailError.stack : 'No stack trace'
+            stack: emailError instanceof Error ? emailError.stack : 'No stack trace',
+            cause: emailError instanceof Error ? emailError.cause : 'No cause'
           });
           
           toast({
             title: "Agent added but email failed",
-            description: `The agent was added successfully, but there was an exception calling the email service: ${emailError instanceof Error ? emailError.message : 'Unknown error'}`,
+            description: `The agent was added successfully, but there was an exception calling the email service: ${emailError instanceof Error ? emailError.message : 'Network error occurred'}`,
             variant: "destructive"
           });
         }
