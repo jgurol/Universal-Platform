@@ -34,8 +34,7 @@ export const IndexPageLayout = () => {
 
   const { addClient, updateClient, deleteClient } = useClientActions(
     clients,
-    setClients,
-    fetchClients
+    setClients
   );
 
   const {
@@ -47,13 +46,30 @@ export const IndexPageLayout = () => {
   } = useQuoteActions(quotes, setQuotes, fetchQuotes);
 
   const {
-    transactions,
     addTransaction,
     updateTransaction,
     approveCommission,
     payCommission,
     deleteTransaction
-  } = useTransactionActions();
+  } = useTransactionActions(clients, fetchQuotes);
+
+  // Convert quotes to transactions format for display
+  const transactions = quotes.map(quote => ({
+    id: quote.id,
+    clientId: quote.clientId || '',
+    clientName: quote.clientName || '',
+    clientInfoId: quote.clientInfoId || '',
+    amount: Number(quote.amount),
+    date: quote.date,
+    description: quote.description || '',
+    invoiceNumber: quote.quoteNumber || '',
+    invoiceMonth: quote.quoteMonth || '',
+    invoiceYear: quote.quoteYear || '',
+    isPaid: quote.status === 'approved',
+    paymentMethod: '',
+    referenceNumber: '',
+    commissionOverride: quote.commissionOverride
+  }));
 
   // Filter quotes based on active filter
   const filteredQuotes = activeFilter 
