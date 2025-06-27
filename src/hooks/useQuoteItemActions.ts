@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { QuoteItemData } from "@/types/quoteItems";
 import { useItems } from "@/hooks/useItems";
@@ -22,10 +21,11 @@ export const useQuoteItemActions = (clientInfoId?: string) => {
   // Get agent commission rate from clients data
   const currentAgent = clients.find(client => client.id === user?.id);
   const agentCommissionRate = currentAgent?.commissionRate || 15;
+  const isAgentOptedOut = agentCommissionRate === 0;
 
   // Helper function to extract term months from term string
   const getTermMonths = (term: string | undefined): number => {
-    if (!term) return 36; // Default to 36 months if no term specified
+    if (!term) return 36;
     
     const termLower = term.toLowerCase();
     const monthMatch = termLower.match(/(\d+)\s*month/);
@@ -37,7 +37,7 @@ export const useQuoteItemActions = (clientInfoId?: string) => {
       return parseInt(yearMatch[1]) * 12;
     }
     
-    return 36; // Default fallback
+    return 36;
   };
 
   const calculateSellPrice = (carrierItem: any, commissionRate: number = agentCommissionRate) => {
@@ -64,12 +64,17 @@ export const useQuoteItemActions = (clientInfoId?: string) => {
       totalCost += carrierItem.other_costs;
     }
 
+    // If agent is opted out of commission, return the total cost as sell price
+    if (isAgentOptedOut) {
+      return totalCost;
+    }
+
     if (isAdmin) {
       return totalCost;
     }
 
     if (!carrierItem.type || !categories.length) {
-      return totalCost; // If no category or categories not loaded, return total cost as sell price
+      return totalCost;
     }
 
     // Find the category that matches the carrier quote type
@@ -86,10 +91,10 @@ export const useQuoteItemActions = (clientInfoId?: string) => {
       
       // Apply the effective minimum markup: sell price = cost * (1 + effectiveMinimumMarkup/100)
       const markup = effectiveMinimumMarkup / 100;
-      return Math.round(totalCost * (1 + markup) * 100) / 100; // Round to 2 decimal places
+      return Math.round(totalCost * (1 + markup) * 100) / 100;
     }
 
-    return totalCost; // If no matching category or no minimum markup, return total cost
+    return totalCost;
   };
 
   const addCarrierItem = async (carrierQuoteId: string, items: QuoteItemData[], onItemsChange: (items: QuoteItemData[]) => void) => {
@@ -227,7 +232,7 @@ export const useQuoteItemActions = (clientInfoId?: string) => {
       item_id: selectedItemId,
       quantity: 1,
       unit_price: selectedItem.price,
-      cost_override: isAdmin ? selectedItem.cost : undefined, // Only set cost for admins
+      cost_override: isAdmin ? selectedItem.cost : undefined,
       total_price: selectedItem.price,
       charge_type: (selectedItem.charge_type as 'NRC' | 'MRC') || 'NRC',
       address_id: addresses.length > 0 ? addresses[0].id : undefined,
@@ -237,7 +242,6 @@ export const useQuoteItemActions = (clientInfoId?: string) => {
       address: addresses.length > 0 ? addresses[0] : undefined
     };
 
-    // Add to the items list
     onItemsChange([...items, newItem]);
     setSelectedItemId("");
   };
@@ -252,6 +256,7 @@ export const useQuoteItemActions = (clientInfoId?: string) => {
     addRegularItem,
     addresses,
     carrierQuoteItems,
-    agentCommissionRate
+    agentCommissionRate,
+    isAgentOptedOut
   };
 };
