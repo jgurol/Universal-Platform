@@ -1,160 +1,31 @@
 
-import { useState, useEffect } from "react";
+import React from "react";
 import { NavigationBar } from "@/components/NavigationBar";
 import { Header } from "@/components/Header";
 import { ProgramsGrid } from "@/components/ProgramsGrid";
-import { AddClientDialog } from "@/components/AddClientDialog";
-import { useClientManagement } from "@/hooks/useClientManagement";
-import { Client, ClientInfo } from "@/types/index";
-import { useAuth } from "@/context/AuthContext";
-import { supabase } from "@/integrations/supabase/client";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { User, Building, Percent } from "lucide-react";
+import { StatsCards } from "@/components/StatsCards";
+import { RecentQuotes } from "@/components/RecentQuotes";
+import { RecentTransactions } from "@/components/RecentTransactions";
+import { CommissionChart } from "@/components/CommissionChart";
+import { AgentSummary } from "@/components/AgentSummary";
 
 export const IndexPageLayout = () => {
-  const [isAddClientOpen, setIsAddClientOpen] = useState(false);
-  const [associatedAgentId, setAssociatedAgentId] = useState<string | null>(null);
-  const [associatedAgentInfo, setAssociatedAgentInfo] = useState<{
-    name: string;
-    company: string;
-    email: string;
-    commissionRate: number;
-  } | null>(null);
-  const { isAdmin, user } = useAuth();
-
-  // Fetch the associated agent ID for the current user
-  useEffect(() => {
-    if (user) {
-      fetchUserProfile();
-    }
-  }, [user]);
-
-  // Fetch user's profile to get associated agent ID
-  const fetchUserProfile = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('associated_agent_id')
-        .eq('id', user?.id)
-        .single();
-      
-      if (error) {
-        console.error('[fetchUserProfile] Error fetching user profile:', error);
-        return;
-      }
-      
-      console.log("[fetchUserProfile] User profile data:", data);
-      setAssociatedAgentId(data?.associated_agent_id || null);
-      
-      // If user has an associated agent, fetch agent details
-      if (data?.associated_agent_id) {
-        fetchAssociatedAgentInfo(data.associated_agent_id);
-      }
-    } catch (err) {
-      console.error('[fetchUserProfile] Exception fetching user profile:', err);
-    }
-  };
-
-  // Fetch associated agent information
-  const fetchAssociatedAgentInfo = async (agentId: string) => {
-    try {
-      const { data, error } = await supabase
-        .from('agents')
-        .select('first_name, last_name, company_name, email, commission_rate')
-        .eq('id', agentId)
-        .single();
-      
-      if (error) {
-        console.error('[fetchAssociatedAgentInfo] Error fetching agent info:', error);
-        return;
-      }
-      
-      if (data) {
-        setAssociatedAgentInfo({
-          name: `${data.first_name} ${data.last_name}`,
-          company: data.company_name || '',
-          email: data.email || '',
-          commissionRate: data.commission_rate || 0
-        });
-      }
-    } catch (err) {
-      console.error('[fetchAssociatedAgentInfo] Exception fetching agent info:', err);
-    }
-  };
-
-  // Placeholder functions for now - these will be implemented when the full dashboard functionality is needed
-  const handleAddClient = async (client: Omit<Client, "id" | "totalEarnings" | "lastPayment">) => {
-    console.log('Add client:', client);
-  };
-
-  const handleFetchClients = async () => {
-    console.log('Fetch clients');
-  };
-
   return (
-    <>
+    <div>
       <NavigationBar />
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
-        <div className="container mx-auto px-4 py-8 max-w-7xl">
-          {/* Header */}
-          <Header />
-
-          {/* Associated Agent Info Card - Show for non-admin users */}
-          {!isAdmin && associatedAgentInfo && (
-            <Card className="bg-gradient-to-r from-blue-50 to-indigo-50 shadow-lg border-0 mt-8 mb-6">
-              <CardHeader>
-                <CardTitle className="text-lg font-semibold text-gray-900 flex items-center gap-2">
-                  <User className="h-5 w-5 text-blue-600" />
-                  Your Associated Agent
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="flex flex-col md:flex-row gap-4">
-                  <div className="flex items-center gap-2">
-                    <Badge variant="secondary" className="bg-blue-100 text-blue-800">
-                      <User className="w-3 h-3 mr-1" />
-                      {associatedAgentInfo.name}
-                    </Badge>
-                  </div>
-                  {associatedAgentInfo.company && (
-                    <div className="flex items-center gap-2">
-                      <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
-                        <Building className="w-3 h-3 mr-1" />
-                        {associatedAgentInfo.company}
-                      </Badge>
-                    </div>
-                  )}
-                  <div className="flex items-center gap-2">
-                    <Badge variant="outline" className="bg-purple-50 text-purple-700 border-purple-200">
-                      <Percent className="w-3 h-3 mr-1" />
-                      {associatedAgentInfo.commissionRate}% Commission
-                    </Badge>
-                  </div>
-                  {associatedAgentInfo.email && (
-                    <div className="text-sm text-gray-600">
-                      Contact: {associatedAgentInfo.email}
-                    </div>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Programs Grid */}
-          <ProgramsGrid />
+      <div className="container mx-auto px-4 py-8">
+        <Header />
+        <StatsCards />
+        <ProgramsGrid />
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mt-8">
+          <RecentQuotes />
+          <RecentTransactions />
         </div>
-
-        {/* Add Client Dialog */}
-        {isAdmin && (
-          <AddClientDialog 
-            open={isAddClientOpen}
-            onOpenChange={setIsAddClientOpen}
-            onAddClient={handleAddClient}
-            onFetchClients={handleFetchClients}
-          />
-        )}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mt-8">
+          <CommissionChart />
+          <AgentSummary />
+        </div>
       </div>
-    </>
+    </div>
   );
 };
