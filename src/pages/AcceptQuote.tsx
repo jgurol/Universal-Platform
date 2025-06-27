@@ -135,7 +135,7 @@ const AcceptQuote = () => {
       if (!quoteData) throw new Error('Quote not found');
 
       console.log('Quote data fetched:', quoteData);
-      console.log('Quote term field:', quoteData.term); // Debug log for term field
+      console.log('Quote term field:', (quoteData as any).term); // Debug log for term field
       
       // Transform the database quote to match our Quote interface
       const transformedQuote: Quote = {
@@ -152,7 +152,7 @@ const AcceptQuote = () => {
         quoteNumber: quoteData.quote_number,
         quoteMonth: quoteData.quote_month,
         quoteYear: quoteData.quote_year,
-        term: quoteData.term || '', // Ensure term is populated
+        term: (quoteData as any).term || '', // Safely access term with type assertion
         expiresAt: quoteData.expires_at,
         commission: quoteData.commission,
         commissionOverride: quoteData.commission_override,
