@@ -61,13 +61,14 @@ export const EditDealDialog = ({
   useEffect(() => {
     if (deal && open) {
       console.log('Setting form data for deal:', deal);
-      reset({
+      // Reset form with all deal data
+      const formData = {
         ...deal,
         expected_close_date: deal.expected_close_date || null,
-        // Ensure agent_id is properly set
         agent_id: deal.agent_id || null,
         client_info_id: deal.client_info_id || null
-      });
+      };
+      reset(formData);
     }
   }, [deal, open, reset]);
 
