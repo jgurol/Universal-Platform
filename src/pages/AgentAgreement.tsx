@@ -34,6 +34,7 @@ export default function AgentAgreement() {
   const [agentData, setAgentData] = useState<AgentData | null>(null);
   const [tokenData, setTokenData] = useState<TokenData | null>(null);
   const [agreementTemplate, setAgreementTemplate] = useState<string>('');
+  const [templateLoading, setTemplateLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [validationError, setValidationError] = useState<string>('');
@@ -133,7 +134,7 @@ export default function AgentAgreement() {
         fullName: `${agent.first_name} ${agent.last_name}`,
       }));
 
-      // Load the default agreement template
+      // Load the agreement template
       await loadAgreementTemplate();
       
       setIsValidToken(true);
@@ -147,23 +148,30 @@ export default function AgentAgreement() {
 
   const loadAgreementTemplate = async () => {
     try {
+      setTemplateLoading(true);
+      console.log('Loading agreement template...');
+      
       // Try to get the default template first
       let { data: template, error } = await supabase
         .from('agent_agreement_templates')
-        .select('content')
+        .select('content, name')
         .eq('is_default', true)
         .maybeSingle();
 
+      console.log('Default template query result:', { template, error });
+
       // If no default template, get the first available template
-      if (!template) {
+      if (!template && !error) {
+        console.log('No default template found, trying to get first available template...');
         const { data: firstTemplate, error: firstError } = await supabase
           .from('agent_agreement_templates')
-          .select('content')
+          .select('content, name')
           .limit(1)
           .maybeSingle();
         
         template = firstTemplate;
         error = firstError;
+        console.log('First template query result:', { template, error });
       }
 
       if (error) {
@@ -173,15 +181,19 @@ export default function AgentAgreement() {
         return;
       }
 
-      if (template) {
+      if (template && template.content) {
+        console.log('Template loaded successfully:', template.name, 'Content length:', template.content.length);
         setAgreementTemplate(template.content);
       } else {
+        console.log('No template content found, using fallback');
         // Use fallback content if no templates exist
         setAgreementTemplate(getDefaultAgreementContent());
       }
     } catch (error) {
       console.error('Error in loadAgreementTemplate:', error);
       setAgreementTemplate(getDefaultAgreementContent());
+    } finally {
+      setTemplateLoading(false);
     }
   };
 
@@ -402,12 +414,20 @@ export default function AgentAgreement() {
               <div className="prose max-w-none">
                 <h3>Agent Agreement Terms</h3>
                 <ScrollArea className="h-64 w-full border rounded-lg">
-                  <div 
-                    className="bg-gray-50 p-4 text-sm"
-                    dangerouslySetInnerHTML={{ 
-                      __html: agreementTemplate.replace(/\{\{commission_rate\}\}/g, agentData?.commission_rate?.toString() || '0')
-                    }}
-                  />
+                  <div className="bg-gray-50 p-4 text-sm">
+                    {templateLoading ? (
+                      <div className="text-center py-8">
+                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto mb-4"></div>
+                        <p>Loading agreement template...</p>
+                      </div>
+                    ) : (
+                      <div 
+                        dangerouslySetInnerHTML={{ 
+                          __html: agreementTemplate.replace(/\{\{commission_rate\}\}/g, agentData?.commission_rate?.toString() || '0')
+                        }}
+                      />
+                    )}
+                  </div>
                 </ScrollArea>
               </div>
 
@@ -546,7 +566,7 @@ export default function AgentAgreement() {
               <Button
                 type="submit"
                 className="w-full"
-                disabled={isSubmitting}
+                disabled={isSubmitting || templateLoading}
               >
                 {isSubmitting ? 'Submitting...' : 'Submit Agent Agreement'}
               </Button>
