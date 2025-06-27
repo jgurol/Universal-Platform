@@ -30,7 +30,9 @@ Deno.serve(async (req) => {
     // Generate secure token for agent agreement access
     const token = crypto.randomUUID();
     const expiresAt = new Date();
-    expiresAt.setDate(expiresAt.getDate() + 7); // Token expires in 7 days
+    expiresAt.setDate(expiresAt.getDate() + 30); // Token expires in 30 days (increased from 7)
+
+    console.log('Creating token for agent:', agentId, 'Token expires at:', expiresAt.toISOString());
 
     // Store the token in database
     const { error: tokenError } = await supabaseClient
@@ -48,6 +50,7 @@ Deno.serve(async (req) => {
 
     // Create agreement form URL
     const agreementUrl = `${req.headers.get('origin')}/agent-agreement/${token}`;
+    console.log('Agreement URL created:', agreementUrl);
 
     // Send email using Resend
     const resendApiKey = Deno.env.get('RESEND_API_KEY');
@@ -70,7 +73,7 @@ Deno.serve(async (req) => {
       <p><strong>Click the link below to access your agent agreement form:</strong></p>
       <p><a href="${agreementUrl}" style="background-color: #4CAF50; color: white; padding: 12px 24px; text-decoration: none; border-radius: 4px; display: inline-block;">Complete Agent Agreement</a></p>
       
-      <p><em>This link will expire in 7 days. If you need assistance, please contact us.</em></p>
+      <p><em>This link will expire in 30 days. If you need assistance, please contact us.</em></p>
       
       <p>Best regards,<br>The Team</p>
     `;
