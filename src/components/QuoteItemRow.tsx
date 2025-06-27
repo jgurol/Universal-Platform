@@ -33,13 +33,13 @@ export const QuoteItemRow = ({ quoteItem, addresses, onUpdateItem, onRemoveItem,
   const { user, isAdmin } = useAuth();
   const { clients } = useClients();
 
-  // Get agent commission rate from clients data
-  const currentAgent = clients.find(client => client.id === user?.id);
+  // Get agent commission rate from clients data - match by email instead of ID
+  const currentAgent = clients.find(client => client.email === user?.email);
   const agentCommissionRate = currentAgent?.commissionRate || 15;
   const isAgentOptedOut = agentCommissionRate === 0;
   
   console.log('[QuoteItemRow] Debug agent commission:', {
-    userId: user?.id,
+    userEmail: user?.email,
     currentAgent: currentAgent?.name,
     agentCommissionRate,
     isAgentOptedOut
