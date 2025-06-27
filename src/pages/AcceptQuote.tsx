@@ -14,31 +14,36 @@ import SignatureCanvas from 'react-signature-canvas';
 
 interface Quote {
   id: string;
-  user_id: string;
-  client_id?: string;
-  client_info_id?: string;
+  clientId: string;
+  clientName: string;
+  companyName: string;
   amount: number;
   date: string;
-  commission?: number;
-  commission_override?: number;
   description?: string;
-  quote_number?: string;
-  quote_month?: string;
-  quote_year?: string;
   status: string;
+  clientInfoId?: string;
+  clientCompanyName?: string;
+  commissionOverride?: number;
   notes?: string;
-  expires_at?: string;
-  billing_address?: string;
-  service_address?: string;
-  template_id?: string;
-  email_status?: string;
-  accepted_by?: string;
-  email_sent_at?: string;
-  email_opened?: boolean;
-  email_opened_at?: string;
-  email_open_count?: number;
-  created_at: string;
-  updated_at: string;
+  quoteItems?: QuoteItem[];
+  quoteNumber?: string;
+  quoteMonth?: string;
+  quoteYear?: string;
+  term?: string;
+  expiresAt?: string;
+  acceptedAt?: string;
+  commission?: number;
+  archived?: boolean;
+  billingAddress?: string;
+  serviceAddress?: string;
+  templateId?: string;
+  emailStatus?: string;
+  acceptedBy?: string;
+  emailSentAt?: string;
+  emailOpened?: boolean;
+  emailOpenedAt?: string;
+  emailOpenCount?: number;
+  user_id?: string;
 }
 
 interface QuoteItem {
@@ -130,15 +135,47 @@ const AcceptQuote = () => {
       if (!quoteData) throw new Error('Quote not found');
 
       console.log('Quote data fetched:', quoteData);
-      setQuote(quoteData);
+      
+      // Transform the database quote to match our Quote interface
+      const transformedQuote: Quote = {
+        id: quoteData.id,
+        clientId: quoteData.client_id || '',
+        clientName: '', // Will be populated from client info
+        companyName: '', // Will be populated from client info
+        amount: quoteData.amount,
+        date: quoteData.date,
+        description: quoteData.description,
+        status: quoteData.status || 'pending',
+        clientInfoId: quoteData.client_info_id,
+        notes: quoteData.notes,
+        quoteNumber: quoteData.quote_number,
+        quoteMonth: quoteData.quote_month,
+        quoteYear: quoteData.quote_year,
+        term: quoteData.term, // Add term field
+        expiresAt: quoteData.expires_at,
+        commission: quoteData.commission,
+        commissionOverride: quoteData.commission_override,
+        billingAddress: quoteData.billing_address,
+        serviceAddress: quoteData.service_address,
+        templateId: quoteData.template_id,
+        emailStatus: quoteData.email_status,
+        acceptedBy: quoteData.accepted_by,
+        emailSentAt: quoteData.email_sent_at,
+        emailOpened: quoteData.email_opened,
+        emailOpenedAt: quoteData.email_opened_at,
+        emailOpenCount: quoteData.email_open_count,
+        user_id: quoteData.user_id
+      };
+      
+      setQuote(transformedQuote);
 
       // Fetch template content if template_id exists
-      if (quoteData.template_id) {
+      if (transformedQuote.templateId) {
         setTemplateLoading(true);
         const { data: template, error: templateError } = await supabase
           .from('quote_templates')
           .select('content')
-          .eq('id', quoteData.template_id)
+          .eq('id', transformedQuote.templateId)
           .single();
 
         if (!templateError && template) {
@@ -167,7 +204,7 @@ const AcceptQuote = () => {
       }
 
       // Check if quote is expired
-      if (quoteData.expires_at && new Date(quoteData.expires_at) < new Date()) {
+      if (transformedQuote.expiresAt && new Date(transformedQuote.expiresAt) < new Date()) {
         setError('This quote has expired and can no longer be accepted.');
         setIsLoading(false);
         return;
@@ -193,11 +230,11 @@ const AcceptQuote = () => {
       setQuoteItems(transformedItems);
 
       // Fetch client info if available
-      if (quoteData.client_info_id) {
+      if (transformedQuote.clientInfoId) {
         const { data: clientData, error: clientError } = await supabase
           .from('client_info')
           .select('*')
-          .eq('id', quoteData.client_info_id)
+          .eq('id', transformedQuote.clientInfoId)
           .single();
 
         if (!clientError && clientData) {
@@ -496,16 +533,16 @@ const AcceptQuote = () => {
                 <div className="space-y-2 text-sm">
                   <div className="flex justify-between">
                     <span className="text-gray-600">Quote Number:</span>
-                    <span className="font-medium">{quote.quote_number || `Q-${quote.id.slice(0, 8)}`}</span>
+                    <span className="font-medium">{quote.quoteNumber || `Q-${quote.id.slice(0, 8)}`}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-gray-600">Date:</span>
                     <span className="font-medium">{new Date(quote.date).toLocaleDateString()}</span>
                   </div>
-                  {quote.expires_at && (
+                  {quote.expiresAt && (
                     <div className="flex justify-between">
                       <span className="text-gray-600">Expires:</span>
-                      <span className="font-medium">{new Date(quote.expires_at).toLocaleDateString()}</span>
+                      <span className="font-medium">{new Date(quote.expiresAt).toLocaleDateString()}</span>
                     </div>
                   )}
                   <div className="flex justify-between">
@@ -606,7 +643,7 @@ const AcceptQuote = () => {
             </div>
 
             {/* Initial Term */}
-            {quote.term && (
+            {quote?.term && (
               <div className="space-y-4">
                 <h3 className="text-lg font-semibold text-gray-900">Initial Term</h3>
                 <div className="bg-gray-50 border rounded-lg p-4">
