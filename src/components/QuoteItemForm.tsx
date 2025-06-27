@@ -6,6 +6,7 @@ import { Plus, Loader2 } from "lucide-react";
 import { Item } from "@/types/items";
 import { useCarrierQuoteItems } from "@/hooks/useCarrierQuoteItems";
 import { Badge } from "@/components/ui/badge";
+import { useAuth } from "@/context/AuthContext";
 
 interface QuoteItemFormProps {
   selectedItemId: string;
@@ -27,6 +28,7 @@ export const QuoteItemForm = ({
   clientInfoId
 }: QuoteItemFormProps) => {
   const { carrierQuoteItems, loading: carrierLoading } = useCarrierQuoteItems(clientInfoId || null);
+  const { isAdmin } = useAuth();
 
   console.log('[QuoteItemForm] Debug info:', {
     clientInfoId,
@@ -75,7 +77,13 @@ export const QuoteItemForm = ({
                         <span className="text-xs text-gray-600">•</span>
                         <span className="text-xs text-gray-600">{item.charge_type}</span>
                         <span className="text-xs text-gray-600">•</span>
-                        <span className="text-xs text-green-600 font-medium">${item.cost}</span>
+                        <span className="text-xs text-green-600 font-medium">${item.price}</span>
+                        {isAdmin && (
+                          <>
+                            <span className="text-xs text-gray-600">•</span>
+                            <span className="text-xs text-orange-600">Cost: ${item.cost}</span>
+                          </>
+                        )}
                         <Badge variant="outline" className="text-xs whitespace-nowrap ml-auto">
                           Catalog
                         </Badge>
@@ -123,7 +131,13 @@ export const QuoteItemForm = ({
                         <span className="text-xs text-gray-600">•</span>
                         <span className="text-xs text-gray-600">{carrierItem.speed}</span>
                         <span className="text-xs text-gray-600">•</span>
-                        <span className="text-xs text-green-600 font-medium">${carrierItem.price.toFixed(2)}/month</span>
+                        <span className="text-xs text-green-600 font-medium">${carrierItem.sell_price ? carrierItem.sell_price.toFixed(2) : carrierItem.price.toFixed(2)}/month</span>
+                        {isAdmin && (
+                          <>
+                            <span className="text-xs text-gray-600">•</span>
+                            <span className="text-xs text-orange-600">Cost: ${carrierItem.price.toFixed(2)}</span>
+                          </>
+                        )}
                         <span className="text-xs text-gray-600">•</span>
                         <span className="text-xs text-blue-600">{carrierItem.location}</span>
                         <Badge variant="outline" className="text-xs whitespace-nowrap ml-auto">

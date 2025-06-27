@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { QuoteItemData } from "@/types/quoteItems";
 import { useItems } from "@/hooks/useItems";
@@ -13,7 +14,7 @@ export const useQuoteItemActions = (clientInfoId?: string) => {
   const { addresses, addAddress } = useClientAddresses(clientInfoId || null);
   const { carrierQuoteItems } = useCarrierQuoteItems(clientInfoId || null);
   const { categories } = useCategories();
-  const { user } = useAuth();
+  const { user, isAdmin } = useAuth();
   const { clients } = useClients();
   const [selectedItemId, setSelectedItemId] = useState("");
   const [isAddingCarrierItem, setIsAddingCarrierItem] = useState(false);
@@ -121,7 +122,7 @@ export const useQuoteItemActions = (clientInfoId?: string) => {
         item_id: `carrier-${carrierItem.id}`,
         quantity: 1,
         unit_price: sellPrice,
-        cost_override: carrierItem.price,
+        cost_override: isAdmin ? carrierItem.price : undefined, // Only set cost for admins
         total_price: sellPrice,
         charge_type: 'MRC',
         address_id: matchingAddress?.id,
@@ -133,7 +134,7 @@ export const useQuoteItemActions = (clientInfoId?: string) => {
           name: `${carrierItem.carrier} - ${carrierItem.type} - ${carrierItem.speed}`,
           description: '',
           price: sellPrice,
-          cost: carrierItem.price,
+          cost: isAdmin ? carrierItem.price : sellPrice, // Hide actual cost from agents
           charge_type: 'MRC',
           is_active: true,
           category_id: matchingCategory?.id, // Add category_id here
@@ -165,7 +166,7 @@ export const useQuoteItemActions = (clientInfoId?: string) => {
       item_id: selectedItemId,
       quantity: 1,
       unit_price: selectedItem.price,
-      cost_override: selectedItem.cost,
+      cost_override: isAdmin ? selectedItem.cost : undefined, // Only set cost for admins
       total_price: selectedItem.price,
       charge_type: (selectedItem.charge_type as 'NRC' | 'MRC') || 'NRC',
       address_id: addresses.length > 0 ? addresses[0].id : undefined,
