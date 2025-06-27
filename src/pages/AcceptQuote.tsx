@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import { ClientInfo } from "@/types/index";
@@ -642,8 +643,8 @@ const AcceptQuote = () => {
               </div>
             </div>
 
-            {/* Initial Term */}
-            {quote?.term && (
+            {/* Initial Term - Updated condition to always show if term exists */}
+            {quote.term && quote.term.trim() !== '' && (
               <div className="space-y-4">
                 <h3 className="text-lg font-semibold text-gray-900">Initial Term</h3>
                 <div className="bg-gray-50 border rounded-lg p-4">
