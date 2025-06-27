@@ -112,11 +112,11 @@ export default function AgentAgreement() {
 
       setTokenData(tokenData);
 
-      // Load agent data
+      // Load agent data - try with better error handling
       console.log('Loading agent data for ID:', tokenData.agent_id);
       const { data: agent, error: agentError } = await supabase
         .from('agents')
-        .select('*')
+        .select('id, first_name, last_name, email, company_name, commission_rate')
         .eq('id', tokenData.agent_id)
         .maybeSingle();
 
@@ -124,14 +124,22 @@ export default function AgentAgreement() {
 
       if (agentError) {
         console.error('Agent query error:', agentError);
-        setValidationError('Error loading agent information');
+        setValidationError(`Error loading agent information: ${agentError.message}`);
         setIsValidToken(false);
         return;
       }
 
       if (!agent) {
-        console.log('Agent not found');
-        setValidationError('Agent not found');
+        console.log('Agent not found with ID:', tokenData.agent_id);
+        // Let's try to see what agents exist
+        const { data: allAgents, error: allAgentsError } = await supabase
+          .from('agents')
+          .select('id, first_name, last_name, email');
+        
+        console.log('All agents in database:', allAgents);
+        console.log('All agents query error:', allAgentsError);
+        
+        setValidationError(`Agent not found. Agent ID: ${tokenData.agent_id}. Please contact support.`);
         setIsValidToken(false);
         return;
       }
@@ -146,7 +154,7 @@ export default function AgentAgreement() {
 
     } catch (error) {
       console.error('Error validating token:', error);
-      setValidationError('Unexpected error occurred while validating the link');
+      setValidationError(`Unexpected error occurred: ${error instanceof Error ? error.message : 'Unknown error'}`);
       setIsValidToken(false);
     }
   };
