@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { useToast } from '@/hooks/use-toast';
 import SignatureCanvas from 'react-signature-canvas';
 import { Upload, FileText, CheckCircle } from 'lucide-react';
@@ -326,22 +327,34 @@ export default function AgentAgreement() {
               {/* Agent Agreement Terms */}
               <div className="prose max-w-none">
                 <h3>Agent Agreement Terms</h3>
-                <div className="bg-gray-50 p-4 rounded-lg text-sm">
-                  <p><strong>INDEPENDENT SALES AGENT AGREEMENT</strong></p>
-                  <p>This Agreement is entered into between the Company and the Agent named below.</p>
-                  
-                  <p><strong>1. APPOINTMENT:</strong> Company hereby appoints Agent as an independent sales representative to solicit orders for Company's products and services.</p>
-                  
-                  <p><strong>2. COMMISSION:</strong> Agent shall receive a commission of {agentData?.commission_rate}% on all accepted orders procured by Agent.</p>
-                  
-                  <p><strong>3. TERRITORY:</strong> Agent's territory shall be as mutually agreed upon in writing.</p>
-                  
-                  <p><strong>4. INDEPENDENT CONTRACTOR:</strong> Agent is an independent contractor and not an employee of Company.</p>
-                  
-                  <p><strong>5. CONFIDENTIALITY:</strong> Agent agrees to maintain confidentiality of all Company information.</p>
-                  
-                  <p><strong>6. TERMINATION:</strong> Either party may terminate this agreement with 30 days written notice.</p>
-                </div>
+                <ScrollArea className="h-64 w-full border rounded-lg">
+                  <div className="bg-gray-50 p-4 text-sm">
+                    <p><strong>INDEPENDENT SALES AGENT AGREEMENT</strong></p>
+                    <p>This Agreement is entered into between the Company and the Agent named below.</p>
+                    
+                    <p><strong>1. APPOINTMENT:</strong> Company hereby appoints Agent as an independent sales representative to solicit orders for Company's products and services.</p>
+                    
+                    <p><strong>2. COMMISSION:</strong> Agent shall receive a commission of {agentData?.commission_rate}% on all accepted orders procured by Agent.</p>
+                    
+                    <p><strong>3. TERRITORY:</strong> Agent's territory shall be as mutually agreed upon in writing.</p>
+                    
+                    <p><strong>4. INDEPENDENT CONTRACTOR:</strong> Agent is an independent contractor and not an employee of Company.</p>
+                    
+                    <p><strong>5. CONFIDENTIALITY:</strong> Agent agrees to maintain confidentiality of all Company information.</p>
+                    
+                    <p><strong>6. TERMINATION:</strong> Either party may terminate this agreement with 30 days written notice.</p>
+                    
+                    <p><strong>7. RELATIONSHIP OF PARTIES:</strong> Both parties shall remain independent contractors, and nothing in this Agreement will be construed to create any other relationship. Partner shall not have authority to make any agreement or incur any liability on behalf of California Telecom. Partner shall not make any oral and/or written representations or warranties to any potential Customer or any third party on behalf of California Telecom or with respect to the Service.</p>
+                    
+                    <p><strong>8. COMPLIANCE WITH LAWS:</strong> Each party agrees to comply with all applicable laws, rules and regulations in its performance under this Agreement.</p>
+                    
+                    <p><strong>9. TERM AND TERMINATION:</strong> Either party may terminate this Agreement without Cause by giving the other party at least 30 days written notice of such termination, or earlier, for convenience. California Telecom may terminate this Agreement immediately upon failure to cure a material breach of or default under this Agreement, if capable of cure, within ten (10) days of receipt of a written notice from the other party describing the breach. To avoid doubt, any breach by Partner of Sections 10 or 11 of this Agreement will be deemed a material non-curable breach, entitling California Telecom to terminate this Agreement immediately.</p>
+                    
+                    <p><strong>10. EFFECT OF TERMINATION:</strong> Upon termination of this Agreement, Partner shall immediately cease all efforts to promote and market California Telecom's Services, and Partner shall promptly return all California Telecom property in Partner's possession or control, including all Customer lists and information. Neither party shall incur any liability whatsoever for any damage, loss or expenses of any kind suffered or incurred by the other because of the termination or the expiration of this Agreement, provided that such termination or expiration does not breach any term or condition of this Agreement.</p>
+                    
+                    <p><strong>11. LIMITATION OF LIABILITY:</strong> IN NO EVENT WILL EITHER PARTY BE LIABLE TO THE OTHER FOR ANY INDIRECT, INCIDENTAL, CONSEQUENTIAL, SPECIAL OR PUNITIVE DAMAGES ARISING OUT OF, OR RELATED TO, THIS AGREEMENT OR THE SUBJECT MATTER HEREOF, OR THE USE OF THE SERVICES, WHETHER THE CLAIM IS BASED IN TORT (INCLUDING NEGLIGENCE OR STRICT LIABILITY), OR IN CONTRACT, AT LAW OR IN EQUITY, INCLUDING WITHOUT LIMITATION, LOSS OF PROFIT, INCOME OR SAVINGS, EVEN IF ADVISED OF THE POSSIBILITY THEREOF.</p>
+                  </div>
+                </ScrollArea>
               </div>
 
               {/* Personal Information */}
