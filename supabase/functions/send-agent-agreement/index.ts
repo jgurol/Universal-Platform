@@ -28,14 +28,14 @@ Deno.serve(async (req) => {
 
     const { agentId, agentEmail, agentName, commissionRate, templateId }: RequestBody = await req.json();
     
-    console.log('Received request for agent:', { agentId, agentEmail, agentName, templateId });
+    console.log('Received request for agent:', { agentId, agentEmail, agentName, commissionRate, templateId });
     
-    // First, let's verify the agent exists before creating the token
+    // Verify the agent exists
     const { data: existingAgent, error: agentCheckError } = await supabaseClient
       .from('agents')
       .select('id, first_name, last_name, email')
       .eq('id', agentId)
-      .maybeSingle();
+      .single();
 
     if (agentCheckError) {
       console.error('Error checking agent existence:', agentCheckError);
@@ -49,21 +49,22 @@ Deno.serve(async (req) => {
 
     console.log('Agent verified:', existingAgent);
 
-    // Get the selected template or fall back to default
+    // Get template content
     let templateContent = '';
-    if (templateId) {
+    
+    if (templateId && templateId !== '') {
       console.log('Fetching specific template:', templateId);
       const { data: selectedTemplate, error: templateError } = await supabaseClient
         .from('agent_agreement_templates')
         .select('content')
         .eq('id', templateId)
-        .maybeSingle();
+        .single();
 
       if (!templateError && selectedTemplate) {
         templateContent = selectedTemplate.content;
         console.log('Using selected template');
       } else {
-        console.log('Selected template not found, falling back to default');
+        console.log('Selected template not found, will try default');
       }
     }
 
@@ -74,17 +75,19 @@ Deno.serve(async (req) => {
         .from('agent_agreement_templates')
         .select('content')
         .eq('is_default', true)
-        .maybeSingle();
+        .single();
 
       if (!defaultError && defaultTemplate) {
         templateContent = defaultTemplate.content;
         console.log('Using default template');
+      } else {
+        console.log('No default template found, using fallback');
       }
     }
 
     // If still no template, use fallback content
     if (!templateContent) {
-      console.log('No templates found, using fallback content');
+      console.log('Using fallback template content');
       templateContent = `
         <p><strong>INDEPENDENT SALES AGENT AGREEMENT</strong></p>
         <p>This Agreement is entered into between the Company and the Agent named below.</p>
@@ -94,6 +97,10 @@ Deno.serve(async (req) => {
       `;
     }
     
+    // Replace template variables
+    templateContent = templateContent.replace(/{{commission_rate}}/g, commissionRate.toString());
+    templateContent = templateContent.replace(/{{agent_name}}/g, agentName);
+    
     // Generate secure token for agent agreement access
     const token = crypto.randomUUID();
     const expiresAt = new Date();
@@ -101,7 +108,7 @@ Deno.serve(async (req) => {
 
     console.log('Creating token for agent:', agentId, 'Token expires at:', expiresAt.toISOString());
 
-    // Store the token in database with template content
+    // Store the token in database
     const { error: tokenError } = await supabaseClient
       .from('agent_agreement_tokens')
       .insert({
@@ -116,12 +123,13 @@ Deno.serve(async (req) => {
     }
 
     // Create agreement form URL
-    const agreementUrl = `${req.headers.get('origin')}/agent-agreement/${token}`;
+    const agreementUrl = `${req.headers.get('origin') || 'https://tsvvpssyzthwbkygrlgw.supabase.co'}/agent-agreement/${token}`;
     console.log('Agreement URL created:', agreementUrl);
 
     // Send email using Resend
     const resendApiKey = Deno.env.get('RESEND_API_KEY');
     if (!resendApiKey) {
+      console.error('RESEND_API_KEY not configured');
       throw new Error('RESEND_API_KEY not configured');
     }
 
@@ -145,6 +153,8 @@ Deno.serve(async (req) => {
       <p>Best regards,<br>The Team</p>
     `;
 
+    console.log('Sending email to:', agentEmail);
+
     const emailResponse = await fetch('https://api.resend.com/emails', {
       method: 'POST',
       headers: {
@@ -161,8 +171,8 @@ Deno.serve(async (req) => {
 
     if (!emailResponse.ok) {
       const errorData = await emailResponse.text();
-      console.error('Resend API error:', errorData);
-      throw new Error('Failed to send email');
+      console.error('Resend API error response:', errorData);
+      throw new Error(`Failed to send email: ${errorData}`);
     }
 
     const emailResult = await emailResponse.json();
@@ -172,7 +182,8 @@ Deno.serve(async (req) => {
       JSON.stringify({ 
         success: true, 
         message: 'Agent agreement email sent successfully',
-        agreementUrl: agreementUrl 
+        agreementUrl: agreementUrl,
+        emailId: emailResult.id
       }),
       { 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -185,7 +196,7 @@ Deno.serve(async (req) => {
     return new Response(
       JSON.stringify({ 
         success: false, 
-        error: error.message 
+        error: error.message || 'Unknown error occurred'
       }),
       { 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },

@@ -56,9 +56,17 @@ export const useClientActions = (
 
         setClients([...clients, newClientWithId]);
 
-        // Send agent agreement email with the actual agent ID and selected template
+        // Send agent agreement email with proper error handling
         try {
-          const { error: emailError } = await supabase.functions.invoke('send-agent-agreement', {
+          console.log('Calling send-agent-agreement function with:', {
+            agentId: data.id,
+            agentEmail: data.email,
+            agentName: `${data.first_name} ${data.last_name}`,
+            commissionRate: data.commission_rate,
+            templateId: newClient.selectedTemplateId || null
+          });
+
+          const { data: emailResult, error: emailError } = await supabase.functions.invoke('send-agent-agreement', {
             body: {
               agentId: data.id,
               agentEmail: data.email,
@@ -68,24 +76,33 @@ export const useClientActions = (
             }
           });
 
+          console.log('Email function response:', { emailResult, emailError });
+
           if (emailError) {
             console.error('Error sending agent agreement email:', emailError);
             toast({
               title: "Agent added but email failed",
-              description: "The agent was added successfully, but we couldn't send the agreement email.",
+              description: `The agent was added successfully, but we couldn't send the agreement email: ${emailError.message}`,
               variant: "destructive"
             });
-          } else {
+          } else if (emailResult?.success) {
             toast({
               title: "Agent added and email sent!",
               description: `${newClientWithId.name} has been added and will receive an agreement email shortly.`,
             });
+          } else {
+            console.error('Email function returned error:', emailResult);
+            toast({
+              title: "Agent added but email failed",
+              description: `The agent was added successfully, but the email service returned an error: ${emailResult?.error || 'Unknown error'}`,
+              variant: "destructive"
+            });
           }
         } catch (emailError) {
-          console.error('Error sending agreement email:', emailError);
+          console.error('Exception sending agreement email:', emailError);
           toast({
             title: "Agent added but email failed",
-            description: "The agent was added successfully, but we couldn't send the agreement email.",
+            description: `The agent was added successfully, but we couldn't send the agreement email: ${emailError instanceof Error ? emailError.message : 'Unknown error'}`,
             variant: "destructive"
           });
         }
