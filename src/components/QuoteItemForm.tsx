@@ -1,4 +1,3 @@
-
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
@@ -198,68 +197,10 @@ export const QuoteItemForm = ({
         <p className="text-sm text-gray-600 mt-1">Choose items from your catalog or from completed circuit quotes</p>
       </div>
 
-      {/* Two Column Layout */}
+      {/* Two Column Layout - Swapped positions */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         
-        {/* Left Column - Catalog Items */}
-        <div className="space-y-4 p-6 border-2 border-blue-200 rounded-lg bg-blue-50/30">
-          <div className="flex items-center gap-2 mb-4">
-            <div className="p-2 bg-blue-100 rounded-lg">
-              <Package className="h-5 w-5 text-blue-600" />
-            </div>
-            <div>
-              <Label className="text-lg font-semibold text-blue-900">Item Catalog</Label>
-              <p className="text-sm text-blue-700">Select from your pre-configured items</p>
-            </div>
-          </div>
-          
-          <div className="space-y-3">
-            <Select 
-              value={selectedItemId.startsWith('carrier-') ? '' : selectedItemId} 
-              onValueChange={handleCatalogItemChange}
-            >
-              <SelectTrigger className="bg-white border-blue-300 focus:border-blue-500">
-                <SelectValue placeholder={isLoading ? "Loading catalog items..." : "Select from catalog"} />
-              </SelectTrigger>
-              <SelectContent className="bg-white border-blue-200 shadow-lg z-50 min-w-[500px]">
-                {availableItems.length > 0 ? (
-                  availableItems.map((item) => (
-                    <SelectItem key={item.id} value={item.id}>
-                      <div className="flex items-center gap-3 w-full min-w-0">
-                        <span className="font-medium text-sm">{item.name}</span>
-                        <span className="text-xs text-muted-foreground">•</span>
-                        <span className="text-xs text-muted-foreground">{item.charge_type}</span>
-                        <span className="text-xs text-muted-foreground">•</span>
-                        <span className="text-xs text-green-600 font-medium">${item.price}</span>
-                        {isAdmin && (
-                          <>
-                            <span className="text-xs text-muted-foreground">•</span>
-                            <span className="text-xs text-orange-600">Cost: ${item.cost}</span>
-                          </>
-                        )}
-                        <Badge variant="outline" className="text-xs whitespace-nowrap ml-auto bg-blue-100 text-blue-700 border-blue-300">
-                          Catalog
-                        </Badge>
-                      </div>
-                    </SelectItem>
-                  ))
-                ) : (
-                  <SelectItem value="no-items" disabled>
-                    No catalog items available
-                  </SelectItem>
-                )}
-              </SelectContent>
-            </Select>
-            
-            {availableItems.length > 0 && (
-              <p className="text-sm text-blue-600 font-medium">
-                {availableItems.length} item(s) available in catalog
-              </p>
-            )}
-          </div>
-        </div>
-
-        {/* Right Column - Circuit Quote Items */}
+        {/* Left Column - Circuit Quote Items */}
         <div className="space-y-4 p-6 border-2 border-emerald-200 rounded-lg bg-emerald-50/30">
           <div className="flex items-center gap-2 mb-4">
             <div className="p-2 bg-emerald-100 rounded-lg">
@@ -393,6 +334,64 @@ export const QuoteItemForm = ({
               <span className="ml-2 text-sm text-emerald-700">Loading circuit quotes...</span>
             </div>
           )}
+        </div>
+
+        {/* Right Column - Catalog Items */}
+        <div className="space-y-4 p-6 border-2 border-blue-200 rounded-lg bg-blue-50/30">
+          <div className="flex items-center gap-2 mb-4">
+            <div className="p-2 bg-blue-100 rounded-lg">
+              <Package className="h-5 w-5 text-blue-600" />
+            </div>
+            <div>
+              <Label className="text-lg font-semibold text-blue-900">Item Catalog</Label>
+              <p className="text-sm text-blue-700">Select from your pre-configured items</p>
+            </div>
+          </div>
+          
+          <div className="space-y-3">
+            <Select 
+              value={selectedItemId.startsWith('carrier-') ? '' : selectedItemId} 
+              onValueChange={handleCatalogItemChange}
+            >
+              <SelectTrigger className="bg-white border-blue-300 focus:border-blue-500">
+                <SelectValue placeholder={isLoading ? "Loading catalog items..." : "Select from catalog"} />
+              </SelectTrigger>
+              <SelectContent className="bg-white border-blue-200 shadow-lg z-50 min-w-[500px]">
+                {availableItems.length > 0 ? (
+                  availableItems.map((item) => (
+                    <SelectItem key={item.id} value={item.id}>
+                      <div className="flex items-center gap-3 w-full min-w-0">
+                        <span className="font-medium text-sm">{item.name}</span>
+                        <span className="text-xs text-muted-foreground">•</span>
+                        <span className="text-xs text-muted-foreground">{item.charge_type}</span>
+                        <span className="text-xs text-muted-foreground">•</span>
+                        <span className="text-xs text-green-600 font-medium">${item.price}</span>
+                        {isAdmin && (
+                          <>
+                            <span className="text-xs text-muted-foreground">•</span>
+                            <span className="text-xs text-orange-600">Cost: ${item.cost}</span>
+                          </>
+                        )}
+                        <Badge variant="outline" className="text-xs whitespace-nowrap ml-auto bg-blue-100 text-blue-700 border-blue-300">
+                          Catalog
+                        </Badge>
+                      </div>
+                    </SelectItem>
+                  ))
+                ) : (
+                  <SelectItem value="no-items" disabled>
+                    No catalog items available
+                  </SelectItem>
+                )}
+              </SelectContent>
+            </Select>
+            
+            {availableItems.length > 0 && (
+              <p className="text-sm text-blue-600 font-medium">
+                {availableItems.length} item(s) available in catalog
+              </p>
+            )}
+          </div>
         </div>
       </div>
 
