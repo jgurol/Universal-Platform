@@ -17,7 +17,7 @@ export const useQuoteForm = (quote: Quote | null, open: boolean) => {
   const [expiresAt, setExpiresAt] = useState("");
   const [notes, setNotes] = useState("");
   const [commissionOverride, setCommissionOverride] = useState("");
-  const [term, setTerm] = useState("");
+  const [term, setTerm] = useState("36 Months");
   const [quoteItems, setQuoteItems] = useState<QuoteItemData[]>([]);
   const { user } = useAuth();
 
@@ -143,8 +143,8 @@ export const useQuoteForm = (quote: Quote | null, open: boolean) => {
       setNotes(quote.notes || "");
       setCommissionOverride(quote.commissionOverride?.toString() || "");
       
-      // Ensure term is properly set from quote data with additional debugging
-      const quoteTerm = quote.term || "";
+      // Ensure term is properly set from quote data with default fallback to 36 Months
+      const quoteTerm = quote.term || "36 Months";
       console.log('[useQuoteForm] Raw quote.term value:', quote.term);
       console.log('[useQuoteForm] Processed quoteTerm:', quoteTerm);
       console.log('[useQuoteForm] Setting term state to:', quoteTerm);
@@ -155,9 +155,9 @@ export const useQuoteForm = (quote: Quote | null, open: boolean) => {
         console.log('[useQuoteForm] Term state after setting:', quoteTerm);
       }, 100);
     } else {
-      // Reset form when dialog closes
+      // Reset form when dialog closes with default term
       console.log('[useQuoteForm] Resetting form - dialog closed or no quote');
-      setTerm("");
+      setTerm("36 Months");
     }
   }, [quote, open]);
 
