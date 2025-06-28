@@ -31,7 +31,7 @@ export const SecureHtmlDisplay: React.FC<SecureHtmlDisplayProps> = ({
   
   return (
     <div 
-      className={cn("prose prose-sm max-w-none", className)}
+      className={cn("prose prose-sm max-w-none [&_img]:inline [&_img]:align-middle [&_img]:mr-2", className)}
       dangerouslySetInnerHTML={{ __html: sanitizedContent }}
     />
   );
