@@ -445,16 +445,6 @@ export const AddQuoteDialog = ({
                   </> : "Create Quote"}
               </Button>
             </div>
-            
-            {/* Debug info - only show in development */}
-            {process.env.NODE_ENV === 'development' && <div className="text-xs text-gray-600 p-3 bg-gray-50 rounded border border-gray-200">
-                Debug: Form valid = {isFormValid ? 'true' : 'false'} | 
-                User: {!!user ? 'yes' : 'no'} | 
-                ClientInfo: {!!(formState.clientInfoId && formState.clientInfoId !== "none") ? 'yes' : 'no'} | 
-                Date: {!!formState.date ? 'yes' : 'no'} | 
-                Items: {formState.quoteItems.length} | 
-                Template: {!!formState.selectedTemplateId ? 'yes' : 'no'}
-              </div>}
           </form>
         </div>
       </DialogContent>

@@ -246,6 +246,7 @@ export const EditQuoteDialog = ({
     console.log('[EditQuoteDialog] Term changed to:', value);
     setTerm(value);
   };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (isSubmitting) {
@@ -482,12 +483,6 @@ export const EditQuoteDialog = ({
                   </> : "Update Quote"}
               </Button>
             </div>
-            
-            {/* Debug info */}
-            {process.env.NODE_ENV === 'development' && <div className="text-xs text-muted-foreground p-3 bg-gray-50 rounded border">
-                Debug: Form valid = {isFormValid ? 'true' : 'false'} 
-                (Quote: {!!quote ? 'yes' : 'no'}, Date: {!!date ? 'yes' : 'no'}, Items: {quoteItems.length}, ClientInfo: {clientInfoId && clientInfoId !== "none" ? 'yes' : 'no'}, Template: {!!selectedTemplateId ? 'yes' : 'no'}, Term: {term || 'none'})
-              </div>}
           </form>
         </div>
       </DialogContent>
