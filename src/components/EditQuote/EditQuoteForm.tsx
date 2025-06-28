@@ -59,6 +59,7 @@ export const EditQuoteForm = ({ quote, clientInfo, onSave, onCancel }: EditQuote
       setSelectedBillingAddressId(quote.billingAddress || null);
       setSelectedServiceAddressId(quote.serviceAddress || null);
       setTerm(quote.term || "");
+      console.log('[EditQuoteForm] Initializing term from quote:', quote.term);
     }
   }, [quote]);
 
@@ -68,6 +69,8 @@ export const EditQuoteForm = ({ quote, clientInfo, onSave, onCancel }: EditQuote
   };
 
   const handleSave = async () => {
+    console.log('[EditQuoteForm] Saving with term:', term);
+    
     if (!isFormValid()) {
       toast({
         title: "Form Invalid",
@@ -98,6 +101,8 @@ export const EditQuoteForm = ({ quote, clientInfo, onSave, onCancel }: EditQuote
         items
       };
       
+      console.log('[EditQuoteForm] Updated quote object:', updatedQuote);
+      
       await onSave(updatedQuote, items);
       
       toast({
@@ -124,6 +129,11 @@ export const EditQuoteForm = ({ quote, clientInfo, onSave, onCancel }: EditQuote
     setSelectedServiceAddressId(addressId);
   };
 
+  const handleTermChange = (value: string) => {
+    console.log('[EditQuoteForm] Term changed to:', value);
+    setTerm(value);
+  };
+
   return (
     <div className="space-y-6">
       <EditQuoteHeader
@@ -148,7 +158,7 @@ export const EditQuoteForm = ({ quote, clientInfo, onSave, onCancel }: EditQuote
         notes={notes}
         onNotesChange={setNotes}
         term={term}
-        onTermChange={setTerm}
+        onTermChange={handleTermChange}
       />
 
       <EditQuoteAddressSection
