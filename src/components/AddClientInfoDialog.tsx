@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -57,16 +58,8 @@ export const AddClientInfoDialog = ({
     }
   }, [open]);
 
-  // Auto-trigger credit check when company name changes and has enough characters
-  useEffect(() => {
-    if (companyName && companyName.length >= 3 && showCreditCheck) {
-      const timeoutId = setTimeout(() => {
-        performCreditCheck(companyName);
-      }, 1000); // Debounce for 1 second
-
-      return () => clearTimeout(timeoutId);
-    }
-  }, [companyName, showCreditCheck, performCreditCheck]);
+  // Remove the auto-trigger credit check effect to prevent loops
+  // Users will manually trigger it with the button instead
 
   const fetchAgents = async () => {
     console.log('[AddClient] Starting agent fetch...');
