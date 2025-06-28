@@ -53,7 +53,7 @@ export const createQuoteInDatabase = async (
     throw quoteError;
   }
 
-  console.log('[createQuoteInDatabase] Quote created successfully with ID:', quoteData.id, 'and user_id:', quoteData.user_id, 'term:', quoteData.term);
+  console.log('[createQuoteInDatabase] Quote created successfully with ID:', quoteData.id, 'and user_id:', quoteData.user_id, 'term:', quote.term);
 
   // Save quote items if they exist using the updateQuoteItems function
   if (quote.quoteItems && quote.quoteItems.length > 0) {
