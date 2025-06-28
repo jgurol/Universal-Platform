@@ -181,11 +181,11 @@ export const QuoteItemForm = ({
     onSelectedItemIdChange("");
   };
 
-  // Handle speed selection
-  const handleSpeedChange = (speed: string) => {
-    setSelectedSpeed(speed);
-    const selectedItem = speedsForSelection.find(item => item.speed === speed);
+  // Handle speed selection - use the carrier item ID instead of just speed
+  const handleSpeedChange = (carrierItemId: string) => {
+    const selectedItem = speedsForSelection.find(item => item.id === carrierItemId);
     if (selectedItem) {
+      setSelectedSpeed(selectedItem.speed);
       onSelectedItemIdChange(`carrier-${selectedItem.id}`);
     }
   };
@@ -252,7 +252,7 @@ export const QuoteItemForm = ({
                   <SelectTrigger className="bg-white border-emerald-300 focus:border-emerald-500">
                     <SelectValue placeholder={carrierLoading ? "Loading locations..." : "Select location"} />
                   </SelectTrigger>
-                  <SelectContent className="bg-white border border-emerald-200 shadow-lg z-50 max-w-sm">
+                  <SelectContent className="bg-white border border-emerald-200 shadow-lg z-[100] max-w-sm">
                     {uniqueAddresses.map((address) => (
                       <SelectItem 
                         key={address} 
@@ -277,7 +277,7 @@ export const QuoteItemForm = ({
                     <SelectTrigger className="bg-white border-emerald-300 focus:border-emerald-500">
                       <SelectValue placeholder="Select carrier" />
                     </SelectTrigger>
-                    <SelectContent className="bg-white border border-emerald-200 shadow-lg z-50 max-w-sm">
+                    <SelectContent className="bg-white border border-emerald-200 shadow-lg z-[100] max-w-sm">
                       {carriersForAddress.map((carrier) => (
                         <SelectItem 
                           key={carrier} 
@@ -297,20 +297,20 @@ export const QuoteItemForm = ({
                 <div className="space-y-2">
                   <Label className="text-sm font-medium text-emerald-800">Step 3: Select Speed & Service</Label>
                   <Select 
-                    value={selectedSpeed} 
+                    value={selectedSpeed ? speedsForSelection.find(item => item.speed === selectedSpeed)?.id || "" : ""} 
                     onValueChange={handleSpeedChange}
                   >
                     <SelectTrigger className="bg-white border-emerald-300 focus:border-emerald-500">
                       <SelectValue placeholder="Select speed and service type" />
                     </SelectTrigger>
-                    <SelectContent className="bg-white border border-emerald-200 shadow-lg z-50 max-w-2xl">
+                    <SelectContent className="bg-white border border-emerald-200 shadow-lg z-[100] max-h-96 overflow-y-auto">
                       {speedsForSelection.map((carrierItem) => {
                         const sellPrice = calculateSellPrice(carrierItem, agentCommissionRate);
                         const totalCostWithAddons = calculateTotalCostWithAddons(carrierItem);
                         return (
                           <SelectItem 
                             key={carrierItem.id} 
-                            value={carrierItem.speed} 
+                            value={carrierItem.id}
                             className="cursor-pointer hover:bg-emerald-50 px-3 py-2"
                           >
                             <div className="flex items-center gap-3 w-full">
@@ -376,7 +376,7 @@ export const QuoteItemForm = ({
               <SelectTrigger className="bg-white border-blue-300 focus:border-blue-500">
                 <SelectValue placeholder={isLoading ? "Loading catalog items..." : "Select from catalog"} />
               </SelectTrigger>
-              <SelectContent className="bg-white border border-blue-200 shadow-lg z-50 max-w-lg">
+              <SelectContent className="bg-white border border-blue-200 shadow-lg z-[100] max-w-lg">
                 {availableItems.length > 0 ? (
                   availableItems.map((item) => (
                     <SelectItem 
