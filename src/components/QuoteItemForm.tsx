@@ -1,3 +1,4 @@
+
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
@@ -60,7 +61,8 @@ export const QuoteItemForm = ({
     return 36; // Default fallback
   };
 
-  const calculateSellPrice = (carrierItem: any, commissionRate: number = agentCommissionRate) => {
+  // Calculate total cost including all add-ons for cost display
+  const calculateTotalCostWithAddons = (carrierItem: any) => {
     const termMonths = getTermMonths(carrierItem.term);
     
     // Start with base price
@@ -84,12 +86,18 @@ export const QuoteItemForm = ({
       totalCost += carrierItem.other_costs;
     }
 
+    return totalCost;
+  };
+
+  const calculateSellPrice = (carrierItem: any, commissionRate: number = agentCommissionRate) => {
+    const totalCostWithAddons = calculateTotalCostWithAddons(carrierItem);
+
     if (isAdmin) {
-      return totalCost;
+      return totalCostWithAddons;
     }
 
     if (!carrierItem.type || !categories.length) {
-      return totalCost; // If no category or categories not loaded, return total cost as sell price
+      return totalCostWithAddons; // If no category or categories not loaded, return total cost as sell price
     }
 
     // Find the category that matches the carrier quote type
@@ -106,10 +114,10 @@ export const QuoteItemForm = ({
       
       // Apply the effective minimum markup: sell price = cost * (1 + effectiveMinimumMarkup/100)
       const markup = effectiveMinimumMarkup / 100;
-      return Math.round(totalCost * (1 + markup) * 100) / 100; // Round to 2 decimal places
+      return Math.round(totalCostWithAddons * (1 + markup) * 100) / 100; // Round to 2 decimal places
     }
 
-    return totalCost; // If no matching category or no minimum markup, return total cost
+    return totalCostWithAddons; // If no matching category or no minimum markup, return total cost
   };
 
   console.log('[QuoteItemForm] Debug info:', {
@@ -290,7 +298,7 @@ export const QuoteItemForm = ({
                     <SelectContent className="bg-white border-emerald-200 shadow-lg z-50 min-w-[600px]">
                       {speedsForSelection.map((carrierItem) => {
                         const sellPrice = calculateSellPrice(carrierItem, agentCommissionRate);
-                        const baseCost = carrierItem.price;
+                        const totalCostWithAddons = calculateTotalCostWithAddons(carrierItem);
                         return (
                           <SelectItem key={carrierItem.id} value={carrierItem.speed}>
                             <div className="flex items-center gap-3 w-full min-w-0 whitespace-nowrap">
@@ -302,7 +310,7 @@ export const QuoteItemForm = ({
                               {isAdmin && (
                                 <>
                                   <span className="text-xs text-muted-foreground">•</span>
-                                  <span className="text-xs text-orange-600">Base Cost: ${baseCost.toFixed(2)}</span>
+                                  <span className="text-xs text-orange-600">Total Cost: ${totalCostWithAddons.toFixed(2)}</span>
                                 </>
                               )}
                               <Badge variant="outline" className="text-xs whitespace-nowrap ml-auto bg-emerald-100 text-emerald-700 border-emerald-300">

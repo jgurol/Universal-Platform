@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { QuoteItemData } from "@/types/quoteItems";
 import { useItems } from "@/hooks/useItems";
@@ -40,7 +41,8 @@ export const useQuoteItemActions = (clientInfoId?: string) => {
     return 36;
   };
 
-  const calculateSellPrice = (carrierItem: any, commissionRate: number = agentCommissionRate) => {
+  // Calculate total cost including all add-ons for admin cost display
+  const calculateTotalCostWithAddons = (carrierItem: any) => {
     const termMonths = getTermMonths(carrierItem.term);
     
     // Start with base price
@@ -64,17 +66,23 @@ export const useQuoteItemActions = (clientInfoId?: string) => {
       totalCost += carrierItem.other_costs;
     }
 
+    return totalCost;
+  };
+
+  const calculateSellPrice = (carrierItem: any, commissionRate: number = agentCommissionRate) => {
+    const totalCostWithAddons = calculateTotalCostWithAddons(carrierItem);
+
     // If agent is opted out of commission, return the total cost as sell price
     if (isAgentOptedOut) {
-      return totalCost;
+      return totalCostWithAddons;
     }
 
     if (isAdmin) {
-      return totalCost;
+      return totalCostWithAddons;
     }
 
     if (!carrierItem.type || !categories.length) {
-      return totalCost;
+      return totalCostWithAddons;
     }
 
     // Find the category that matches the carrier quote type
@@ -91,10 +99,10 @@ export const useQuoteItemActions = (clientInfoId?: string) => {
       
       // Apply the effective minimum markup: sell price = cost * (1 + effectiveMinimumMarkup/100)
       const markup = effectiveMinimumMarkup / 100;
-      return Math.round(totalCost * (1 + markup) * 100) / 100;
+      return Math.round(totalCostWithAddons * (1 + markup) * 100) / 100;
     }
 
-    return totalCost;
+    return totalCostWithAddons;
   };
 
   const addCarrierItem = async (carrierQuoteId: string, items: QuoteItemData[], onItemsChange: (items: QuoteItemData[]) => void) => {
@@ -165,22 +173,8 @@ export const useQuoteItemActions = (clientInfoId?: string) => {
       // Calculate sell price using category markup with current agent commission rate and including add-ons
       const sellPrice = calculateSellPrice(carrierItem, agentCommissionRate);
       
-      // Calculate the total cost including add-ons for cost_override (admin only)
-      const termMonths = getTermMonths(carrierItem.term);
-      let totalCostWithAddons = carrierItem.price;
-      
-      if (carrierItem.static_ip && carrierItem.static_ip_fee_amount) {
-        totalCostWithAddons += carrierItem.static_ip_fee_amount;
-      }
-      if (carrierItem.static_ip_5 && carrierItem.static_ip_5_fee_amount) {
-        totalCostWithAddons += carrierItem.static_ip_5_fee_amount;
-      }
-      if (carrierItem.install_fee && carrierItem.install_fee_amount) {
-        totalCostWithAddons += carrierItem.install_fee_amount / termMonths;
-      }
-      if (carrierItem.other_costs) {
-        totalCostWithAddons += carrierItem.other_costs;
-      }
+      // Calculate the total cost including add-ons for cost_override (admin display)
+      const totalCostWithAddons = calculateTotalCostWithAddons(carrierItem);
 
       // Create a temporary quote item for the carrier quote
       const quoteItem: QuoteItemData = {
@@ -188,7 +182,7 @@ export const useQuoteItemActions = (clientInfoId?: string) => {
         item_id: `carrier-${carrierItem.id}`,
         quantity: 1,
         unit_price: sellPrice,
-        cost_override: isAdmin ? totalCostWithAddons : undefined, // Only set cost for admins, include add-ons
+        cost_override: isAdmin ? totalCostWithAddons : undefined, // For admins, show total cost including all add-ons
         total_price: sellPrice,
         charge_type: 'MRC',
         address_id: matchingAddress?.id,
@@ -200,10 +194,10 @@ export const useQuoteItemActions = (clientInfoId?: string) => {
           name: `${carrierItem.carrier} - ${carrierItem.type} - ${carrierItem.speed}`,
           description: '',
           price: sellPrice,
-          cost: isAdmin ? totalCostWithAddons : sellPrice, // Hide actual cost from agents, include add-ons for admins
+          cost: isAdmin ? totalCostWithAddons : sellPrice, // For admins, use total cost including add-ons; for agents, use sell price
           charge_type: 'MRC',
           is_active: true,
-          category_id: matchingCategory?.id, // Add category_id here
+          category_id: matchingCategory?.id,
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString()
         },

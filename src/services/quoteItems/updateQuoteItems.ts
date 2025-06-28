@@ -83,6 +83,7 @@ export const updateQuoteItems = async (quoteId: string, quoteItems: QuoteItemDat
         quantity: quoteItem.quantity,
         unit_price: quoteItem.unit_price,
         total_price: quoteItem.total_price,
+        cost_override: quoteItem.cost_override,
         description: quoteItem.description?.substring(0, 50) + '...',
         image_url: quoteItem.image_url,
         image_name: quoteItem.image_name
@@ -104,7 +105,7 @@ export const updateQuoteItems = async (quoteId: string, quoteItems: QuoteItemDat
           name: quoteItem.name || 'Carrier Item',
           description: quoteItem.description || '',
           price: quoteItem.unit_price || 0,
-          cost: quoteItem.cost_override || 0,
+          cost: quoteItem.cost_override || 0, // Use the total cost including add-ons from the quote item
           charge_type: quoteItem.charge_type || 'MRC',
           is_active: false // Mark as inactive so it doesn't show in catalog
         };
