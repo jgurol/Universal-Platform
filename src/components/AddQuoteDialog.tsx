@@ -6,7 +6,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Calendar, Building2, FileText, DollarSign, Clock, Settings } from "lucide-react";
@@ -225,26 +224,26 @@ export const AddQuoteDialog = ({ open, onOpenChange, onAddQuote, clients, client
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[1400px] max-h-[95vh] overflow-y-auto bg-gray-500">
+      <DialogContent className="sm:max-w-[1400px] max-h-[95vh] overflow-y-auto">
         <div className="space-y-6">
           {/* Header */}
-          <div className="flex items-center gap-3 pb-4 border-b">
+          <div className="flex items-center gap-3 pb-4 border-b border-gray-200">
             <div className="p-2 bg-blue-100 rounded-lg">
               <FileText className="h-6 w-6 text-blue-600" />
             </div>
             <div>
-              <h2 className="text-2xl font-semibold">Create New Quote</h2>
-              <p className="text-muted-foreground">Fill out the details below to create a professional quote for your client</p>
+              <h2 className="text-2xl font-semibold text-gray-900">Create New Quote</h2>
+              <p className="text-gray-600">Fill out the details below to create a professional quote for your client</p>
             </div>
           </div>
         
           {/* Show loading state while data is loading */}
           {dialogData.isDataLoading && (
-            <Card>
+            <Card className="border-gray-200">
               <CardContent className="flex items-center justify-center py-12">
                 <div className="text-center space-y-3">
                   <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-                  <p className="text-muted-foreground">Loading form data...</p>
+                  <p className="text-gray-600">Loading form data...</p>
                 </div>
               </CardContent>
             </Card>
@@ -252,9 +251,9 @@ export const AddQuoteDialog = ({ open, onOpenChange, onAddQuote, clients, client
         
           <form onSubmit={handleSubmit} className="space-y-8">
             {/* Quote Header Information */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-lg">
+            <Card className="border-gray-200">
+              <CardHeader className="pb-4">
+                <CardTitle className="flex items-center gap-2 text-lg text-gray-900">
                   <Calendar className="h-5 w-5 text-blue-600" />
                   Quote Information
                 </CardTitle>
@@ -271,7 +270,7 @@ export const AddQuoteDialog = ({ open, onOpenChange, onAddQuote, clients, client
                     }}
                     placeholder="Enter quote name (optional - will auto-generate if empty)"
                     disabled={dialogData.isDataLoading}
-                    className="border-gray-300 bg-gray-50 focus:bg-white focus:border-blue-500 transition-colors"
+                    className="border-gray-300 bg-white focus:border-blue-500 transition-colors"
                   />
                 </div>
 
@@ -297,7 +296,7 @@ export const AddQuoteDialog = ({ open, onOpenChange, onAddQuote, clients, client
                     value={formState.date}
                     onChange={(e) => formState.setDate(e.target.value)}
                     required
-                    className="border-gray-300 bg-gray-50 focus:bg-white focus:border-blue-500 transition-colors"
+                    className="border-gray-300 bg-white focus:border-blue-500 transition-colors"
                   />
                 </div>
 
@@ -308,7 +307,7 @@ export const AddQuoteDialog = ({ open, onOpenChange, onAddQuote, clients, client
                     type="date"
                     value={formState.expiresAt}
                     onChange={(e) => formState.setExpiresAt(e.target.value)}
-                    className="border-gray-300 bg-gray-50 focus:bg-white focus:border-blue-500 transition-colors"
+                    className="border-gray-300 bg-white focus:border-blue-500 transition-colors"
                   />
                   <p className="text-xs text-gray-600">Auto-set to +60 days from quote date</p>
                 </div>
@@ -316,9 +315,9 @@ export const AddQuoteDialog = ({ open, onOpenChange, onAddQuote, clients, client
             </Card>
 
             {/* Client Information */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-lg">
+            <Card className="border-gray-200">
+              <CardHeader className="pb-4">
+                <CardTitle className="flex items-center gap-2 text-lg text-gray-900">
                   <Building2 className="h-5 w-5 text-green-600" />
                   Client & Details
                 </CardTitle>
@@ -330,7 +329,7 @@ export const AddQuoteDialog = ({ open, onOpenChange, onAddQuote, clients, client
                       Client Company <span className="text-red-500">*</span>
                     </Label>
                     <Select value={formState.clientInfoId} onValueChange={formState.setClientInfoId} required disabled={dialogData.isDataLoading}>
-                      <SelectTrigger className="border-gray-300 bg-gray-50 focus:bg-white focus:border-blue-500 transition-colors">
+                      <SelectTrigger className="border-gray-300 bg-white focus:border-blue-500 transition-colors">
                         <SelectValue placeholder={
                           dialogData.isDataLoading 
                             ? "Loading client companies..." 
@@ -339,7 +338,7 @@ export const AddQuoteDialog = ({ open, onOpenChange, onAddQuote, clients, client
                               : "Select a client company"
                         } />
                       </SelectTrigger>
-                      <SelectContent className="bg-white border-gray-200 shadow-lg">
+                      <SelectContent className="bg-white border-gray-200 shadow-lg z-50">
                         {dialogData.isDataLoading ? (
                           <SelectItem value="loading" disabled>
                             Loading...
@@ -373,10 +372,10 @@ export const AddQuoteDialog = ({ open, onOpenChange, onAddQuote, clients, client
                   <div className="space-y-3">
                     <Label htmlFor="term" className="text-sm font-semibold text-gray-800">Initial Term</Label>
                     <Select value={formState.term} onValueChange={formState.setTerm} disabled={dialogData.isDataLoading}>
-                      <SelectTrigger className="border-gray-300 bg-gray-50 focus:bg-white focus:border-blue-500 transition-colors">
+                      <SelectTrigger className="border-gray-300 bg-white focus:border-blue-500 transition-colors">
                         <SelectValue placeholder="Select initial term" />
                       </SelectTrigger>
-                      <SelectContent className="bg-white border-gray-200 shadow-lg">
+                      <SelectContent className="bg-white border-gray-200 shadow-lg z-50">
                         <SelectItem value="Month to Month" className="hover:bg-gray-100">Month to Month</SelectItem>
                         <SelectItem value="12 Months" className="hover:bg-gray-100">12 Months</SelectItem>
                         <SelectItem value="24 Months" className="hover:bg-gray-100">24 Months</SelectItem>
@@ -403,43 +402,35 @@ export const AddQuoteDialog = ({ open, onOpenChange, onAddQuote, clients, client
                   </div>
                 )}
 
-                {/* Associated Deals Section */}
+                {/* Associated Deals Section - Changed to dropdown */}
                 {dialogData.associatedDeals.length > 0 && (
                   <div className="space-y-3">
-                    <Label className="text-sm font-semibold text-gray-800">Associated Deals (Optional)</Label>
-                    <Card className="bg-gray-50 border-gray-200">
-                      <CardContent className="p-4 max-h-40 overflow-y-auto">
-                        <p className="text-sm text-gray-600 mb-3">
-                          Select deals to associate with this quote:
-                        </p>
-                        <div className="space-y-3">
-                          {dialogData.associatedDeals.map((deal) => (
-                            <div key={deal.id} className="flex items-center space-x-3 p-2 hover:bg-white rounded-md transition-colors">
-                              <Checkbox
-                                id={`deal-${deal.id}`}
-                                checked={formState.selectedDealIds.includes(deal.id)}
-                                onCheckedChange={() => formState.handleDealSelection(deal.id)}
-                                disabled={dialogData.isDataLoading}
-                              />
-                              <label
-                                htmlFor={`deal-${deal.id}`}
-                                className="text-sm cursor-pointer flex-1"
-                              >
-                                <span className="font-medium text-gray-900">{deal.deal_name}</span>
-                                <span className="text-gray-500 ml-2">
-                                  (${deal.deal_value.toLocaleString()} - {deal.stage})
-                                </span>
-                              </label>
+                    <Label className="text-sm font-semibold text-gray-800">Associated Deal (Optional)</Label>
+                    <Select value={formState.selectedDealId} onValueChange={formState.setSelectedDealId} disabled={dialogData.isDataLoading}>
+                      <SelectTrigger className="border-gray-300 bg-white focus:border-blue-500 transition-colors">
+                        <SelectValue placeholder="Select a deal to associate (optional)" />
+                      </SelectTrigger>
+                      <SelectContent className="bg-white border-gray-200 shadow-lg z-50">
+                        <SelectItem value="" className="hover:bg-gray-100">
+                          No deal selected
+                        </SelectItem>
+                        {dialogData.associatedDeals.map((deal) => (
+                          <SelectItem key={deal.id} value={deal.id} className="hover:bg-gray-100">
+                            <div className="flex flex-col">
+                              <span className="font-medium text-gray-900">{deal.deal_name}</span>
+                              <span className="text-sm text-gray-500">
+                                ${deal.deal_value.toLocaleString()} - {deal.stage}
+                              </span>
                             </div>
-                          ))}
-                        </div>
-                        {formState.selectedDealIds.length > 0 && (
-                          <p className="text-sm text-green-600 mt-3 font-medium">
-                            {formState.selectedDealIds.length} deal{formState.selectedDealIds.length > 1 ? 's' : ''} selected
-                          </p>
-                        )}
-                      </CardContent>
-                    </Card>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    {formState.selectedDealId && (
+                      <p className="text-sm text-green-600 mt-2 font-medium">
+                        Deal selected: {dialogData.associatedDeals.find(d => d.id === formState.selectedDealId)?.deal_name}
+                      </p>
+                    )}
                   </div>
                 )}
 
@@ -457,7 +448,7 @@ export const AddQuoteDialog = ({ open, onOpenChange, onAddQuote, clients, client
                       onChange={(e) => formState.setCommissionOverride(e.target.value)}
                       placeholder="Optional commission override"
                       disabled={dialogData.isDataLoading}
-                      className="border-gray-300 bg-gray-50 focus:bg-white focus:border-blue-500 transition-colors"
+                      className="border-gray-300 bg-white focus:border-blue-500 transition-colors"
                     />
                   </div>
                 )}
@@ -471,16 +462,16 @@ export const AddQuoteDialog = ({ open, onOpenChange, onAddQuote, clients, client
                     placeholder="Additional notes about the quote"
                     rows={4}
                     disabled={dialogData.isDataLoading}
-                    className="border-gray-300 bg-gray-50 focus:bg-white focus:border-blue-500 transition-colors resize-none"
+                    className="border-gray-300 bg-white focus:border-blue-500 transition-colors resize-none"
                   />
                 </div>
               </CardContent>
             </Card>
 
             {/* Address Information */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg">Address Information</CardTitle>
+            <Card className="border-gray-200">
+              <CardHeader className="pb-4">
+                <CardTitle className="text-lg text-gray-900">Address Information</CardTitle>
               </CardHeader>
               <CardContent className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <AddressSelector
@@ -502,9 +493,9 @@ export const AddQuoteDialog = ({ open, onOpenChange, onAddQuote, clients, client
             </Card>
 
             {/* Quote Items */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-lg">
+            <Card className="border-gray-200">
+              <CardHeader className="pb-4">
+                <CardTitle className="flex items-center gap-2 text-lg text-gray-900">
                   <DollarSign className="h-5 w-5 text-emerald-600" />
                   Quote Items <span className="text-red-500">*</span>
                 </CardTitle>
@@ -524,9 +515,9 @@ export const AddQuoteDialog = ({ open, onOpenChange, onAddQuote, clients, client
             </Card>
 
             {/* Quote Settings */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-lg">
+            <Card className="border-gray-200">
+              <CardHeader className="pb-4">
+                <CardTitle className="flex items-center gap-2 text-lg text-gray-900">
                   <Settings className="h-5 w-5 text-purple-600" />
                   Quote Template
                 </CardTitle>
@@ -537,7 +528,7 @@ export const AddQuoteDialog = ({ open, onOpenChange, onAddQuote, clients, client
                     Quote Template <span className="text-red-500">*</span>
                   </Label>
                   <Select value={formState.selectedTemplateId} onValueChange={formState.setSelectedTemplateId} required disabled={dialogData.isDataLoading}>
-                    <SelectTrigger className="border-gray-300 bg-gray-50 focus:bg-white focus:border-blue-500 transition-colors">
+                    <SelectTrigger className="border-gray-300 bg-white focus:border-blue-500 transition-colors">
                       <SelectValue placeholder={
                         dialogData.isDataLoading
                           ? "Loading templates..."
@@ -548,7 +539,7 @@ export const AddQuoteDialog = ({ open, onOpenChange, onAddQuote, clients, client
                               : "Select a quote template"
                       } />
                     </SelectTrigger>
-                    <SelectContent className="bg-white border-gray-200 shadow-lg">
+                    <SelectContent className="bg-white border-gray-200 shadow-lg z-50">
                       {dialogData.isDataLoading ? (
                         <SelectItem value="loading" disabled>
                           Loading...
@@ -575,7 +566,7 @@ export const AddQuoteDialog = ({ open, onOpenChange, onAddQuote, clients, client
               </CardContent>
             </Card>
             
-            <Separator />
+            <Separator className="bg-gray-200" />
             
             <div className="flex justify-end space-x-3 pt-4">
               <Button 
@@ -583,7 +574,7 @@ export const AddQuoteDialog = ({ open, onOpenChange, onAddQuote, clients, client
                 variant="outline" 
                 onClick={() => onOpenChange(false)}
                 disabled={formState.isSubmitting}
-                className="px-6"
+                className="px-6 border-gray-300 text-gray-700 hover:bg-gray-100"
               >
                 Cancel
               </Button>
@@ -605,7 +596,7 @@ export const AddQuoteDialog = ({ open, onOpenChange, onAddQuote, clients, client
             
             {/* Debug info - only show in development */}
             {process.env.NODE_ENV === 'development' && (
-              <div className="text-xs text-muted-foreground p-3 bg-gray-50 rounded border">
+              <div className="text-xs text-gray-600 p-3 bg-gray-50 rounded border border-gray-200">
                 Debug: Form valid = {isFormValid ? 'true' : 'false'} | 
                 User: {!!user ? 'yes' : 'no'} | 
                 ClientInfo: {!!(formState.clientInfoId && formState.clientInfoId !== "none") ? 'yes' : 'no'} | 

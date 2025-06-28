@@ -23,7 +23,7 @@ export const useAddQuoteForm = (open: boolean) => {
   const [selectedServiceAddressId, setSelectedServiceAddressId] = useState<string | null>(null);
   const [selectedTemplateId, setSelectedTemplateId] = useState<string>("");
   const [associatedDeals, setAssociatedDeals] = useState<DealRegistration[]>([]);
-  const [selectedDealIds, setSelectedDealIds] = useState<string[]>([]);
+  const [selectedDealId, setSelectedDealId] = useState<string>(""); // Changed from array to single string
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Function to calculate expiration date (+60 days from quote date)
@@ -55,7 +55,7 @@ export const useAddQuoteForm = (open: boolean) => {
     setSelectedServiceAddressId(null);
     setSelectedTemplateId("");
     setAssociatedDeals([]);
-    setSelectedDealIds([]);
+    setSelectedDealId(""); // Changed from array to single string
     setIsSubmitting(false);
     
     // Reset dates
@@ -97,14 +97,6 @@ export const useAddQuoteForm = (open: boolean) => {
     console.log('AddQuoteDialog - Service address changed:', { addressId, customAddr });
     setSelectedServiceAddressId(addressId);
     setServiceAddress(customAddr || "");
-  };
-
-  const handleDealSelection = (dealId: string) => {
-    setSelectedDealIds(prev => 
-      prev.includes(dealId) 
-        ? prev.filter(id => id !== dealId)
-        : [...prev, dealId]
-    );
   };
 
   const calculateTotalAmount = () => {
@@ -149,8 +141,8 @@ export const useAddQuoteForm = (open: boolean) => {
     setSelectedTemplateId,
     associatedDeals,
     setAssociatedDeals,
-    selectedDealIds,
-    setSelectedDealIds,
+    selectedDealId, // Changed from selectedDealIds to selectedDealId
+    setSelectedDealId, // Changed from setSelectedDealIds to setSelectedDealId
     isSubmitting,
     setIsSubmitting,
     
@@ -159,7 +151,6 @@ export const useAddQuoteForm = (open: boolean) => {
     calculateExpirationDate,
     handleBillingAddressChange,
     handleServiceAddressChange,
-    handleDealSelection,
     calculateTotalAmount
   };
 };
