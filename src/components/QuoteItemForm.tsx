@@ -38,7 +38,7 @@ export const QuoteItemForm = ({
   // Multi-step selection state
   const [selectedAddress, setSelectedAddress] = useState<string>("");
   const [selectedCarrier, setSelectedCarrier] = useState<string>("");
-  const [selectedSpeed, setSelectedSpeed] = useState<string>("");
+  const [selectedCarrierItemId, setSelectedCarrierItemId] = useState<string>("");
 
   // Get agent commission rate from clients data
   const currentAgent = clients.find(client => client.id === user?.id);
@@ -170,31 +170,28 @@ export const QuoteItemForm = ({
   const handleAddressChange = (address: string) => {
     setSelectedAddress(address);
     setSelectedCarrier("");
-    setSelectedSpeed("");
+    setSelectedCarrierItemId("");
     onSelectedItemIdChange("");
   };
 
   // Handle carrier selection
   const handleCarrierChange = (carrier: string) => {
     setSelectedCarrier(carrier);
-    setSelectedSpeed("");
+    setSelectedCarrierItemId("");
     onSelectedItemIdChange("");
   };
 
-  // Handle speed selection - use the carrier item ID instead of just speed
+  // Handle speed selection - use the carrier item ID
   const handleSpeedChange = (carrierItemId: string) => {
-    const selectedItem = speedsForSelection.find(item => item.id === carrierItemId);
-    if (selectedItem) {
-      setSelectedSpeed(selectedItem.speed);
-      onSelectedItemIdChange(`carrier-${selectedItem.id}`);
-    }
+    setSelectedCarrierItemId(carrierItemId);
+    onSelectedItemIdChange(`carrier-${carrierItemId}`);
   };
 
   // Reset multi-step selection when switching between catalog and carrier items
   const handleCatalogItemChange = (value: string) => {
     setSelectedAddress("");
     setSelectedCarrier("");
-    setSelectedSpeed("");
+    setSelectedCarrierItemId("");
     onSelectedItemIdChange(value);
   };
 
@@ -297,7 +294,7 @@ export const QuoteItemForm = ({
                 <div className="space-y-2">
                   <Label className="text-sm font-medium text-emerald-800">Step 3: Select Speed & Service</Label>
                   <Select 
-                    value={selectedSpeed ? speedsForSelection.find(item => item.speed === selectedSpeed)?.id || "" : ""} 
+                    value={selectedCarrierItemId} 
                     onValueChange={handleSpeedChange}
                   >
                     <SelectTrigger className="bg-white border-emerald-300 focus:border-emerald-500">
@@ -306,7 +303,6 @@ export const QuoteItemForm = ({
                     <SelectContent className="bg-white border border-emerald-200 shadow-lg z-[100] max-h-96 overflow-y-auto">
                       {speedsForSelection.map((carrierItem) => {
                         const sellPrice = calculateSellPrice(carrierItem, agentCommissionRate);
-                        const totalCostWithAddons = calculateTotalCostWithAddons(carrierItem);
                         return (
                           <SelectItem 
                             key={carrierItem.id} 
@@ -319,15 +315,6 @@ export const QuoteItemForm = ({
                               <span className="text-xs text-muted-foreground">{carrierItem.type}</span>
                               <span className="text-xs text-muted-foreground">•</span>
                               <span className="text-xs text-green-600 font-medium">${sellPrice.toFixed(2)}/month</span>
-                              {isAdmin && (
-                                <>
-                                  <span className="text-xs text-muted-foreground">•</span>
-                                  <span className="text-xs text-orange-600">Total Cost: ${totalCostWithAddons.toFixed(2)}</span>
-                                </>
-                              )}
-                              <Badge variant="outline" className="text-xs ml-auto bg-emerald-100 text-emerald-700 border-emerald-300">
-                                Circuit Quote
-                              </Badge>
                             </div>
                           </SelectItem>
                         );
