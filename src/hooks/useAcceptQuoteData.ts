@@ -3,7 +3,7 @@ import { useQuoteData } from "./useQuoteData";
 import { useClientData } from "./useClientData";
 import { useTemplateContent } from "./useTemplateContent";
 import { useAcceptanceStatus } from "./useAcceptanceStatus";
-import { useQuoteItems } from "./useQuoteItems";
+import { useQuoteItems } from "../hooks/useQuoteItems";
 
 export const useAcceptQuoteData = (quoteId: string | undefined) => {
   const { quote, isLoading: quoteLoading, error } = useQuoteData(quoteId);
