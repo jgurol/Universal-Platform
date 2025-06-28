@@ -36,6 +36,8 @@ export const EditQuoteFormFields = ({
   term,
   onTermChange
 }: EditQuoteFormFieldsProps) => {
+  console.log('[EditQuoteFormFields] Rendering with term:', term);
+  
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
       <div className="space-y-2">
@@ -98,13 +100,15 @@ export const EditQuoteFormFields = ({
           <SelectTrigger>
             <SelectValue placeholder="Select initial term" />
           </SelectTrigger>
-          <SelectContent>
+          <SelectContent className="bg-white border border-gray-200 shadow-lg z-50">
+            <SelectItem value="">Select initial term</SelectItem>
             <SelectItem value="Month to Month">Month to Month</SelectItem>
             <SelectItem value="12 Months">12 Months</SelectItem>
             <SelectItem value="24 Months">24 Months</SelectItem>
             <SelectItem value="36 Months">36 Months</SelectItem>
           </SelectContent>
         </Select>
+        <p className="text-xs text-muted-foreground">Current term value: {term || 'none'}</p>
       </div>
 
       <div className="md:col-span-2 space-y-2">

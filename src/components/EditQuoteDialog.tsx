@@ -286,6 +286,8 @@ export const EditQuoteDialog = ({
 
     try {
       console.log('[EditQuoteDialog] Validation passed, updating quote');
+      console.log('[EditQuoteDialog] Term value being saved:', term);
+      
       const { totalAmount } = calculateTotalsByChargeType(quoteItems);
       
       console.log('[EditQuoteDialog] Saving quote items before updating quote:', quoteItems.map(item => ({
@@ -319,11 +321,13 @@ export const EditQuoteDialog = ({
         commissionOverride: commissionOverride ? parseFloat(commissionOverride) : undefined,
         expiresAt: expiresAt || undefined,
         notes: notes || undefined,
-        term: term || undefined,
+        term: term || undefined, // Ensure term is included
         billingAddress: billingAddress || undefined,
         serviceAddress: serviceAddress || undefined,
         templateId: selectedTemplateId
       };
+
+      console.log('[EditQuoteDialog] Final updatedQuote object with term:', updatedQuote.term);
 
       onUpdateQuote(updatedQuote);
       
@@ -364,7 +368,8 @@ export const EditQuoteDialog = ({
     hasQuoteItems: quoteItems.length > 0,
     hasClientInfo: !!(clientInfoId && clientInfoId !== "none"),
     hasTemplate: !!selectedTemplateId,
-    isFormValid
+    isFormValid,
+    currentTerm: term
   });
 
   if (!quote) return null;
@@ -424,7 +429,7 @@ export const EditQuoteDialog = ({
             </p>
           )}
           <p className="text-sm text-muted-foreground">
-            Debug: Found {templates.length} templates
+            Debug: Found {templates.length} templates, Term: {term || 'none'}
           </p>
 
           <div className="flex justify-end space-x-2 mt-6">
