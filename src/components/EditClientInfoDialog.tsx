@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -9,6 +8,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { ClientInfo } from "@/pages/Index";
 import { useForm } from "react-hook-form";
 import { supabase } from "@/integrations/supabase/client";
+import { useCreditCheck } from "@/hooks/useCreditCheck";
+import { CreditCheckResult } from "@/components/CreditCheckResult";
 
 interface EditClientInfoDialogProps {
   open: boolean;
@@ -34,8 +35,24 @@ export const EditClientInfoDialog = ({
   const [agents, setAgents] = useState<Agent[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [selectedAgentId, setSelectedAgentId] = useState<string>("");
+  const [showCreditCheck, setShowCreditCheck] = useState(false);
+  const [existingCreditData, setExistingCreditData] = useState<{
+    score: number | null;
+    rating: string | null;
+    riskLevel: string | null;
+    recommendation: string | null;
+    checkDate: string | null;
+  }>({
+    score: null,
+    rating: null,
+    riskLevel: null,
+    recommendation: null,
+    checkDate: null
+  });
+
+  const { creditResult, isLoading: creditLoading, performCreditCheck, clearCreditResult } = useCreditCheck();
   
-  const { register, handleSubmit, reset, setValue, formState: { errors } } = useForm<ClientInfo>({
+  const { register, handleSubmit, reset, setValue, watch, formState: { errors } } = useForm<ClientInfo>({
     defaultValues: {
       company_name: "",
       notes: "",
@@ -44,6 +61,8 @@ export const EditClientInfoDialog = ({
       commission_override: null
     }
   });
+
+  const companyName = watch("company_name");
 
   // Fetch agents when dialog opens
   useEffect(() => {
@@ -59,6 +78,15 @@ export const EditClientInfoDialog = ({
       reset({
         ...clientInfo,
         agent_id: clientInfo.agent_id || null
+      });
+      
+      // Set existing credit data
+      setExistingCreditData({
+        score: (clientInfo as any).credit_score || null,
+        rating: (clientInfo as any).credit_rating || null,
+        riskLevel: (clientInfo as any).credit_risk_level || null,
+        recommendation: (clientInfo as any).credit_recommendation || null,
+        checkDate: (clientInfo as any).credit_check_date || null
       });
       
       // Set the selectedAgentId after agents are loaded
@@ -116,6 +144,15 @@ export const EditClientInfoDialog = ({
     if (!newOpen) {
       reset();
       setSelectedAgentId("");
+      setShowCreditCheck(false);
+      clearCreditResult();
+      setExistingCreditData({
+        score: null,
+        rating: null,
+        riskLevel: null,
+        recommendation: null,
+        checkDate: null
+      });
     }
     onOpenChange(newOpen);
   };
@@ -124,6 +161,18 @@ export const EditClientInfoDialog = ({
     console.log('[EditClient] Agent selected:', value);
     setSelectedAgentId(value);
     setValue("agent_id", value === "none" ? null : value);
+  };
+
+  const handleCreditCheckToggle = () => {
+    if (!showCreditCheck && companyName && clientInfo) {
+      setShowCreditCheck(true);
+      performCreditCheck(companyName, clientInfo.id);
+    } else {
+      setShowCreditCheck(!showCreditCheck);
+      if (!showCreditCheck) {
+        clearCreditResult();
+      }
+    }
   };
 
   const onSubmit = (data: ClientInfo) => {
@@ -141,9 +190,11 @@ export const EditClientInfoDialog = ({
 
   if (!clientInfo) return null;
 
+  const hasExistingCreditData = existingCreditData.score !== null;
+
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="sm:max-w-[500px]">
+      <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Edit Client</DialogTitle>
           <DialogDescription>
@@ -152,7 +203,18 @@ export const EditClientInfoDialog = ({
         </DialogHeader>
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="edit-company_name" className="required">Company Name</Label>
+            <div className="flex items-center justify-between">
+              <Label htmlFor="edit-company_name" className="required">Company Name</Label>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={handleCreditCheckToggle}
+                disabled={!companyName || companyName.length < 3}
+              >
+                {showCreditCheck ? 'Hide Credit Check' : 'Run Credit Check'}
+              </Button>
+            </div>
             <Input
               id="edit-company_name"
               {...register("company_name", { required: "Company name is required" })}
@@ -162,6 +224,26 @@ export const EditClientInfoDialog = ({
               <p className="text-sm text-red-500">{errors.company_name.message}</p>
             )}
           </div>
+
+          {/* Show existing credit data if available */}
+          {hasExistingCreditData && !showCreditCheck && (
+            <div className="bg-blue-50 border border-blue-200 rounded-md p-4">
+              <h4 className="font-medium text-blue-900 mb-2">Previous Credit Check</h4>
+              <div className="grid grid-cols-2 gap-2 text-sm">
+                <div><span className="font-medium">Score:</span> {existingCreditData.score}</div>
+                <div><span className="font-medium">Rating:</span> {existingCreditData.rating}</div>
+                <div><span className="font-medium">Risk:</span> {existingCreditData.riskLevel}</div>
+                <div className="col-span-2"><span className="font-medium">Date:</span> {existingCreditData.checkDate ? new Date(existingCreditData.checkDate).toLocaleDateString() : 'N/A'}</div>
+              </div>
+            </div>
+          )}
+
+          {showCreditCheck && (
+            <CreditCheckResult 
+              result={creditResult!} 
+              isLoading={creditLoading}
+            />
+          )}
 
           <div className="space-y-2">
             <Label htmlFor="edit-revio_id">Revio ID</Label>

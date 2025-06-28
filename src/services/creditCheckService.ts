@@ -32,6 +32,33 @@ export const creditCheckService = {
     }
   },
 
+  async storeCreditCheckResult(clientInfoId: string, result: CreditCheckResult): Promise<void> {
+    try {
+      console.log('[CreditCheck] Storing credit check result for client:', clientInfoId);
+      
+      const { error } = await supabase
+        .from('client_info')
+        .update({
+          credit_score: result.creditScore,
+          credit_rating: result.creditRating,
+          credit_risk_level: result.riskLevel,
+          credit_recommendation: result.recommendation,
+          credit_check_date: new Date().toISOString()
+        })
+        .eq('id', clientInfoId);
+
+      if (error) {
+        console.error('[CreditCheck] Error storing result:', error);
+        throw new Error(`Failed to store credit check result: ${error.message}`);
+      }
+
+      console.log('[CreditCheck] Credit check result stored successfully');
+    } catch (error) {
+      console.error('[CreditCheck] Exception storing result:', error);
+      throw error;
+    }
+  },
+
   getCreditRating(score: number): CreditCheckResult['creditRating'] {
     if (score >= 800) return 'Excellent';
     if (score >= 700) return 'Good';

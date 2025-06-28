@@ -137,7 +137,32 @@ export const AddClientInfoDialog = ({
         agent_id: selectedAgentId === "none" || selectedAgentId === "" ? null : selectedAgentId
       };
       
+      // Add the client first
       await onAddClientInfo(cleanedData);
+      
+      // If there's a credit check result, we need to get the client ID and store it
+      if (creditResult && companyName) {
+        try {
+          // Fetch the newly created client to get the ID
+          const { data: clientData, error } = await supabase
+            .from('client_info')
+            .select('id')
+            .eq('company_name', cleanedData.company_name)
+            .eq('user_id', user?.id)
+            .order('created_at', { ascending: false })
+            .limit(1)
+            .single();
+
+          if (!error && clientData) {
+            await creditCheckService.storeCreditCheckResult(clientData.id, creditResult);
+            console.log('[AddClient] Credit check result stored for new client');
+          }
+        } catch (err) {
+          console.error('[AddClient] Error storing credit check result:', err);
+          // Don't fail the entire operation if credit check storage fails
+        }
+      }
+      
       reset();
       setSelectedAgentId("");
       setShowCreditCheck(false);

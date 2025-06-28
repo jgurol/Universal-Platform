@@ -7,7 +7,14 @@ export const clientInfoService = {
   async fetchClientInfos(userId?: string, associatedAgentId?: string | null, isAdmin?: boolean): Promise<ClientInfo[]> {
     let query = supabase
       .from('client_info')
-      .select('*');
+      .select(`
+        *,
+        credit_score,
+        credit_rating,
+        credit_risk_level,
+        credit_recommendation,
+        credit_check_date
+      `);
     
     // Admin users can see all clients - no filtering needed
     if (isAdmin) {
@@ -42,7 +49,12 @@ export const clientInfoService = {
       agent_id: info.agent_id,
       created_at: info.created_at,
       updated_at: info.updated_at,
-      commission_override: info.commission_override
+      commission_override: info.commission_override,
+      credit_score: info.credit_score,
+      credit_rating: info.credit_rating,
+      credit_risk_level: info.credit_risk_level,
+      credit_recommendation: info.credit_recommendation,
+      credit_check_date: info.credit_check_date
     }));
   },
 

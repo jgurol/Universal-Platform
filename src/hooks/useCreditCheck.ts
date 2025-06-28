@@ -8,7 +8,7 @@ export const useCreditCheck = () => {
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
 
-  const performCreditCheck = async (businessName: string) => {
+  const performCreditCheck = async (businessName: string, clientInfoId?: string) => {
     if (!businessName.trim()) {
       toast({
         title: "Business Name Required",
@@ -25,10 +25,19 @@ export const useCreditCheck = () => {
       const result = await creditCheckService.performCreditCheck(businessName);
       setCreditResult(result);
       
-      toast({
-        title: "Credit Check Complete",
-        description: `Credit rating: ${result.creditRating} (Score: ${result.creditScore})`,
-      });
+      // Store the result if clientInfoId is provided (for existing clients)
+      if (clientInfoId) {
+        await creditCheckService.storeCreditCheckResult(clientInfoId, result);
+        toast({
+          title: "Credit Check Complete",
+          description: `Credit rating: ${result.creditRating} (Score: ${result.creditScore}) - Results saved to client record.`,
+        });
+      } else {
+        toast({
+          title: "Credit Check Complete",
+          description: `Credit rating: ${result.creditRating} (Score: ${result.creditScore})`,
+        });
+      }
     } catch (error) {
       console.error('Credit check failed:', error);
       toast({

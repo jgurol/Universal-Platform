@@ -808,6 +808,11 @@ export type Database = {
           commission_override: number | null
           company_name: string
           created_at: string | null
+          credit_check_date: string | null
+          credit_rating: string | null
+          credit_recommendation: string | null
+          credit_risk_level: string | null
+          credit_score: number | null
           id: string
           notes: string | null
           revio_id: string | null
@@ -819,6 +824,11 @@ export type Database = {
           commission_override?: number | null
           company_name: string
           created_at?: string | null
+          credit_check_date?: string | null
+          credit_rating?: string | null
+          credit_recommendation?: string | null
+          credit_risk_level?: string | null
+          credit_score?: number | null
           id?: string
           notes?: string | null
           revio_id?: string | null
@@ -830,6 +840,11 @@ export type Database = {
           commission_override?: number | null
           company_name?: string
           created_at?: string | null
+          credit_check_date?: string | null
+          credit_rating?: string | null
+          credit_recommendation?: string | null
+          credit_risk_level?: string | null
+          credit_score?: number | null
           id?: string
           notes?: string | null
           revio_id?: string | null
