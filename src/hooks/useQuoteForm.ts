@@ -17,6 +17,7 @@ export const useQuoteForm = (quote: Quote | null, open: boolean) => {
   const [expiresAt, setExpiresAt] = useState("");
   const [notes, setNotes] = useState("");
   const [commissionOverride, setCommissionOverride] = useState("");
+  const [term, setTerm] = useState("");
   const [quoteItems, setQuoteItems] = useState<QuoteItemData[]>([]);
   const { user } = useAuth();
 
@@ -74,6 +75,12 @@ export const useQuoteForm = (quote: Quote | null, open: boolean) => {
   // Update form when quote changes
   useEffect(() => {
     if (quote) {
+      console.log('[useQuoteForm] Initializing form with quote data:', {
+        term: quote.term,
+        description: quote.description,
+        clientId: quote.clientId
+      });
+      
       setClientId(quote.clientId);
       setClientInfoId(quote.clientInfoId || "");
       setDate(quote.date);
@@ -84,6 +91,7 @@ export const useQuoteForm = (quote: Quote | null, open: boolean) => {
       setExpiresAt(quote.expiresAt || "");
       setNotes(quote.notes || "");
       setCommissionOverride(quote.commissionOverride?.toString() || "");
+      setTerm(quote.term || "");
     }
   }, [quote]);
 
@@ -91,7 +99,7 @@ export const useQuoteForm = (quote: Quote | null, open: boolean) => {
     clientId,
     setClientId,
     clientInfoId,
-    setClientInfoId,
+    setClientInfoId,  
     date,
     setDate,
     description,
@@ -110,6 +118,8 @@ export const useQuoteForm = (quote: Quote | null, open: boolean) => {
     setNotes,
     commissionOverride,
     setCommissionOverride,
+    term,
+    setTerm,
     quoteItems,
     setQuoteItems
   };

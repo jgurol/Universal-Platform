@@ -55,7 +55,9 @@ export const EditQuoteDialog = ({
     notes,
     setNotes,
     commissionOverride,
-    setCommissionOverride
+    setCommissionOverride,
+    term,
+    setTerm
   } = useQuoteForm(quote, open);
 
   const { quoteItems, setQuoteItems } = useQuoteItems(quote, open);
@@ -65,20 +67,11 @@ export const EditQuoteDialog = ({
   const [billingAddress, setBillingAddress] = useState<string>("");
   const [selectedServiceAddressId, setSelectedServiceAddressId] = useState<string | null>(null);
   const [serviceAddress, setServiceAddress] = useState<string>("");
-  const [term, setTerm] = useState<string>("");
 
   const [selectedTemplateId, setSelectedTemplateId] = useState<string>("");
   const [templates, setTemplates] = useState<QuoteTemplate[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { user } = useAuth();
-
-  // Initialize term from quote
-  useEffect(() => {
-    if (quote && open) {
-      console.log('EditQuoteDialog - Initializing term from quote:', quote.term);
-      setTerm(quote.term || "");
-    }
-  }, [quote, open]);
 
   // Helper function to find matching address ID from address string
   const findMatchingAddressId = (addressString: string, addresses: any[]) => {
