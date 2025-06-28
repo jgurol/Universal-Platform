@@ -1,3 +1,4 @@
+
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Quote, Client, ClientInfo } from "@/pages/Index";
@@ -64,11 +65,20 @@ export const EditQuoteDialog = ({
   const [billingAddress, setBillingAddress] = useState<string>("");
   const [selectedServiceAddressId, setSelectedServiceAddressId] = useState<string | null>(null);
   const [serviceAddress, setServiceAddress] = useState<string>("");
+  const [term, setTerm] = useState<string>("");
 
   const [selectedTemplateId, setSelectedTemplateId] = useState<string>("");
   const [templates, setTemplates] = useState<QuoteTemplate[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { user } = useAuth();
+
+  // Initialize term from quote
+  useEffect(() => {
+    if (quote && open) {
+      console.log('EditQuoteDialog - Initializing term from quote:', quote.term);
+      setTerm(quote.term || "");
+    }
+  }, [quote, open]);
 
   // Helper function to find matching address ID from address string
   const findMatchingAddressId = (addressString: string, addresses: any[]) => {
@@ -192,6 +202,11 @@ export const EditQuoteDialog = ({
     setServiceAddress(customAddr || "");
   };
 
+  const handleTermChange = (value: string) => {
+    console.log('EditQuoteDialog - Term changed to:', value);
+    setTerm(value);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -207,7 +222,8 @@ export const EditQuoteDialog = ({
       date,
       quoteItemsLength: quoteItems.length,
       clientsLength: clients.length,
-      selectedTemplateId
+      selectedTemplateId,
+      term
     });
     
     if (!quote) {
@@ -289,9 +305,10 @@ export const EditQuoteDialog = ({
       // Update quote items in database with address information and custom descriptions
       await updateQuoteItems(quote.id, quoteItems);
 
-      console.log('EditQuoteDialog - Updating quote with addresses:', { 
+      console.log('EditQuoteDialog - Updating quote with addresses and term:', { 
         billing: billingAddress, 
-        service: serviceAddress 
+        service: serviceAddress,
+        term: term
       });
 
       const updatedQuote: Quote = {
@@ -309,6 +326,7 @@ export const EditQuoteDialog = ({
         commissionOverride: commissionOverride ? parseFloat(commissionOverride) : undefined,
         expiresAt: expiresAt || undefined,
         notes: notes || undefined,
+        term: term || undefined,
         billingAddress: billingAddress || undefined,
         serviceAddress: serviceAddress || undefined,
         templateId: selectedTemplateId
@@ -384,6 +402,8 @@ export const EditQuoteDialog = ({
             onCommissionOverrideChange={setCommissionOverride}
             notes={notes}
             onNotesChange={setNotes}
+            term={term}
+            onTermChange={handleTermChange}
           />
 
           <EditQuoteAddressSection
@@ -435,7 +455,7 @@ export const EditQuoteDialog = ({
           {/* Debug info */}
           <div className="text-xs text-muted-foreground">
             Debug: Form valid = {isFormValid ? 'true' : 'false'} 
-            (Quote: {!!quote ? 'yes' : 'no'}, Date: {!!date ? 'yes' : 'no'}, Items: {quoteItems.length}, ClientInfo: {clientInfoId && clientInfoId !== "none" ? 'yes' : 'no'}, Template: {!!selectedTemplateId ? 'yes' : 'no'})
+            (Quote: {!!quote ? 'yes' : 'no'}, Date: {!!date ? 'yes' : 'no'}, Items: {quoteItems.length}, ClientInfo: {clientInfoId && clientInfoId !== "none" ? 'yes' : 'no'}, Template: {!!selectedTemplateId ? 'yes' : 'no'}, Term: {term || 'none'})
           </div>
         </form>
       </DialogContent>
