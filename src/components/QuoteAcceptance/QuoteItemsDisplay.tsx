@@ -1,5 +1,5 @@
+
 import React from 'react';
-import { SecureHtmlDisplay } from '@/components/SecureHtmlDisplay';
 
 interface QuoteItem {
   id: string;
@@ -25,23 +25,13 @@ export const QuoteItemsDisplay: React.FC<QuoteItemsDisplayProps> = ({ items }) =
 
   const renderItem = (item: QuoteItem) => {
     const itemName = item.name || item.item?.name || 'Service Item';
-    const itemDescription = item.description || item.item?.description || '';
 
     console.log('QuoteItemsDisplay - Item name:', itemName);
-    console.log('QuoteItemsDisplay - Item description raw:', itemDescription);
 
     return (
       <tr key={item.id} className="border-b">
         <td className="py-3 px-4">
           <div className="font-medium">{itemName}</div>
-          {itemDescription && itemDescription.trim() && (
-            <div className="mt-1">
-              <SecureHtmlDisplay 
-                content={itemDescription} 
-                className="text-gray-600"
-              />
-            </div>
-          )}
         </td>
         <td className="py-3 px-4 text-center">{item.quantity}</td>
         <td className="py-3 px-4 text-right">${item.unit_price.toFixed(2)}</td>
