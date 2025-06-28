@@ -104,6 +104,12 @@ export const useQuoteForm = (quote: Quote | null, open: boolean) => {
             areEqual: data.term === quote.term
           });
 
+          // If the database term is different from the prop, use the database value
+          if (data.term !== quote.term) {
+            console.log('[useQuoteForm] Using database term value:', data.term);
+            setTerm(data.term || "");
+          }
+
         } catch (err) {
           console.error('[useQuoteForm] Error in database fetch:', err);
         }
@@ -148,6 +154,10 @@ export const useQuoteForm = (quote: Quote | null, open: boolean) => {
       setTimeout(() => {
         console.log('[useQuoteForm] Term state after setting:', quoteTerm);
       }, 100);
+    } else {
+      // Reset form when dialog closes
+      console.log('[useQuoteForm] Resetting form - dialog closed or no quote');
+      setTerm("");
     }
   }, [quote, open]);
 

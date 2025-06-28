@@ -1,4 +1,3 @@
-
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -40,7 +39,8 @@ export const EditQuoteFormFields = ({
     term,
     termType: typeof term,
     termLength: term?.length,
-    termTruthy: !!term
+    termTruthy: !!term,
+    termValue: JSON.stringify(term)
   });
   
   const handleTermChange = (value: string) => {
@@ -123,6 +123,9 @@ export const EditQuoteFormFields = ({
             <SelectItem value="36 Months">36 Months</SelectItem>
           </SelectContent>
         </Select>
+        <div className="text-xs text-muted-foreground">
+          Debug: Current term value = "{term}" (type: {typeof term})
+        </div>
       </div>
 
       <div className="md:col-span-2 space-y-2">
