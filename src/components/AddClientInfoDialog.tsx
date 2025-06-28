@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -11,6 +10,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { AddClientInfoData } from "@/types/clientManagement";
 import { useCreditCheck } from "@/hooks/useCreditCheck";
 import { CreditCheckResult } from "@/components/CreditCheckResult";
+import { creditCheckService } from "@/services/creditCheckService";
+import { useAuth } from "@/context/AuthContext";
 
 interface AddClientInfoDialogProps {
   open: boolean;
@@ -36,6 +37,7 @@ export const AddClientInfoDialog = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [selectedAgentId, setSelectedAgentId] = useState<string>("");
   const [showCreditCheck, setShowCreditCheck] = useState(false);
+  const { user } = useAuth();
 
   const { creditResult, isLoading: creditLoading, performCreditCheck, clearCreditResult } = useCreditCheck();
 
@@ -141,14 +143,14 @@ export const AddClientInfoDialog = ({
       await onAddClientInfo(cleanedData);
       
       // If there's a credit check result, we need to get the client ID and store it
-      if (creditResult && companyName) {
+      if (creditResult && companyName && user) {
         try {
           // Fetch the newly created client to get the ID
           const { data: clientData, error } = await supabase
             .from('client_info')
             .select('id')
             .eq('company_name', cleanedData.company_name)
-            .eq('user_id', user?.id)
+            .eq('user_id', user.id)
             .order('created_at', { ascending: false })
             .limit(1)
             .single();
