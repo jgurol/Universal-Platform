@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -331,7 +330,7 @@ export default function QuoteAcceptance() {
               </div>
             </div>
 
-            {/* Quote Items */}
+            {/* Quote Items - Using the new component */}
             <div className="mb-8">
               <QuoteItemsDisplay items={quote.quote_items || []} />
             </div>
