@@ -6,7 +6,13 @@ import type { Database } from "@/integrations/supabase/types";
 type DatabaseQuote = Database['public']['Tables']['quotes']['Row'];
 
 const mapDatabaseQuoteToQuote = (dbQuote: DatabaseQuote, clientName?: string, companyName?: string): Quote => {
-  return {
+  console.log('[mapDatabaseQuoteToQuote] Mapping quote with term:', {
+    id: dbQuote.id,
+    rawTerm: dbQuote.term,
+    termType: typeof dbQuote.term
+  });
+
+  const mappedQuote = {
     id: dbQuote.id,
     clientId: dbQuote.client_id || "",
     clientName: clientName || "No Salesperson Assigned",
@@ -35,9 +41,17 @@ const mapDatabaseQuoteToQuote = (dbQuote: DatabaseQuote, clientName?: string, co
     emailOpened: dbQuote.email_opened || false,
     emailOpenedAt: dbQuote.email_opened_at || undefined,
     emailOpenCount: dbQuote.email_open_count || 0,
-    term: dbQuote.term || undefined, // Make sure term is included
+    term: dbQuote.term || undefined, // Ensure term is properly mapped
     user_id: dbQuote.user_id
   };
+
+  console.log('[mapDatabaseQuoteToQuote] Final mapped quote with term:', {
+    id: mappedQuote.id,
+    term: mappedQuote.term,
+    termType: typeof mappedQuote.term
+  });
+
+  return mappedQuote;
 };
 
 export const fetchQuotes = async (userId: string): Promise<Quote[]> => {
@@ -66,7 +80,7 @@ export const fetchQuotes = async (userId: string): Promise<Quote[]> => {
       const clientName = agent ? `${agent.first_name} ${agent.last_name}` : undefined;
       const companyName = clientInfo?.company_name;
       
-      console.log('[fetchQuotes] Mapping quote:', {
+      console.log('[fetchQuotes] Processing quote:', {
         id: dbQuote.id,
         rawTerm: dbQuote.term,
         termType: typeof dbQuote.term,
@@ -76,7 +90,7 @@ export const fetchQuotes = async (userId: string): Promise<Quote[]> => {
       
       const mappedQuote = mapDatabaseQuoteToQuote(dbQuote, clientName, companyName);
       
-      console.log('[fetchQuotes] Mapped quote result:', {
+      console.log('[fetchQuotes] Final quote result:', {
         id: mappedQuote.id,
         mappedTerm: mappedQuote.term,
         mappedTermType: typeof mappedQuote.term
@@ -86,6 +100,8 @@ export const fetchQuotes = async (userId: string): Promise<Quote[]> => {
     }) || [];
 
     console.log('[fetchQuotes] Successfully fetched quotes:', quotes.length);
+    console.log('[fetchQuotes] Sample quote terms:', quotes.slice(0, 3).map(q => ({ id: q.id, term: q.term })));
+    
     return quotes;
   } catch (error) {
     console.error('[fetchQuotes] Error in fetchQuotes:', error);
