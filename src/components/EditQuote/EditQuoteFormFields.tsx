@@ -94,12 +94,17 @@ export const EditQuoteFormFields = ({
 
       <div className="md:col-span-2 space-y-2">
         <Label htmlFor="term">Initial Term</Label>
-        <Input
-          id="term"
-          value={term || ""}
-          onChange={(e) => onTermChange?.(e.target.value)}
-          placeholder="e.g., 36 Months, 24 Months, etc."
-        />
+        <Select value={term || ""} onValueChange={onTermChange}>
+          <SelectTrigger>
+            <SelectValue placeholder="Select initial term" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="Month to Month">Month to Month</SelectItem>
+            <SelectItem value="12 Months">12 Months</SelectItem>
+            <SelectItem value="24 Months">24 Months</SelectItem>
+            <SelectItem value="36 Months">36 Months</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
 
       <div className="md:col-span-2 space-y-2">
