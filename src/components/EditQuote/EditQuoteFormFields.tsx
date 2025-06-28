@@ -1,3 +1,4 @@
+
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -55,27 +56,28 @@ export const EditQuoteFormFields = ({
   };
   
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-      <div className="space-y-2">
-        <Label htmlFor="description">Description *</Label>
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="space-y-3">
+        <Label htmlFor="description" className="text-sm font-semibold text-gray-800">Description *</Label>
         <Input
           id="description"
           value={description}
           onChange={(e) => onDescriptionChange(e.target.value)}
           placeholder="Enter quote description"
           required
+          className="border-gray-300 bg-gray-50 focus:bg-white focus:border-blue-500 transition-colors"
         />
       </div>
 
-      <div className="space-y-2">
-        <Label htmlFor="clientInfo">Client Company *</Label>
+      <div className="space-y-3">
+        <Label htmlFor="clientInfo" className="text-sm font-semibold text-gray-800">Client Company *</Label>
         <Select value={clientInfoId} onValueChange={onClientInfoIdChange}>
-          <SelectTrigger>
+          <SelectTrigger className="border-gray-300 bg-gray-50 focus:bg-white focus:border-blue-500 transition-colors">
             <SelectValue placeholder="Select client company" />
           </SelectTrigger>
-          <SelectContent>
+          <SelectContent className="bg-white border-gray-200 shadow-lg">
             {clientInfos.map((client) => (
-              <SelectItem key={client.id} value={client.id}>
+              <SelectItem key={client.id} value={client.id} className="hover:bg-gray-100">
                 {client.company_name}
               </SelectItem>
             ))}
@@ -83,23 +85,23 @@ export const EditQuoteFormFields = ({
         </Select>
       </div>
 
-      <div className="space-y-2">
-        <Label htmlFor="status">Status</Label>
+      <div className="space-y-3">
+        <Label htmlFor="status" className="text-sm font-semibold text-gray-800">Status</Label>
         <Select value={status} onValueChange={onStatusChange}>
-          <SelectTrigger>
+          <SelectTrigger className="border-gray-300 bg-gray-50 focus:bg-white focus:border-blue-500 transition-colors">
             <SelectValue placeholder="Select status" />
           </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="pending">Pending</SelectItem>
-            <SelectItem value="approved">Approved</SelectItem>
-            <SelectItem value="rejected">Rejected</SelectItem>
-            <SelectItem value="sent">Sent</SelectItem>
+          <SelectContent className="bg-white border-gray-200 shadow-lg">
+            <SelectItem value="pending" className="hover:bg-gray-100">Pending</SelectItem>
+            <SelectItem value="approved" className="hover:bg-gray-100">Approved</SelectItem>
+            <SelectItem value="rejected" className="hover:bg-gray-100">Rejected</SelectItem>
+            <SelectItem value="sent" className="hover:bg-gray-100">Sent</SelectItem>
           </SelectContent>
         </Select>
       </div>
 
-      <div className="space-y-2">
-        <Label htmlFor="commissionOverride">Commission Override (%)</Label>
+      <div className="space-y-3">
+        <Label htmlFor="commissionOverride" className="text-sm font-semibold text-gray-800">Commission Override (%)</Label>
         <Input
           id="commissionOverride"
           type="number"
@@ -107,35 +109,34 @@ export const EditQuoteFormFields = ({
           onChange={(e) => onCommissionOverrideChange(e.target.value)}
           placeholder="Enter commission override"
           step="0.01"
+          className="border-gray-300 bg-gray-50 focus:bg-white focus:border-blue-500 transition-colors"
         />
       </div>
 
-      <div className="md:col-span-2 space-y-2">
-        <Label htmlFor="term">Initial Term</Label>
+      <div className="md:col-span-2 space-y-3">
+        <Label htmlFor="term" className="text-sm font-semibold text-gray-800">Initial Term</Label>
         <Select value={term || undefined} onValueChange={handleTermChange}>
-          <SelectTrigger>
+          <SelectTrigger className="border-gray-300 bg-gray-50 focus:bg-white focus:border-blue-500 transition-colors">
             <SelectValue placeholder="Select initial term" />
           </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="Month to Month">Month to Month</SelectItem>
-            <SelectItem value="12 Months">12 Months</SelectItem>
-            <SelectItem value="24 Months">24 Months</SelectItem>
-            <SelectItem value="36 Months">36 Months</SelectItem>
+          <SelectContent className="bg-white border-gray-200 shadow-lg">
+            <SelectItem value="Month to Month" className="hover:bg-gray-100">Month to Month</SelectItem>
+            <SelectItem value="12 Months" className="hover:bg-gray-100">12 Months</SelectItem>
+            <SelectItem value="24 Months" className="hover:bg-gray-100">24 Months</SelectItem>
+            <SelectItem value="36 Months" className="hover:bg-gray-100">36 Months</SelectItem>
           </SelectContent>
         </Select>
-        <div className="text-xs text-muted-foreground">
-          Debug: Current term value = "{term}" (type: {typeof term})
-        </div>
       </div>
 
-      <div className="md:col-span-2 space-y-2">
-        <Label htmlFor="notes">Notes</Label>
+      <div className="md:col-span-2 space-y-3">
+        <Label htmlFor="notes" className="text-sm font-semibold text-gray-800">Notes</Label>
         <Textarea
           id="notes"
           value={notes}
           onChange={(e) => onNotesChange(e.target.value)}
           placeholder="Enter any additional notes"
-          rows={3}
+          rows={4}
+          className="border-gray-300 bg-gray-50 focus:bg-white focus:border-blue-500 transition-colors resize-none"
         />
       </div>
     </div>
