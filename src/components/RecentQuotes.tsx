@@ -111,7 +111,21 @@ export const RecentQuotes = ({
       quoteNumber: newQuoteNumber, // Use properly generated quote number
       quoteMonth: quote.quoteMonth,
       quoteYear: quote.quoteYear,
-      expiresAt: quote.expiresAt
+      expiresAt: quote.expiresAt,
+      term: quote.term,
+      billingAddress: quote.billingAddress,
+      serviceAddress: quote.serviceAddress,
+      templateId: quote.templateId,
+      emailStatus: quote.emailStatus,
+      acceptedBy: quote.acceptedBy,
+      emailSentAt: quote.emailSentAt,
+      emailOpened: quote.emailOpened,
+      emailOpenedAt: quote.emailOpenedAt,
+      emailOpenCount: quote.emailOpenCount,
+      acceptedAt: quote.acceptedAt,
+      commission: quote.commission,
+      user_id: quote.user_id,
+      archived: false
     };
     
     onAddQuote(newQuote);

@@ -163,7 +163,9 @@ export const AddQuoteDialog = ({ open, onOpenChange, onAddQuote, clients, client
         quoteItems: formState.quoteItems,
         billingAddress: formState.billingAddress || undefined,
         serviceAddress: formState.serviceAddress || undefined,
-        templateId: formState.selectedTemplateId
+        templateId: formState.selectedTemplateId,
+        user_id: user.id,
+        archived: false
       };
       
       console.log('[AddQuoteDialog] Calling onAddQuote with data:', quoteData);
