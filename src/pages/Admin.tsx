@@ -18,6 +18,7 @@ import { EditUserDialog } from '@/components/EditUserDialog';
 import { AssociateUserDialog } from '@/components/AssociateUserDialog';
 import { AddUserDialog } from '@/components/AddUserDialog';
 import { DeleteUserDialog } from '@/components/DeleteUserDialog';
+import { useSystemSettings } from '@/context/SystemSettingsContext';
 
 interface UserProfile {
   id: string;
@@ -48,6 +49,7 @@ interface AuthUser {
 export default function Admin() {
   const { isAdmin, user } = useAuth();
   const { toast } = useToast();
+  const { settings } = useSystemSettings();
   const [users, setUsers] = useState<UserProfile[]>([]);
   const [loading, setLoading] = useState(true);
   const [editingUser, setEditingUser] = useState<UserProfile | null>(null);
@@ -137,19 +139,39 @@ export default function Admin() {
   const formatLastLogin = (lastSignInAt: string | null) => {
     if (!lastSignInAt) return 'Never';
     
-    const date = new Date(lastSignInAt);
-    const now = new Date();
-    const diffMs = now.getTime() - date.getTime();
-    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-    
-    if (diffDays === 0) {
-      return `Today at ${date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
-    } else if (diffDays === 1) {
-      return 'Yesterday';
-    } else if (diffDays < 7) {
-      return `${diffDays} days ago`;
-    } else {
-      return date.toLocaleDateString();
+    try {
+      // Create date object from UTC timestamp
+      const utcDate = new Date(lastSignInAt);
+      
+      // Get the configured timezone from system settings
+      const userTimezone = settings.timezone || 'America/Los_Angeles';
+      
+      // Convert to user's configured timezone
+      const localDate = new Date(utcDate.toLocaleString("en-US", { timeZone: userTimezone }));
+      const now = new Date(new Date().toLocaleString("en-US", { timeZone: userTimezone }));
+      
+      const diffMs = now.getTime() - localDate.getTime();
+      const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+      
+      if (diffDays === 0) {
+        // Format time in user's timezone
+        const timeString = utcDate.toLocaleTimeString([], { 
+          hour: '2-digit', 
+          minute: '2-digit',
+          timeZone: userTimezone
+        });
+        return `Today at ${timeString}`;
+      } else if (diffDays === 1) {
+        return 'Yesterday';
+      } else if (diffDays < 7) {
+        return `${diffDays} days ago`;
+      } else {
+        // Format date in user's timezone
+        return utcDate.toLocaleDateString([], { timeZone: userTimezone });
+      }
+    } catch (error) {
+      console.error('Error formatting last login date:', error);
+      return 'Invalid date';
     }
   };
 
