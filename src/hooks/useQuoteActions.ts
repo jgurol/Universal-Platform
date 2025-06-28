@@ -1,7 +1,12 @@
+
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/context/AuthContext";
 import { Quote, Client } from "@/pages/Index";
-import { addQuoteToDatabase, updateQuoteInDatabase, deleteQuoteFromDatabase, unarchiveQuoteFromDatabase, permanentlyDeleteQuoteFromDatabase } from "@/services/quoteService";
+import { createQuoteInDatabase } from "@/services/quoteCreationService";
+import { updateQuote as updateQuoteInService } from "@/services/quoteService";
+import { deleteQuoteFromDatabase } from "@/services/quoteDeletionService";
+import { unarchiveQuoteFromDatabase } from "@/services/quoteUnarchiveService";
+import { permanentlyDeleteQuoteFromDatabase } from "@/services/quotePermanentDeletionService";
 
 export const useQuoteActions = (
   clients: Client[],
@@ -28,7 +33,7 @@ export const useQuoteActions = (
         quoteItemsCount: newQuote.quoteItems?.length || 0
       });
       
-      await addQuoteToDatabase(newQuote, user.id);
+      await createQuoteInDatabase(newQuote, user.id);
       
       fetchQuotes();
       const client = clients.find(c => c.id === newQuote.clientId);
@@ -61,11 +66,7 @@ export const useQuoteActions = (
       console.log('[updateQuote] Updating quote with user:', user.id);
       console.log('[updateQuote] Updating quote with data:', updatedQuote);
       
-      // Extract the quote items from the updated quote
-      const items = updatedQuote.quoteItems || [];
-      
-      // Call updateQuoteInDatabase with the correct arguments
-      await updateQuoteInDatabase(updatedQuote.id, updatedQuote, items);
+      await updateQuoteInService(updatedQuote);
       
       fetchQuotes();
       const client = clients.find(c => c.id === updatedQuote.clientId);
