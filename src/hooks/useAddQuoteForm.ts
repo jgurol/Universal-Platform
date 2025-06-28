@@ -55,7 +55,7 @@ export const useAddQuoteForm = (open: boolean) => {
     setSelectedServiceAddressId(null);
     setSelectedTemplateId("");
     setAssociatedDeals([]);
-    setSelectedDealId(""); // Changed from array to single string
+    setSelectedDealId("none"); // Changed to use "none" instead of empty string
     setIsSubmitting(false);
     
     // Reset dates

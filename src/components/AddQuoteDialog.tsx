@@ -1,4 +1,3 @@
-
 import { useEffect } from "react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -402,7 +401,7 @@ export const AddQuoteDialog = ({ open, onOpenChange, onAddQuote, clients, client
                   </div>
                 )}
 
-                {/* Associated Deals Section - Changed to dropdown */}
+                {/* Associated Deals Section - Fixed dropdown */}
                 {dialogData.associatedDeals.length > 0 && (
                   <div className="space-y-3">
                     <Label className="text-sm font-semibold text-gray-800">Associated Deal (Optional)</Label>
@@ -411,7 +410,7 @@ export const AddQuoteDialog = ({ open, onOpenChange, onAddQuote, clients, client
                         <SelectValue placeholder="Select a deal to associate (optional)" />
                       </SelectTrigger>
                       <SelectContent className="bg-white border-gray-200 shadow-lg z-50">
-                        <SelectItem value="" className="hover:bg-gray-100">
+                        <SelectItem value="none" className="hover:bg-gray-100">
                           No deal selected
                         </SelectItem>
                         {dialogData.associatedDeals.map((deal) => (
@@ -426,7 +425,7 @@ export const AddQuoteDialog = ({ open, onOpenChange, onAddQuote, clients, client
                         ))}
                       </SelectContent>
                     </Select>
-                    {formState.selectedDealId && (
+                    {formState.selectedDealId && formState.selectedDealId !== "none" && (
                       <p className="text-sm text-green-600 mt-2 font-medium">
                         Deal selected: {dialogData.associatedDeals.find(d => d.id === formState.selectedDealId)?.deal_name}
                       </p>
