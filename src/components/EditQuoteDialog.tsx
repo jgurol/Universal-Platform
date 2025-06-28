@@ -393,7 +393,7 @@ export const EditQuoteDialog = ({
   });
   if (!quote) return null;
   return <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[1400px] max-h-[95vh] overflow-y-auto bg-blue-300">
+      <DialogContent className="sm:max-w-[1400px] max-h-[95vh] overflow-y-auto bg-gray-500">
         <div className="space-y-6">
           {/* Header */}
           <div className="flex items-center gap-3 pb-4 border-b">
