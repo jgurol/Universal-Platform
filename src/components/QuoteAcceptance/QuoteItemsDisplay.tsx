@@ -1,3 +1,4 @@
+
 import React from 'react';
 
 interface QuoteItem {
@@ -23,14 +24,12 @@ export const QuoteItemsDisplay: React.FC<QuoteItemsDisplayProps> = ({ items }) =
   const nrcItems = items.filter(item => item.charge_type === 'NRC');
 
   const renderItem = (item: QuoteItem) => {
-    const itemName = item.name || item.item?.name || 'Service Item';
-
-    console.log('QuoteItemsDisplay - Item name:', itemName);
+    console.log('QuoteItemsDisplay - Item name:', "testing");
 
     return (
       <tr key={item.id} className="border-b">
         <td className="py-3 px-4">
-          <div className="font-medium">{itemName}</div>
+          <div className="font-medium">testing</div>
         </td>
         <td className="py-3 px-4 text-center">{item.quantity}</td>
         <td className="py-3 px-4 text-right">${item.unit_price.toFixed(2)}</td>
