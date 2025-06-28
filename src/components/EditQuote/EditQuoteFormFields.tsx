@@ -36,7 +36,23 @@ export const EditQuoteFormFields = ({
   term,
   onTermChange
 }: EditQuoteFormFieldsProps) => {
-  console.log('[EditQuoteFormFields] Rendering with term:', term);
+  console.log('[EditQuoteFormFields] Rendering with term:', {
+    term,
+    termType: typeof term,
+    termLength: term?.length,
+    termTruthy: !!term
+  });
+  
+  const handleTermChange = (value: string) => {
+    console.log('[EditQuoteFormFields] Term change triggered:', {
+      newValue: value,
+      oldTerm: term,
+      onTermChangeExists: !!onTermChange
+    });
+    if (onTermChange) {
+      onTermChange(value);
+    }
+  };
   
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -96,7 +112,7 @@ export const EditQuoteFormFields = ({
 
       <div className="md:col-span-2 space-y-2">
         <Label htmlFor="term">Initial Term</Label>
-        <Select value={term || ""} onValueChange={onTermChange}>
+        <Select value={term || ""} onValueChange={handleTermChange}>
           <SelectTrigger>
             <SelectValue placeholder="Select initial term" />
           </SelectTrigger>
@@ -107,7 +123,9 @@ export const EditQuoteFormFields = ({
             <SelectItem value="36 Months">36 Months</SelectItem>
           </SelectContent>
         </Select>
-        <p className="text-xs text-muted-foreground">Current term value: {term || 'none'}</p>
+        <p className="text-xs text-muted-foreground">
+          Debug: term="{term}", length={term?.length || 0}, type={typeof term}
+        </p>
       </div>
 
       <div className="md:col-span-2 space-y-2">

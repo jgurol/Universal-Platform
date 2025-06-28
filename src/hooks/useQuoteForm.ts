@@ -72,14 +72,58 @@ export const useQuoteForm = (quote: Quote | null, open: boolean) => {
     generateNextVersionNumber();
   }, [quote, user, open]);
 
+  // Add debugging effect to fetch fresh quote data from database
+  useEffect(() => {
+    const fetchQuoteFromDatabase = async () => {
+      if (quote && quote.id && open) {
+        console.log('[useQuoteForm] Fetching fresh quote data from database for quote ID:', quote.id);
+        try {
+          const { data, error } = await supabase
+            .from('quotes')
+            .select('*')
+            .eq('id', quote.id)
+            .single();
+
+          if (error) {
+            console.error('[useQuoteForm] Error fetching quote from database:', error);
+            return;
+          }
+
+          console.log('[useQuoteForm] Fresh quote data from database:', {
+            id: data.id,
+            term: data.term,
+            description: data.description,
+            quote_number: data.quote_number,
+            status: data.status
+          });
+          
+          // Compare with quote prop
+          console.log('[useQuoteForm] Comparing database vs prop:', {
+            databaseTerm: data.term,
+            propTerm: quote.term,
+            areEqual: data.term === quote.term
+          });
+
+        } catch (err) {
+          console.error('[useQuoteForm] Error in database fetch:', err);
+        }
+      }
+    };
+
+    fetchQuoteFromDatabase();
+  }, [quote?.id, open]);
+
   // Update form when quote changes - ensuring term is properly initialized
   useEffect(() => {
     if (quote && open) {
       console.log('[useQuoteForm] Initializing form with quote data:', {
         term: quote.term,
+        termType: typeof quote.term,
+        termLength: quote.term?.length,
         description: quote.description,
         clientId: quote.clientId,
-        quoteId: quote.id
+        quoteId: quote.id,
+        fullQuoteObject: quote
       });
       
       setClientId(quote.clientId || "");
