@@ -28,6 +28,8 @@ export const QuoteItemsDisplay: React.FC<QuoteItemsDisplayProps> = ({ items }) =
     const itemName = item.name || item.item?.name || 'Service Item';
     const itemDescription = item.description || item.item?.description || '';
 
+    console.log('QuoteItemsDisplay - Item description:', itemDescription);
+
     return (
       <tr key={item.id} className="border-b">
         <td className="py-3 px-4">
@@ -36,7 +38,7 @@ export const QuoteItemsDisplay: React.FC<QuoteItemsDisplayProps> = ({ items }) =
             <div className="mt-1">
               <SecureHtmlDisplay 
                 content={itemDescription} 
-                className="text-sm text-gray-600 [&_p]:mb-2 [&_img]:max-w-full [&_img]:h-auto"
+                className="text-sm text-gray-600"
               />
             </div>
           )}
