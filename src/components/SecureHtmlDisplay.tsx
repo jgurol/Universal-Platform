@@ -17,36 +17,51 @@ export const SecureHtmlDisplay: React.FC<SecureHtmlDisplayProps> = ({
   
   console.log('SecureHtmlDisplay - Raw content:', content);
   
-  // Strip all HTML tags to get plain text - more robust approach
-  const stripHtml = (html: string): string => {
+  // Comprehensive HTML stripping function
+  const stripAllHtml = (html: string): string => {
     if (!html) return '';
     
-    // First, decode HTML entities
-    const textarea = document.createElement('textarea');
-    textarea.innerHTML = html;
-    const decodedHtml = textarea.value;
-    
-    // Create a temporary div element to parse HTML
-    const tempDiv = document.createElement('div');
-    tempDiv.innerHTML = decodedHtml;
-    
-    // Extract text content only, removing all HTML tags
-    let textContent = tempDiv.textContent || tempDiv.innerText || '';
-    
-    // Remove extra whitespace and line breaks
-    textContent = textContent.replace(/\s+/g, ' ').trim();
-    
-    return textContent;
+    try {
+      // First pass: decode HTML entities
+      const textarea = document.createElement('textarea');
+      textarea.innerHTML = html;
+      let decodedHtml = textarea.value;
+      
+      // Second pass: remove all HTML tags using regex
+      decodedHtml = decodedHtml.replace(/<[^>]*>/g, '');
+      
+      // Third pass: create DOM element to extract pure text content
+      const tempDiv = document.createElement('div');
+      tempDiv.innerHTML = decodedHtml;
+      let textContent = tempDiv.textContent || tempDiv.innerText || '';
+      
+      // Clean up whitespace and special characters
+      textContent = textContent
+        .replace(/&nbsp;/g, ' ')
+        .replace(/&amp;/g, '&')
+        .replace(/&lt;/g, '<')
+        .replace(/&gt;/g, '>')
+        .replace(/&quot;/g, '"')
+        .replace(/&#39;/g, "'")
+        .replace(/\s+/g, ' ')
+        .trim();
+      
+      return textContent;
+    } catch (error) {
+      console.error('Error stripping HTML:', error);
+      // Fallback: aggressive regex replacement
+      return html.replace(/<[^>]*>/g, '').replace(/&[^;]+;/g, '').trim();
+    }
   };
   
-  let plainText = stripHtml(content);
+  let plainText = stripAllHtml(content);
   
   // Truncate if maxLength is specified
   if (maxLength && plainText.length > maxLength) {
     plainText = plainText.substring(0, maxLength) + '...';
   }
   
-  console.log('SecureHtmlDisplay - Plain text output:', plainText);
+  console.log('SecureHtmlDisplay - Final plain text output:', plainText);
   
   return (
     <div className={cn("text-sm leading-relaxed", className)}>
