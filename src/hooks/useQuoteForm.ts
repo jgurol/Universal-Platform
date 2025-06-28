@@ -72,16 +72,16 @@ export const useQuoteForm = (quote: Quote | null, open: boolean) => {
     generateNextVersionNumber();
   }, [quote, user, open]);
 
-  // Update form when quote changes
+  // Update form when quote changes - ensuring term is properly initialized
   useEffect(() => {
-    if (quote) {
+    if (quote && open) {
       console.log('[useQuoteForm] Initializing form with quote data:', {
         term: quote.term,
         description: quote.description,
         clientId: quote.clientId
       });
       
-      setClientId(quote.clientId);
+      setClientId(quote.clientId || "");
       setClientInfoId(quote.clientInfoId || "");
       setDate(quote.date);
       setDescription(quote.description || "");
@@ -91,9 +91,13 @@ export const useQuoteForm = (quote: Quote | null, open: boolean) => {
       setExpiresAt(quote.expiresAt || "");
       setNotes(quote.notes || "");
       setCommissionOverride(quote.commissionOverride?.toString() || "");
-      setTerm(quote.term || "");
+      
+      // Ensure term is properly set from quote data
+      const quoteTerm = quote.term || "";
+      console.log('[useQuoteForm] Setting term from quote:', quoteTerm);
+      setTerm(quoteTerm);
     }
-  }, [quote]);
+  }, [quote, open]);
 
   return {
     clientId,
