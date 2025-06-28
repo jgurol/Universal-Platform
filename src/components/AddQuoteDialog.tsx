@@ -1,6 +1,6 @@
 
 import { useEffect } from "react";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -9,7 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { Calendar, Building2, FileText, DollarSign, Clock } from "lucide-react";
+import { Calendar, Building2, FileText, DollarSign, Clock, Settings } from "lucide-react";
 import { Quote, Client, ClientInfo } from "@/pages/Index";
 import { useAuth } from "@/context/AuthContext";
 import { QuoteItemsManager } from "@/components/QuoteItemsManager";
@@ -225,396 +225,397 @@ export const AddQuoteDialog = ({ open, onOpenChange, onAddQuote, clients, client
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[1400px] max-h-[95vh] overflow-y-auto">
-        <DialogHeader className="space-y-4 pb-6">
-          <div className="flex items-center gap-3">
+      <DialogContent className="sm:max-w-[1400px] max-h-[95vh] overflow-y-auto bg-gray-500">
+        <div className="space-y-6">
+          {/* Header */}
+          <div className="flex items-center gap-3 pb-4 border-b">
             <div className="p-2 bg-blue-100 rounded-lg">
               <FileText className="h-6 w-6 text-blue-600" />
             </div>
             <div>
-              <DialogTitle className="text-2xl font-semibold">Create New Quote</DialogTitle>
-              <DialogDescription className="text-base text-muted-foreground">
-                Fill out the details below to create a professional quote for your client.
-              </DialogDescription>
+              <h2 className="text-2xl font-semibold">Create New Quote</h2>
+              <p className="text-muted-foreground">Fill out the details below to create a professional quote for your client</p>
             </div>
           </div>
-        </DialogHeader>
         
-        {/* Show loading state while data is loading */}
-        {dialogData.isDataLoading && (
-          <Card>
-            <CardContent className="flex items-center justify-center py-12">
-              <div className="text-center space-y-3">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-                <p className="text-muted-foreground">Loading form data...</p>
-              </div>
-            </CardContent>
-          </Card>
-        )}
+          {/* Show loading state while data is loading */}
+          {dialogData.isDataLoading && (
+            <Card>
+              <CardContent className="flex items-center justify-center py-12">
+                <div className="text-center space-y-3">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+                  <p className="text-muted-foreground">Loading form data...</p>
+                </div>
+              </CardContent>
+            </Card>
+          )}
         
-        <form onSubmit={handleSubmit} className="space-y-8">
-          {/* Quote Header Information */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-lg">
-                <Calendar className="h-5 w-5 text-blue-600" />
-                Quote Information
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <div className="space-y-2">
-                <Label htmlFor="description" className="text-sm font-medium">Quote Name</Label>
-                <Input
-                  id="description"
-                  value={formState.description}
-                  onChange={(e) => {
-                    console.log('[AddQuoteDialog] Description changed to:', e.target.value);
-                    formState.setDescription(e.target.value);
-                  }}
-                  placeholder="Enter quote name (optional - will auto-generate if empty)"
-                  disabled={dialogData.isDataLoading}
-                  className="h-10"
-                />
-              </div>
+          <form onSubmit={handleSubmit} className="space-y-8">
+            {/* Quote Header Information */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-lg">
+                  <Calendar className="h-5 w-5 text-blue-600" />
+                  Quote Information
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div className="space-y-3">
+                  <Label htmlFor="description" className="text-sm font-semibold text-gray-800">Quote Name</Label>
+                  <Input
+                    id="description"
+                    value={formState.description}
+                    onChange={(e) => {
+                      console.log('[AddQuoteDialog] Description changed to:', e.target.value);
+                      formState.setDescription(e.target.value);
+                    }}
+                    placeholder="Enter quote name (optional - will auto-generate if empty)"
+                    disabled={dialogData.isDataLoading}
+                    className="border-gray-300 bg-gray-50 focus:bg-white focus:border-blue-500 transition-colors"
+                  />
+                </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="quoteNumber" className="text-sm font-medium">Quote Number</Label>
-                <Input
-                  id="quoteNumber"
-                  value={quoteNumber}
-                  onChange={(e) => setQuoteNumber(e.target.value)}
-                  placeholder="Auto-generated"
-                  disabled
-                  className="h-10 bg-muted"
-                />
-              </div>
+                <div className="space-y-3">
+                  <Label htmlFor="quoteNumber" className="text-sm font-semibold text-gray-800">Quote Number</Label>
+                  <Input
+                    id="quoteNumber"
+                    value={quoteNumber}
+                    onChange={(e) => setQuoteNumber(e.target.value)}
+                    placeholder="Auto-generated"
+                    disabled
+                    className="border-gray-300 bg-gray-100 text-gray-600"
+                  />
+                </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="date" className="text-sm font-medium">
-                  Quote Date <span className="text-red-500">*</span>
-                </Label>
-                <Input
-                  id="date"
-                  type="date"
-                  value={formState.date}
-                  onChange={(e) => formState.setDate(e.target.value)}
-                  required
-                  className="h-10"
-                />
-              </div>
+                <div className="space-y-3">
+                  <Label htmlFor="date" className="text-sm font-semibold text-gray-800">
+                    Quote Date <span className="text-red-500">*</span>
+                  </Label>
+                  <Input
+                    id="date"
+                    type="date"
+                    value={formState.date}
+                    onChange={(e) => formState.setDate(e.target.value)}
+                    required
+                    className="border-gray-300 bg-gray-50 focus:bg-white focus:border-blue-500 transition-colors"
+                  />
+                </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="expiresAt" className="text-sm font-medium">Expiration Date</Label>
-                <Input
-                  id="expiresAt"
-                  type="date"
-                  value={formState.expiresAt}
-                  onChange={(e) => formState.setExpiresAt(e.target.value)}
-                  className="h-10"
-                />
-                <p className="text-xs text-muted-foreground">Auto-set to +60 days from quote date</p>
-              </div>
-            </CardContent>
-          </Card>
+                <div className="space-y-3">
+                  <Label htmlFor="expiresAt" className="text-sm font-semibold text-gray-800">Expiration Date</Label>
+                  <Input
+                    id="expiresAt"
+                    type="date"
+                    value={formState.expiresAt}
+                    onChange={(e) => formState.setExpiresAt(e.target.value)}
+                    className="border-gray-300 bg-gray-50 focus:bg-white focus:border-blue-500 transition-colors"
+                  />
+                  <p className="text-xs text-gray-600">Auto-set to +60 days from quote date</p>
+                </div>
+              </CardContent>
+            </Card>
 
-          {/* Client Information */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-lg">
-                <Building2 className="h-5 w-5 text-green-600" />
-                Client Information
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="space-y-2">
-                <Label htmlFor="clientInfo" className="text-sm font-medium">
-                  Client Company <span className="text-red-500">*</span>
-                </Label>
-                <Select value={formState.clientInfoId} onValueChange={formState.setClientInfoId} required disabled={dialogData.isDataLoading}>
-                  <SelectTrigger className="h-10">
-                    <SelectValue placeholder={
-                      dialogData.isDataLoading 
-                        ? "Loading client companies..." 
-                        : dialogData.filteredClientInfos.length === 0 
-                          ? "No clients available - Add clients first" 
-                          : "Select a client company"
-                    } />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {dialogData.isDataLoading ? (
-                      <SelectItem value="loading" disabled>
-                        Loading...
-                      </SelectItem>
-                    ) : dialogData.filteredClientInfos.length === 0 ? (
-                      <SelectItem value="no-clients" disabled>
+            {/* Client Information */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-lg">
+                  <Building2 className="h-5 w-5 text-green-600" />
+                  Client & Details
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  <div className="space-y-3">
+                    <Label htmlFor="clientInfo" className="text-sm font-semibold text-gray-800">
+                      Client Company <span className="text-red-500">*</span>
+                    </Label>
+                    <Select value={formState.clientInfoId} onValueChange={formState.setClientInfoId} required disabled={dialogData.isDataLoading}>
+                      <SelectTrigger className="border-gray-300 bg-gray-50 focus:bg-white focus:border-blue-500 transition-colors">
+                        <SelectValue placeholder={
+                          dialogData.isDataLoading 
+                            ? "Loading client companies..." 
+                            : dialogData.filteredClientInfos.length === 0 
+                              ? "No clients available - Add clients first" 
+                              : "Select a client company"
+                        } />
+                      </SelectTrigger>
+                      <SelectContent className="bg-white border-gray-200 shadow-lg">
+                        {dialogData.isDataLoading ? (
+                          <SelectItem value="loading" disabled>
+                            Loading...
+                          </SelectItem>
+                        ) : dialogData.filteredClientInfos.length === 0 ? (
+                          <SelectItem value="no-clients" disabled>
+                            {clientInfos.length === 0 
+                              ? "No client companies found in the database. Please add a client company in Deal Registration first."
+                              : "No client companies available for your user role. Contact your administrator if this seems incorrect."
+                            }
+                          </SelectItem>
+                        ) : (
+                          dialogData.filteredClientInfos.map((clientInfo) => (
+                            <SelectItem key={clientInfo.id} value={clientInfo.id} className="hover:bg-gray-100">
+                              {clientInfo.company_name}
+                            </SelectItem>
+                          ))
+                        )}
+                      </SelectContent>
+                    </Select>
+                    {!dialogData.isDataLoading && dialogData.filteredClientInfos.length === 0 && (
+                      <p className="text-sm text-red-500 mt-2 p-3 bg-red-50 rounded-md border border-red-200">
                         {clientInfos.length === 0 
                           ? "No client companies found in the database. Please add a client company in Deal Registration first."
                           : "No client companies available for your user role. Contact your administrator if this seems incorrect."
                         }
-                      </SelectItem>
-                    ) : (
-                      dialogData.filteredClientInfos.map((clientInfo) => (
-                        <SelectItem key={clientInfo.id} value={clientInfo.id}>
-                          {clientInfo.company_name}
-                        </SelectItem>
-                      ))
-                    )}
-                  </SelectContent>
-                </Select>
-                {!dialogData.isDataLoading && dialogData.filteredClientInfos.length === 0 && (
-                  <p className="text-sm text-amber-600 bg-amber-50 p-3 rounded-md border border-amber-200">
-                    {clientInfos.length === 0 
-                      ? "No client companies found in the database. Please add a client company in Deal Registration first."
-                      : "No client companies available for your user role. Contact your administrator if this seems incorrect."
-                    }
-                  </p>
-                )}
-              </div>
-
-              {/* Associated Salesperson */}
-              {selectedSalesperson ? (
-                <div className="space-y-2">
-                  <Label className="text-sm font-medium">Associated Salesperson</Label>
-                  <div className="border rounded-md px-3 py-2 bg-muted text-muted-foreground">
-                    {selectedSalesperson.name} {selectedSalesperson.companyName && `(${selectedSalesperson.companyName})`}
-                  </div>
-                </div>
-              ) : (
-                <div className="space-y-2">
-                  <Label className="text-sm font-medium">Associated Salesperson</Label>
-                  <div className="border rounded-md px-3 py-2 bg-muted text-muted-foreground">
-                    {dialogData.currentUserName || 'Loading...'}
-                  </div>
-                </div>
-              )}
-
-              {/* Associated Deals Section */}
-              {dialogData.associatedDeals.length > 0 && (
-                <div className="space-y-3">
-                  <Label className="text-sm font-medium">Associated Deals (Optional)</Label>
-                  <Card className="bg-gray-50 border-gray-200">
-                    <CardContent className="p-4 max-h-40 overflow-y-auto">
-                      <p className="text-sm text-gray-600 mb-3">
-                        Select deals to associate with this quote:
                       </p>
-                      <div className="space-y-3">
-                        {dialogData.associatedDeals.map((deal) => (
-                          <div key={deal.id} className="flex items-center space-x-3 p-2 hover:bg-white rounded-md transition-colors">
-                            <Checkbox
-                              id={`deal-${deal.id}`}
-                              checked={formState.selectedDealIds.includes(deal.id)}
-                              onCheckedChange={() => formState.handleDealSelection(deal.id)}
-                              disabled={dialogData.isDataLoading}
-                            />
-                            <label
-                              htmlFor={`deal-${deal.id}`}
-                              className="text-sm cursor-pointer flex-1"
-                            >
-                              <span className="font-medium text-gray-900">{deal.deal_name}</span>
-                              <span className="text-gray-500 ml-2">
-                                (${deal.deal_value.toLocaleString()} - {deal.stage})
-                              </span>
-                            </label>
-                          </div>
-                        ))}
-                      </div>
-                      {formState.selectedDealIds.length > 0 && (
-                        <p className="text-sm text-green-600 mt-3 font-medium">
-                          {formState.selectedDealIds.length} deal{formState.selectedDealIds.length > 1 ? 's' : ''} selected
-                        </p>
-                      )}
-                    </CardContent>
-                  </Card>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* Address Information */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">Address Information</CardTitle>
-            </CardHeader>
-            <CardContent className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <AddressSelector
-                clientInfoId={formState.clientInfoId !== "none" ? formState.clientInfoId : null}
-                selectedAddressId={formState.selectedBillingAddressId || undefined}
-                onAddressChange={formState.handleBillingAddressChange}
-                label="Billing Address"
-                autoSelectPrimary={true}
-              />
-
-              <AddressSelector
-                clientInfoId={formState.clientInfoId !== "none" ? formState.clientInfoId : null}
-                selectedAddressId={formState.selectedServiceAddressId || undefined}
-                onAddressChange={formState.handleServiceAddressChange}
-                label="Service Address (Optional)"
-                autoSelectPrimary={false}
-              />
-            </CardContent>
-          </Card>
-
-          {/* Quote Items */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-lg">
-                <DollarSign className="h-5 w-5 text-emerald-600" />
-                Quote Items <span className="text-red-500">*</span>
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <QuoteItemsManager 
-                items={formState.quoteItems}
-                onItemsChange={formState.setQuoteItems}
-                clientInfoId={formState.clientInfoId !== "none" ? formState.clientInfoId : undefined}
-              />
-              {formState.quoteItems.length === 0 && (
-                <p className="text-sm text-muted-foreground mt-3 p-3 bg-blue-50 rounded-md border border-blue-200">
-                  Add at least one item to create the quote
-                </p>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* Quote Settings */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-lg">
-                <Clock className="h-5 w-5 text-purple-600" />
-                Quote Settings
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <div className="space-y-2">
-                <Label htmlFor="templateId" className="text-sm font-medium">
-                  Quote Template <span className="text-red-500">*</span>
-                </Label>
-                <Select value={formState.selectedTemplateId} onValueChange={formState.setSelectedTemplateId} required disabled={dialogData.isDataLoading}>
-                  <SelectTrigger className="h-10">
-                    <SelectValue placeholder={
-                      dialogData.isDataLoading
-                        ? "Loading templates..."
-                        : dialogData.templates.length === 0 
-                          ? "No templates available" 
-                          : formState.selectedTemplateId 
-                            ? `${dialogData.templates.find(t => t.id === formState.selectedTemplateId)?.name}${dialogData.templates.find(t => t.id === formState.selectedTemplateId)?.is_default ? " (Default)" : ""}`
-                            : "Select a quote template"
-                    } />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {dialogData.isDataLoading ? (
-                      <SelectItem value="loading" disabled>
-                        Loading...
-                      </SelectItem>
-                    ) : dialogData.templates.length === 0 ? (
-                      <SelectItem value="no-templates" disabled>
-                        No templates available - Create templates first
-                      </SelectItem>
-                    ) : (
-                      dialogData.templates.map((template) => (
-                        <SelectItem key={template.id} value={template.id}>
-                          {template.name}{template.is_default ? " (Default)" : ""}
-                        </SelectItem>
-                      ))
                     )}
-                  </SelectContent>
-                </Select>
-                {!dialogData.isDataLoading && dialogData.templates.length === 0 && (
-                  <p className="text-sm text-amber-600 bg-amber-50 p-3 rounded-md border border-amber-200">
-                    No quote templates found. Please create a template in System Settings → Quote Templates first.
-                  </p>
+                  </div>
+
+                  <div className="space-y-3">
+                    <Label htmlFor="term" className="text-sm font-semibold text-gray-800">Initial Term</Label>
+                    <Select value={formState.term} onValueChange={formState.setTerm} disabled={dialogData.isDataLoading}>
+                      <SelectTrigger className="border-gray-300 bg-gray-50 focus:bg-white focus:border-blue-500 transition-colors">
+                        <SelectValue placeholder="Select initial term" />
+                      </SelectTrigger>
+                      <SelectContent className="bg-white border-gray-200 shadow-lg">
+                        <SelectItem value="Month to Month" className="hover:bg-gray-100">Month to Month</SelectItem>
+                        <SelectItem value="12 Months" className="hover:bg-gray-100">12 Months</SelectItem>
+                        <SelectItem value="24 Months" className="hover:bg-gray-100">24 Months</SelectItem>
+                        <SelectItem value="36 Months" className="hover:bg-gray-100">36 Months</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                {/* Associated Salesperson */}
+                {selectedSalesperson ? (
+                  <div className="space-y-3">
+                    <Label className="text-sm font-semibold text-gray-800">Associated Salesperson</Label>
+                    <div className="border rounded-md px-3 py-2 bg-gray-50 text-gray-700 border-gray-300">
+                      {selectedSalesperson.name} {selectedSalesperson.companyName && `(${selectedSalesperson.companyName})`}
+                    </div>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    <Label className="text-sm font-semibold text-gray-800">Associated Salesperson</Label>
+                    <div className="border rounded-md px-3 py-2 bg-gray-50 text-gray-700 border-gray-300">
+                      {dialogData.currentUserName || 'Loading...'}
+                    </div>
+                  </div>
                 )}
-              </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="term" className="text-sm font-medium">Initial Term</Label>
-                <Select value={formState.term} onValueChange={formState.setTerm} disabled={dialogData.isDataLoading}>
-                  <SelectTrigger className="h-10">
-                    <SelectValue placeholder="Select initial term" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Month to Month">Month to Month</SelectItem>
-                    <SelectItem value="12 Months">12 Months</SelectItem>
-                    <SelectItem value="24 Months">24 Months</SelectItem>
-                    <SelectItem value="36 Months">36 Months</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+                {/* Associated Deals Section */}
+                {dialogData.associatedDeals.length > 0 && (
+                  <div className="space-y-3">
+                    <Label className="text-sm font-semibold text-gray-800">Associated Deals (Optional)</Label>
+                    <Card className="bg-gray-50 border-gray-200">
+                      <CardContent className="p-4 max-h-40 overflow-y-auto">
+                        <p className="text-sm text-gray-600 mb-3">
+                          Select deals to associate with this quote:
+                        </p>
+                        <div className="space-y-3">
+                          {dialogData.associatedDeals.map((deal) => (
+                            <div key={deal.id} className="flex items-center space-x-3 p-2 hover:bg-white rounded-md transition-colors">
+                              <Checkbox
+                                id={`deal-${deal.id}`}
+                                checked={formState.selectedDealIds.includes(deal.id)}
+                                onCheckedChange={() => formState.handleDealSelection(deal.id)}
+                                disabled={dialogData.isDataLoading}
+                              />
+                              <label
+                                htmlFor={`deal-${deal.id}`}
+                                className="text-sm cursor-pointer flex-1"
+                              >
+                                <span className="font-medium text-gray-900">{deal.deal_name}</span>
+                                <span className="text-gray-500 ml-2">
+                                  (${deal.deal_value.toLocaleString()} - {deal.stage})
+                                </span>
+                              </label>
+                            </div>
+                          ))}
+                        </div>
+                        {formState.selectedDealIds.length > 0 && (
+                          <p className="text-sm text-green-600 mt-3 font-medium">
+                            {formState.selectedDealIds.length} deal{formState.selectedDealIds.length > 1 ? 's' : ''} selected
+                          </p>
+                        )}
+                      </CardContent>
+                    </Card>
+                  </div>
+                )}
 
-              {/* Commission Override - Only show for admins */}
-              {dialogData.isAdmin && (
-                <div className="space-y-2">
-                  <Label htmlFor="commissionOverride" className="text-sm font-medium">Commission Override (%)</Label>
-                  <Input
-                    id="commissionOverride"
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    max="100"
-                    value={formState.commissionOverride}
-                    onChange={(e) => formState.setCommissionOverride(e.target.value)}
-                    placeholder="Optional commission override"
+                {/* Commission Override - Only show for admins */}
+                {dialogData.isAdmin && (
+                  <div className="space-y-3">
+                    <Label htmlFor="commissionOverride" className="text-sm font-semibold text-gray-800">Commission Override (%)</Label>
+                    <Input
+                      id="commissionOverride"
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      max="100"
+                      value={formState.commissionOverride}
+                      onChange={(e) => formState.setCommissionOverride(e.target.value)}
+                      placeholder="Optional commission override"
+                      disabled={dialogData.isDataLoading}
+                      className="border-gray-300 bg-gray-50 focus:bg-white focus:border-blue-500 transition-colors"
+                    />
+                  </div>
+                )}
+
+                <div className="space-y-3">
+                  <Label htmlFor="notes" className="text-sm font-semibold text-gray-800">Notes</Label>
+                  <Textarea
+                    id="notes"
+                    value={formState.notes}
+                    onChange={(e) => formState.setNotes(e.target.value)}
+                    placeholder="Additional notes about the quote"
+                    rows={4}
                     disabled={dialogData.isDataLoading}
-                    className="h-10"
+                    className="border-gray-300 bg-gray-50 focus:bg-white focus:border-blue-500 transition-colors resize-none"
                   />
                 </div>
-              )}
+              </CardContent>
+            </Card>
 
-              <div className="space-y-2 lg:col-span-2">
-                <Label htmlFor="notes" className="text-sm font-medium">Notes</Label>
-                <Textarea
-                  id="notes"
-                  value={formState.notes}
-                  onChange={(e) => formState.setNotes(e.target.value)}
-                  placeholder="Additional notes about the quote"
-                  rows={4}
-                  disabled={dialogData.isDataLoading}
-                  className="resize-none"
+            {/* Address Information */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg">Address Information</CardTitle>
+              </CardHeader>
+              <CardContent className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <AddressSelector
+                  clientInfoId={formState.clientInfoId !== "none" ? formState.clientInfoId : null}
+                  selectedAddressId={formState.selectedBillingAddressId || undefined}
+                  onAddressChange={formState.handleBillingAddressChange}
+                  label="Billing Address"
+                  autoSelectPrimary={true}
                 />
-              </div>
-            </CardContent>
-          </Card>
-          
-          <Separator />
-          
-          <div className="flex justify-end space-x-3 pt-4">
-            <Button 
-              type="button" 
-              variant="outline" 
-              onClick={() => onOpenChange(false)}
-              disabled={formState.isSubmitting}
-              className="px-6"
-            >
-              Cancel
-            </Button>
-            <Button 
-              type="submit" 
-              className="bg-blue-600 hover:bg-blue-700 px-6"
-              disabled={!isFormValid}
-            >
-              {formState.isSubmitting ? (
-                <>
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                  Creating Quote...
-                </>
-              ) : (
-                "Create Quote"
-              )}
-            </Button>
-          </div>
-          
-          {/* Debug info - only show in development */}
-          {process.env.NODE_ENV === 'development' && (
-            <div className="text-xs text-muted-foreground p-3 bg-gray-50 rounded border">
-              Debug: Form valid = {isFormValid ? 'true' : 'false'} | 
-              User: {!!user ? 'yes' : 'no'} | 
-              ClientInfo: {!!(formState.clientInfoId && formState.clientInfoId !== "none") ? 'yes' : 'no'} | 
-              Date: {!!formState.date ? 'yes' : 'no'} | 
-              Items: {formState.quoteItems.length} | 
-              Template: {!!formState.selectedTemplateId ? 'yes' : 'no'}
+
+                <AddressSelector
+                  clientInfoId={formState.clientInfoId !== "none" ? formState.clientInfoId : null}
+                  selectedAddressId={formState.selectedServiceAddressId || undefined}
+                  onAddressChange={formState.handleServiceAddressChange}
+                  label="Service Address (Optional)"
+                  autoSelectPrimary={false}
+                />
+              </CardContent>
+            </Card>
+
+            {/* Quote Items */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-lg">
+                  <DollarSign className="h-5 w-5 text-emerald-600" />
+                  Quote Items <span className="text-red-500">*</span>
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <QuoteItemsManager 
+                  items={formState.quoteItems}
+                  onItemsChange={formState.setQuoteItems}
+                  clientInfoId={formState.clientInfoId !== "none" ? formState.clientInfoId : undefined}
+                />
+                {formState.quoteItems.length === 0 && (
+                  <p className="text-sm text-red-500 mt-3 p-3 bg-red-50 rounded-md border border-red-200">
+                    Add at least one item to create the quote
+                  </p>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Quote Settings */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-lg">
+                  <Settings className="h-5 w-5 text-purple-600" />
+                  Quote Template
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  <Label htmlFor="templateId" className="text-sm font-semibold text-gray-800">
+                    Quote Template <span className="text-red-500">*</span>
+                  </Label>
+                  <Select value={formState.selectedTemplateId} onValueChange={formState.setSelectedTemplateId} required disabled={dialogData.isDataLoading}>
+                    <SelectTrigger className="border-gray-300 bg-gray-50 focus:bg-white focus:border-blue-500 transition-colors">
+                      <SelectValue placeholder={
+                        dialogData.isDataLoading
+                          ? "Loading templates..."
+                          : dialogData.templates.length === 0 
+                            ? "No templates available" 
+                            : formState.selectedTemplateId 
+                              ? `${dialogData.templates.find(t => t.id === formState.selectedTemplateId)?.name}${dialogData.templates.find(t => t.id === formState.selectedTemplateId)?.is_default ? " (Default)" : ""}`
+                              : "Select a quote template"
+                      } />
+                    </SelectTrigger>
+                    <SelectContent className="bg-white border-gray-200 shadow-lg">
+                      {dialogData.isDataLoading ? (
+                        <SelectItem value="loading" disabled>
+                          Loading...
+                        </SelectItem>
+                      ) : dialogData.templates.length === 0 ? (
+                        <SelectItem value="no-templates" disabled>
+                          No templates available - Create templates first
+                        </SelectItem>
+                      ) : (
+                        dialogData.templates.map((template) => (
+                          <SelectItem key={template.id} value={template.id} className="hover:bg-gray-100">
+                            {template.name}{template.is_default ? " (Default)" : ""}
+                          </SelectItem>
+                        ))
+                      )}
+                    </SelectContent>
+                  </Select>
+                  {!dialogData.isDataLoading && dialogData.templates.length === 0 && (
+                    <p className="text-sm text-red-500 mt-2 p-3 bg-red-50 rounded-md border border-red-200">
+                      No quote templates found. Please create a template in System Settings → Quote Templates first.
+                    </p>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+            
+            <Separator />
+            
+            <div className="flex justify-end space-x-3 pt-4">
+              <Button 
+                type="button" 
+                variant="outline" 
+                onClick={() => onOpenChange(false)}
+                disabled={formState.isSubmitting}
+                className="px-6"
+              >
+                Cancel
+              </Button>
+              <Button 
+                type="submit" 
+                className="bg-blue-600 hover:bg-blue-700 px-6"
+                disabled={!isFormValid}
+              >
+                {formState.isSubmitting ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                    Creating Quote...
+                  </>
+                ) : (
+                  "Create Quote"
+                )}
+              </Button>
             </div>
-          )}
-        </form>
+            
+            {/* Debug info - only show in development */}
+            {process.env.NODE_ENV === 'development' && (
+              <div className="text-xs text-muted-foreground p-3 bg-gray-50 rounded border">
+                Debug: Form valid = {isFormValid ? 'true' : 'false'} | 
+                User: {!!user ? 'yes' : 'no'} | 
+                ClientInfo: {!!(formState.clientInfoId && formState.clientInfoId !== "none") ? 'yes' : 'no'} | 
+                Date: {!!formState.date ? 'yes' : 'no'} | 
+                Items: {formState.quoteItems.length} | 
+                Template: {!!formState.selectedTemplateId ? 'yes' : 'no'}
+              </div>
+            )}
+          </form>
+        </div>
       </DialogContent>
     </Dialog>
   );
