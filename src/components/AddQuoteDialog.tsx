@@ -208,7 +208,7 @@ export const AddQuoteDialog = ({
     isFormValid
   });
   return <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[1400px] max-h-[95vh] overflow-y-auto bg-slate-500">
+      <DialogContent className="sm:max-w-[1400px] max-h-[95vh] overflow-y-auto bg-slate-300">
         <div className="space-y-6">
           {/* Header */}
           <div className="flex items-center gap-3 pb-4 border-b border-gray-200">
