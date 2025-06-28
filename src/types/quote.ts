@@ -18,6 +18,7 @@ export interface DatabaseQuote {
   billing_address: string | null;
   service_address: string | null;
   template_id: string | null;
+  term: string | null; // Added term field
   user_id: string;
   created_at: string | null;
   updated_at: string | null;
