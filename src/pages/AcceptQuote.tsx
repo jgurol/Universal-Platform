@@ -431,6 +431,30 @@ const AcceptQuote = () => {
     }
   };
 
+  // Helper function to strip HTML from text
+  const stripHtml = (html: string): string => {
+    if (!html) return '';
+    
+    // Remove all HTML tags
+    let cleanText = html.replace(/<[^>]*>/g, '');
+    
+    // Decode common HTML entities
+    cleanText = cleanText
+      .replace(/&nbsp;/g, ' ')
+      .replace(/&amp;/g, '&')
+      .replace(/&lt;/g, '<')
+      .replace(/&gt;/g, '>')
+      .replace(/&quot;/g, '"')
+      .replace(/&#39;/g, "'")
+      .replace(/&apos;/g, "'");
+    
+    // Remove any remaining HTML entities
+    cleanText = cleanText.replace(/&[a-zA-Z0-9#]+;/g, '');
+    
+    // Clean up whitespace
+    return cleanText.replace(/\s+/g, ' ').trim();
+  };
+
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
@@ -603,7 +627,7 @@ const AcceptQuote = () => {
                           <div>
                             <div className="font-medium">{item.item?.name || 'Item'}</div>
                             {item.item?.description && (
-                              <div className="text-sm text-gray-600">{item.item.description}</div>
+                              <div className="text-sm text-gray-600">{stripHtml(item.item.description)}</div>
                             )}
                           </div>
                         </td>
