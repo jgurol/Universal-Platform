@@ -29,6 +29,9 @@ export const PriceAndCostSection = ({
   const cost = quoteItem.cost_override || quoteItem.item?.cost || 0;
   const sellPrice = quoteItem.unit_price || 0;
 
+  // Check if this is a carrier item (item_id starts with "carrier-")
+  const isCarrierItem = quoteItem.item?.id?.startsWith('carrier-');
+
   const calculateProfitMargin = (): string => {
     if (!isAdmin || cost === 0) return '0%';
     
@@ -101,15 +104,23 @@ export const PriceAndCostSection = ({
         <>
           <div className="flex items-center gap-1">
             <span className="text-xs text-gray-500">Cost:</span>
-            <Input
-              type="number"
-              step="0.01"
-              min="0"
-              value={quoteItem.cost_override || 0}
-              onChange={(e) => onUpdateItem(quoteItem.id, 'cost_override', parseFloat(e.target.value) || 0)}
-              className="text-xs h-8"
-              placeholder="$"
-            />
+            {isCarrierItem ? (
+              // For carrier items, show the calculated cost as read-only
+              <div className="text-xs h-8 px-3 py-2 border rounded bg-gray-50 text-gray-600 flex items-center">
+                ${cost.toFixed(2)}
+              </div>
+            ) : (
+              // For regular items, allow cost editing
+              <Input
+                type="number"
+                step="0.01"
+                min="0"
+                value={quoteItem.cost_override || 0}
+                onChange={(e) => onUpdateItem(quoteItem.id, 'cost_override', parseFloat(e.target.value) || 0)}
+                className="text-xs h-8"
+                placeholder="$"
+              />
+            )}
           </div>
           <div className="flex flex-col items-center justify-center space-y-1">
             <span className={`text-xs font-medium ${getProfitMarginColor()}`}>
