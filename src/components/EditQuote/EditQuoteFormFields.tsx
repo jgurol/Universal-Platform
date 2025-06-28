@@ -116,16 +116,14 @@ export const EditQuoteFormFields = ({
           <SelectTrigger>
             <SelectValue placeholder="Select initial term" />
           </SelectTrigger>
-          <SelectContent className="bg-white border border-gray-200 shadow-lg z-50">
+          <SelectContent>
+            <SelectItem value="">No term selected</SelectItem>
             <SelectItem value="Month to Month">Month to Month</SelectItem>
             <SelectItem value="12 Months">12 Months</SelectItem>
             <SelectItem value="24 Months">24 Months</SelectItem>
             <SelectItem value="36 Months">36 Months</SelectItem>
           </SelectContent>
         </Select>
-        <p className="text-xs text-muted-foreground">
-          Debug: term="{term}", length={term?.length || 0}, type={typeof term}
-        </p>
       </div>
 
       <div className="md:col-span-2 space-y-2">
