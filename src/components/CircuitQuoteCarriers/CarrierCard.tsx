@@ -237,7 +237,11 @@ export const CarrierCard = ({ carrier, onEdit, onDelete, onCopy, dragHandleProps
     if (carrier.install_fee) {
       let installText = "Install Fee";
       if (carrier.install_fee_amount && carrier.install_fee_amount > 0) {
-        installText += ` ($${carrier.install_fee_amount})`;
+        if (isAdmin) {
+          installText += ` ($${carrier.install_fee_amount})`;
+        } else {
+          installText += " (included)";
+        }
       }
       ticked.push(installText);
     }
@@ -265,19 +269,33 @@ export const CarrierCard = ({ carrier, onEdit, onDelete, onCopy, dragHandleProps
     if (carrier.static_ip) {
       let staticIpText = "1 Static IP (/30)";
       if (carrier.static_ip_fee_amount && carrier.static_ip_fee_amount > 0) {
-        staticIpText += ` ($${carrier.static_ip_fee_amount})`;
+        if (isAdmin) {
+          staticIpText += ` ($${carrier.static_ip_fee_amount})`;
+        } else {
+          staticIpText += " (included)";
+        }
       }
       ticked.push(staticIpText);
     }
     if ((carrier as any).static_ip_5) {
       let staticIp5Text = "5 Static IP (/29)";
       if ((carrier as any).static_ip_5_fee_amount && (carrier as any).static_ip_5_fee_amount > 0) {
-        staticIp5Text += ` ($${(carrier as any).static_ip_5_fee_amount})`;
+        if (isAdmin) {
+          staticIp5Text += ` ($${(carrier as any).static_ip_5_fee_amount})`;
+        } else {
+          staticIp5Text += " (included)";
+        }
       }
       ticked.push(staticIp5Text);
     }
     if ((carrier as any).other_costs && (carrier as any).other_costs > 0) {
-      ticked.push(`Other MRC Cost ($${(carrier as any).other_costs})`);
+      let otherCostsText = "Other MRC Cost";
+      if (isAdmin) {
+        otherCostsText += ` ($${(carrier as any).other_costs})`;
+      } else {
+        otherCostsText += " (included)";
+      }
+      ticked.push(otherCostsText);
     }
     return ticked;
   };
