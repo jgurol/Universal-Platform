@@ -601,7 +601,7 @@ const AcceptQuote = () => {
                       <tr key={item.id}>
                         <td className="border border-gray-300 px-4 py-2">
                           <div>
-                            <div className="font-medium">testing</div>
+                            <div className="font-medium">{item.item?.name || 'Item'}</div>
                             {item.item?.description && (
                               <div className="text-sm text-gray-600">{item.item.description}</div>
                             )}
