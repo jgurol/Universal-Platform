@@ -17,45 +17,36 @@ export const SecureHtmlDisplay: React.FC<SecureHtmlDisplayProps> = ({
   
   console.log('SecureHtmlDisplay - Raw content:', content);
   
-  // Ultra-aggressive HTML stripping function
+  // Ultra-simple HTML stripping function
   const stripAllHtml = (html: string): string => {
     if (!html) return '';
     
     console.log('SecureHtmlDisplay - Starting HTML strip for:', html.substring(0, 100) + '...');
     
-    try {
-      let cleanText = html;
-      
-      // First: Remove all HTML tags completely
-      cleanText = cleanText.replace(/<[^>]*>/g, '');
-      console.log('SecureHtmlDisplay - After tag removal:', cleanText.substring(0, 100) + '...');
-      
-      // Second: Decode common HTML entities
-      cleanText = cleanText
-        .replace(/&nbsp;/g, ' ')
-        .replace(/&amp;/g, '&')
-        .replace(/&lt;/g, '<')
-        .replace(/&gt;/g, '>')
-        .replace(/&quot;/g, '"')
-        .replace(/&#39;/g, "'")
-        .replace(/&apos;/g, "'");
-      
-      // Third: Remove any remaining HTML entities (anything that looks like &...;)
-      cleanText = cleanText.replace(/&[a-zA-Z0-9#]+;/g, '');
-      
-      // Fourth: Clean up excessive whitespace
-      cleanText = cleanText.replace(/\s+/g, ' ').trim();
-      
-      console.log('SecureHtmlDisplay - Final cleaned text:', cleanText);
-      return cleanText;
-      
-    } catch (error) {
-      console.error('Error stripping HTML:', error);
-      // Ultra-aggressive fallback
-      const fallbackText = html.replace(/<[^>]*>/g, '').replace(/&[^;]+;/g, ' ').replace(/\s+/g, ' ').trim();
-      console.log('SecureHtmlDisplay - Fallback text:', fallbackText);
-      return fallbackText;
-    }
+    // Step 1: Remove all HTML tags completely
+    let cleanText = html.replace(/<[^>]*>/g, '');
+    console.log('SecureHtmlDisplay - After removing HTML tags:', cleanText);
+    
+    // Step 2: Decode HTML entities manually
+    cleanText = cleanText
+      .replace(/&nbsp;/g, ' ')
+      .replace(/&amp;/g, '&')
+      .replace(/&lt;/g, '<')
+      .replace(/&gt;/g, '>')
+      .replace(/&quot;/g, '"')
+      .replace(/&#39;/g, "'")
+      .replace(/&apos;/g, "'")
+      .replace(/&copy;/g, '©')
+      .replace(/&reg;/g, '®');
+    
+    // Step 3: Remove any remaining HTML entities
+    cleanText = cleanText.replace(/&[a-zA-Z0-9#]+;/g, '');
+    
+    // Step 4: Clean up whitespace
+    cleanText = cleanText.replace(/\s+/g, ' ').trim();
+    
+    console.log('SecureHtmlDisplay - Final cleaned text:', cleanText);
+    return cleanText;
   };
   
   let plainText = stripAllHtml(content);
@@ -67,9 +58,10 @@ export const SecureHtmlDisplay: React.FC<SecureHtmlDisplayProps> = ({
   
   console.log('SecureHtmlDisplay - Final output text:', plainText);
   
+  // Return just the plain text without any HTML wrapper
   return (
-    <div className={cn("text-sm leading-relaxed", className)}>
+    <span className={cn("text-sm leading-relaxed", className)}>
       {plainText}
-    </div>
+    </span>
   );
 };
