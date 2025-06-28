@@ -1,6 +1,5 @@
 
 import React from 'react';
-import { sanitizeHtml } from '@/utils/securityUtils';
 import { cn } from '@/lib/utils';
 
 interface SecureHtmlDisplayProps {
@@ -18,30 +17,28 @@ export const SecureHtmlDisplay: React.FC<SecureHtmlDisplayProps> = ({
   
   console.log('SecureHtmlDisplay - Raw content:', content);
   
-  let displayContent = content;
+  // Strip all HTML tags to get plain text
+  const stripHtml = (html: string): string => {
+    // Create a temporary div element to parse HTML
+    const tempDiv = document.createElement('div');
+    tempDiv.innerHTML = html;
+    
+    // Extract text content only
+    return tempDiv.textContent || tempDiv.innerText || '';
+  };
+  
+  let plainText = stripHtml(content);
   
   // Truncate if maxLength is specified
-  if (maxLength && content.length > maxLength) {
-    // Remove HTML tags for length calculation
-    const plainText = content.replace(/<[^>]*>/g, '');
-    if (plainText.length > maxLength) {
-      displayContent = content.substring(0, maxLength) + '...';
-    }
+  if (maxLength && plainText.length > maxLength) {
+    plainText = plainText.substring(0, maxLength) + '...';
   }
   
-  const sanitizedContent = sanitizeHtml(displayContent);
-  console.log('SecureHtmlDisplay - Sanitized content:', sanitizedContent);
+  console.log('SecureHtmlDisplay - Plain text:', plainText);
   
   return (
-    <div 
-      className={cn(
-        "prose prose-sm max-w-none", 
-        "[&_img]:inline [&_img]:align-middle [&_img]:mr-2 [&_img]:max-w-full [&_img]:h-auto",
-        "[&_p]:mb-2 [&_p]:leading-relaxed [&_p]:inline",
-        "[&>p]:inline [&>p>img]:inline [&>p>*]:inline-block",
-        className
-      )}
-      dangerouslySetInnerHTML={{ __html: sanitizedContent }}
-    />
+    <div className={cn("text-sm leading-relaxed", className)}>
+      {plainText}
+    </div>
   );
 };
