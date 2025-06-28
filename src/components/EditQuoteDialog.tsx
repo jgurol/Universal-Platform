@@ -1,5 +1,8 @@
+
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator";
 import { Quote, Client, ClientInfo } from "@/pages/Index";
 import { QuoteItemsManager } from "@/components/QuoteItemsManager";
 import { useQuoteForm } from "@/hooks/useQuoteForm";
@@ -15,6 +18,7 @@ import { EditQuoteAddressSection } from "@/components/EditQuote/EditQuoteAddress
 import { EditQuoteTemplateSection } from "@/components/EditQuote/EditQuoteTemplateSection";
 import { EditQuoteFormFields } from "@/components/EditQuote/EditQuoteFormFields";
 import { useToast } from "@/hooks/use-toast";
+import { FileText, Building2, DollarSign, Settings } from "lucide-react";
 
 type QuoteTemplate = Database['public']['Tables']['quote_templates']['Row'];
 
@@ -423,86 +427,157 @@ export const EditQuoteDialog = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[1400px] max-h-[90vh] overflow-y-auto">
-        <EditQuoteHeader
-          quoteNumber={quoteNumber}
-          onQuoteNumberChange={setQuoteNumber}
-          date={date}
-          onDateChange={setDate}
-          expiresAt={expiresAt}
-          onExpiresAtChange={setExpiresAt}
-          selectedSalesperson={selectedSalesperson}
-        />
+      <DialogContent className="sm:max-w-[1400px] max-h-[95vh] overflow-y-auto">
+        <div className="space-y-6">
+          {/* Header */}
+          <div className="flex items-center gap-3 pb-4 border-b">
+            <div className="p-2 bg-blue-100 rounded-lg">
+              <FileText className="h-6 w-6 text-blue-600" />
+            </div>
+            <div>
+              <h2 className="text-2xl font-semibold">Edit Quote</h2>
+              <p className="text-muted-foreground">Update quote details and settings</p>
+            </div>
+          </div>
         
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <EditQuoteFormFields
-            description={description}
-            onDescriptionChange={setDescription}
-            clientInfoId={clientInfoId}
-            onClientInfoIdChange={setClientInfoId}
-            clientInfos={clientInfos}
-            status={status}
-            onStatusChange={setStatus}
-            commissionOverride={commissionOverride}
-            onCommissionOverrideChange={setCommissionOverride}
-            notes={notes}
-            onNotesChange={setNotes}
-            term={term}
-            onTermChange={handleTermChange}
-          />
+          <form onSubmit={handleSubmit} className="space-y-8">
+            {/* Quote Header Information */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg">Quote Information</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <EditQuoteHeader
+                  quoteNumber={quoteNumber}
+                  onQuoteNumberChange={setQuoteNumber}
+                  date={date}
+                  onDateChange={setDate}
+                  expiresAt={expiresAt}
+                  onExpiresAtChange={setExpiresAt}
+                  selectedSalesperson={selectedSalesperson}
+                />
+              </CardContent>
+            </Card>
+            
+            {/* Client & Form Fields */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-lg">
+                  <Building2 className="h-5 w-5 text-green-600" />
+                  Client & Details
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <EditQuoteFormFields
+                  description={description}
+                  onDescriptionChange={setDescription}
+                  clientInfoId={clientInfoId}
+                  onClientInfoIdChange={setClientInfoId}
+                  clientInfos={clientInfos}
+                  status={status}
+                  onStatusChange={setStatus}
+                  commissionOverride={commissionOverride}
+                  onCommissionOverrideChange={setCommissionOverride}
+                  notes={notes}
+                  onNotesChange={setNotes}
+                  term={term}
+                  onTermChange={handleTermChange}
+                />
+              </CardContent>
+            </Card>
 
-          <EditQuoteAddressSection
-            clientInfoId={clientInfoId}
-            selectedBillingAddressId={selectedBillingAddressId}
-            onBillingAddressChange={handleBillingAddressChange}
-            selectedServiceAddressId={selectedServiceAddressId}
-            onServiceAddressChange={handleServiceAddressChange}
-          />
+            {/* Address Section */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg">Address Information</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <EditQuoteAddressSection
+                  clientInfoId={clientInfoId}
+                  selectedBillingAddressId={selectedBillingAddressId}
+                  onBillingAddressChange={handleBillingAddressChange}
+                  selectedServiceAddressId={selectedServiceAddressId}
+                  onServiceAddressChange={handleServiceAddressChange}
+                />
+              </CardContent>
+            </Card>
 
-          <QuoteItemsManager
-            items={quoteItems}
-            onItemsChange={setQuoteItems}
-            clientInfoId={clientInfoId !== "none" ? clientInfoId : undefined}
-          />
+            {/* Quote Items */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-lg">
+                  <DollarSign className="h-5 w-5 text-emerald-600" />
+                  Quote Items
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <QuoteItemsManager
+                  items={quoteItems}
+                  onItemsChange={setQuoteItems}
+                  clientInfoId={clientInfoId !== "none" ? clientInfoId : undefined}
+                />
+              </CardContent>
+            </Card>
 
-          <EditQuoteTemplateSection
-            selectedTemplateId={selectedTemplateId}
-            onTemplateChange={setSelectedTemplateId}
-            templates={templates}
-          />
-          {templates.length === 0 && (
-            <p className="text-sm text-red-500">
-              No templates available. Create templates in System Settings → Quote Templates.
-            </p>
-          )}
-          <p className="text-sm text-muted-foreground">
-            Debug: Found {templates.length} templates, Term: {term || 'none'}
-          </p>
+            {/* Template Section */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-lg">
+                  <Settings className="h-5 w-5 text-purple-600" />
+                  Quote Template
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <EditQuoteTemplateSection
+                  selectedTemplateId={selectedTemplateId}
+                  onTemplateChange={setSelectedTemplateId}
+                  templates={templates}
+                />
+                {templates.length === 0 && (
+                  <p className="text-sm text-red-500 mt-2 p-3 bg-red-50 rounded-md border border-red-200">
+                    No templates available. Create templates in System Settings → Quote Templates.
+                  </p>
+                )}
+              </CardContent>
+            </Card>
 
-          <div className="flex justify-end space-x-2 mt-6">
-            <Button 
-              type="button" 
-              variant="outline" 
-              onClick={() => onOpenChange(false)}
-              disabled={isSubmitting}
-            >
-              Cancel
-            </Button>
-            <Button 
-              type="submit" 
-              className="bg-blue-600 hover:bg-blue-700"
-              disabled={!isFormValid || isSubmitting}
-            >
-              {isSubmitting ? "Updating..." : "Update Quote"}
-            </Button>
-          </div>
-          
-          {/* Debug info */}
-          <div className="text-xs text-muted-foreground">
-            Debug: Form valid = {isFormValid ? 'true' : 'false'} 
-            (Quote: {!!quote ? 'yes' : 'no'}, Date: {!!date ? 'yes' : 'no'}, Items: {quoteItems.length}, ClientInfo: {clientInfoId && clientInfoId !== "none" ? 'yes' : 'no'}, Template: {!!selectedTemplateId ? 'yes' : 'no'}, Term: {term || 'none'})
-          </div>
-        </form>
+            <Separator />
+
+            <div className="flex justify-end space-x-3 pt-4">
+              <Button 
+                type="button" 
+                variant="outline" 
+                onClick={() => onOpenChange(false)}
+                disabled={isSubmitting}
+                className="px-6"
+              >
+                Cancel
+              </Button>
+              <Button 
+                type="submit" 
+                className="bg-blue-600 hover:bg-blue-700 px-6"
+                disabled={!isFormValid || isSubmitting}
+              >
+                {isSubmitting ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                    Updating...
+                  </>
+                ) : (
+                  "Update Quote"
+                )}
+              </Button>
+            </div>
+            
+            {/* Debug info */}
+            {process.env.NODE_ENV === 'development' && (
+              <div className="text-xs text-muted-foreground p-3 bg-gray-50 rounded border">
+                Debug: Form valid = {isFormValid ? 'true' : 'false'} 
+                (Quote: {!!quote ? 'yes' : 'no'}, Date: {!!date ? 'yes' : 'no'}, Items: {quoteItems.length}, ClientInfo: {clientInfoId && clientInfoId !== "none" ? 'yes' : 'no'}, Template: {!!selectedTemplateId ? 'yes' : 'no'}, Term: {term || 'none'})
+              </div>
+            )}
+          </form>
+        </div>
       </DialogContent>
     </Dialog>
   );
