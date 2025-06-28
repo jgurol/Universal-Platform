@@ -60,7 +60,12 @@ export const useQuoteActions = (
     try {
       console.log('[updateQuote] Updating quote with user:', user.id);
       console.log('[updateQuote] Updating quote with data:', updatedQuote);
-      await updateQuoteInDatabase(updatedQuote);
+      
+      // Extract the quote items from the updated quote
+      const items = updatedQuote.quoteItems || [];
+      
+      // Call updateQuoteInDatabase with the correct arguments
+      await updateQuoteInDatabase(updatedQuote.id, updatedQuote, items);
       
       fetchQuotes();
       const client = clients.find(c => c.id === updatedQuote.clientId);

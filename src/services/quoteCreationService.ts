@@ -13,6 +13,7 @@ export const createQuoteInDatabase = async (
     billingAddress: quote.billingAddress,
     serviceAddress: quote.serviceAddress,
     description: quote.description,
+    term: quote.term, // Log the term value
     quoteItems: quote.quoteItems?.length || 0
   });
 
@@ -39,6 +40,7 @@ export const createQuoteInDatabase = async (
       commission_override: quote.commissionOverride,
       expires_at: quote.expiresAt,
       notes: quote.notes,
+      term: quote.term, // Make sure to include the term field
       billing_address: quote.billingAddress,
       service_address: quote.serviceAddress,
       template_id: quote.templateId
@@ -51,7 +53,7 @@ export const createQuoteInDatabase = async (
     throw quoteError;
   }
 
-  console.log('[createQuoteInDatabase] Quote created successfully with ID:', quoteData.id, 'and user_id:', quoteData.user_id);
+  console.log('[createQuoteInDatabase] Quote created successfully with ID:', quoteData.id, 'and user_id:', quoteData.user_id, 'term:', quoteData.term);
 
   // Save quote items if they exist using the updateQuoteItems function
   if (quote.quoteItems && quote.quoteItems.length > 0) {
@@ -66,11 +68,12 @@ export const createQuoteInDatabase = async (
     }
   }
 
-  console.log('[createQuoteInDatabase] Quote creation completed successfully with addresses:', {
+  console.log('[createQuoteInDatabase] Quote creation completed successfully with addresses and term:', {
     id: quoteData.id,
     user_id: quoteData.user_id,
     billingAddress: quote.billingAddress,
-    serviceAddress: quote.serviceAddress
+    serviceAddress: quote.serviceAddress,
+    term: quote.term
   });
 
   return quoteData.id;
