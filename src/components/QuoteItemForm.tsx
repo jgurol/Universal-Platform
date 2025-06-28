@@ -46,7 +46,7 @@ export const QuoteItemForm = ({
 
   // Helper function to extract term months from term string
   const getTermMonths = (term: string | undefined): number => {
-    if (!term) return 36; // Default to 36 months if no term specified
+    if (!term) return 36;
     
     const termLower = term.toLowerCase();
     const monthMatch = termLower.match(/(\d+)\s*month/);
@@ -58,7 +58,7 @@ export const QuoteItemForm = ({
       return parseInt(yearMatch[1]) * 12;
     }
     
-    return 36; // Default fallback
+    return 36;
   };
 
   // Calculate total cost including all add-ons for cost display
@@ -97,7 +97,7 @@ export const QuoteItemForm = ({
     }
 
     if (!carrierItem.type || !categories.length) {
-      return totalCostWithAddons; // If no category or categories not loaded, return total cost as sell price
+      return totalCostWithAddons;
     }
 
     // Find the category that matches the carrier quote type
@@ -114,10 +114,10 @@ export const QuoteItemForm = ({
       
       // Apply the effective minimum markup: sell price = cost * (1 + effectiveMinimumMarkup/100)
       const markup = effectiveMinimumMarkup / 100;
-      return Math.round(totalCostWithAddons * (1 + markup) * 100) / 100; // Round to 2 decimal places
+      return Math.round(totalCostWithAddons * (1 + markup) * 100) / 100;
     }
 
-    return totalCostWithAddons; // If no matching category or no minimum markup, return total cost
+    return totalCostWithAddons;
   };
 
   console.log('[QuoteItemForm] Debug info:', {
@@ -252,9 +252,9 @@ export const QuoteItemForm = ({
                   <SelectTrigger className="bg-white border-emerald-300 focus:border-emerald-500">
                     <SelectValue placeholder={carrierLoading ? "Loading locations..." : "Select location"} />
                   </SelectTrigger>
-                  <SelectContent className="bg-white border-emerald-200 shadow-lg z-50 min-w-[400px]">
+                  <SelectContent className="bg-white border border-emerald-200 shadow-lg z-[9999] min-w-[400px] max-h-[300px] overflow-y-auto">
                     {uniqueAddresses.map((address) => (
-                      <SelectItem key={address} value={address}>
+                      <SelectItem key={address} value={address} className="cursor-pointer hover:bg-emerald-50">
                         {address}
                       </SelectItem>
                     ))}
@@ -273,9 +273,9 @@ export const QuoteItemForm = ({
                     <SelectTrigger className="bg-white border-emerald-300 focus:border-emerald-500">
                       <SelectValue placeholder="Select carrier" />
                     </SelectTrigger>
-                    <SelectContent className="bg-white border-emerald-200 shadow-lg z-50 min-w-[300px]">
+                    <SelectContent className="bg-white border border-emerald-200 shadow-lg z-[9999] min-w-[300px] max-h-[300px] overflow-y-auto">
                       {carriersForAddress.map((carrier) => (
-                        <SelectItem key={carrier} value={carrier}>
+                        <SelectItem key={carrier} value={carrier} className="cursor-pointer hover:bg-emerald-50">
                           {carrier}
                         </SelectItem>
                       ))}
@@ -295,12 +295,12 @@ export const QuoteItemForm = ({
                     <SelectTrigger className="bg-white border-emerald-300 focus:border-emerald-500">
                       <SelectValue placeholder="Select speed and service type" />
                     </SelectTrigger>
-                    <SelectContent className="bg-white border-emerald-200 shadow-lg z-50 min-w-[600px]">
+                    <SelectContent className="bg-white border border-emerald-200 shadow-lg z-[9999] min-w-[600px] max-h-[300px] overflow-y-auto">
                       {speedsForSelection.map((carrierItem) => {
                         const sellPrice = calculateSellPrice(carrierItem, agentCommissionRate);
                         const totalCostWithAddons = calculateTotalCostWithAddons(carrierItem);
                         return (
-                          <SelectItem key={carrierItem.id} value={carrierItem.speed}>
+                          <SelectItem key={carrierItem.id} value={carrierItem.speed} className="cursor-pointer hover:bg-emerald-50">
                             <div className="flex items-center gap-3 w-full min-w-0 whitespace-nowrap">
                               <span className="font-medium text-sm">{carrierItem.speed}</span>
                               <span className="text-xs text-muted-foreground">•</span>
@@ -364,10 +364,10 @@ export const QuoteItemForm = ({
               <SelectTrigger className="bg-white border-blue-300 focus:border-blue-500">
                 <SelectValue placeholder={isLoading ? "Loading catalog items..." : "Select from catalog"} />
               </SelectTrigger>
-              <SelectContent className="bg-white border-blue-200 shadow-lg z-50 min-w-[500px]">
+              <SelectContent className="bg-white border border-blue-200 shadow-lg z-[9999] min-w-[500px] max-h-[300px] overflow-y-auto">
                 {availableItems.length > 0 ? (
                   availableItems.map((item) => (
-                    <SelectItem key={item.id} value={item.id}>
+                    <SelectItem key={item.id} value={item.id} className="cursor-pointer hover:bg-blue-50">
                       <div className="flex items-center gap-3 w-full min-w-0">
                         <span className="font-medium text-sm">{item.name}</span>
                         <span className="text-xs text-muted-foreground">•</span>
