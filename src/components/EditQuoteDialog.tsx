@@ -36,6 +36,54 @@ export const EditQuoteDialog = ({
   clientInfos 
 }: EditQuoteDialogProps) => {
   const { toast } = useToast();
+
+  // Add debugging for the quote prop
+  useEffect(() => {
+    if (quote && open) {
+      console.log('[EditQuoteDialog] Quote prop received:', {
+        id: quote.id,
+        term: quote.term,
+        termType: typeof quote.term,
+        termExists: quote.hasOwnProperty('term'),
+        fullQuote: quote
+      });
+    }
+  }, [quote, open]);
+
+  // Add effect to fetch fresh quote data directly in the dialog
+  useEffect(() => {
+    const fetchFreshQuoteData = async () => {
+      if (quote && quote.id && open) {
+        console.log('[EditQuoteDialog] Fetching fresh quote data for:', quote.id);
+        try {
+          const { data, error } = await supabase
+            .from('quotes')
+            .select('*')
+            .eq('id', quote.id)
+            .single();
+
+          if (error) {
+            console.error('[EditQuoteDialog] Error fetching fresh quote:', error);
+            return;
+          }
+
+          console.log('[EditQuoteDialog] Fresh quote from DB vs prop:', {
+            dbTerm: data.term,
+            propTerm: quote.term,
+            dbStatus: data.status,
+            propStatus: quote.status,
+            match: data.term === quote.term
+          });
+
+        } catch (err) {
+          console.error('[EditQuoteDialog] Error in fresh fetch:', err);
+        }
+      }
+    };
+
+    fetchFreshQuoteData();
+  }, [quote?.id, open]);
+
   const {
     clientId,
     setClientId,
@@ -195,7 +243,7 @@ export const EditQuoteDialog = ({
   };
 
   const handleTermChange = (value: string) => {
-    console.log('EditQuoteDialog - Term changed to:', value);
+    console.log('[EditQuoteDialog] Term changed to:', value);
     setTerm(value);
   };
 

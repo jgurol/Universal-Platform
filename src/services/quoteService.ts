@@ -68,11 +68,21 @@ export const fetchQuotes = async (userId: string): Promise<Quote[]> => {
       
       console.log('[fetchQuotes] Mapping quote:', {
         id: dbQuote.id,
-        term: dbQuote.term,
-        description: dbQuote.description
+        rawTerm: dbQuote.term,
+        termType: typeof dbQuote.term,
+        description: dbQuote.description,
+        hasTermProperty: dbQuote.hasOwnProperty('term')
       });
       
-      return mapDatabaseQuoteToQuote(dbQuote, clientName, companyName);
+      const mappedQuote = mapDatabaseQuoteToQuote(dbQuote, clientName, companyName);
+      
+      console.log('[fetchQuotes] Mapped quote result:', {
+        id: mappedQuote.id,
+        mappedTerm: mappedQuote.term,
+        mappedTermType: typeof mappedQuote.term
+      });
+      
+      return mappedQuote;
     }) || [];
 
     console.log('[fetchQuotes] Successfully fetched quotes:', quotes.length);
