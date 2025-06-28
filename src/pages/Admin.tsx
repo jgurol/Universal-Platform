@@ -150,53 +150,21 @@ export default function Admin() {
       console.log('Parsed UTC date:', utcDate);
       console.log('User timezone:', userTimezone);
       
-      // Convert to user's timezone for display
-      const localTimeString = utcDate.toLocaleString("en-US", { 
+      // Format as MM/DD HH:MM AM/PM in the user's timezone
+      const formattedDate = utcDate.toLocaleDateString("en-US", { 
         timeZone: userTimezone,
-        year: 'numeric',
         month: '2-digit',
-        day: '2-digit',
-        hour: '2-digit',
-        minute: '2-digit',
-        second: '2-digit'
+        day: '2-digit'
       });
       
-      console.log('Converted local time string:', localTimeString);
+      const formattedTime = utcDate.toLocaleTimeString("en-US", { 
+        timeZone: userTimezone,
+        hour: '2-digit', 
+        minute: '2-digit',
+        hour12: true
+      });
       
-      // Parse the converted time to get a proper date object in the target timezone
-      const localDate = new Date(localTimeString);
-      const now = new Date();
-      
-      // Convert current time to the same timezone for comparison
-      const nowInTimezone = new Date(now.toLocaleString("en-US", { timeZone: userTimezone }));
-      
-      const diffMs = nowInTimezone.getTime() - localDate.getTime();
-      const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-      
-      console.log('Time difference in days:', diffDays);
-      
-      if (diffDays === 0) {
-        // Same day - show time
-        const timeString = utcDate.toLocaleTimeString("en-US", { 
-          hour: '2-digit', 
-          minute: '2-digit',
-          timeZone: userTimezone,
-          hour12: true
-        });
-        return `Today at ${timeString}`;
-      } else if (diffDays === 1) {
-        return 'Yesterday';
-      } else if (diffDays < 7) {
-        return `${diffDays} days ago`;
-      } else {
-        // Format date in user's timezone
-        return utcDate.toLocaleDateString("en-US", { 
-          timeZone: userTimezone,
-          year: 'numeric',
-          month: 'short',
-          day: 'numeric'
-        });
-      }
+      return `${formattedDate} ${formattedTime}`;
     } catch (error) {
       console.error('Error formatting last login date:', error);
       return 'Invalid date';
