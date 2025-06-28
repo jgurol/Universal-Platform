@@ -1,25 +1,14 @@
 
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { QuoteItemData } from "@/types/quoteItems";
 
-interface QuoteItem {
-  id: string;
-  quantity: number;
-  unit_price: number;
-  total_price: number;
-  charge_type: 'MRC' | 'NRC';
-  item?: {
-    name: string;
-    description?: string;
-  };
-}
-
-export const useQuoteItems = (quoteId: string | undefined) => {
-  const [quoteItems, setQuoteItems] = useState<QuoteItem[]>([]);
+export const useQuoteItems = (quote: any, open: boolean) => {
+  const [quoteItems, setQuoteItems] = useState<QuoteItemData[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
   const fetchQuoteItems = async () => {
-    if (!quoteId) return;
+    if (!quote?.id) return;
 
     try {
       setIsLoading(true);
@@ -28,12 +17,11 @@ export const useQuoteItems = (quoteId: string | undefined) => {
         .from('quote_items')
         .select(`
           *,
-          item:items(
-            name,
-            description
-          )
+          item:items(*),
+          address:client_addresses(*)
         `)
-        .eq('quote_id', quoteId);
+        .eq('quote_id', quote.id)
+        .order('created_at', { ascending: true });
 
       if (quoteItemsError) {
         console.error('Error fetching quote items:', quoteItemsError);
@@ -41,7 +29,24 @@ export const useQuoteItems = (quoteId: string | undefined) => {
       }
 
       if (quoteItemsData) {
-        setQuoteItems(quoteItemsData);
+        const mappedItems: QuoteItemData[] = quoteItemsData.map((quoteItem: any) => ({
+          id: quoteItem.id,
+          item_id: quoteItem.item_id,
+          quantity: quoteItem.quantity || 1,
+          unit_price: parseFloat(quoteItem.unit_price) || 0,
+          cost_override: quoteItem.item?.cost || 0,
+          total_price: parseFloat(quoteItem.total_price) || 0,
+          charge_type: (quoteItem.charge_type as 'NRC' | 'MRC') || 'NRC',
+          address_id: quoteItem.address_id,
+          name: quoteItem.item?.name || 'Unknown Item',
+          description: quoteItem.item?.description || '',
+          image_url: quoteItem.image_url,
+          image_name: quoteItem.image_name,
+          item: quoteItem.item,
+          address: quoteItem.address
+        }));
+        
+        setQuoteItems(mappedItems);
       }
     } catch (err) {
       console.error('Error fetching quote items:', err);
@@ -51,11 +56,16 @@ export const useQuoteItems = (quoteId: string | undefined) => {
   };
 
   useEffect(() => {
-    fetchQuoteItems();
-  }, [quoteId]);
+    if (open && quote?.id) {
+      fetchQuoteItems();
+    } else if (!open) {
+      setQuoteItems([]);
+    }
+  }, [quote?.id, open]);
 
   return {
     quoteItems,
+    setQuoteItems,
     isLoading
   };
 };
