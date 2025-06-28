@@ -140,25 +140,48 @@ export default function Admin() {
     if (!lastSignInAt) return 'Never';
     
     try {
-      // Create date object from UTC timestamp
+      // Parse the UTC timestamp
       const utcDate = new Date(lastSignInAt);
       
       // Get the configured timezone from system settings
       const userTimezone = settings.timezone || 'America/Los_Angeles';
       
-      // Convert to user's configured timezone
-      const localDate = new Date(utcDate.toLocaleString("en-US", { timeZone: userTimezone }));
-      const now = new Date(new Date().toLocaleString("en-US", { timeZone: userTimezone }));
+      console.log('Original UTC timestamp:', lastSignInAt);
+      console.log('Parsed UTC date:', utcDate);
+      console.log('User timezone:', userTimezone);
       
-      const diffMs = now.getTime() - localDate.getTime();
+      // Convert to user's timezone for display
+      const localTimeString = utcDate.toLocaleString("en-US", { 
+        timeZone: userTimezone,
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit'
+      });
+      
+      console.log('Converted local time string:', localTimeString);
+      
+      // Parse the converted time to get a proper date object in the target timezone
+      const localDate = new Date(localTimeString);
+      const now = new Date();
+      
+      // Convert current time to the same timezone for comparison
+      const nowInTimezone = new Date(now.toLocaleString("en-US", { timeZone: userTimezone }));
+      
+      const diffMs = nowInTimezone.getTime() - localDate.getTime();
       const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
       
+      console.log('Time difference in days:', diffDays);
+      
       if (diffDays === 0) {
-        // Format time in user's timezone
-        const timeString = utcDate.toLocaleTimeString([], { 
+        // Same day - show time
+        const timeString = utcDate.toLocaleTimeString("en-US", { 
           hour: '2-digit', 
           minute: '2-digit',
-          timeZone: userTimezone
+          timeZone: userTimezone,
+          hour12: true
         });
         return `Today at ${timeString}`;
       } else if (diffDays === 1) {
@@ -167,7 +190,12 @@ export default function Admin() {
         return `${diffDays} days ago`;
       } else {
         // Format date in user's timezone
-        return utcDate.toLocaleDateString([], { timeZone: userTimezone });
+        return utcDate.toLocaleDateString("en-US", { 
+          timeZone: userTimezone,
+          year: 'numeric',
+          month: 'short',
+          day: 'numeric'
+        });
       }
     } catch (error) {
       console.error('Error formatting last login date:', error);
