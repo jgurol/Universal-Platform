@@ -6,7 +6,6 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { FileText } from "lucide-react";
 import { QuoteItemData } from "@/types/quoteItems";
 import { AdvancedTiptapEditor } from "@/components/AdvancedTiptapEditor";
-import { SecureHtmlDisplay } from "@/components/SecureHtmlDisplay";
 import { secureTextSchema } from "@/utils/securityUtils";
 
 interface ItemNameAndDescriptionProps {
@@ -54,13 +53,6 @@ export const ItemNameAndDescription = ({ quoteItem, onUpdateItem }: ItemNameAndD
         className="text-sm font-medium h-8"
       />
       <div className="space-y-1">
-        {currentDescription && (
-          <SecureHtmlDisplay 
-            content={currentDescription}
-            className="text-xs text-gray-700 p-2 bg-white border rounded prose prose-xs max-w-none"
-            maxLength={200}
-          />
-        )}
         <Dialog open={isDescriptionOpen} onOpenChange={handleDialogOpenChange}>
           <DialogTrigger asChild>
             <Button
