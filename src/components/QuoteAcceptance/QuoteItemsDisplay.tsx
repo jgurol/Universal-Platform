@@ -1,5 +1,6 @@
 
 import React from 'react';
+import { SecureHtmlDisplay } from '@/components/SecureHtmlDisplay';
 
 interface QuoteItem {
   id: string;
@@ -31,7 +32,10 @@ export const QuoteItemsDisplay: React.FC<QuoteItemsDisplayProps> = ({ items }) =
     return (
       <tr key={item.id} className="border-b">
         <td className="py-3 px-4">
-          <div className="font-medium">{itemName}</div>
+          <SecureHtmlDisplay 
+            content={itemName} 
+            className="font-medium"
+          />
         </td>
         <td className="py-3 px-4 text-center">{item.quantity}</td>
         <td className="py-3 px-4 text-right">${item.unit_price.toFixed(2)}</td>
