@@ -78,7 +78,8 @@ export const useQuoteForm = (quote: Quote | null, open: boolean) => {
       console.log('[useQuoteForm] Initializing form with quote data:', {
         term: quote.term,
         description: quote.description,
-        clientId: quote.clientId
+        clientId: quote.clientId,
+        quoteId: quote.id
       });
       
       setClientId(quote.clientId || "");
@@ -92,12 +93,24 @@ export const useQuoteForm = (quote: Quote | null, open: boolean) => {
       setNotes(quote.notes || "");
       setCommissionOverride(quote.commissionOverride?.toString() || "");
       
-      // Ensure term is properly set from quote data
+      // Ensure term is properly set from quote data with additional debugging
       const quoteTerm = quote.term || "";
-      console.log('[useQuoteForm] Setting term from quote:', quoteTerm);
+      console.log('[useQuoteForm] Raw quote.term value:', quote.term);
+      console.log('[useQuoteForm] Processed quoteTerm:', quoteTerm);
+      console.log('[useQuoteForm] Setting term state to:', quoteTerm);
       setTerm(quoteTerm);
+      
+      // Add a small delay to ensure state is updated and log the result
+      setTimeout(() => {
+        console.log('[useQuoteForm] Term state after setting:', quoteTerm);
+      }, 100);
     }
   }, [quote, open]);
+
+  // Add a separate effect to track term changes
+  useEffect(() => {
+    console.log('[useQuoteForm] Term state changed to:', term);
+  }, [term]);
 
   return {
     clientId,
