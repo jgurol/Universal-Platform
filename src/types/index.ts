@@ -1,3 +1,4 @@
+
 export interface Client {
   id: string;
   firstName: string;
@@ -17,7 +18,7 @@ export interface Quote {
   companyName: string;
   amount: number;
   date: string;
-  description?: string;
+  description: string;
   status: string;
   clientInfoId?: string;
   clientCompanyName?: string;
@@ -31,7 +32,7 @@ export interface Quote {
   expiresAt?: string;
   acceptedAt?: string;
   commission?: number;
-  archived?: boolean;
+  archived: boolean;
   billingAddress?: string;
   serviceAddress?: string;
   templateId?: string;
@@ -41,7 +42,7 @@ export interface Quote {
   emailOpened?: boolean;
   emailOpenedAt?: string;
   emailOpenCount?: number;
-  user_id?: string;
+  user_id: string;
 }
 
 export interface QuoteItem {
