@@ -252,9 +252,13 @@ export const QuoteItemForm = ({
                   <SelectTrigger className="bg-white border-emerald-300 focus:border-emerald-500">
                     <SelectValue placeholder={carrierLoading ? "Loading locations..." : "Select location"} />
                   </SelectTrigger>
-                  <SelectContent className="bg-white border border-emerald-200 shadow-lg z-[9999] min-w-[400px] max-h-[300px] overflow-y-auto">
+                  <SelectContent className="bg-white border border-emerald-200 shadow-lg z-50 max-w-sm">
                     {uniqueAddresses.map((address) => (
-                      <SelectItem key={address} value={address} className="cursor-pointer hover:bg-emerald-50">
+                      <SelectItem 
+                        key={address} 
+                        value={address} 
+                        className="cursor-pointer hover:bg-emerald-50 px-3 py-2 text-sm"
+                      >
                         {address}
                       </SelectItem>
                     ))}
@@ -273,9 +277,13 @@ export const QuoteItemForm = ({
                     <SelectTrigger className="bg-white border-emerald-300 focus:border-emerald-500">
                       <SelectValue placeholder="Select carrier" />
                     </SelectTrigger>
-                    <SelectContent className="bg-white border border-emerald-200 shadow-lg z-[9999] min-w-[300px] max-h-[300px] overflow-y-auto">
+                    <SelectContent className="bg-white border border-emerald-200 shadow-lg z-50 max-w-sm">
                       {carriersForAddress.map((carrier) => (
-                        <SelectItem key={carrier} value={carrier} className="cursor-pointer hover:bg-emerald-50">
+                        <SelectItem 
+                          key={carrier} 
+                          value={carrier} 
+                          className="cursor-pointer hover:bg-emerald-50 px-3 py-2 text-sm"
+                        >
                           {carrier}
                         </SelectItem>
                       ))}
@@ -295,13 +303,17 @@ export const QuoteItemForm = ({
                     <SelectTrigger className="bg-white border-emerald-300 focus:border-emerald-500">
                       <SelectValue placeholder="Select speed and service type" />
                     </SelectTrigger>
-                    <SelectContent className="bg-white border border-emerald-200 shadow-lg z-[9999] min-w-[600px] max-h-[300px] overflow-y-auto">
+                    <SelectContent className="bg-white border border-emerald-200 shadow-lg z-50 max-w-2xl">
                       {speedsForSelection.map((carrierItem) => {
                         const sellPrice = calculateSellPrice(carrierItem, agentCommissionRate);
                         const totalCostWithAddons = calculateTotalCostWithAddons(carrierItem);
                         return (
-                          <SelectItem key={carrierItem.id} value={carrierItem.speed} className="cursor-pointer hover:bg-emerald-50">
-                            <div className="flex items-center gap-3 w-full min-w-0 whitespace-nowrap">
+                          <SelectItem 
+                            key={carrierItem.id} 
+                            value={carrierItem.speed} 
+                            className="cursor-pointer hover:bg-emerald-50 px-3 py-2"
+                          >
+                            <div className="flex items-center gap-3 w-full">
                               <span className="font-medium text-sm">{carrierItem.speed}</span>
                               <span className="text-xs text-muted-foreground">•</span>
                               <span className="text-xs text-muted-foreground">{carrierItem.type}</span>
@@ -313,7 +325,7 @@ export const QuoteItemForm = ({
                                   <span className="text-xs text-orange-600">Total Cost: ${totalCostWithAddons.toFixed(2)}</span>
                                 </>
                               )}
-                              <Badge variant="outline" className="text-xs whitespace-nowrap ml-auto bg-emerald-100 text-emerald-700 border-emerald-300">
+                              <Badge variant="outline" className="text-xs ml-auto bg-emerald-100 text-emerald-700 border-emerald-300">
                                 Circuit Quote
                               </Badge>
                             </div>
@@ -364,11 +376,15 @@ export const QuoteItemForm = ({
               <SelectTrigger className="bg-white border-blue-300 focus:border-blue-500">
                 <SelectValue placeholder={isLoading ? "Loading catalog items..." : "Select from catalog"} />
               </SelectTrigger>
-              <SelectContent className="bg-white border border-blue-200 shadow-lg z-[9999] min-w-[500px] max-h-[300px] overflow-y-auto">
+              <SelectContent className="bg-white border border-blue-200 shadow-lg z-50 max-w-lg">
                 {availableItems.length > 0 ? (
                   availableItems.map((item) => (
-                    <SelectItem key={item.id} value={item.id} className="cursor-pointer hover:bg-blue-50">
-                      <div className="flex items-center gap-3 w-full min-w-0">
+                    <SelectItem 
+                      key={item.id} 
+                      value={item.id} 
+                      className="cursor-pointer hover:bg-blue-50 px-3 py-2"
+                    >
+                      <div className="flex items-center gap-3 w-full">
                         <span className="font-medium text-sm">{item.name}</span>
                         <span className="text-xs text-muted-foreground">•</span>
                         <span className="text-xs text-muted-foreground">{item.charge_type}</span>
@@ -380,7 +396,7 @@ export const QuoteItemForm = ({
                             <span className="text-xs text-orange-600">Cost: ${item.cost}</span>
                           </>
                         )}
-                        <Badge variant="outline" className="text-xs whitespace-nowrap ml-auto bg-blue-100 text-blue-700 border-blue-300">
+                        <Badge variant="outline" className="text-xs ml-auto bg-blue-100 text-blue-700 border-blue-300">
                           Catalog
                         </Badge>
                       </div>
