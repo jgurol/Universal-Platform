@@ -1,4 +1,3 @@
-
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -19,9 +18,7 @@ import { EditQuoteTemplateSection } from "@/components/EditQuote/EditQuoteTempla
 import { EditQuoteFormFields } from "@/components/EditQuote/EditQuoteFormFields";
 import { useToast } from "@/hooks/use-toast";
 import { FileText, Building2, DollarSign, Settings } from "lucide-react";
-
 type QuoteTemplate = Database['public']['Tables']['quote_templates']['Row'];
-
 interface EditQuoteDialogProps {
   quote: Quote | null;
   open: boolean;
@@ -30,16 +27,17 @@ interface EditQuoteDialogProps {
   clients: Client[];
   clientInfos: ClientInfo[];
 }
-
-export const EditQuoteDialog = ({ 
-  quote, 
-  open, 
-  onOpenChange, 
-  onUpdateQuote, 
-  clients, 
-  clientInfos 
+export const EditQuoteDialog = ({
+  quote,
+  open,
+  onOpenChange,
+  onUpdateQuote,
+  clients,
+  clientInfos
 }: EditQuoteDialogProps) => {
-  const { toast } = useToast();
+  const {
+    toast
+  } = useToast();
 
   // Add debugging for the quote prop
   useEffect(() => {
@@ -60,17 +58,14 @@ export const EditQuoteDialog = ({
       if (quote && quote.id && open) {
         console.log('[EditQuoteDialog] Fetching fresh quote data for:', quote.id);
         try {
-          const { data, error } = await supabase
-            .from('quotes')
-            .select('*')
-            .eq('id', quote.id)
-            .single();
-
+          const {
+            data,
+            error
+          } = await supabase.from('quotes').select('*').eq('id', quote.id).single();
           if (error) {
             console.error('[EditQuoteDialog] Error fetching fresh quote:', error);
             return;
           }
-
           console.log('[EditQuoteDialog] Fresh quote from DB vs prop:', {
             dbTerm: data.term,
             propTerm: quote.term,
@@ -78,16 +73,13 @@ export const EditQuoteDialog = ({
             propStatus: quote.status,
             match: data.term === quote.term
           });
-
         } catch (err) {
           console.error('[EditQuoteDialog] Error in fresh fetch:', err);
         }
       }
     };
-
     fetchFreshQuoteData();
   }, [quote?.id, open]);
-
   const {
     clientId,
     setClientId,
@@ -110,39 +102,41 @@ export const EditQuoteDialog = ({
     term,
     setTerm
   } = useQuoteForm(quote, open);
-
-  const { quoteItems, setQuoteItems } = useQuoteItems(quote, open);
-  const { addresses } = useClientAddresses(clientInfoId !== "none" ? clientInfoId : null);
-  
+  const {
+    quoteItems,
+    setQuoteItems
+  } = useQuoteItems(quote, open);
+  const {
+    addresses
+  } = useClientAddresses(clientInfoId !== "none" ? clientInfoId : null);
   const [selectedBillingAddressId, setSelectedBillingAddressId] = useState<string | null>(null);
   const [billingAddress, setBillingAddress] = useState<string>("");
   const [selectedServiceAddressId, setSelectedServiceAddressId] = useState<string | null>(null);
   const [serviceAddress, setServiceAddress] = useState<string>("");
-
   const [selectedTemplateId, setSelectedTemplateId] = useState<string>("");
   const [templates, setTemplates] = useState<QuoteTemplate[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const { user } = useAuth();
+  const {
+    user
+  } = useAuth();
 
   // Helper function to find matching address ID from address string
   const findMatchingAddressId = (addressString: string, addresses: any[]) => {
     if (!addressString || !addresses.length) return null;
-    
     const matchingAddress = addresses.find(addr => {
       const formattedAddress = `${addr.street_address}${addr.street_address_2 ? `, ${addr.street_address_2}` : ''}, ${addr.city}, ${addr.state} ${addr.zip_code}`;
       return formattedAddress === addressString;
     });
-    
     return matchingAddress ? matchingAddress.id : null;
   };
 
   // Initialize addresses from quote - check if they match existing addresses
   useEffect(() => {
     if (quote && open && addresses.length > 0) {
-      console.log('EditQuoteDialog - Initializing addresses with quote data:', { 
-        billing: quote.billingAddress, 
+      console.log('EditQuoteDialog - Initializing addresses with quote data:', {
+        billing: quote.billingAddress,
         service: quote.serviceAddress,
-        addressesCount: addresses.length 
+        addressesCount: addresses.length
       });
 
       // Handle billing address
@@ -191,18 +185,18 @@ export const EditQuoteDialog = ({
       if (open && user) {
         console.log('[EditQuoteDialog] Fetching templates for user:', user.id);
         try {
-          const { data, error } = await supabase
-            .from('quote_templates')
-            .select('*')
-            .order('name');
-
-          console.log('[EditQuoteDialog] Templates query result:', { data, error });
-
+          const {
+            data,
+            error
+          } = await supabase.from('quote_templates').select('*').order('name');
+          console.log('[EditQuoteDialog] Templates query result:', {
+            data,
+            error
+          });
           if (error) {
             console.error('[EditQuoteDialog] Error fetching templates:', error);
             throw error;
           }
-          
           setTemplates(data || []);
           console.log('[EditQuoteDialog] Templates set:', data?.length || 0, 'templates');
         } catch (error) {
@@ -210,7 +204,6 @@ export const EditQuoteDialog = ({
         }
       }
     };
-
     fetchTemplates();
   }, [open, user]);
 
@@ -233,32 +226,32 @@ export const EditQuoteDialog = ({
       }
     }
   }, [quote, open, templates]);
-
   const handleBillingAddressChange = (addressId: string | null, customAddr?: string) => {
-    console.log('EditQuoteDialog - Billing address changed:', { addressId, customAddr });
+    console.log('EditQuoteDialog - Billing address changed:', {
+      addressId,
+      customAddr
+    });
     setSelectedBillingAddressId(addressId);
     setBillingAddress(customAddr || "");
   };
-
   const handleServiceAddressChange = (addressId: string | null, customAddr?: string) => {
-    console.log('EditQuoteDialog - Service address changed:', { addressId, customAddr });
+    console.log('EditQuoteDialog - Service address changed:', {
+      addressId,
+      customAddr
+    });
     setSelectedServiceAddressId(addressId);
     setServiceAddress(customAddr || "");
   };
-
   const handleTermChange = (value: string) => {
     console.log('[EditQuoteDialog] Term changed to:', value);
     setTerm(value);
   };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
     if (isSubmitting) {
       console.log('[EditQuoteDialog] Already submitting, ignoring duplicate submission');
       return;
     }
-
     console.log('[EditQuoteDialog] Form submitted - checking validation');
     console.log('[EditQuoteDialog] Form data:', {
       quote: !!quote,
@@ -269,94 +262,83 @@ export const EditQuoteDialog = ({
       selectedTemplateId,
       term
     });
-    
     if (!quote) {
       console.error('[EditQuoteDialog] No quote provided');
       toast({
         title: "Error",
         description: "No quote provided for update",
-        variant: "destructive",
+        variant: "destructive"
       });
       return;
     }
-
     if (!date) {
       console.error('[EditQuoteDialog] No date provided');
       toast({
-        title: "Error", 
+        title: "Error",
         description: "Quote date is required",
-        variant: "destructive",
+        variant: "destructive"
       });
       return;
     }
-
     if (quoteItems.length === 0) {
       console.error('[EditQuoteDialog] No quote items provided');
       toast({
         title: "Error",
         description: "At least one quote item is required",
-        variant: "destructive",
+        variant: "destructive"
       });
       return;
     }
-
     if (!clientInfoId || clientInfoId === "none") {
       console.error('[EditQuoteDialog] No client info selected');
       toast({
         title: "Error",
         description: "Please select a client company",
-        variant: "destructive",
+        variant: "destructive"
       });
       return;
     }
-
     if (!selectedTemplateId) {
       console.error('[EditQuoteDialog] No template selected');
       toast({
         title: "Error",
         description: "Please select a quote template",
-        variant: "destructive",
+        variant: "destructive"
       });
       return;
     }
-
     const selectedClient = clientId ? clients.find(client => client.id === clientId) : null;
     const selectedClientInfo = clientInfos.find(info => info.id === clientInfoId);
-    
     if (!selectedClientInfo) {
       console.error('[EditQuoteDialog] Selected client info not found');
       toast({
         title: "Error",
         description: "Selected client company not found",
-        variant: "destructive",
+        variant: "destructive"
       });
       return;
     }
-
     setIsSubmitting(true);
-
     try {
       console.log('[EditQuoteDialog] Validation passed, updating quote');
       console.log('[EditQuoteDialog] Term value being saved:', term);
-      
-      const { totalAmount } = calculateTotalsByChargeType(quoteItems);
-      
+      const {
+        totalAmount
+      } = calculateTotalsByChargeType(quoteItems);
       console.log('[EditQuoteDialog] Saving quote items before updating quote:', quoteItems.map(item => ({
         id: item.id,
         name: item.name,
         description: item.description,
         address_id: item.address_id
       })));
-      
+
       // Update quote items in database with address information and custom descriptions
       await updateQuoteItems(quote.id, quoteItems);
-
-      console.log('EditQuoteDialog - Updating quote with addresses and term:', { 
-        billing: billingAddress, 
+      console.log('EditQuoteDialog - Updating quote with addresses and term:', {
+        billing: billingAddress,
         service: serviceAddress,
         term: term
       });
-
       const updatedQuote: Quote = {
         ...quote,
         clientId: clientId || "",
@@ -372,47 +354,34 @@ export const EditQuoteDialog = ({
         commissionOverride: commissionOverride ? parseFloat(commissionOverride) : undefined,
         expiresAt: expiresAt || undefined,
         notes: notes || undefined,
-        term: term || undefined, // Ensure term is included
+        term: term || undefined,
+        // Ensure term is included
         billingAddress: billingAddress || undefined,
         serviceAddress: serviceAddress || undefined,
         templateId: selectedTemplateId
       };
-
       console.log('[EditQuoteDialog] Final updatedQuote object with term:', updatedQuote.term);
-
       onUpdateQuote(updatedQuote);
-      
       toast({
         title: "Success",
-        description: "Quote updated successfully",
+        description: "Quote updated successfully"
       });
-      
       onOpenChange(false);
-
     } catch (error) {
       console.error('[EditQuoteDialog] Error updating quote:', error);
       toast({
         title: "Error",
         description: "Failed to update quote. Please try again.",
-        variant: "destructive",
+        variant: "destructive"
       });
     } finally {
       setIsSubmitting(false);
     }
   };
-
   const selectedSalesperson = clientId ? clients.find(c => c.id === clientId) : null;
 
   // Updated form validation - must include template selection
-  const isFormValid = !!(
-    quote && 
-    date && 
-    quoteItems.length > 0 && 
-    clientInfoId && 
-    clientInfoId !== "none" &&
-    selectedTemplateId
-  );
-  
+  const isFormValid = !!(quote && date && quoteItems.length > 0 && clientInfoId && clientInfoId !== "none" && selectedTemplateId);
   console.log('[EditQuoteDialog] Form validation status:', {
     hasQuote: !!quote,
     hasDate: !!date,
@@ -422,12 +391,9 @@ export const EditQuoteDialog = ({
     isFormValid,
     currentTerm: term
   });
-
   if (!quote) return null;
-
-  return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[1400px] max-h-[95vh] overflow-y-auto">
+  return <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-[1400px] max-h-[95vh] overflow-y-auto bg-blue-300">
         <div className="space-y-6">
           {/* Header */}
           <div className="flex items-center gap-3 pb-4 border-b">
@@ -447,15 +413,7 @@ export const EditQuoteDialog = ({
                 <CardTitle className="text-lg">Quote Information</CardTitle>
               </CardHeader>
               <CardContent>
-                <EditQuoteHeader
-                  quoteNumber={quoteNumber}
-                  onQuoteNumberChange={setQuoteNumber}
-                  date={date}
-                  onDateChange={setDate}
-                  expiresAt={expiresAt}
-                  onExpiresAtChange={setExpiresAt}
-                  selectedSalesperson={selectedSalesperson}
-                />
+                <EditQuoteHeader quoteNumber={quoteNumber} onQuoteNumberChange={setQuoteNumber} date={date} onDateChange={setDate} expiresAt={expiresAt} onExpiresAtChange={setExpiresAt} selectedSalesperson={selectedSalesperson} />
               </CardContent>
             </Card>
             
@@ -468,21 +426,7 @@ export const EditQuoteDialog = ({
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <EditQuoteFormFields
-                  description={description}
-                  onDescriptionChange={setDescription}
-                  clientInfoId={clientInfoId}
-                  onClientInfoIdChange={setClientInfoId}
-                  clientInfos={clientInfos}
-                  status={status}
-                  onStatusChange={setStatus}
-                  commissionOverride={commissionOverride}
-                  onCommissionOverrideChange={setCommissionOverride}
-                  notes={notes}
-                  onNotesChange={setNotes}
-                  term={term}
-                  onTermChange={handleTermChange}
-                />
+                <EditQuoteFormFields description={description} onDescriptionChange={setDescription} clientInfoId={clientInfoId} onClientInfoIdChange={setClientInfoId} clientInfos={clientInfos} status={status} onStatusChange={setStatus} commissionOverride={commissionOverride} onCommissionOverrideChange={setCommissionOverride} notes={notes} onNotesChange={setNotes} term={term} onTermChange={handleTermChange} />
               </CardContent>
             </Card>
 
@@ -492,13 +436,7 @@ export const EditQuoteDialog = ({
                 <CardTitle className="text-lg">Address Information</CardTitle>
               </CardHeader>
               <CardContent>
-                <EditQuoteAddressSection
-                  clientInfoId={clientInfoId}
-                  selectedBillingAddressId={selectedBillingAddressId}
-                  onBillingAddressChange={handleBillingAddressChange}
-                  selectedServiceAddressId={selectedServiceAddressId}
-                  onServiceAddressChange={handleServiceAddressChange}
-                />
+                <EditQuoteAddressSection clientInfoId={clientInfoId} selectedBillingAddressId={selectedBillingAddressId} onBillingAddressChange={handleBillingAddressChange} selectedServiceAddressId={selectedServiceAddressId} onServiceAddressChange={handleServiceAddressChange} />
               </CardContent>
             </Card>
 
@@ -511,11 +449,7 @@ export const EditQuoteDialog = ({
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <QuoteItemsManager
-                  items={quoteItems}
-                  onItemsChange={setQuoteItems}
-                  clientInfoId={clientInfoId !== "none" ? clientInfoId : undefined}
-                />
+                <QuoteItemsManager items={quoteItems} onItemsChange={setQuoteItems} clientInfoId={clientInfoId !== "none" ? clientInfoId : undefined} />
               </CardContent>
             </Card>
 
@@ -528,57 +462,34 @@ export const EditQuoteDialog = ({
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <EditQuoteTemplateSection
-                  selectedTemplateId={selectedTemplateId}
-                  onTemplateChange={setSelectedTemplateId}
-                  templates={templates}
-                />
-                {templates.length === 0 && (
-                  <p className="text-sm text-red-500 mt-2 p-3 bg-red-50 rounded-md border border-red-200">
+                <EditQuoteTemplateSection selectedTemplateId={selectedTemplateId} onTemplateChange={setSelectedTemplateId} templates={templates} />
+                {templates.length === 0 && <p className="text-sm text-red-500 mt-2 p-3 bg-red-50 rounded-md border border-red-200">
                     No templates available. Create templates in System Settings → Quote Templates.
-                  </p>
-                )}
+                  </p>}
               </CardContent>
             </Card>
 
             <Separator />
 
             <div className="flex justify-end space-x-3 pt-4">
-              <Button 
-                type="button" 
-                variant="outline" 
-                onClick={() => onOpenChange(false)}
-                disabled={isSubmitting}
-                className="px-6"
-              >
+              <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={isSubmitting} className="px-6">
                 Cancel
               </Button>
-              <Button 
-                type="submit" 
-                className="bg-blue-600 hover:bg-blue-700 px-6"
-                disabled={!isFormValid || isSubmitting}
-              >
-                {isSubmitting ? (
-                  <>
+              <Button type="submit" className="bg-blue-600 hover:bg-blue-700 px-6" disabled={!isFormValid || isSubmitting}>
+                {isSubmitting ? <>
                     <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
                     Updating...
-                  </>
-                ) : (
-                  "Update Quote"
-                )}
+                  </> : "Update Quote"}
               </Button>
             </div>
             
             {/* Debug info */}
-            {process.env.NODE_ENV === 'development' && (
-              <div className="text-xs text-muted-foreground p-3 bg-gray-50 rounded border">
+            {process.env.NODE_ENV === 'development' && <div className="text-xs text-muted-foreground p-3 bg-gray-50 rounded border">
                 Debug: Form valid = {isFormValid ? 'true' : 'false'} 
                 (Quote: {!!quote ? 'yes' : 'no'}, Date: {!!date ? 'yes' : 'no'}, Items: {quoteItems.length}, ClientInfo: {clientInfoId && clientInfoId !== "none" ? 'yes' : 'no'}, Template: {!!selectedTemplateId ? 'yes' : 'no'}, Term: {term || 'none'})
-              </div>
-            )}
+              </div>}
           </form>
         </div>
       </DialogContent>
-    </Dialog>
-  );
+    </Dialog>;
 };
