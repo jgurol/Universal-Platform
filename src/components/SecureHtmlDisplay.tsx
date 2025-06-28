@@ -16,6 +16,8 @@ export const SecureHtmlDisplay: React.FC<SecureHtmlDisplayProps> = ({
 }) => {
   if (!content) return null;
   
+  console.log('SecureHtmlDisplay - Raw content:', content);
+  
   let displayContent = content;
   
   // Truncate if maxLength is specified
@@ -28,10 +30,11 @@ export const SecureHtmlDisplay: React.FC<SecureHtmlDisplayProps> = ({
   }
   
   const sanitizedContent = sanitizeHtml(displayContent);
+  console.log('SecureHtmlDisplay - Sanitized content:', sanitizedContent);
   
   return (
     <div 
-      className={cn("prose prose-sm max-w-none [&_img]:inline [&_img]:align-middle [&_img]:mr-2", className)}
+      className={cn("prose prose-sm max-w-none [&_img]:inline [&_img]:align-middle [&_img]:mr-2 [&_p]:mb-2", className)}
       dangerouslySetInnerHTML={{ __html: sanitizedContent }}
     />
   );

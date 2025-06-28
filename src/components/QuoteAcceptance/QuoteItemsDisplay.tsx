@@ -36,7 +36,7 @@ export const QuoteItemsDisplay: React.FC<QuoteItemsDisplayProps> = ({ items }) =
             <div className="mt-1">
               <SecureHtmlDisplay 
                 content={itemDescription} 
-                className="text-sm text-gray-600"
+                className="text-sm text-gray-600 [&_p]:mb-2 [&_img]:max-w-full [&_img]:h-auto"
               />
             </div>
           )}
