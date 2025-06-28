@@ -119,16 +119,7 @@ const AcceptQuote = () => {
             {/* Quote Items */}
             <QuoteItemsDisplay quoteItems={quoteItems} />
 
-            {/* Initial Term - Debug version */}
-            <div>
-              <h3 className="text-lg font-semibold text-gray-900">Debug Info</h3>
-              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4">
-                <p className="text-sm">Quote term value: "{quote.term}"</p>
-                <p className="text-sm">Term exists: {quote.term ? 'true' : 'false'}</p>
-                <p className="text-sm">Term not empty: {quote.term && quote.term.trim() !== '' ? 'true' : 'false'}</p>
-              </div>
-            </div>
-
+            {/* Initial Term */}
             {quote.term && quote.term.trim() !== '' && (
               <div className="space-y-4">
                 <h3 className="text-lg font-semibold text-gray-900">Initial Term</h3>
