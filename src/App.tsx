@@ -1,9 +1,11 @@
+
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/context/AuthContext";
+import { SystemSettingsProvider } from "@/context/SystemSettingsContext";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
@@ -32,91 +34,93 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <Router>
         <AuthProvider>
-          <TooltipProvider>
-            <Toaster />
-            <Sonner />
-            <Routes>
-              <Route path="/auth" element={<Auth />} />
-              <Route path="/accept-quote/:quoteId" element={<AcceptQuote />} />
-              <Route path="/agent-agreement/:token" element={<AgentAgreement />} />
-              <Route path="/" element={
-                <ProtectedRoute>
-                  <Index />
-                </ProtectedRoute>
-              } />
-              <Route path="/admin" element={
-                <ProtectedRoute requireAdmin>
-                  <Admin />
-                </ProtectedRoute>
-              } />
-              <Route path="/quoting-system" element={
-                <ProtectedRoute>
-                  <QuotingSystem />
-                </ProtectedRoute>
-              } />
-              <Route path="/agent-management" element={
-                <ProtectedRoute requireAdmin>
-                  <AgentManagement />
-                </ProtectedRoute>
-              } />
-              <Route path="/client-management" element={
-                <ProtectedRoute>
-                  <ClientManagement />
-                </ProtectedRoute>
-              } />
-              <Route path="/deal-registration" element={
-                <ProtectedRoute>
-                  <DealRegistration />
-                </ProtectedRoute>
-              } />
-              <Route path="/system-settings" element={
-                <ProtectedRoute requireAdmin>
-                  <SystemSettings />
-                </ProtectedRoute>
-              } />
-              <Route path="/settings/profile" element={
-                <ProtectedRoute>
-                  <ProfileSettings />
-                </ProtectedRoute>
-              } />
-              <Route path="/billing" element={
-                <ProtectedRoute>
-                  <Billing />
-                </ProtectedRoute>
-              } />
-              <Route path="/fix-account" element={
-                <ProtectedRoute>
-                  <FixAccount />
-                </ProtectedRoute>
-              } />
-              <Route path="/circuit-tracking" element={
-                <ProtectedRoute>
-                  <CircuitTracking />
-                </ProtectedRoute>
-              } />
-              <Route path="/circuit-quotes" element={
-                <ProtectedRoute>
-                  <CircuitQuotes />
-                </ProtectedRoute>
-              } />
-              <Route path="/vendors" element={
-                <ProtectedRoute>
-                  <Vendors />
-                </ProtectedRoute>
-              } />
-              <Route path="/orders-management" element={
-                <ProtectedRoute requireAdmin>
-                  <OrdersManagement />
-                </ProtectedRoute>
-              } />
-              <Route path="/templates" element={
-                <ProtectedRoute requireAdmin>
-                  <Templates />
-                </ProtectedRoute>
-              } />
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </TooltipProvider>
+          <SystemSettingsProvider>
+            <TooltipProvider>
+              <Toaster />
+              <Sonner />
+              <Routes>
+                <Route path="/auth" element={<Auth />} />
+                <Route path="/accept-quote/:quoteId" element={<AcceptQuote />} />
+                <Route path="/agent-agreement/:token" element={<AgentAgreement />} />
+                <Route path="/" element={
+                  <ProtectedRoute>
+                    <Index />
+                  </ProtectedRoute>
+                } />
+                <Route path="/admin" element={
+                  <ProtectedRoute requireAdmin>
+                    <Admin />
+                  </ProtectedRoute>
+                } />
+                <Route path="/quoting-system" element={
+                  <ProtectedRoute>
+                    <QuotingSystem />
+                  </ProtectedRoute>
+                } />
+                <Route path="/agent-management" element={
+                  <ProtectedRoute requireAdmin>
+                    <AgentManagement />
+                  </ProtectedRoute>
+                } />
+                <Route path="/client-management" element={
+                  <ProtectedRoute>
+                    <ClientManagement />
+                  </ProtectedRoute>
+                } />
+                <Route path="/deal-registration" element={
+                  <ProtectedRoute>
+                    <DealRegistration />
+                  </ProtectedRoute>
+                } />
+                <Route path="/system-settings" element={
+                  <ProtectedRoute requireAdmin>
+                    <SystemSettings />
+                  </ProtectedRoute>
+                } />
+                <Route path="/settings/profile" element={
+                  <ProtectedRoute>
+                    <ProfileSettings />
+                  </ProtectedRoute>
+                } />
+                <Route path="/billing" element={
+                  <ProtectedRoute>
+                    <Billing />
+                  </ProtectedRoute>
+                } />
+                <Route path="/fix-account" element={
+                  <ProtectedRoute>
+                    <FixAccount />
+                  </ProtectedRoute>
+                } />
+                <Route path="/circuit-tracking" element={
+                  <ProtectedRoute>
+                    <CircuitTracking />
+                  </ProtectedRoute>
+                } />
+                <Route path="/circuit-quotes" element={
+                  <ProtectedRoute>
+                    <CircuitQuotes />
+                  </ProtectedRoute>
+                } />
+                <Route path="/vendors" element={
+                  <ProtectedRoute>
+                    <Vendors />
+                  </ProtectedRoute>
+                } />
+                <Route path="/orders-management" element={
+                  <ProtectedRoute requireAdmin>
+                    <OrdersManagement />
+                  </ProtectedRoute>
+                } />
+                <Route path="/templates" element={
+                  <ProtectedRoute requireAdmin>
+                    <Templates />
+                  </ProtectedRoute>
+                } />
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </TooltipProvider>
+          </SystemSettingsProvider>
         </AuthProvider>
       </Router>
     </QueryClientProvider>
