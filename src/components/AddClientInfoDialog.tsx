@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -9,6 +8,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useForm } from "react-hook-form";
 import { supabase } from "@/integrations/supabase/client";
 import { AddClientInfoData } from "@/types/clientManagement";
+import { useCreditCheck } from "@/hooks/useCreditCheck";
+import { CreditCheckResult } from "@/components/CreditCheckResult";
 
 interface AddClientInfoDialogProps {
   open: boolean;
@@ -33,8 +34,11 @@ export const AddClientInfoDialog = ({
   const [isLoading, setIsLoading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [selectedAgentId, setSelectedAgentId] = useState<string>("");
+  const [showCreditCheck, setShowCreditCheck] = useState(false);
 
-  const { register, handleSubmit, reset, setValue, formState: { errors } } = useForm<AddClientInfoData>({
+  const { creditResult, isLoading: creditLoading, performCreditCheck, clearCreditResult } = useCreditCheck();
+
+  const { register, handleSubmit, reset, setValue, watch, formState: { errors } } = useForm<AddClientInfoData>({
     defaultValues: {
       company_name: "",
       notes: "",
@@ -44,12 +48,25 @@ export const AddClientInfoDialog = ({
     }
   });
 
+  const companyName = watch("company_name");
+
   // Fetch agents when dialog opens
   useEffect(() => {
     if (open) {
       fetchAgents();
     }
   }, [open]);
+
+  // Auto-trigger credit check when company name changes and has enough characters
+  useEffect(() => {
+    if (companyName && companyName.length >= 3 && showCreditCheck) {
+      const timeoutId = setTimeout(() => {
+        performCreditCheck(companyName);
+      }, 1000); // Debounce for 1 second
+
+      return () => clearTimeout(timeoutId);
+    }
+  }, [companyName, showCreditCheck, performCreditCheck]);
 
   const fetchAgents = async () => {
     console.log('[AddClient] Starting agent fetch...');
@@ -94,6 +111,8 @@ export const AddClientInfoDialog = ({
   const handleOpenChange = (newOpen: boolean) => {
     if (newOpen) {
       setSelectedAgentId("");
+      setShowCreditCheck(false);
+      clearCreditResult();
       reset();
     }
     onOpenChange(newOpen);
@@ -103,6 +122,18 @@ export const AddClientInfoDialog = ({
     console.log('[AddClient] Agent selected:', value);
     setSelectedAgentId(value);
     setValue("agent_id", value === "none" ? null : value);
+  };
+
+  const handleCreditCheckToggle = () => {
+    if (!showCreditCheck && companyName) {
+      setShowCreditCheck(true);
+      performCreditCheck(companyName);
+    } else {
+      setShowCreditCheck(!showCreditCheck);
+      if (!showCreditCheck) {
+        clearCreditResult();
+      }
+    }
   };
 
   const onSubmit = async (data: AddClientInfoData) => {
@@ -116,6 +147,8 @@ export const AddClientInfoDialog = ({
       await onAddClientInfo(cleanedData);
       reset();
       setSelectedAgentId("");
+      setShowCreditCheck(false);
+      clearCreditResult();
       onOpenChange(false);
     } catch (err) {
       console.error('Error adding client info:', err);
@@ -126,7 +159,7 @@ export const AddClientInfoDialog = ({
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Add New Client</DialogTitle>
           <DialogDescription>
@@ -134,9 +167,20 @@ export const AddClientInfoDialog = ({
           </DialogDescription>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
           <div className="space-y-2">
-            <Label htmlFor="company_name" className="required">Company Name</Label>
+            <div className="flex items-center justify-between">
+              <Label htmlFor="company_name" className="required">Company Name</Label>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={handleCreditCheckToggle}
+                disabled={!companyName || companyName.length < 3}
+              >
+                {showCreditCheck ? 'Hide Credit Check' : 'Run Credit Check'}
+              </Button>
+            </div>
             <Input
               id="company_name"
               {...register("company_name", { required: "Company name is required" })}
@@ -146,6 +190,13 @@ export const AddClientInfoDialog = ({
               <p className="text-sm text-red-500">{errors.company_name.message}</p>
             )}
           </div>
+
+          {showCreditCheck && (
+            <CreditCheckResult 
+              result={creditResult!} 
+              isLoading={creditLoading}
+            />
+          )}
 
           <div className="space-y-2">
             <Label htmlFor="revio_id">Revio ID</Label>
