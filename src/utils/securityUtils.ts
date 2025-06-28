@@ -12,7 +12,7 @@ export const sanitizeHtml = (content: string): string => {
       'ul', 'ol', 'li', 'blockquote', 'img', 'a', 'span', 'div'
     ],
     ALLOWED_ATTR: [
-      'href', 'src', 'alt', 'title', 'class', 'style', 'target'
+      'href', 'src', 'alt', 'title', 'class', 'style', 'target', 'width', 'height'
     ],
     ALLOWED_URI_REGEXP: /^(?:(?:(?:f|ht)tps?|mailto|tel|callto|cid|xmpp|data):|[^a-z]|[a-z+.\-]+(?:[^a-z+.\-:]|$))/i,
     ADD_ATTR: ['target'],
