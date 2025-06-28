@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -252,7 +253,7 @@ export const OrdersManagement = () => {
       const agentId = clientInfoData?.agent_id;
       const accountManagerName = agentId ? agentMapping[agentId] || 'Unknown' : 'No Agent';
 
-      // Transform the data to match Quote interface, including templateId
+      // Transform the data to match Quote interface, including templateId and required properties
       const quote: Quote = {
         id: quoteData.id,
         clientId: quoteData.client_id || '',
@@ -281,7 +282,10 @@ export const OrdersManagement = () => {
         serviceAddress: quoteData.service_address || '',
         expiresAt: quoteData.expires_at || '',
         notes: quoteData.notes || '',
-        templateId: quoteData.template_id || undefined // Include template ID
+        templateId: quoteData.template_id || undefined,
+        term: quoteData.term || undefined,
+        user_id: quoteData.user_id,
+        archived: quoteData.archived || false
       };
 
       const clientInfo: ClientInfo | undefined = clientInfoData ? {
