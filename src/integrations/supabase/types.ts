@@ -1437,6 +1437,7 @@ export type Database = {
           service_address: string | null
           status: string | null
           template_id: string | null
+          term: string | null
           updated_at: string | null
           user_id: string
         }
@@ -1467,6 +1468,7 @@ export type Database = {
           service_address?: string | null
           status?: string | null
           template_id?: string | null
+          term?: string | null
           updated_at?: string | null
           user_id: string
         }
@@ -1497,6 +1499,7 @@ export type Database = {
           service_address?: string | null
           status?: string | null
           template_id?: string | null
+          term?: string | null
           updated_at?: string | null
           user_id?: string
         }

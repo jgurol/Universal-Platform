@@ -9,7 +9,7 @@ export const createQuoteInDatabase = async (
   userId: string
 ): Promise<string> => {
   console.log('[createQuoteInDatabase] Creating quote with user_id:', userId);
-  console.log('[createQuoteInDatabase] Creating quote with addresses:', {
+  console.log('[createQuoteInDatabase] Creating quote with addresses and term:', {
     billingAddress: quote.billingAddress,
     serviceAddress: quote.serviceAddress,
     description: quote.description,
@@ -40,7 +40,7 @@ export const createQuoteInDatabase = async (
       commission_override: quote.commissionOverride,
       expires_at: quote.expiresAt,
       notes: quote.notes,
-      term: quote.term, // Make sure to include the term field
+      term: quote.term, // Now this column exists in the database
       billing_address: quote.billingAddress,
       service_address: quote.serviceAddress,
       template_id: quote.templateId
@@ -53,7 +53,7 @@ export const createQuoteInDatabase = async (
     throw quoteError;
   }
 
-  console.log('[createQuoteInDatabase] Quote created successfully with ID:', quoteData.id, 'and user_id:', quoteData.user_id, 'term:', quote.term);
+  console.log('[createQuoteInDatabase] Quote created successfully with ID:', quoteData.id, 'user_id:', quoteData.user_id, 'term:', quoteData.term);
 
   // Save quote items if they exist using the updateQuoteItems function
   if (quote.quoteItems && quote.quoteItems.length > 0) {
@@ -73,7 +73,7 @@ export const createQuoteInDatabase = async (
     user_id: quoteData.user_id,
     billingAddress: quote.billingAddress,
     serviceAddress: quote.serviceAddress,
-    term: quote.term
+    term: quoteData.term
   });
 
   return quoteData.id;
