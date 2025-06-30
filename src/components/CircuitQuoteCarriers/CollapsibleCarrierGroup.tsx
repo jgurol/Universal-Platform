@@ -1,5 +1,4 @@
-
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { ChevronDown, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
@@ -16,6 +15,7 @@ interface CollapsibleCarrierGroupProps {
   onCopyCarrier?: (carrier: CarrierQuote) => void;
   onReorderCarriers?: (reorderedCarriers: CarrierQuote[]) => void;
   allCarriers: CarrierQuote[]; // All carriers to maintain global order
+  shouldExpand?: boolean; // New prop to control auto-expansion
 }
 
 export const CollapsibleCarrierGroup = ({
@@ -25,10 +25,18 @@ export const CollapsibleCarrierGroup = ({
   onDeleteCarrier,
   onCopyCarrier,
   onReorderCarriers,
-  allCarriers
+  allCarriers,
+  shouldExpand = false
 }: CollapsibleCarrierGroupProps) => {
   const [isOpen, setIsOpen] = useState(false);
   const { isAdmin } = useAuth();
+
+  // Auto-expand when shouldExpand is true
+  useEffect(() => {
+    if (shouldExpand) {
+      setIsOpen(true);
+    }
+  }, [shouldExpand]);
 
   // Sort carriers within this group by display_order, then by speed
   const sortedCarriers = [...carriers].sort((a, b) => {

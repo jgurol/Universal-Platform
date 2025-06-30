@@ -26,6 +26,7 @@ export const CircuitQuoteCard = ({
   onDeleteQuote
 }: CircuitQuoteCardProps) => {
   const [isExpanded, setIsExpanded] = useState(false);
+  const [expandedCarrier, setExpandedCarrier] = useState<string | undefined>();
 
   const handleStatusChange = (newStatus: string) => {
     const updatedQuote = {
@@ -76,8 +77,7 @@ export const CircuitQuoteCard = ({
 
   const handleExpandCarrier = (carrierName: string) => {
     setIsExpanded(true);
-    // Optional: You could add logic here to auto-expand the specific carrier group
-    // This would require passing the carrierName to CollapsibleCarrierGroup
+    setExpandedCarrier(carrierName);
   };
 
   const actions = CircuitQuoteCardActions({
@@ -126,6 +126,7 @@ export const CircuitQuoteCard = ({
             staticIp={quote.static_ip}
             slash29={quote.slash_29}
             mikrotikRequired={quote.mikrotik_required}
+            expandedCarrier={expandedCarrier}
           />
         </CardContent>
       )}

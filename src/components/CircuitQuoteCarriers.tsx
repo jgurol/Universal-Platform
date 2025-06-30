@@ -20,6 +20,7 @@ interface CircuitQuoteCarriersProps {
   slash29?: boolean;
   mikrotikRequired?: boolean;
   onExpandCarrier?: (carrierName: string) => void;
+  expandedCarrier?: string; // New prop to track which carrier should be expanded
 }
 
 export const CircuitQuoteCarriers = ({ 
@@ -33,7 +34,8 @@ export const CircuitQuoteCarriers = ({
   staticIp = false,
   slash29 = false,
   mikrotikRequired = false,
-  onExpandCarrier
+  onExpandCarrier,
+  expandedCarrier
 }: CircuitQuoteCarriersProps) => {
   const { isAdmin } = useAuth();
   const { toast } = useToast();
@@ -129,6 +131,7 @@ export const CircuitQuoteCarriers = ({
             onDeleteCarrier={onDeleteCarrier}
             onCopyCarrier={onCopyCarrier}
             onReorderCarriers={handleReorderCarriers}
+            shouldExpand={expandedCarrier === carrierName}
           />
         ))}
       </div>
