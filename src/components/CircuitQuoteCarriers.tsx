@@ -19,6 +19,7 @@ interface CircuitQuoteCarriersProps {
   staticIp?: boolean;
   slash29?: boolean;
   mikrotikRequired?: boolean;
+  onExpandCarrier?: (carrierName: string) => void;
 }
 
 export const CircuitQuoteCarriers = ({ 
@@ -31,13 +32,20 @@ export const CircuitQuoteCarriers = ({
   onReorderCarriers,
   staticIp = false,
   slash29 = false,
-  mikrotikRequired = false
+  mikrotikRequired = false,
+  onExpandCarrier
 }: CircuitQuoteCarriersProps) => {
   const { isAdmin } = useAuth();
   const { toast } = useToast();
 
+  const handleCarrierClick = (carrierName: string) => {
+    if (onExpandCarrier) {
+      onExpandCarrier(carrierName);
+    }
+  };
+
   if (isMinimized) {
-    return <CarrierTags carriers={carriers} />;
+    return <CarrierTags carriers={carriers} onCarrierClick={handleCarrierClick} />;
   }
 
   // Group carriers by carrier name

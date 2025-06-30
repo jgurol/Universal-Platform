@@ -1,11 +1,11 @@
-
 import type { CarrierQuote } from "@/hooks/useCircuitQuotes";
 
 interface CarrierTagsProps {
   carriers: CarrierQuote[];
+  onCarrierClick?: (carrierName: string) => void;
 }
 
-export const CarrierTags = ({ carriers }: CarrierTagsProps) => {
+export const CarrierTags = ({ carriers, onCarrierClick }: CarrierTagsProps) => {
   // Sort carriers by carrier name first, then by speed
   const sortedCarriers = [...carriers].sort((a, b) => {
     const carrierComparison = a.carrier.localeCompare(b.carrier);
@@ -66,15 +66,22 @@ export const CarrierTags = ({ carriers }: CarrierTagsProps) => {
     };
   });
 
+  const handleCarrierClick = (vendorName: string) => {
+    if (onCarrierClick) {
+      onCarrierClick(vendorName);
+    }
+  };
+
   return (
     <div className="flex flex-wrap gap-2">
       {vendorDisplayData.map(({ vendorName, displayCarrier, isPending, summaryText }) => (
         <div
           key={vendorName}
-          className={`inline-flex flex-col items-start px-3 py-2 rounded-lg text-white shadow-sm ${
+          className={`inline-flex flex-col items-start px-3 py-2 rounded-lg text-white shadow-sm cursor-pointer hover:opacity-90 transition-opacity ${
             isPending ? 'animate-pulse' : ''
           }`}
           style={{ backgroundColor: displayCarrier.color || '#3B82F6' }}
+          onClick={() => handleCarrierClick(vendorName)}
         >
           <div className="text-xs font-medium">
             {vendorName}

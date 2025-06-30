@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { CircuitQuoteCardHeader } from "./CircuitQuoteCardHeader";
@@ -75,6 +74,12 @@ export const CircuitQuoteCard = ({
     onUpdate(updatedQuote);
   };
 
+  const handleExpandCarrier = (carrierName: string) => {
+    setIsExpanded(true);
+    // Optional: You could add logic here to auto-expand the specific carrier group
+    // This would require passing the carrierName to CollapsibleCarrierGroup
+  };
+
   const actions = CircuitQuoteCardActions({
     onAddCarrier,
     onUpdateCarrier: handleUpdateCarrier
@@ -101,6 +106,7 @@ export const CircuitQuoteCard = ({
             staticIp={quote.static_ip}
             slash29={quote.slash_29}
             mikrotikRequired={quote.mikrotik_required}
+            onExpandCarrier={handleExpandCarrier}
           />
         </CardContent>
       )}
