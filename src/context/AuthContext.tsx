@@ -27,6 +27,28 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+// Utility function to clean up authentication state
+const cleanupAuthState = () => {
+  console.log('Cleaning up authentication state');
+  
+  // Remove standard auth tokens
+  localStorage.removeItem('supabase.auth.token');
+  
+  // Remove all Supabase auth keys from localStorage
+  Object.keys(localStorage).forEach((key) => {
+    if (key.startsWith('supabase.auth.') || key.includes('sb-')) {
+      localStorage.removeItem(key);
+    }
+  });
+  
+  // Remove from sessionStorage if in use
+  Object.keys(sessionStorage || {}).forEach((key) => {
+    if (key.startsWith('supabase.auth.') || key.includes('sb-')) {
+      sessionStorage.removeItem(key);
+    }
+  });
+};
+
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
@@ -63,6 +85,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
+        console.log('Auth state change:', event, !!session);
+        
         setSession(session);
         setUser(session?.user ?? null);
         
@@ -89,6 +113,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             await fetchUserProfile(session.user.id);
           }, 0);
         } else {
+          // Clear state when signed out
           setIsAdmin(false);
           setUserProfile(null);
         }
@@ -111,6 +136,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   const signIn = async (email: string, password: string) => {
+    // Clean up existing state before signing in
+    cleanupAuthState();
+    
+    // Attempt global sign out first
+    try {
+      await supabase.auth.signOut({ scope: 'global' });
+    } catch (err) {
+      // Continue even if this fails
+      console.log('Global signout failed, continuing with sign in');
+    }
+    
     const { error } = await supabase.auth.signInWithPassword({
       email,
       password,
@@ -133,7 +169,34 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const signOut = async () => {
-    await supabase.auth.signOut();
+    console.log('Starting sign out process');
+    
+    try {
+      // Clean up auth state first
+      cleanupAuthState();
+      
+      // Clear local state immediately
+      setSession(null);
+      setUser(null);
+      setIsAdmin(false);
+      setUserProfile(null);
+      
+      // Attempt global sign out
+      try {
+        await supabase.auth.signOut({ scope: 'global' });
+        console.log('Global sign out successful');
+      } catch (err) {
+        console.log('Global sign out failed, but continuing with cleanup');
+      }
+      
+      // Force page reload for a completely clean state
+      console.log('Redirecting to auth page');
+      window.location.href = '/auth';
+    } catch (error) {
+      console.error('Error during sign out:', error);
+      // Even if there's an error, redirect to auth page
+      window.location.href = '/auth';
+    }
   };
 
   return (

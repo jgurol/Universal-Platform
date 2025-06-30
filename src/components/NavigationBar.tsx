@@ -22,15 +22,25 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { useToast } from "@/hooks/use-toast";
 
 export function NavigationBar() {
   const { isAdmin, user, signOut, userProfile } = useAuth();
+  const { toast } = useToast();
 
   const handleSignOut = async () => {
     try {
+      console.log('NavigationBar: Starting sign out');
       await signOut();
     } catch (error) {
       console.error('Error signing out:', error);
+      toast({
+        title: "Sign Out Error",
+        description: "There was an error signing out. Redirecting to login page.",
+        variant: "destructive"
+      });
+      // Force redirect even if there's an error
+      window.location.href = '/auth';
     }
   };
 
