@@ -1,7 +1,7 @@
 
 import { Button } from "@/components/ui/button";
-import { Pencil, Trash2, FileText, Copy, XCircle } from "lucide-react";
-import { ArchiveRestore } from "lucide-react";
+import { Pencil, FileText, Copy, XCircle } from "lucide-react";
+import { Archive, Delete, ArchiveRestore } from "lucide-react";
 import { Quote, ClientInfo } from "@/pages/Index";
 import { generateQuotePDF } from "@/utils/pdfUtils";
 import { useToast } from "@/hooks/use-toast";
@@ -153,10 +153,10 @@ export const QuoteActions = ({
               <Button 
                 variant="ghost" 
                 size="sm" 
-                className="h-8 w-8 p-0 text-gray-500 hover:text-red-600"
+                className="h-8 w-8 p-0 text-gray-500 hover:text-orange-600"
                 onClick={() => onDeleteQuote(quote.id)}
               >
-                <Trash2 className="w-4 h-4" />
+                <Archive className="w-4 h-4" />
               </Button>
             </TooltipTrigger>
             <TooltipContent>
@@ -173,9 +173,9 @@ export const QuoteActions = ({
                   <Button 
                     variant="ghost" 
                     size="sm" 
-                    className="h-8 w-8 p-0 text-gray-500 hover:text-red-800"
+                    className="h-8 w-8 p-0 text-gray-500 hover:text-red-600"
                   >
-                    <XCircle className="w-4 h-4" />
+                    <Delete className="w-4 h-4" />
                   </Button>
                 </AlertDialogTrigger>
                 <AlertDialogContent>

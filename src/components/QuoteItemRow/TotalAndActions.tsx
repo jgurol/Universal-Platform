@@ -1,6 +1,6 @@
 
 import { Button } from "@/components/ui/button";
-import { Trash2 } from "lucide-react";
+import { Delete } from "lucide-react";
 
 interface TotalAndActionsProps {
   totalPrice: number;
@@ -28,7 +28,7 @@ export const TotalAndActions = ({
           onClick={onRemoveItem}
           className="h-6 w-6 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
         >
-          <Trash2 className="w-3 h-3" />
+          <Delete className="w-3 h-3" />
         </Button>
       </div>
       {!isAgentOptedOut && (
