@@ -1,3 +1,4 @@
+
 import type { CarrierQuote } from "@/hooks/useCircuitQuotes";
 
 interface CarrierTagsProps {
@@ -30,33 +31,34 @@ export const CarrierTags = ({ carriers, onCarrierClick }: CarrierTagsProps) => {
     // Use the first carrier for display properties
     const displayCarrier = vendorCarriers[0];
     let hasPendingQuotes = false;
-    let hasNoService = false;
+    let hasService = false;
     let lowestPrice: number | null = null;
     
     // Analyze all carriers for this vendor
     vendorCarriers.forEach(carrier => {
-      if (carrier.no_service) {
-        hasNoService = true;
-      } else if (!carrier.price || carrier.price === 0) {
-        hasPendingQuotes = true;
-      } else {
-        if (lowestPrice === null || carrier.price < lowestPrice) {
-          lowestPrice = carrier.price;
+      if (!carrier.no_service) {
+        hasService = true;
+        if (!carrier.price || carrier.price === 0) {
+          hasPendingQuotes = true;
+        } else {
+          if (lowestPrice === null || carrier.price < lowestPrice) {
+            lowestPrice = carrier.price;
+          }
         }
       }
     });
 
-    // Determine summary text
+    // Determine summary text - prioritize actual service over "No service"
     let summaryText = "";
-    if (hasNoService) {
-      summaryText = "No service";
-    } else if (lowestPrice !== null) {
+    if (lowestPrice !== null) {
       summaryText = `prices starting at $${lowestPrice.toFixed(2)}`;
-    } else if (hasPendingQuotes) {
+    } else if (hasPendingQuotes && hasService) {
       summaryText = "Pricing pending";
+    } else if (!hasService) {
+      summaryText = "No service";
     }
 
-    const isPending = hasPendingQuotes && !hasNoService && lowestPrice === null;
+    const isPending = hasPendingQuotes && hasService && lowestPrice === null;
     
     return {
       vendorName,
