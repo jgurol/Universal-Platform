@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { CircuitQuoteCardHeader } from "./CircuitQuoteCardHeader";
@@ -77,8 +76,15 @@ export const CircuitQuoteCard = ({
   };
 
   const handleExpandCarrier = (carrierName: string) => {
-    setIsExpanded(true);
-    setExpandedCarrier(carrierName);
+    // If clicking on the same carrier that's already expanded, collapse it
+    if (expandedCarrier === carrierName && isExpanded) {
+      setIsExpanded(false);
+      setExpandedCarrier(undefined);
+    } else {
+      // Otherwise, expand this carrier
+      setIsExpanded(true);
+      setExpandedCarrier(carrierName);
+    }
   };
 
   const actions = CircuitQuoteCardActions({
