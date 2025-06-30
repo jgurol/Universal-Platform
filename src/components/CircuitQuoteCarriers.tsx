@@ -60,10 +60,15 @@ export const CircuitQuoteCarriers = ({
     return groups;
   }, {} as Record<string, CarrierQuote[]>);
 
+  // If expandedCarrier is set, only show that specific carrier group
+  const carriersToShow = expandedCarrier 
+    ? { [expandedCarrier]: carrierGroups[expandedCarrier] }
+    : carrierGroups;
+
   // Sort carrier groups by the first carrier's display_order in each group
-  const sortedCarrierNames = Object.keys(carrierGroups).sort((a, b) => {
-    const firstCarrierA = carrierGroups[a][0];
-    const firstCarrierB = carrierGroups[b][0];
+  const sortedCarrierNames = Object.keys(carriersToShow).sort((a, b) => {
+    const firstCarrierA = carriersToShow[a][0];
+    const firstCarrierB = carriersToShow[b][0];
     
     const orderA = (firstCarrierA as any).display_order ?? 999;
     const orderB = (firstCarrierB as any).display_order ?? 999;
@@ -125,7 +130,7 @@ export const CircuitQuoteCarriers = ({
           <CollapsibleCarrierGroup
             key={carrierName}
             carrierName={carrierName}
-            carriers={carrierGroups[carrierName]}
+            carriers={carriersToShow[carrierName]}
             allCarriers={carriers}
             onEditCarrier={onEditCarrier}
             onDeleteCarrier={onDeleteCarrier}
