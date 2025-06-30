@@ -15,7 +15,7 @@ export const CarrierTags = ({ carriers }: CarrierTagsProps) => {
     return a.speed.localeCompare(b.speed);
   });
 
-  // Group carriers by vendor name and show only one tag per vendor
+  // Group carriers by vendor name and calculate summary for each vendor
   const carriersByVendor = new Map<string, CarrierQuote[]>();
   
   sortedCarriers.forEach(carrier => {
@@ -25,37 +25,65 @@ export const CarrierTags = ({ carriers }: CarrierTagsProps) => {
     carriersByVendor.get(carrier.carrier)!.push(carrier);
   });
 
-  // Create display data for each vendor (showing only vendor name)
+  // Create display data for each vendor with summary information
   const vendorDisplayData = Array.from(carriersByVendor.entries()).map(([vendorName, vendorCarriers]) => {
     // Use the first carrier for display properties
     const displayCarrier = vendorCarriers[0];
     let hasPendingQuotes = false;
+    let hasNoService = false;
+    let lowestPrice: number | null = null;
     
-    // Check if any carriers have pending quotes for animation
+    // Analyze all carriers for this vendor
     vendorCarriers.forEach(carrier => {
-      if (!carrier.price || carrier.price === 0) hasPendingQuotes = true;
+      if (carrier.no_service) {
+        hasNoService = true;
+      } else if (!carrier.price || carrier.price === 0) {
+        hasPendingQuotes = true;
+      } else {
+        if (lowestPrice === null || carrier.price < lowestPrice) {
+          lowestPrice = carrier.price;
+        }
+      }
     });
 
-    const isPending = hasPendingQuotes;
+    // Determine summary text
+    let summaryText = "";
+    if (hasNoService) {
+      summaryText = "No service";
+    } else if (lowestPrice !== null) {
+      summaryText = `prices starting at $${lowestPrice.toFixed(2)}`;
+    } else if (hasPendingQuotes) {
+      summaryText = "Pricing pending";
+    }
+
+    const isPending = hasPendingQuotes && !hasNoService && lowestPrice === null;
     
     return {
       vendorName,
       displayCarrier,
-      isPending
+      isPending,
+      summaryText
     };
   });
 
   return (
     <div className="flex flex-wrap gap-2">
-      {vendorDisplayData.map(({ vendorName, displayCarrier, isPending }) => (
+      {vendorDisplayData.map(({ vendorName, displayCarrier, isPending, summaryText }) => (
         <div
           key={vendorName}
-          className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium text-white shadow-sm ${
+          className={`inline-flex flex-col items-start px-3 py-2 rounded-lg text-white shadow-sm ${
             isPending ? 'animate-pulse' : ''
           }`}
           style={{ backgroundColor: displayCarrier.color || '#3B82F6' }}
         >
-          {vendorName}
+          <div className="text-xs font-medium">
+            {vendorName}
+          </div>
+          {summaryText && (
+            <div className="text-xs opacity-90 mt-1">
+              {summaryText}
+            </div>
+          )}
         </div>
       ))}
     </div>
