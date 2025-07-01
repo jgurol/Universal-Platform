@@ -23,13 +23,12 @@ export const IndexPageLayout: React.FC = () => {
   } = useIndexData();
 
   const {
-    transactions,
-    onAddTransaction,
-    onUpdateTransaction,
-    onApproveCommission,
-    onPayCommission,
-    onDeleteTransaction
-  } = useTransactionActions(associatedAgentId);
+    addTransaction,
+    updateTransaction,
+    approveCommission,
+    payCommission,
+    deleteTransaction
+  } = useTransactionActions(clients, fetchQuotes);
 
   const [activeFilter, setActiveFilter] = useState<string | null>(null);
 
@@ -47,6 +46,24 @@ export const IndexPageLayout: React.FC = () => {
       default: return true;
     }
   });
+
+  // Convert quotes to transactions format for display
+  const transactions = quotes.map(quote => ({
+    id: quote.id,
+    clientId: quote.clientId || '',
+    clientName: quote.clientName || '',
+    clientInfoId: quote.clientInfoId || '',
+    amount: Number(quote.amount),
+    date: quote.date,
+    description: quote.description || '',
+    invoiceNumber: quote.quoteNumber || '',
+    invoiceMonth: quote.quoteMonth || '',
+    invoiceYear: quote.quoteYear || '',
+    isPaid: quote.status === 'approved',
+    paymentMethod: '',
+    referenceNumber: '',
+    commissionOverride: quote.commissionOverride
+  }));
 
   const handleAddQuote = (quote: any) => {
     // Add quote logic here
@@ -126,11 +143,11 @@ export const IndexPageLayout: React.FC = () => {
             transactions={transactions}
             clients={clients}
             clientInfos={clientInfos}
-            onAddTransaction={onAddTransaction}
-            onUpdateTransaction={onUpdateTransaction}
-            onApproveCommission={onApproveCommission}
-            onPayCommission={onPayCommission}
-            onDeleteTransaction={onDeleteTransaction}
+            onAddTransaction={addTransaction}
+            onUpdateTransaction={updateTransaction}
+            onApproveCommission={approveCommission}
+            onPayCommission={payCommission}
+            onDeleteTransaction={deleteTransaction}
             associatedAgentId={associatedAgentId}
           />
         </div>
