@@ -3,7 +3,6 @@ import React, { useState } from "react";
 import { NavigationBar } from "@/components/NavigationBar";
 import { QuickNavigation } from "@/components/QuickNavigation";
 import { AppAccessGrid } from "@/components/AppAccessGrid";
-import { StatsCards } from "@/components/StatsCards";
 import { RecentQuotes } from "@/components/RecentQuotes";
 import { RecentTransactions } from "@/components/RecentTransactions";
 import { useAuth } from "@/context/AuthContext";
@@ -29,23 +28,6 @@ export const IndexPageLayout: React.FC = () => {
     payCommission,
     deleteTransaction
   } = useTransactionActions(clients, fetchQuotes);
-
-  const [activeFilter, setActiveFilter] = useState<string | null>(null);
-
-  // Filter quotes based on active filter
-  const filteredQuotes = quotes.filter(quote => {
-    if (!activeFilter) return true;
-    
-    switch (activeFilter) {
-      case 'pending': return quote.status === 'pending';
-      case 'approved': return quote.status === 'approved';
-      case 'expired': {
-        const today = new Date();
-        return quote.expiresAt && new Date(quote.expiresAt) < today;
-      }
-      default: return true;
-    }
-  });
 
   // Convert quotes to transactions format for display
   const transactions = quotes.map(quote => ({
@@ -117,21 +99,10 @@ export const IndexPageLayout: React.FC = () => {
         {/* Programs Grid - Now using app access */}
         <AppAccessGrid />
 
-        {/* Stats Cards */}
-        <StatsCards 
-          clients={clients}
-          quotes={filteredQuotes}
-          clientInfos={clientInfos}
-          isAdmin={isAdmin}
-          associatedAgentId={associatedAgentId}
-          onFilterChange={setActiveFilter}
-          activeFilter={activeFilter}
-        />
-
         {/* Recent Activity Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           <RecentQuotes 
-            quotes={filteredQuotes}
+            quotes={quotes}
             clients={clients}
             clientInfos={clientInfos}
             onAddQuote={handleAddQuote}
