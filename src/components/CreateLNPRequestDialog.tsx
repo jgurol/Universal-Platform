@@ -254,25 +254,14 @@ export const CreateLNPRequestDialog = ({ open, onOpenChange, onCreateRequest }: 
           {/* Address Information */}
           <div className="space-y-4">
             <h3 className="text-lg font-semibold">Address Information</h3>
-            <div className="space-y-4">
-              <div>
-                <AddressAutocomplete
-                  label="Service Address *"
-                  placeholder="Start typing the service address..."
-                  onAddressSelect={handleServiceAddressSelect}
-                  initialValue={formData.service_address}
-                  required
-                />
-              </div>
-              <div>
-                <Label htmlFor="billing_address">Billing Address (if different)</Label>
-                <Textarea
-                  id="billing_address"
-                  value={formData.billing_address || ''}
-                  onChange={(e) => setFormData({...formData, billing_address: e.target.value})}
-                  rows={3}
-                />
-              </div>
+            <div>
+              <AddressAutocomplete
+                label="Service Address *"
+                placeholder="Start typing the service address..."
+                onAddressSelect={handleServiceAddressSelect}
+                initialValue={formData.service_address}
+                required
+              />
             </div>
           </div>
 
