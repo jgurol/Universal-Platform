@@ -64,6 +64,16 @@ export function NavigationBar() {
     return name.substring(0, 2).toUpperCase();
   };
 
+  // Map icon names to actual icon components
+  const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
+    Users,
+    Target: UserPlus,
+    Search: FileText,
+    FileText,
+    Zap,
+    DollarSign: Package
+  };
+
   return (
     <div className="w-full bg-white border-b border-gray-200 py-2 px-4 mb-6">
       <div className="container mx-auto flex justify-between items-center">
@@ -87,32 +97,56 @@ export function NavigationBar() {
                 </Link>
               </NavigationMenuItem>
 
+              {userApps.length > 0 && (
+                <NavigationMenuItem>
+                  <NavigationMenuTrigger>Applications</NavigationMenuTrigger>
+                  <NavigationMenuContent>
+                    <ul className="grid w-[350px] gap-3 p-4">
+                      {userApps.map((app) => {
+                        const Icon = iconMap[app.icon_name] || FileText;
+                        return (
+                          <ListItem 
+                            key={app.id}
+                            href={app.route} 
+                            title={app.name} 
+                            Icon={Icon}
+                            color={app.color}
+                          >
+                            {app.description}
+                          </ListItem>
+                        );
+                      })}
+                    </ul>
+                  </NavigationMenuContent>
+                </NavigationMenuItem>
+              )}
+
               {isAdmin && (
                 <NavigationMenuItem>
                   <NavigationMenuTrigger>System Settings</NavigationMenuTrigger>
                   <NavigationMenuContent>
                     <ul className="grid w-[300px] gap-3 p-4">
-                      <ListItem href="/orders-management" title="Orders Management" Icon={Package}>
+                      <ListItem href="/orders-management" title="Orders Management" Icon={Package} color="#059669">
                         Manage and track customer orders
                       </ListItem>
                       
-                      <ListItem href="/templates" title="Templates" Icon={FileText}>
+                      <ListItem href="/templates" title="Templates" Icon={FileText} color="#2563EB">
                         Manage quote templates and terms & conditions
                       </ListItem>
                       
-                      <ListItem href="/vendors" title="Vendor Management" Icon={Building}>
+                      <ListItem href="/vendors" title="Vendor Management" Icon={Building} color="#7C3AED">
                         Manage vendors and supplier information
                       </ListItem>
                       
-                      <ListItem href="/agent-management" title="Agent Management" Icon={UserCog}>
+                      <ListItem href="/agent-management" title="Agent Management" Icon={UserCog} color="#EA580C">
                         Manage commission agents and their rates
                       </ListItem>
                       
-                      <ListItem href="/admin" title="User Management" Icon={Users}>
+                      <ListItem href="/admin" title="User Management" Icon={Users} color="#4F46E5">
                         Manage users, set permissions, and control access
                       </ListItem>
                       
-                      <ListItem href="/system-settings" title="System Configuration" Icon={Settings}>
+                      <ListItem href="/system-settings" title="System Configuration" Icon={Settings} color="#6B7280">
                         Configure global system settings and defaults
                       </ListItem>
                     </ul>
@@ -170,9 +204,10 @@ interface ListItemProps {
   title: string;
   children: React.ReactNode;
   Icon: React.ComponentType<{ className?: string }>;
+  color?: string;
 }
 
-const ListItem = ({ href, title, children, Icon }: ListItemProps) => {
+const ListItem = ({ href, title, children, Icon, color = '#3B82F6' }: ListItemProps) => {
   return (
     <li>
       <NavigationMenuLink asChild>
@@ -181,7 +216,10 @@ const ListItem = ({ href, title, children, Icon }: ListItemProps) => {
           className="block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-blue-50 hover:text-blue-900 focus:bg-blue-50 focus:text-blue-900"
         >
           <div className="flex items-center gap-2">
-            <Icon className="h-4 w-4 text-blue-600" />
+            <Icon 
+              className="h-4 w-4" 
+              style={{ color }} 
+            />
             <div className="text-sm font-medium leading-none">{title}</div>
           </div>
           <p className="line-clamp-2 text-sm leading-snug text-gray-500">
