@@ -7,6 +7,7 @@ import { Separator } from '@/components/ui/separator';
 import { PhoneCall, Building, User, MapPin, Phone, FileText, Calendar } from 'lucide-react';
 import { LNPPortingRequest } from '@/hooks/useLNPPortingRequests';
 import { LOAFormDialog } from '@/components/LOAFormDialog';
+import { FOCDateDialog } from '@/components/FOCDateDialog';
 
 interface LNPRequestDetailsDialogProps {
   request: LNPPortingRequest;
@@ -22,6 +23,7 @@ export const LNPRequestDetailsDialog = ({
   onUpdateRequest 
 }: LNPRequestDetailsDialogProps) => {
   const [isLOAFormOpen, setIsLOAFormOpen] = useState(false);
+  const [isFOCDialogOpen, setIsFOCDialogOpen] = useState(false);
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -33,8 +35,11 @@ export const LNPRequestDetailsDialog = ({
     }
   };
 
-  const handleStatusUpdate = (newStatus: LNPPortingRequest['status']) => {
-    onUpdateRequest(request.id, { status: newStatus });
+  const handleApproveWithFOC = async (focDate: string) => {
+    await onUpdateRequest(request.id, { 
+      status: 'approved',
+      foc_date: focDate
+    });
   };
 
   return (
@@ -67,11 +72,11 @@ export const LNPRequestDetailsDialog = ({
                 )}
                 {request.status === 'submitted' && (
                   <Button
-                    onClick={() => handleStatusUpdate('approved')}
+                    onClick={() => setIsFOCDialogOpen(true)}
                     className="bg-green-600 hover:bg-green-700"
                     size="sm"
                   >
-                    Approve Request
+                    Approve with FOC Date
                   </Button>
                 )}
               </div>
@@ -173,7 +178,7 @@ export const LNPRequestDetailsDialog = ({
               </div>
             </div>
 
-            {/* Timestamps */}
+            {/* Timeline */}
             <div className="space-y-4">
               <h3 className="text-lg font-semibold flex items-center gap-2">
                 <Calendar className="w-5 h-5" />
@@ -188,6 +193,14 @@ export const LNPRequestDetailsDialog = ({
                   <div>
                     <span className="font-medium text-gray-600">Submitted:</span>
                     <p>{new Date(request.submitted_at).toLocaleString()}</p>
+                  </div>
+                )}
+                {request.foc_date && (
+                  <div>
+                    <span className="font-medium text-gray-600">FOC Date:</span>
+                    <p className="text-green-600 font-medium">
+                      {new Date(request.foc_date).toLocaleDateString()}
+                    </p>
                   </div>
                 )}
               </div>
@@ -232,6 +245,14 @@ export const LNPRequestDetailsDialog = ({
           });
           setIsLOAFormOpen(false);
         }}
+      />
+
+      <FOCDateDialog
+        open={isFOCDialogOpen}
+        onOpenChange={setIsFOCDialogOpen}
+        onConfirm={handleApproveWithFOC}
+        requestId={request.id}
+        businessName={request.business_name}
       />
     </>
   );

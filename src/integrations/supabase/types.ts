@@ -1225,6 +1225,7 @@ export type Database = {
           client_info_id: string | null
           created_at: string
           current_carrier: string
+          foc_date: string | null
           id: string
           ip_address: unknown | null
           notes: string | null
@@ -1248,6 +1249,7 @@ export type Database = {
           client_info_id?: string | null
           created_at?: string
           current_carrier: string
+          foc_date?: string | null
           id?: string
           ip_address?: unknown | null
           notes?: string | null
@@ -1271,6 +1273,7 @@ export type Database = {
           client_info_id?: string | null
           created_at?: string
           current_carrier?: string
+          foc_date?: string | null
           id?: string
           ip_address?: unknown | null
           notes?: string | null

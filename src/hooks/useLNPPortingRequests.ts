@@ -23,6 +23,7 @@ export interface LNPPortingRequest {
   business_name: string;
   service_address: string;
   billing_address?: string;
+  foc_date?: string;
   phone_bill_file_path?: string;
   phone_bill_file_name?: string;
   signature_data?: string;
