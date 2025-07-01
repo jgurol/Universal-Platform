@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -101,6 +102,17 @@ export const LNPRequestDetailsDialog = ({
     } finally {
       setIsDeleting(false);
     }
+  };
+
+  const handleLOAComplete = async (signatureData: string) => {
+    await onUpdateRequest(request.id, {
+      signature_data: signatureData,
+      status: 'submitted',
+      submitted_at: new Date().toISOString()
+    });
+    setIsLOAFormOpen(false);
+    // Close the main dialog as well to return to the LNP page
+    onOpenChange(false);
   };
 
   const canUndo = request.status === 'completed' || request.status === 'submitted';
@@ -345,14 +357,7 @@ export const LNPRequestDetailsDialog = ({
         request={request}
         open={isLOAFormOpen}
         onOpenChange={setIsLOAFormOpen}
-        onComplete={(signatureData) => {
-          onUpdateRequest(request.id, {
-            signature_data: signatureData,
-            status: 'submitted',
-            submitted_at: new Date().toISOString()
-          });
-          setIsLOAFormOpen(false);
-        }}
+        onComplete={handleLOAComplete}
       />
 
       <FOCDateDialog
