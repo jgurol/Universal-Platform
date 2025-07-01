@@ -12,7 +12,7 @@ export const QuickNavigation = () => {
   const { userApps } = useAppAccess();
 
   // Map icon names to actual icon components
-  const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
+  const iconMap: Record<string, React.ComponentType<{ className?: string; color?: string }>> = {
     Users,
     Target: UserPlus,
     Search,
@@ -26,7 +26,8 @@ export const QuickNavigation = () => {
     path: app.route,
     icon: iconMap[app.icon_name] || FileText,
     label: app.name,
-    description: app.description
+    description: app.description,
+    color: app.color
   }));
 
   // Don't render if no apps available
@@ -55,8 +56,13 @@ export const QuickNavigation = () => {
                         className={isActive ? "bg-blue-600 hover:bg-blue-700" : ""}
                       >
                         <Link to={item.path} className="flex items-center gap-2">
-                          <Icon className="h-4 w-4" />
-                          <span className="hidden sm:inline">{item.label}</span>
+                          <Icon 
+                            className="h-4 w-4" 
+                            color={isActive ? "white" : item.color}
+                          />
+                          <span className="hidden sm:inline" style={!isActive ? { color: item.color } : {}}>
+                            {item.label}
+                          </span>
                         </Link>
                       </Button>
                     </TooltipTrigger>

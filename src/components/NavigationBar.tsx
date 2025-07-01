@@ -28,7 +28,6 @@ import { useToast } from "@/hooks/use-toast";
 
 export function NavigationBar() {
   const { isAdmin, user, signOut, userProfile } = useAuth();
-  const { userApps } = useAppAccess();
   const { toast } = useToast();
 
   const handleSignOut = async () => {
@@ -64,16 +63,6 @@ export function NavigationBar() {
     return name.substring(0, 2).toUpperCase();
   };
 
-  // Map icon names to actual icon components
-  const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
-    Users,
-    Target: UserPlus,
-    Search: FileText,
-    FileText,
-    Zap,
-    DollarSign: Package
-  };
-
   return (
     <div className="w-full bg-white border-b border-gray-200 py-2 px-4 mb-6">
       <div className="container mx-auto flex justify-between items-center">
@@ -96,30 +85,6 @@ export function NavigationBar() {
                   </NavigationMenuLink>
                 </Link>
               </NavigationMenuItem>
-
-              {userApps.length > 0 && (
-                <NavigationMenuItem>
-                  <NavigationMenuTrigger>Applications</NavigationMenuTrigger>
-                  <NavigationMenuContent>
-                    <ul className="grid w-[350px] gap-3 p-4">
-                      {userApps.map((app) => {
-                        const Icon = iconMap[app.icon_name] || FileText;
-                        return (
-                          <ListItem 
-                            key={app.id}
-                            href={app.route} 
-                            title={app.name} 
-                            Icon={Icon}
-                            color={app.color}
-                          >
-                            {app.description}
-                          </ListItem>
-                        );
-                      })}
-                    </ul>
-                  </NavigationMenuContent>
-                </NavigationMenuItem>
-              )}
 
               {isAdmin && (
                 <NavigationMenuItem>
