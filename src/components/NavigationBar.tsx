@@ -1,6 +1,8 @@
+
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
+import { useAppAccess } from '@/hooks/useAppAccess';
 import {
   NavigationMenu,
   NavigationMenuContent,
@@ -26,6 +28,7 @@ import { useToast } from "@/hooks/use-toast";
 
 export function NavigationBar() {
   const { isAdmin, user, signOut, userProfile } = useAuth();
+  const { userApps } = useAppAccess();
   const { toast } = useToast();
 
   const handleSignOut = async () => {
@@ -83,6 +86,33 @@ export function NavigationBar() {
                   </NavigationMenuLink>
                 </Link>
               </NavigationMenuItem>
+
+              {userApps.length > 0 && (
+                <NavigationMenuItem>
+                  <NavigationMenuTrigger>Applications</NavigationMenuTrigger>
+                  <NavigationMenuContent>
+                    <ul className="grid w-[300px] gap-3 p-4">
+                      {userApps.map((app) => {
+                        const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
+                          Users,
+                          Target: UserPlus,
+                          Search: Zap,
+                          FileText,
+                          Zap,
+                          DollarSign: Package
+                        };
+                        const IconComponent = iconMap[app.icon_name] || FileText;
+                        
+                        return (
+                          <ListItem key={app.id} href={app.route} title={app.name} Icon={IconComponent}>
+                            {app.description}
+                          </ListItem>
+                        );
+                      })}
+                    </ul>
+                  </NavigationMenuContent>
+                </NavigationMenuItem>
+              )}
 
               {isAdmin && (
                 <NavigationMenuItem>

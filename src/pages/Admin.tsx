@@ -12,12 +12,13 @@ import {
   TableCell 
 } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
-import { Shield, UserCheck, UserX, PencilIcon, Plus, Mail, Trash2 } from 'lucide-react';
+import { Shield, UserCheck, UserX, PencilIcon, Plus, Mail, Trash2, Package } from 'lucide-react';
 import { Navigate } from 'react-router-dom';
 import { EditUserDialog } from '@/components/EditUserDialog';
 import { AssociateUserDialog } from '@/components/AssociateUserDialog';
 import { AddUserDialog } from '@/components/AddUserDialog';
 import { DeleteUserDialog } from '@/components/DeleteUserDialog';
+import { UserAppAccessDialog } from '@/components/UserAppAccessDialog';
 import { useSystemSettings } from '@/context/SystemSettingsContext';
 
 interface UserProfile {
@@ -58,6 +59,7 @@ export default function Admin() {
   const [agents, setAgents] = useState<Agent[]>([]);
   const [deletingUser, setDeletingUser] = useState<UserProfile | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [appAccessUser, setAppAccessUser] = useState<UserProfile | null>(null);
 
   // Redirect non-admin users
   if (!isAdmin) {
@@ -413,6 +415,16 @@ export default function Admin() {
                         <Button
                           variant="ghost"
                           size="sm"
+                          onClick={() => setAppAccessUser(userProfile)}
+                          className="text-green-600 hover:bg-green-50"
+                        >
+                          <Package className="w-4 h-4 mr-1" />
+                          Apps
+                        </Button>
+                        
+                        <Button
+                          variant="ghost"
+                          size="sm"
                           onClick={() => sendResetEmail(userProfile)}
                           className="text-purple-600 hover:bg-purple-50"
                         >
@@ -427,7 +439,7 @@ export default function Admin() {
                             onClick={() => setDeletingUser(userProfile)}
                             className="text-red-600 hover:bg-red-50"
                           >
-                            <Trash2 className="w-4 h-4 mr-1" />
+                            <Trash2 className="w-4 w-4 mr-1" />
                             Delete
                           </Button>
                         )}
@@ -507,6 +519,16 @@ export default function Admin() {
         onConfirmDelete={handleDeleteUser}
         isDeleting={isDeleting}
       />
+
+      {appAccessUser && (
+        <UserAppAccessDialog
+          user={appAccessUser}
+          open={!!appAccessUser}
+          onOpenChange={(open) => {
+            if (!open) setAppAccessUser(null);
+          }}
+        />
+      )}
     </div>
   );
 }

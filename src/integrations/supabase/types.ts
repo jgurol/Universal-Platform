@@ -172,6 +172,45 @@ export type Database = {
         }
         Relationships: []
       }
+      apps: {
+        Row: {
+          color: string
+          created_at: string
+          description: string | null
+          display_order: number
+          icon_name: string
+          id: string
+          is_active: boolean
+          name: string
+          route: string
+          updated_at: string
+        }
+        Insert: {
+          color?: string
+          created_at?: string
+          description?: string | null
+          display_order?: number
+          icon_name: string
+          id?: string
+          is_active?: boolean
+          name: string
+          route: string
+          updated_at?: string
+        }
+        Update: {
+          color?: string
+          created_at?: string
+          description?: string | null
+          display_order?: number
+          icon_name?: string
+          id?: string
+          is_active?: boolean
+          name?: string
+          route?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       carrier_options: {
         Row: {
           created_at: string
@@ -1595,6 +1634,38 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      user_app_access: {
+        Row: {
+          app_id: string
+          granted_at: string
+          granted_by: string | null
+          id: string
+          user_id: string
+        }
+        Insert: {
+          app_id: string
+          granted_at?: string
+          granted_by?: string | null
+          id?: string
+          user_id: string
+        }
+        Update: {
+          app_id?: string
+          granted_at?: string
+          granted_by?: string | null
+          id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_app_access_app_id_fkey"
+            columns: ["app_id"]
+            isOneToOne: false
+            referencedRelation: "apps"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       vendor_attachments: {
         Row: {
