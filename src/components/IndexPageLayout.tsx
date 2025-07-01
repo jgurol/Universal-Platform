@@ -3,11 +3,8 @@ import React, { useState } from "react";
 import { NavigationBar } from "@/components/NavigationBar";
 import { QuickNavigation } from "@/components/QuickNavigation";
 import { AppAccessGrid } from "@/components/AppAccessGrid";
-import { RecentQuotes } from "@/components/RecentQuotes";
-import { RecentTransactions } from "@/components/RecentTransactions";
 import { useAuth } from "@/context/AuthContext";
 import { useIndexData } from "@/hooks/useIndexData";
-import { useTransactionActions } from "@/hooks/useTransactionActions";
 
 export const IndexPageLayout: React.FC = () => {
   const { userProfile, isAdmin } = useAuth();
@@ -20,50 +17,6 @@ export const IndexPageLayout: React.FC = () => {
     setQuotes,
     fetchQuotes
   } = useIndexData();
-
-  const {
-    addTransaction,
-    updateTransaction,
-    approveCommission,
-    payCommission,
-    deleteTransaction
-  } = useTransactionActions(clients, fetchQuotes);
-
-  // Convert quotes to transactions format for display
-  const transactions = quotes.map(quote => ({
-    id: quote.id,
-    clientId: quote.clientId || '',
-    clientName: quote.clientName || '',
-    clientInfoId: quote.clientInfoId || '',
-    amount: Number(quote.amount),
-    date: quote.date,
-    description: quote.description || '',
-    invoiceNumber: quote.quoteNumber || '',
-    invoiceMonth: quote.quoteMonth || '',
-    invoiceYear: quote.quoteYear || '',
-    isPaid: quote.status === 'approved',
-    paymentMethod: '',
-    referenceNumber: '',
-    commissionOverride: quote.commissionOverride
-  }));
-
-  const handleAddQuote = (quote: any) => {
-    // Add quote logic here
-    console.log('Adding quote:', quote);
-    fetchQuotes();
-  };
-
-  const handleUpdateQuote = (quote: any) => {
-    // Update quote logic here
-    console.log('Updating quote:', quote);
-    fetchQuotes();
-  };
-
-  const handleDeleteQuote = (quoteId: string) => {
-    // Delete quote logic here
-    console.log('Deleting quote:', quoteId);
-    fetchQuotes();
-  };
 
   if (isLoading) {
     return (
@@ -98,30 +51,6 @@ export const IndexPageLayout: React.FC = () => {
 
         {/* Programs Grid - Now using app access */}
         <AppAccessGrid />
-
-        {/* Recent Activity Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          <RecentQuotes 
-            quotes={quotes}
-            clients={clients}
-            clientInfos={clientInfos}
-            onAddQuote={handleAddQuote}
-            onUpdateQuote={handleUpdateQuote}
-            onDeleteQuote={handleDeleteQuote}
-            associatedAgentId={associatedAgentId}
-          />
-          <RecentTransactions 
-            transactions={transactions}
-            clients={clients}
-            clientInfos={clientInfos}
-            onAddTransaction={addTransaction}
-            onUpdateTransaction={updateTransaction}
-            onApproveCommission={approveCommission}
-            onPayCommission={payCommission}
-            onDeleteTransaction={deleteTransaction}
-            associatedAgentId={associatedAgentId}
-          />
-        </div>
       </div>
     </div>
   );
