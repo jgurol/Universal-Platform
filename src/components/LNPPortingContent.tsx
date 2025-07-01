@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -15,7 +14,7 @@ export const LNPPortingContent = () => {
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [selectedRequest, setSelectedRequest] = useState<any>(null);
   
-  const { lnpRequests, loading, createLNPRequest, updateLNPRequest } = useLNPPortingRequests();
+  const { lnpRequests, loading, createLNPRequest, updateLNPRequest, markCompleted } = useLNPPortingRequests();
 
   const filteredRequests = lnpRequests.filter(request => {
     const matchesSearch = request.business_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -246,6 +245,7 @@ export const LNPPortingContent = () => {
           open={!!selectedRequest}
           onOpenChange={(open) => !open && setSelectedRequest(null)}
           onUpdateRequest={updateLNPRequest}
+          onMarkCompleted={markCompleted}
         />
       )}
     </div>

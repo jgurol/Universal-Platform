@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/context/AuthContext';
@@ -24,6 +23,7 @@ export interface LNPPortingRequest {
   service_address: string;
   billing_address?: string;
   foc_date?: string;
+  completed_at?: string;
   phone_bill_file_path?: string;
   phone_bill_file_name?: string;
   signature_data?: string;
@@ -186,6 +186,39 @@ export const useLNPPortingRequests = () => {
     }
   };
 
+  const markCompleted = async (requestId: string, completedDate: string) => {
+    try {
+      const { error } = await supabase
+        .from('lnp_porting_requests')
+        .update({
+          status: 'completed',
+          completed_at: completedDate,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', requestId);
+
+      if (error) throw error;
+
+      setLNPRequests(prev => prev.map(request => 
+        request.id === requestId 
+          ? { ...request, status: 'completed' as const, completed_at: completedDate }
+          : request
+      ));
+
+      toast({
+        title: "Success",
+        description: "LNP port request marked as completed"
+      });
+    } catch (error) {
+      console.error('Error marking LNP request as completed:', error);
+      toast({
+        title: "Error",
+        description: "Failed to mark LNP request as completed",
+        variant: "destructive"
+      });
+    }
+  };
+
   useEffect(() => {
     fetchLNPRequests();
   }, [user]);
@@ -195,6 +228,7 @@ export const useLNPPortingRequests = () => {
     loading,
     createLNPRequest,
     updateLNPRequest,
+    markCompleted,
     refetch: fetchLNPRequests
   };
 };

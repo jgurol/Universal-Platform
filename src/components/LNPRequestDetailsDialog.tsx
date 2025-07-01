@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -8,22 +7,26 @@ import { PhoneCall, Building, User, MapPin, Phone, FileText, Calendar } from 'lu
 import { LNPPortingRequest } from '@/hooks/useLNPPortingRequests';
 import { LOAFormDialog } from '@/components/LOAFormDialog';
 import { FOCDateDialog } from '@/components/FOCDateDialog';
+import { MarkCompletedDialog } from '@/components/MarkCompletedDialog';
 
 interface LNPRequestDetailsDialogProps {
   request: LNPPortingRequest;
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onUpdateRequest: (requestId: string, updates: Partial<LNPPortingRequest>) => Promise<void>;
+  onMarkCompleted?: (requestId: string, completedDate: string) => Promise<void>;
 }
 
 export const LNPRequestDetailsDialog = ({ 
   request, 
   open, 
   onOpenChange, 
-  onUpdateRequest 
+  onUpdateRequest,
+  onMarkCompleted 
 }: LNPRequestDetailsDialogProps) => {
   const [isLOAFormOpen, setIsLOAFormOpen] = useState(false);
   const [isFOCDialogOpen, setIsFOCDialogOpen] = useState(false);
+  const [isMarkCompletedOpen, setIsMarkCompletedOpen] = useState(false);
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -40,6 +43,12 @@ export const LNPRequestDetailsDialog = ({
       status: 'approved',
       foc_date: focDate
     });
+  };
+
+  const handleMarkCompleted = async (completedDate: string) => {
+    if (onMarkCompleted) {
+      await onMarkCompleted(request.id, completedDate);
+    }
   };
 
   return (
@@ -77,6 +86,15 @@ export const LNPRequestDetailsDialog = ({
                     size="sm"
                   >
                     Approve with FOC Date
+                  </Button>
+                )}
+                {request.status === 'approved' && (
+                  <Button
+                    onClick={() => setIsMarkCompletedOpen(true)}
+                    className="bg-blue-600 hover:bg-blue-700"
+                    size="sm"
+                  >
+                    Mark as Completed
                   </Button>
                 )}
               </div>
@@ -203,6 +221,14 @@ export const LNPRequestDetailsDialog = ({
                     </p>
                   </div>
                 )}
+                {request.completed_at && (
+                  <div>
+                    <span className="font-medium text-gray-600">Completed:</span>
+                    <p className="text-blue-600 font-medium">
+                      {new Date(request.completed_at).toLocaleDateString()}
+                    </p>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -253,6 +279,15 @@ export const LNPRequestDetailsDialog = ({
         onConfirm={handleApproveWithFOC}
         requestId={request.id}
         businessName={request.business_name}
+      />
+
+      <MarkCompletedDialog
+        open={isMarkCompletedOpen}
+        onOpenChange={setIsMarkCompletedOpen}
+        onConfirm={handleMarkCompleted}
+        requestId={request.id}
+        businessName={request.business_name}
+        focDate={request.foc_date}
       />
     </>
   );
