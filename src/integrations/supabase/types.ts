@@ -1223,6 +1223,7 @@ export type Database = {
           billing_phone_number: string | null
           business_name: string
           client_info_id: string | null
+          completed_at: string | null
           created_at: string
           current_carrier: string
           foc_date: string | null
@@ -1247,6 +1248,7 @@ export type Database = {
           billing_phone_number?: string | null
           business_name: string
           client_info_id?: string | null
+          completed_at?: string | null
           created_at?: string
           current_carrier: string
           foc_date?: string | null
@@ -1271,6 +1273,7 @@ export type Database = {
           billing_phone_number?: string | null
           business_name?: string
           client_info_id?: string | null
+          completed_at?: string | null
           created_at?: string
           current_carrier?: string
           foc_date?: string | null
