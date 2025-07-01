@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -82,6 +83,8 @@ export const LNPRequestDetailsDialog = ({
       }
 
       await onUpdateRequest(request.id, updates);
+      // Close the main dialog to return to the LNP page
+      onOpenChange(false);
     } finally {
       setIsUndoing(false);
     }
