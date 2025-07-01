@@ -1,6 +1,8 @@
 
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Mail, CheckCircle, XCircle, Eye } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -13,6 +15,8 @@ export const EmailStatusButton = ({ quoteId, onEmailClick }: EmailStatusButtonPr
   const [emailStatus, setEmailStatus] = useState<'idle' | 'success' | 'error'>('idle');
   const [emailOpened, setEmailOpened] = useState(false);
   const [emailOpenCount, setEmailOpenCount] = useState(0);
+  const [emailOpenedAt, setEmailOpenedAt] = useState<string | null>(null);
+  const [emailSentAt, setEmailSentAt] = useState<string | null>(null);
 
   // Load email status from database when component mounts
   useEffect(() => {
@@ -20,7 +24,7 @@ export const EmailStatusButton = ({ quoteId, onEmailClick }: EmailStatusButtonPr
       try {
         const { data, error } = await supabase
           .from('quotes')
-          .select('email_status, email_opened, email_open_count')
+          .select('email_status, email_opened, email_open_count, email_opened_at, email_sent_at')
           .eq('id', quoteId)
           .single();
 
@@ -30,6 +34,8 @@ export const EmailStatusButton = ({ quoteId, onEmailClick }: EmailStatusButtonPr
           }
           setEmailOpened(data.email_opened || false);
           setEmailOpenCount(data.email_open_count || 0);
+          setEmailOpenedAt(data.email_opened_at);
+          setEmailSentAt(data.email_sent_at);
         }
       } catch (err) {
         console.error('Error loading email status:', err);
@@ -51,34 +57,75 @@ export const EmailStatusButton = ({ quoteId, onEmailClick }: EmailStatusButtonPr
     return 'text-gray-500 hover:text-blue-600';
   };
 
-  const getEmailOpenIndicator = () => {
-    if (emailOpened && emailStatus === 'success') {
-      return (
-        <div className="flex items-center gap-1 text-xs text-blue-600" title={`Email opened ${emailOpenCount} time(s)`}>
-          <Eye className="w-3 h-3" />
-          {emailOpenCount > 1 && <span>{emailOpenCount}</span>}
-        </div>
-      );
+  const formatDateTime = (dateString: string | null) => {
+    if (!dateString) return null;
+    const date = new Date(dateString);
+    return date.toLocaleString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true
+    });
+  };
+
+  const getTooltipContent = () => {
+    if (emailStatus === 'error') {
+      return "Email failed to send";
     }
-    return null;
+    
+    if (emailStatus === 'success') {
+      const sentDate = formatDateTime(emailSentAt);
+      const openedDate = formatDateTime(emailOpenedAt);
+      
+      let content = `Email sent successfully`;
+      if (sentDate) content += `\nSent: ${sentDate}`;
+      
+      if (emailOpened) {
+        content += `\nOpened: ${emailOpenCount} time(s)`;
+        if (openedDate) content += `\nLast opened: ${openedDate}`;
+      } else {
+        content += `\nNot yet opened`;
+      }
+      
+      return content;
+    }
+    
+    return "Email Quote";
   };
 
   return (
-    <div className="relative">
-      <Button 
-        variant={emailStatus !== 'idle' ? 'outline' : 'ghost'}
-        size="sm" 
-        className={`h-8 w-8 p-0 transition-all duration-500 border ${getEmailButtonClass()}`}
-        onClick={onEmailClick}
-        title={emailStatus === 'success' ? 'Email sent successfully!' : emailStatus === 'error' ? 'Email failed to send' : 'Email Quote'}
-      >
-        {getEmailIcon()}
-      </Button>
-      {getEmailOpenIndicator() && (
-        <div className="absolute -top-1 -right-1">
-          {getEmailOpenIndicator()}
-        </div>
-      )}
-    </div>
+    <TooltipProvider>
+      <div className="relative">
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button 
+              variant={emailStatus !== 'idle' ? 'outline' : 'ghost'}
+              size="sm" 
+              className={`h-8 w-8 p-0 transition-all duration-500 border ${getEmailButtonClass()}`}
+              onClick={onEmailClick}
+            >
+              {getEmailIcon()}
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>
+            <div className="text-sm whitespace-pre-line">
+              {getTooltipContent()}
+            </div>
+          </TooltipContent>
+        </Tooltip>
+        
+        {/* Badge count for email opens */}
+        {emailOpened && emailOpenCount > 0 && emailStatus === 'success' && (
+          <Badge 
+            variant="secondary" 
+            className="absolute -top-2 -right-2 h-5 w-5 rounded-full p-0 flex items-center justify-center text-xs bg-blue-500 text-white border-2 border-white"
+          >
+            {emailOpenCount}
+          </Badge>
+        )}
+      </div>
+    </TooltipProvider>
   );
 };
