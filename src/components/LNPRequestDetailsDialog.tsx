@@ -1,4 +1,5 @@
 
+
 import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -55,6 +56,8 @@ export const LNPRequestDetailsDialog = ({
   const handleMarkCompleted = async (completedDate: string) => {
     if (onMarkCompleted) {
       await onMarkCompleted(request.id, completedDate);
+      // Close the main dialog to return to the LNP page
+      onOpenChange(false);
     }
   };
 
@@ -383,3 +386,4 @@ export const LNPRequestDetailsDialog = ({
     </>
   );
 };
+
