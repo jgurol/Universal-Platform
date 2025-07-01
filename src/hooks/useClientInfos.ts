@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
 import { ClientInfo } from "@/types/index";
@@ -9,7 +9,7 @@ export const useClientInfos = () => {
   const [isLoading, setIsLoading] = useState(false);
   const { user, isAdmin } = useAuth();
 
-  const fetchClientInfos = async (userId?: string, associatedAgentId?: string | null, adminOverride?: boolean) => {
+  const fetchClientInfos = useCallback(async (userId?: string, associatedAgentId?: string | null, adminOverride?: boolean) => {
     const currentUserId = userId || user?.id;
     const currentIsAdmin = adminOverride !== undefined ? adminOverride : isAdmin;
     
@@ -65,7 +65,6 @@ export const useClientInfos = () => {
         }));
 
         setClientInfos(formattedClientInfos);
-        console.log('[useClientInfos] Set clientInfos state to:', formattedClientInfos.length, 'items');
       }
     } catch (err) {
       console.error('Error in fetchClientInfos:', err);
@@ -73,7 +72,7 @@ export const useClientInfos = () => {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [user?.id, isAdmin]);
 
   return {
     clientInfos,
