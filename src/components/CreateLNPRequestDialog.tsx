@@ -134,17 +134,6 @@ export const CreateLNPRequestDialog = ({ open, onOpenChange, onCreateRequest }: 
             <h3 className="text-lg font-semibold">Business Information</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <Label htmlFor="business_name">Business Name *</Label>
-                <Input
-                  id="business_name"
-                  value={formData.business_name}
-                  onChange={(e) => setFormData({...formData, business_name: e.target.value})}
-                  required
-                  disabled={!!selectedClientId}
-                  placeholder={selectedClientId ? "Auto-filled from selected client" : "Enter business name"}
-                />
-              </div>
-              <div>
                 <Label htmlFor="current_carrier">Current Carrier *</Label>
                 <Input
                   id="current_carrier"
