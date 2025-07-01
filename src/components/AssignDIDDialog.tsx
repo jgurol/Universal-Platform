@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -21,7 +20,7 @@ interface AssignDIDDialogProps {
 export const AssignDIDDialog = ({ did, open, onOpenChange, onAssignDID }: AssignDIDDialogProps) => {
   const [selectedClientId, setSelectedClientId] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const { user, isAdmin, profile } = useAuth();
+  const { user, isAdmin, userProfile } = useAuth();
   const { clientInfos, isLoading, fetchClientInfos } = useClientInfos();
 
   // Fetch clients when dialog opens
@@ -31,13 +30,13 @@ export const AssignDIDDialog = ({ did, open, onOpenChange, onAssignDID }: Assign
       // Call fetchClientInfos with proper parameters based on user role
       if (isAdmin) {
         fetchClientInfos(user.id, undefined, true);
-      } else if (profile?.associated_agent_id) {
-        fetchClientInfos(user.id, profile.associated_agent_id, false);
+      } else if (userProfile?.associated_agent_id) {
+        fetchClientInfos(user.id, userProfile.associated_agent_id, false);
       } else {
         fetchClientInfos(user.id, undefined, false);
       }
     }
-  }, [open, user, isAdmin, profile, fetchClientInfos]);
+  }, [open, user, isAdmin, userProfile, fetchClientInfos]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
