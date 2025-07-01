@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Navigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
@@ -32,11 +31,9 @@ const Auth = () => {
   });
 
   const handleLoginSubmit = async (email: string, password: string) => {
+    setIsSubmitting(true);
     try {
-      setIsSubmitting(true);
       await signIn(email, password);
-    } catch (error) {
-      console.error("Error during login:", error);
     } finally {
       setIsSubmitting(false);
     }

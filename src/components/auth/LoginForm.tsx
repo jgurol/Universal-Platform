@@ -14,6 +14,8 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { AlertCircle } from "lucide-react";
 
 const loginSchema = z.object({
   email: z.string().email({ message: "Invalid email address" }),
@@ -33,6 +35,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({
   onForgotPassword,
   isSubmitting 
 }) => {
+  const [loginError, setLoginError] = useState<string | null>(null);
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
     defaultValues: {
@@ -42,12 +45,31 @@ export const LoginForm: React.FC<LoginFormProps> = ({
   });
 
   const handleSubmit = async (values: LoginFormValues) => {
-    await onLogin(values.email, values.password);
+    try {
+      setLoginError(null);
+      await onLogin(values.email, values.password);
+    } catch (error: any) {
+      console.error('Login error:', error);
+      if (error?.message?.includes('Invalid login credentials') || error?.code === 'invalid_credentials') {
+        setLoginError("Invalid email or password. Please check your credentials and try again.");
+      } else {
+        setLoginError("An error occurred during login. Please try again.");
+      }
+    }
   };
 
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
+        {loginError && (
+          <Alert variant="destructive">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>
+              {loginError}
+            </AlertDescription>
+          </Alert>
+        )}
+        
         <FormField
           control={form.control}
           name="email"
