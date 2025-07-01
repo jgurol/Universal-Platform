@@ -3,8 +3,8 @@ import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/context/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
-import { ClientInfo } from "@/types/index";
 import { DealRegistration } from "@/services/dealRegistrationService";
+import { useClientInfos } from "@/hooks/useClientInfos";
 
 interface UseAddCircuitQuoteFormProps {
   onQuoteAdded?: () => void;
@@ -21,31 +21,17 @@ export const useAddCircuitQuoteForm = ({ onQuoteAdded, onOpenChange }: UseAddCir
   const [dhcp, setDhcp] = useState(false);
   const [mikrotikRequired, setMikrotikRequired] = useState(false);
   
-  const [clientInfos, setClientInfos] = useState<ClientInfo[]>([]);
   const [deals, setDeals] = useState<DealRegistration[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const { toast } = useToast();
   const { user } = useAuth();
+  const { clientInfos, fetchClientInfos } = useClientInfos();
 
   useEffect(() => {
     fetchClientInfos();
     fetchDeals();
-  }, []);
-
-  const fetchClientInfos = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('client_info')
-        .select('*')
-        .order('company_name');
-      
-      if (error) throw error;
-      setClientInfos(data);
-    } catch (error) {
-      console.error('Error fetching client infos:', error);
-    }
-  };
+  }, [fetchClientInfos]);
 
   const fetchDeals = async () => {
     try {

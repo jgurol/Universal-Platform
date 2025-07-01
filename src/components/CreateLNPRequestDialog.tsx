@@ -1,13 +1,15 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Separator } from '@/components/ui/separator';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Plus, Trash2, PhoneCall } from 'lucide-react';
 import { CreateLNPRequestData } from '@/hooks/useLNPPortingRequests';
+import { useClientInfos } from '@/hooks/useClientInfos';
 
 interface CreateLNPRequestDialogProps {
   open: boolean;
@@ -18,12 +20,35 @@ interface CreateLNPRequestDialogProps {
 export const CreateLNPRequestDialog = ({ open, onOpenChange, onCreateRequest }: CreateLNPRequestDialogProps) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [numbers, setNumbers] = useState<string[]>(['']);
+  const [selectedClientId, setSelectedClientId] = useState<string>('');
   const [formData, setFormData] = useState<CreateLNPRequestData>({
     current_carrier: '',
     authorized_contact_name: '',
     business_name: '',
     service_address: ''
   });
+
+  const { clientInfos, fetchClientInfos } = useClientInfos();
+
+  useEffect(() => {
+    if (open) {
+      fetchClientInfos();
+    }
+  }, [open, fetchClientInfos]);
+
+  // Update business name when client is selected
+  useEffect(() => {
+    if (selectedClientId) {
+      const selectedClient = clientInfos.find(client => client.id === selectedClientId);
+      if (selectedClient) {
+        setFormData(prev => ({
+          ...prev,
+          business_name: selectedClient.company_name,
+          client_info_id: selectedClientId
+        }));
+      }
+    }
+  }, [selectedClientId, clientInfos]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -50,6 +75,7 @@ export const CreateLNPRequestDialog = ({ open, onOpenChange, onCreateRequest }: 
       service_address: ''
     });
     setNumbers(['']);
+    setSelectedClientId('');
     onOpenChange(false);
   };
 
@@ -78,6 +104,31 @@ export const CreateLNPRequestDialog = ({ open, onOpenChange, onCreateRequest }: 
         </DialogHeader>
         
         <form onSubmit={handleSubmit} className="space-y-6">
+          {/* Client Selection */}
+          <div className="space-y-4">
+            <h3 className="text-lg font-semibold">Client Selection</h3>
+            <div className="space-y-2">
+              <Label htmlFor="client_selection">Select Client *</Label>
+              <Select value={selectedClientId} onValueChange={setSelectedClientId}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select a client" />
+                </SelectTrigger>
+                <SelectContent className="bg-white">
+                  {clientInfos.map((client) => (
+                    <SelectItem key={client.id} value={client.id}>
+                      {client.company_name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {clientInfos.length === 0 && (
+                <p className="text-sm text-red-500">No clients available. Please add a client first.</p>
+              )}
+            </div>
+          </div>
+
+          <Separator />
+
           {/* Business Information */}
           <div className="space-y-4">
             <h3 className="text-lg font-semibold">Business Information</h3>
@@ -89,6 +140,8 @@ export const CreateLNPRequestDialog = ({ open, onOpenChange, onCreateRequest }: 
                   value={formData.business_name}
                   onChange={(e) => setFormData({...formData, business_name: e.target.value})}
                   required
+                  disabled={!!selectedClientId}
+                  placeholder={selectedClientId ? "Auto-filled from selected client" : "Enter business name"}
                 />
               </div>
               <div>
@@ -233,7 +286,7 @@ export const CreateLNPRequestDialog = ({ open, onOpenChange, onCreateRequest }: 
             </Button>
             <Button
               type="submit"
-              disabled={isSubmitting}
+              disabled={isSubmitting || !selectedClientId}
               className="bg-purple-600 hover:bg-purple-700"
             >
               {isSubmitting ? 'Creating...' : 'Create Port Request'}
