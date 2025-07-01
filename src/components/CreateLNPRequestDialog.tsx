@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Plus, Trash2, PhoneCall } from 'lucide-react';
 import { CreateLNPRequestData } from '@/hooks/useLNPPortingRequests';
 import { useClientInfos } from '@/hooks/useClientInfos';
+import { useClientContacts } from '@/hooks/useClientContacts';
 
 interface CreateLNPRequestDialogProps {
   open: boolean;
@@ -21,6 +22,7 @@ export const CreateLNPRequestDialog = ({ open, onOpenChange, onCreateRequest }: 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [numbers, setNumbers] = useState<string[]>(['']);
   const [selectedClientId, setSelectedClientId] = useState<string>('');
+  const [selectedContactId, setSelectedContactId] = useState<string>('');
   const [formData, setFormData] = useState<CreateLNPRequestData>({
     current_carrier: '',
     authorized_contact_name: '',
@@ -29,6 +31,7 @@ export const CreateLNPRequestDialog = ({ open, onOpenChange, onCreateRequest }: 
   });
 
   const { clientInfos, fetchClientInfos } = useClientInfos();
+  const { contacts } = useClientContacts(selectedClientId || null);
 
   useEffect(() => {
     if (open) {
@@ -46,9 +49,30 @@ export const CreateLNPRequestDialog = ({ open, onOpenChange, onCreateRequest }: 
           business_name: selectedClient.company_name,
           client_info_id: selectedClientId
         }));
+        // Reset contact selection when client changes
+        setSelectedContactId('');
+        setFormData(prev => ({
+          ...prev,
+          authorized_contact_name: '',
+          authorized_contact_title: ''
+        }));
       }
     }
   }, [selectedClientId, clientInfos]);
+
+  // Update contact details when contact is selected
+  useEffect(() => {
+    if (selectedContactId) {
+      const selectedContact = contacts.find(contact => contact.id === selectedContactId);
+      if (selectedContact) {
+        setFormData(prev => ({
+          ...prev,
+          authorized_contact_name: `${selectedContact.first_name} ${selectedContact.last_name}`,
+          authorized_contact_title: selectedContact.title || ''
+        }));
+      }
+    }
+  }, [selectedContactId, contacts]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -76,6 +100,7 @@ export const CreateLNPRequestDialog = ({ open, onOpenChange, onCreateRequest }: 
     });
     setNumbers(['']);
     setSelectedClientId('');
+    setSelectedContactId('');
     onOpenChange(false);
   };
 
@@ -166,25 +191,54 @@ export const CreateLNPRequestDialog = ({ open, onOpenChange, onCreateRequest }: 
           {/* Contact Information */}
           <div className="space-y-4">
             <h3 className="text-lg font-semibold">Authorized Contact</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="authorized_contact_name">Contact Name *</Label>
-                <Input
-                  id="authorized_contact_name"
-                  value={formData.authorized_contact_name}
-                  onChange={(e) => setFormData({...formData, authorized_contact_name: e.target.value})}
-                  required
-                />
+            {selectedClientId ? (
+              <div className="space-y-4">
+                <div>
+                  <Label htmlFor="contact_selection">Select Contact *</Label>
+                  <Select value={selectedContactId} onValueChange={setSelectedContactId}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select a contact" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-white">
+                      {contacts.map((contact) => (
+                        <SelectItem key={contact.id} value={contact.id}>
+                          {contact.first_name} {contact.last_name}
+                          {contact.title && ` - ${contact.title}`}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {contacts.length === 0 && (
+                    <p className="text-sm text-yellow-600">No contacts found for this client. Please add contacts first.</p>
+                  )}
+                </div>
+                
+                {selectedContactId && (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="authorized_contact_name">Contact Name *</Label>
+                      <Input
+                        id="authorized_contact_name"
+                        value={formData.authorized_contact_name}
+                        readOnly
+                        className="bg-gray-50"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="authorized_contact_title">Contact Title</Label>
+                      <Input
+                        id="authorized_contact_title"
+                        value={formData.authorized_contact_title || ''}
+                        readOnly
+                        className="bg-gray-50"
+                      />
+                    </div>
+                  </div>
+                )}
               </div>
-              <div>
-                <Label htmlFor="authorized_contact_title">Contact Title</Label>
-                <Input
-                  id="authorized_contact_title"
-                  value={formData.authorized_contact_title || ''}
-                  onChange={(e) => setFormData({...formData, authorized_contact_title: e.target.value})}
-                />
-              </div>
-            </div>
+            ) : (
+              <p className="text-sm text-gray-500">Please select a client first to choose an authorized contact.</p>
+            )}
           </div>
 
           <Separator />
@@ -275,7 +329,7 @@ export const CreateLNPRequestDialog = ({ open, onOpenChange, onCreateRequest }: 
             </Button>
             <Button
               type="submit"
-              disabled={isSubmitting || !selectedClientId}
+              disabled={isSubmitting || !selectedClientId || !selectedContactId}
               className="bg-purple-600 hover:bg-purple-700"
             >
               {isSubmitting ? 'Creating...' : 'Create Port Request'}
