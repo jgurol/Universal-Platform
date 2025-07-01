@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -11,6 +10,7 @@ import { Plus, Trash2, PhoneCall } from 'lucide-react';
 import { CreateLNPRequestData } from '@/hooks/useLNPPortingRequests';
 import { useClientInfos } from '@/hooks/useClientInfos';
 import { useClientContacts } from '@/hooks/useClientContacts';
+import { AddressAutocomplete } from '@/components/AddressAutocomplete';
 
 interface CreateLNPRequestDialogProps {
   open: boolean;
@@ -73,6 +73,14 @@ export const CreateLNPRequestDialog = ({ open, onOpenChange, onCreateRequest }: 
       }
     }
   }, [selectedContactId, contacts]);
+
+  const handleServiceAddressSelect = (addressData: any) => {
+    const fullAddress = `${addressData.street_address}, ${addressData.city}, ${addressData.state} ${addressData.zip_code}`;
+    setFormData(prev => ({
+      ...prev,
+      service_address: fullAddress
+    }));
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -248,13 +256,12 @@ export const CreateLNPRequestDialog = ({ open, onOpenChange, onCreateRequest }: 
             <h3 className="text-lg font-semibold">Address Information</h3>
             <div className="space-y-4">
               <div>
-                <Label htmlFor="service_address">Service Address *</Label>
-                <Textarea
-                  id="service_address"
-                  value={formData.service_address}
-                  onChange={(e) => setFormData({...formData, service_address: e.target.value})}
+                <AddressAutocomplete
+                  label="Service Address *"
+                  placeholder="Start typing the service address..."
+                  onAddressSelect={handleServiceAddressSelect}
+                  initialValue={formData.service_address}
                   required
-                  rows={3}
                 />
               </div>
               <div>
