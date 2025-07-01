@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Search, PhoneCall, FileText, Clock, CheckCircle } from 'lucide-react';
+import { Plus, Search, PhoneCall, FileText, Clock, CheckCircle, Calendar } from 'lucide-react';
 import { useLNPPortingRequests } from '@/hooks/useLNPPortingRequests';
 import { CreateLNPRequestDialog } from '@/components/CreateLNPRequestDialog';
 import { LNPRequestDetailsDialog } from '@/components/LNPRequestDetailsDialog';
@@ -216,6 +216,12 @@ export const LNPPortingContent = () => {
                       {request.submitted_at && (
                         <p className="text-sm text-gray-600">
                           Submitted: {new Date(request.submitted_at).toLocaleDateString()}
+                        </p>
+                      )}
+                      {request.foc_date && (
+                        <p className="text-sm text-green-600 font-medium flex items-center gap-1">
+                          <Calendar className="w-3 h-3" />
+                          FOC: {new Date(request.foc_date).toLocaleDateString()}
                         </p>
                       )}
                     </div>
