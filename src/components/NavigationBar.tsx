@@ -13,7 +13,7 @@ import {
   navigationMenuTriggerStyle,
 } from "@/components/ui/navigation-menu";
 import { cn } from "@/lib/utils";
-import { Settings, Users, FileText, Home, UserPlus, Building, UserCog, Zap, LogOut, User, Package, Target, Search, DollarSign } from 'lucide-react';
+import { Settings, Users, FileText, Home, UserPlus, Building, UserCog, Zap, LogOut, User, Package } from 'lucide-react';
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import {
@@ -86,33 +86,6 @@ export function NavigationBar() {
                   </NavigationMenuLink>
                 </Link>
               </NavigationMenuItem>
-
-              {userApps.length > 0 && (
-                <NavigationMenuItem>
-                  <NavigationMenuTrigger>Applications</NavigationMenuTrigger>
-                  <NavigationMenuContent>
-                    <ul className="grid w-[300px] gap-3 p-4">
-                      {userApps.map((app) => {
-                        const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
-                          Users,
-                          Target,
-                          Search,
-                          FileText,
-                          Zap,
-                          DollarSign
-                        };
-                        const IconComponent = iconMap[app.icon_name] || FileText;
-                        
-                        return (
-                          <ListItem key={app.id} href={app.route} title={app.name} Icon={IconComponent}>
-                            {app.description}
-                          </ListItem>
-                        );
-                      })}
-                    </ul>
-                  </NavigationMenuContent>
-                </NavigationMenuItem>
-              )}
 
               {isAdmin && (
                 <NavigationMenuItem>
