@@ -1,5 +1,5 @@
 
-import React from "react";
+import React, { useState } from "react";
 import { NavigationBar } from "@/components/NavigationBar";
 import { QuickNavigation } from "@/components/QuickNavigation";
 import { AppAccessGrid } from "@/components/AppAccessGrid";
@@ -7,9 +7,79 @@ import { StatsCards } from "@/components/StatsCards";
 import { RecentQuotes } from "@/components/RecentQuotes";
 import { RecentTransactions } from "@/components/RecentTransactions";
 import { useAuth } from "@/context/AuthContext";
+import { useIndexData } from "@/hooks/useIndexData";
+import { useTransactionActions } from "@/hooks/useTransactionActions";
 
 export const IndexPageLayout: React.FC = () => {
-  const { userProfile } = useAuth();
+  const { userProfile, isAdmin } = useAuth();
+  const {
+    clients,
+    quotes,
+    clientInfos,
+    isLoading,
+    associatedAgentId,
+    setQuotes,
+    fetchQuotes
+  } = useIndexData();
+
+  const {
+    transactions,
+    onAddTransaction,
+    onUpdateTransaction,
+    onApproveCommission,
+    onPayCommission,
+    onDeleteTransaction
+  } = useTransactionActions(associatedAgentId);
+
+  const [activeFilter, setActiveFilter] = useState<string | null>(null);
+
+  // Filter quotes based on active filter
+  const filteredQuotes = quotes.filter(quote => {
+    if (!activeFilter) return true;
+    
+    switch (activeFilter) {
+      case 'pending': return quote.status === 'pending';
+      case 'approved': return quote.status === 'approved';
+      case 'expired': {
+        const today = new Date();
+        return quote.expiresAt && new Date(quote.expiresAt) < today;
+      }
+      default: return true;
+    }
+  });
+
+  const handleAddQuote = (quote: any) => {
+    // Add quote logic here
+    console.log('Adding quote:', quote);
+    fetchQuotes();
+  };
+
+  const handleUpdateQuote = (quote: any) => {
+    // Update quote logic here
+    console.log('Updating quote:', quote);
+    fetchQuotes();
+  };
+
+  const handleDeleteQuote = (quoteId: string) => {
+    // Delete quote logic here
+    console.log('Deleting quote:', quoteId);
+    fetchQuotes();
+  };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
+        <NavigationBar />
+        <QuickNavigation />
+        <div className="container mx-auto px-4 py-8 max-w-7xl">
+          <div className="flex items-center justify-center py-12">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+            <p className="ml-2 text-gray-600">Loading...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
   
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
@@ -31,12 +101,38 @@ export const IndexPageLayout: React.FC = () => {
         <AppAccessGrid />
 
         {/* Stats Cards */}
-        <StatsCards />
+        <StatsCards 
+          clients={clients}
+          quotes={filteredQuotes}
+          clientInfos={clientInfos}
+          isAdmin={isAdmin}
+          associatedAgentId={associatedAgentId}
+          onFilterChange={setActiveFilter}
+          activeFilter={activeFilter}
+        />
 
         {/* Recent Activity Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          <RecentQuotes />
-          <RecentTransactions />
+          <RecentQuotes 
+            quotes={filteredQuotes}
+            clients={clients}
+            clientInfos={clientInfos}
+            onAddQuote={handleAddQuote}
+            onUpdateQuote={handleUpdateQuote}
+            onDeleteQuote={handleDeleteQuote}
+            associatedAgentId={associatedAgentId}
+          />
+          <RecentTransactions 
+            transactions={transactions}
+            clients={clients}
+            clientInfos={clientInfos}
+            onAddTransaction={onAddTransaction}
+            onUpdateTransaction={onUpdateTransaction}
+            onApproveCommission={onApproveCommission}
+            onPayCommission={onPayCommission}
+            onDeleteTransaction={onDeleteTransaction}
+            associatedAgentId={associatedAgentId}
+          />
         </div>
       </div>
     </div>
