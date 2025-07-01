@@ -1,6 +1,5 @@
-
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { FileText, Zap, Search, DollarSign, Target, Users } from "lucide-react";
+import { FileText, Zap, Search, DollarSign, Target, Users, PhoneCall } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useAppAccess, type App } from "@/hooks/useAppAccess";
 
@@ -10,7 +9,8 @@ const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
   Search,
   FileText,
   Zap,
-  DollarSign
+  DollarSign,
+  PhoneCall
 };
 
 export const AppAccessGrid = () => {

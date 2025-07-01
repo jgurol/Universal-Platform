@@ -1182,6 +1182,118 @@ export type Database = {
           },
         ]
       }
+      lnp_numbers: {
+        Row: {
+          created_at: string
+          current_service_type: string | null
+          id: string
+          lnp_porting_request_id: string
+          phone_number: string
+        }
+        Insert: {
+          created_at?: string
+          current_service_type?: string | null
+          id?: string
+          lnp_porting_request_id: string
+          phone_number: string
+        }
+        Update: {
+          created_at?: string
+          current_service_type?: string | null
+          id?: string
+          lnp_porting_request_id?: string
+          phone_number?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lnp_numbers_lnp_porting_request_id_fkey"
+            columns: ["lnp_porting_request_id"]
+            isOneToOne: false
+            referencedRelation: "lnp_porting_requests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      lnp_porting_requests: {
+        Row: {
+          account_number: string | null
+          authorized_contact_name: string
+          authorized_contact_title: string | null
+          billing_address: string | null
+          billing_phone_number: string | null
+          business_name: string
+          client_info_id: string | null
+          created_at: string
+          current_carrier: string
+          id: string
+          ip_address: unknown | null
+          notes: string | null
+          phone_bill_file_name: string | null
+          phone_bill_file_path: string | null
+          service_address: string
+          signature_data: string | null
+          status: string
+          submitted_at: string | null
+          updated_at: string
+          user_agent: string | null
+          user_id: string
+        }
+        Insert: {
+          account_number?: string | null
+          authorized_contact_name: string
+          authorized_contact_title?: string | null
+          billing_address?: string | null
+          billing_phone_number?: string | null
+          business_name: string
+          client_info_id?: string | null
+          created_at?: string
+          current_carrier: string
+          id?: string
+          ip_address?: unknown | null
+          notes?: string | null
+          phone_bill_file_name?: string | null
+          phone_bill_file_path?: string | null
+          service_address: string
+          signature_data?: string | null
+          status?: string
+          submitted_at?: string | null
+          updated_at?: string
+          user_agent?: string | null
+          user_id: string
+        }
+        Update: {
+          account_number?: string | null
+          authorized_contact_name?: string
+          authorized_contact_title?: string | null
+          billing_address?: string | null
+          billing_phone_number?: string | null
+          business_name?: string
+          client_info_id?: string | null
+          created_at?: string
+          current_carrier?: string
+          id?: string
+          ip_address?: unknown | null
+          notes?: string | null
+          phone_bill_file_name?: string | null
+          phone_bill_file_path?: string | null
+          service_address?: string
+          signature_data?: string | null
+          status?: string
+          submitted_at?: string | null
+          updated_at?: string
+          user_agent?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lnp_porting_requests_client_info_id_fkey"
+            columns: ["client_info_id"]
+            isOneToOne: false
+            referencedRelation: "client_info"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       login_logs: {
         Row: {
           created_at: string

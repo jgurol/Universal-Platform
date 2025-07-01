@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Users, UserPlus, Zap, FileText, BarChart3, DollarSign, Target, Search } from 'lucide-react';
+import { Users, UserPlus, Zap, FileText, BarChart3, DollarSign, Target, Search, PhoneCall } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useAppAccess } from '@/hooks/useAppAccess';
@@ -18,7 +18,8 @@ export const QuickNavigation = () => {
     Search,
     FileText,
     Zap: BarChart3,
-    DollarSign
+    DollarSign,
+    PhoneCall
   };
 
   // Convert userApps to navigation items format

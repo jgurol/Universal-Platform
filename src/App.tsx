@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -15,6 +14,7 @@ import AgentManagement from "./pages/AgentManagement";
 import ClientManagement from "./pages/ClientManagement";
 import DealRegistration from "./pages/DealRegistration";
 import DIDManagement from "./pages/DIDManagement";
+import LNPPorting from "./pages/LNPPorting";
 import SystemSettings from "./pages/SystemSettings";
 import ProfileSettings from "./pages/ProfileSettings";
 import Billing from "./pages/Billing";
@@ -76,6 +76,11 @@ function App() {
                 <Route path="/did-management" element={
                   <ProtectedRoute>
                     <DIDManagement />
+                  </ProtectedRoute>
+                } />
+                <Route path="/lnp-porting" element={
+                  <ProtectedRoute>
+                    <LNPPorting />
                   </ProtectedRoute>
                 } />
                 <Route path="/system-settings" element={
