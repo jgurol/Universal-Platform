@@ -4,18 +4,20 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Search, Phone } from 'lucide-react';
+import { Plus, Search, Phone, Trash2 } from 'lucide-react';
 import { useDIDNumbers } from '@/hooks/useDIDNumbers';
 import { AddDIDDialog } from '@/components/AddDIDDialog';
 import { AssignDIDDialog } from '@/components/AssignDIDDialog';
+import { DeleteDIDDialog } from '@/components/DeleteDIDDialog';
 
 export const DIDManagementContent = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'available' | 'assigned'>('all');
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [assigningDID, setAssigningDID] = useState<any>(null);
+  const [deletingDID, setDeletingDID] = useState<any>(null);
   
-  const { didNumbers, loading, addDIDNumber, assignDIDToClient, releaseDID } = useDIDNumbers();
+  const { didNumbers, loading, addDIDNumber, assignDIDToClient, releaseDID, deleteDID } = useDIDNumbers();
 
   const filteredDIDs = didNumbers.filter(did => {
     const matchesSearch = did.did_number.includes(searchTerm);
@@ -34,6 +36,13 @@ export const DIDManagementContent = () => {
   const formatDIDNumber = (didNumber: string) => {
     // Format as (XXX) XXX-XXXX
     return `(${didNumber.slice(0, 3)}) ${didNumber.slice(3, 6)}-${didNumber.slice(6)}`;
+  };
+
+  const handleDeleteConfirm = () => {
+    if (deletingDID) {
+      deleteDID(deletingDID.id);
+      setDeletingDID(null);
+    }
   };
 
   if (loading) {
@@ -195,6 +204,14 @@ export const DIDManagementContent = () => {
                         Release
                       </Button>
                     )}
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setDeletingDID(did)}
+                      className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
                   </div>
                 </div>
               ))}
@@ -218,6 +235,13 @@ export const DIDManagementContent = () => {
           onAssignDID={assignDIDToClient}
         />
       )}
+
+      <DeleteDIDDialog
+        did={deletingDID}
+        open={!!deletingDID}
+        onOpenChange={(open) => !open && setDeletingDID(null)}
+        onConfirm={handleDeleteConfirm}
+      />
     </div>
   );
 };

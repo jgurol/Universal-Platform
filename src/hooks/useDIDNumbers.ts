@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/context/AuthContext';
@@ -189,6 +188,31 @@ export const useDIDNumbers = () => {
     }
   };
 
+  const deleteDID = async (didId: string) => {
+    try {
+      const { error } = await supabase
+        .from('did_numbers')
+        .delete()
+        .eq('id', didId);
+
+      if (error) throw error;
+
+      setDIDNumbers(prev => prev.filter(did => did.id !== didId));
+
+      toast({
+        title: "Success",
+        description: "DID number deleted successfully"
+      });
+    } catch (error) {
+      console.error('Error deleting DID number:', error);
+      toast({
+        title: "Error",
+        description: "Failed to delete DID number",
+        variant: "destructive"
+      });
+    }
+  };
+
   useEffect(() => {
     fetchDIDNumbers();
   }, [user]);
@@ -199,6 +223,7 @@ export const useDIDNumbers = () => {
     addDIDNumber,
     assignDIDToClient,
     releaseDID,
+    deleteDID,
     refetch: fetchDIDNumbers
   };
 };
