@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -48,6 +47,8 @@ export const LNPRequestDetailsDialog = ({
       status: 'approved',
       foc_date: focDate
     });
+    // Close the main dialog to return to the LNP page
+    onOpenChange(false);
   };
 
   const handleMarkCompleted = async (completedDate: string) => {
