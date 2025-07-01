@@ -14,6 +14,7 @@ import QuotingSystem from "./pages/QuotingSystem";
 import AgentManagement from "./pages/AgentManagement";
 import ClientManagement from "./pages/ClientManagement";
 import DealRegistration from "./pages/DealRegistration";
+import DIDManagement from "./pages/DIDManagement";
 import SystemSettings from "./pages/SystemSettings";
 import ProfileSettings from "./pages/ProfileSettings";
 import Billing from "./pages/Billing";
@@ -70,6 +71,11 @@ function App() {
                 <Route path="/deal-registration" element={
                   <ProtectedRoute>
                     <DealRegistration />
+                  </ProtectedRoute>
+                } />
+                <Route path="/did-management" element={
+                  <ProtectedRoute>
+                    <DIDManagement />
                   </ProtectedRoute>
                 } />
                 <Route path="/system-settings" element={

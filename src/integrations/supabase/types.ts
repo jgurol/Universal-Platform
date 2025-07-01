@@ -1042,6 +1042,50 @@ export type Database = {
           },
         ]
       }
+      did_numbers: {
+        Row: {
+          assigned_at: string | null
+          client_info_id: string | null
+          created_at: string
+          did_number: string
+          id: string
+          notes: string | null
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          assigned_at?: string | null
+          client_info_id?: string | null
+          created_at?: string
+          did_number: string
+          id?: string
+          notes?: string | null
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          assigned_at?: string | null
+          client_info_id?: string | null
+          created_at?: string
+          did_number?: string
+          id?: string
+          notes?: string | null
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "did_numbers_client_info_id_fkey"
+            columns: ["client_info_id"]
+            isOneToOne: false
+            referencedRelation: "client_info"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       email_templates: {
         Row: {
           content: string
