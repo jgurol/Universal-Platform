@@ -25,7 +25,7 @@ export const AssignDIDDialog = ({ did, open, onOpenChange, onAssignDID }: Assign
 
   // Fetch clients when dialog opens
   useEffect(() => {
-    if (open && user) {
+    if (open && user?.id) {
       console.log('[AssignDIDDialog] Fetching clients for user:', user.id);
       // Call fetchClientInfos with proper parameters based on user role
       if (isAdmin) {
@@ -36,7 +36,7 @@ export const AssignDIDDialog = ({ did, open, onOpenChange, onAssignDID }: Assign
         fetchClientInfos(user.id, undefined, false);
       }
     }
-  }, [open, user, isAdmin, userProfile, fetchClientInfos]);
+  }, [open, user?.id, isAdmin, userProfile?.associated_agent_id]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
