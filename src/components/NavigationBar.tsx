@@ -203,7 +203,7 @@ interface ListItemProps {
   href: string;
   title: string;
   children: React.ReactNode;
-  Icon: React.ComponentType<{ className?: string }>;
+  Icon: React.ComponentType<{ className?: string; color?: string }>;
   color?: string;
 }
 
@@ -218,7 +218,7 @@ const ListItem = ({ href, title, children, Icon, color = '#3B82F6' }: ListItemPr
           <div className="flex items-center gap-2">
             <Icon 
               className="h-4 w-4" 
-              style={{ color }} 
+              color={color}
             />
             <div className="text-sm font-medium leading-none">{title}</div>
           </div>
