@@ -6,6 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Phone, Building } from 'lucide-react';
 import { useClientInfos } from '@/hooks/useClientInfos';
+import { useAuth } from '@/context/AuthContext';
 
 interface AssignDIDDialogProps {
   did: {
@@ -20,14 +21,23 @@ interface AssignDIDDialogProps {
 export const AssignDIDDialog = ({ did, open, onOpenChange, onAssignDID }: AssignDIDDialogProps) => {
   const [selectedClientId, setSelectedClientId] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const { user, isAdmin, profile } = useAuth();
   const { clientInfos, isLoading, fetchClientInfos } = useClientInfos();
 
   // Fetch clients when dialog opens
   useEffect(() => {
-    if (open) {
-      fetchClientInfos();
+    if (open && user) {
+      console.log('[AssignDIDDialog] Fetching clients for user:', user.id);
+      // Call fetchClientInfos with proper parameters based on user role
+      if (isAdmin) {
+        fetchClientInfos(user.id, undefined, true);
+      } else if (profile?.associated_agent_id) {
+        fetchClientInfos(user.id, profile.associated_agent_id, false);
+      } else {
+        fetchClientInfos(user.id, undefined, false);
+      }
     }
-  }, [open, fetchClientInfos]);
+  }, [open, user, isAdmin, profile, fetchClientInfos]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -96,6 +106,11 @@ export const AssignDIDDialog = ({ did, open, onOpenChange, onAssignDID }: Assign
                   )}
                 </SelectContent>
               </Select>
+              {!isLoading && clientInfos.length > 0 && (
+                <p className="text-xs text-gray-500">
+                  Found {clientInfos.length} client(s)
+                </p>
+              )}
             </div>
 
             <div className="flex justify-end gap-2 pt-4">
