@@ -13,7 +13,7 @@ import {
   navigationMenuTriggerStyle,
 } from "@/components/ui/navigation-menu";
 import { cn } from "@/lib/utils";
-import { Settings, Users, FileText, Home, UserPlus, Building, UserCog, Zap, LogOut, User, Package } from 'lucide-react';
+import { Settings, Users, FileText, Home, UserPlus, Building, UserCog, Zap, LogOut, User, Package, Target, Search, DollarSign } from 'lucide-react';
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import {
@@ -95,11 +95,11 @@ export function NavigationBar() {
                       {userApps.map((app) => {
                         const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
                           Users,
-                          Target: UserPlus,
-                          Search: Zap,
+                          Target,
+                          Search,
                           FileText,
                           Zap,
-                          DollarSign: Package
+                          DollarSign
                         };
                         const IconComponent = iconMap[app.icon_name] || FileText;
                         
