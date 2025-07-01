@@ -5,40 +5,29 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Separator } from '@/components/ui/separator';
 import { Plus, Trash2, PhoneCall } from 'lucide-react';
-import { useClientInfos } from '@/hooks/useClientInfos';
-import { useAuth } from '@/context/AuthContext';
+import { CreateLNPRequestData } from '@/hooks/useLNPPortingRequests';
 
 interface CreateLNPRequestDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onCreateRequest: (requestData: any, numbers: string[]) => Promise<void>;
+  onCreateRequest: (requestData: CreateLNPRequestData, numbers: string[]) => Promise<void>;
 }
 
 export const CreateLNPRequestDialog = ({ open, onOpenChange, onCreateRequest }: CreateLNPRequestDialogProps) => {
-  const { user } = useAuth();
-  const { clientInfos } = useClientInfos();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [numbers, setNumbers] = useState<string[]>(['']);
-  
-  const [formData, setFormData] = useState({
-    client_info_id: '',
-    business_name: '',
+  const [formData, setFormData] = useState<CreateLNPRequestData>({
     current_carrier: '',
-    account_number: '',
-    billing_phone_number: '',
     authorized_contact_name: '',
-    authorized_contact_title: '',
-    service_address: '',
-    billing_address: '',
-    notes: ''
+    business_name: '',
+    service_address: ''
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.business_name || !formData.current_carrier || !formData.authorized_contact_name) return;
-
+    
     const validNumbers = numbers.filter(num => num.trim() !== '');
     if (validNumbers.length === 0) {
       return;
@@ -55,16 +44,10 @@ export const CreateLNPRequestDialog = ({ open, onOpenChange, onCreateRequest }: 
 
   const handleClose = () => {
     setFormData({
-      client_info_id: '',
-      business_name: '',
       current_carrier: '',
-      account_number: '',
-      billing_phone_number: '',
       authorized_contact_name: '',
-      authorized_contact_title: '',
-      service_address: '',
-      billing_address: '',
-      notes: ''
+      business_name: '',
+      service_address: ''
     });
     setNumbers(['']);
     onOpenChange(false);
@@ -75,9 +58,7 @@ export const CreateLNPRequestDialog = ({ open, onOpenChange, onCreateRequest }: 
   };
 
   const removeNumber = (index: number) => {
-    if (numbers.length > 1) {
-      setNumbers(numbers.filter((_, i) => i !== index));
-    }
+    setNumbers(numbers.filter((_, i) => i !== index));
   };
 
   const updateNumber = (index: number, value: string) => {
@@ -97,119 +78,119 @@ export const CreateLNPRequestDialog = ({ open, onOpenChange, onCreateRequest }: 
         </DialogHeader>
         
         <form onSubmit={handleSubmit} className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="client">Client (Optional)</Label>
-              <Select value={formData.client_info_id} onValueChange={(value) => setFormData(prev => ({ ...prev, client_info_id: value }))}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select a client..." />
-                </SelectTrigger>
-                <SelectContent>
-                  {clientInfos.map((client) => (
-                    <SelectItem key={client.id} value={client.id}>
-                      {client.company_name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="business_name">Business Name *</Label>
-              <Input
-                id="business_name"
-                value={formData.business_name}
-                onChange={(e) => setFormData(prev => ({ ...prev, business_name: e.target.value }))}
-                placeholder="Enter business name"
-                required
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="current_carrier">Current Carrier *</Label>
-              <Input
-                id="current_carrier"
-                value={formData.current_carrier}
-                onChange={(e) => setFormData(prev => ({ ...prev, current_carrier: e.target.value }))}
-                placeholder="e.g., AT&T, Verizon, T-Mobile"
-                required
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="account_number">Account Number</Label>
-              <Input
-                id="account_number"
-                value={formData.account_number}
-                onChange={(e) => setFormData(prev => ({ ...prev, account_number: e.target.value }))}
-                placeholder="Current carrier account number"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="billing_phone_number">Billing Phone Number</Label>
-              <Input
-                id="billing_phone_number"
-                value={formData.billing_phone_number}
-                onChange={(e) => setFormData(prev => ({ ...prev, billing_phone_number: e.target.value }))}
-                placeholder="(555) 123-4567"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="authorized_contact_name">Authorized Contact Name *</Label>
-              <Input
-                id="authorized_contact_name"
-                value={formData.authorized_contact_name}
-                onChange={(e) => setFormData(prev => ({ ...prev, authorized_contact_name: e.target.value }))}
-                placeholder="Full name of authorized contact"
-                required
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="authorized_contact_title">Contact Title</Label>
-              <Input
-                id="authorized_contact_title"
-                value={formData.authorized_contact_title}
-                onChange={(e) => setFormData(prev => ({ ...prev, authorized_contact_title: e.target.value }))}
-                placeholder="e.g., Owner, Manager, IT Director"
-              />
+          {/* Business Information */}
+          <div className="space-y-4">
+            <h3 className="text-lg font-semibold">Business Information</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="business_name">Business Name *</Label>
+                <Input
+                  id="business_name"
+                  value={formData.business_name}
+                  onChange={(e) => setFormData({...formData, business_name: e.target.value})}
+                  required
+                />
+              </div>
+              <div>
+                <Label htmlFor="current_carrier">Current Carrier *</Label>
+                <Input
+                  id="current_carrier"
+                  value={formData.current_carrier}
+                  onChange={(e) => setFormData({...formData, current_carrier: e.target.value})}
+                  required
+                />
+              </div>
+              <div>
+                <Label htmlFor="account_number">Account Number</Label>
+                <Input
+                  id="account_number"
+                  value={formData.account_number || ''}
+                  onChange={(e) => setFormData({...formData, account_number: e.target.value})}
+                />
+              </div>
+              <div>
+                <Label htmlFor="billing_phone_number">Billing Phone Number</Label>
+                <Input
+                  id="billing_phone_number"
+                  value={formData.billing_phone_number || ''}
+                  onChange={(e) => setFormData({...formData, billing_phone_number: e.target.value})}
+                />
+              </div>
             </div>
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="service_address">Service Address *</Label>
-            <Textarea
-              id="service_address"
-              value={formData.service_address}
-              onChange={(e) => setFormData(prev => ({ ...prev, service_address: e.target.value }))}
-              placeholder="Complete service address"
-              required
-              rows={2}
-            />
+          <Separator />
+
+          {/* Contact Information */}
+          <div className="space-y-4">
+            <h3 className="text-lg font-semibold">Authorized Contact</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="authorized_contact_name">Contact Name *</Label>
+                <Input
+                  id="authorized_contact_name"
+                  value={formData.authorized_contact_name}
+                  onChange={(e) => setFormData({...formData, authorized_contact_name: e.target.value})}
+                  required
+                />
+              </div>
+              <div>
+                <Label htmlFor="authorized_contact_title">Contact Title</Label>
+                <Input
+                  id="authorized_contact_title"
+                  value={formData.authorized_contact_title || ''}
+                  onChange={(e) => setFormData({...formData, authorized_contact_title: e.target.value})}
+                />
+              </div>
+            </div>
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="billing_address">Billing Address</Label>
-            <Textarea
-              id="billing_address"
-              value={formData.billing_address}
-              onChange={(e) => setFormData(prev => ({ ...prev, billing_address: e.target.value }))}
-              placeholder="Billing address (if different from service address)"
-              rows={2}
-            />
+          <Separator />
+
+          {/* Address Information */}
+          <div className="space-y-4">
+            <h3 className="text-lg font-semibold">Address Information</h3>
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="service_address">Service Address *</Label>
+                <Textarea
+                  id="service_address"
+                  value={formData.service_address}
+                  onChange={(e) => setFormData({...formData, service_address: e.target.value})}
+                  required
+                  rows={3}
+                />
+              </div>
+              <div>
+                <Label htmlFor="billing_address">Billing Address (if different)</Label>
+                <Textarea
+                  id="billing_address"
+                  value={formData.billing_address || ''}
+                  onChange={(e) => setFormData({...formData, billing_address: e.target.value})}
+                  rows={3}
+                />
+              </div>
+            </div>
           </div>
 
-          <div className="space-y-2">
-            <Label>Phone Numbers to Port *</Label>
+          <Separator />
+
+          {/* Phone Numbers */}
+          <div className="space-y-4">
+            <div className="flex justify-between items-center">
+              <h3 className="text-lg font-semibold">Phone Numbers to Port</h3>
+              <Button type="button" onClick={addNumber} size="sm">
+                <Plus className="w-4 h-4 mr-2" />
+                Add Number
+              </Button>
+            </div>
             <div className="space-y-2">
               {numbers.map((number, index) => (
-                <div key={index} className="flex gap-2">
+                <div key={index} className="flex gap-2 items-center">
                   <Input
                     value={number}
                     onChange={(e) => updateNumber(index, e.target.value)}
-                    placeholder="(555) 123-4567"
+                    placeholder="Enter phone number"
                     className="flex-1"
                   />
                   {numbers.length > 1 && (
@@ -224,27 +205,20 @@ export const CreateLNPRequestDialog = ({ open, onOpenChange, onCreateRequest }: 
                   )}
                 </div>
               ))}
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={addNumber}
-                className="w-full"
-              >
-                <Plus className="w-4 h-4 mr-2" />
-                Add Another Number
-              </Button>
             </div>
           </div>
 
-          <div className="space-y-2">
+          <Separator />
+
+          {/* Notes */}
+          <div>
             <Label htmlFor="notes">Notes</Label>
             <Textarea
               id="notes"
-              value={formData.notes}
-              onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
-              placeholder="Additional notes or special instructions"
+              value={formData.notes || ''}
+              onChange={(e) => setFormData({...formData, notes: e.target.value})}
               rows={3}
+              placeholder="Any additional notes or special instructions..."
             />
           </div>
 
@@ -259,7 +233,7 @@ export const CreateLNPRequestDialog = ({ open, onOpenChange, onCreateRequest }: 
             </Button>
             <Button
               type="submit"
-              disabled={isSubmitting || !formData.business_name || !formData.current_carrier || !formData.authorized_contact_name}
+              disabled={isSubmitting}
               className="bg-purple-600 hover:bg-purple-700"
             >
               {isSubmitting ? 'Creating...' : 'Create Port Request'}

@@ -37,6 +37,19 @@ export interface LNPPortingRequest {
   };
 }
 
+export interface CreateLNPRequestData {
+  client_info_id?: string;
+  current_carrier: string;
+  account_number?: string;
+  billing_phone_number?: string;
+  authorized_contact_name: string;
+  authorized_contact_title?: string;
+  business_name: string;
+  service_address: string;
+  billing_address?: string;
+  notes?: string;
+}
+
 export const useLNPPortingRequests = () => {
   const { user } = useAuth();
   const { toast } = useToast();
@@ -71,6 +84,7 @@ export const useLNPPortingRequests = () => {
       
       const transformedData: LNPPortingRequest[] = (data || []).map(item => ({
         ...item,
+        status: item.status as 'pending' | 'submitted' | 'approved' | 'completed',
         numbers: item.lnp_numbers || []
       }));
       
@@ -87,7 +101,7 @@ export const useLNPPortingRequests = () => {
     }
   };
 
-  const createLNPRequest = async (requestData: Partial<LNPPortingRequest>, numbers: string[]) => {
+  const createLNPRequest = async (requestData: CreateLNPRequestData, numbers: string[]) => {
     if (!user) return;
 
     try {
@@ -95,7 +109,17 @@ export const useLNPPortingRequests = () => {
         .from('lnp_porting_requests')
         .insert({
           user_id: user.id,
-          ...requestData
+          client_info_id: requestData.client_info_id,
+          current_carrier: requestData.current_carrier,
+          account_number: requestData.account_number,
+          billing_phone_number: requestData.billing_phone_number,
+          authorized_contact_name: requestData.authorized_contact_name,
+          authorized_contact_title: requestData.authorized_contact_title,
+          business_name: requestData.business_name,
+          service_address: requestData.service_address,
+          billing_address: requestData.billing_address,
+          notes: requestData.notes,
+          status: 'pending'
         })
         .select()
         .single();
