@@ -1,9 +1,10 @@
+
 import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { PhoneCall, Building, User, MapPin, Phone, FileText, Calendar } from 'lucide-react';
+import { PhoneCall, Building, User, MapPin, Phone, FileText, Calendar, Undo } from 'lucide-react';
 import { LNPPortingRequest } from '@/hooks/useLNPPortingRequests';
 import { LOAFormDialog } from '@/components/LOAFormDialog';
 import { FOCDateDialog } from '@/components/FOCDateDialog';
@@ -27,6 +28,7 @@ export const LNPRequestDetailsDialog = ({
   const [isLOAFormOpen, setIsLOAFormOpen] = useState(false);
   const [isFOCDialogOpen, setIsFOCDialogOpen] = useState(false);
   const [isMarkCompletedOpen, setIsMarkCompletedOpen] = useState(false);
+  const [isUndoing, setIsUndoing] = useState(false);
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -51,6 +53,43 @@ export const LNPRequestDetailsDialog = ({
     }
   };
 
+  const handleUndo = async () => {
+    setIsUndoing(true);
+    try {
+      let newStatus: string;
+      let updates: Partial<LNPPortingRequest> = {};
+
+      if (request.status === 'completed') {
+        newStatus = 'submitted';
+        updates = {
+          status: 'submitted',
+          completed_at: undefined
+        };
+      } else if (request.status === 'submitted') {
+        newStatus = 'pending';
+        updates = {
+          status: 'pending',
+          submitted_at: undefined,
+          signature_data: undefined
+        };
+      } else {
+        // Can't undo from pending
+        return;
+      }
+
+      await onUpdateRequest(request.id, updates);
+    } finally {
+      setIsUndoing(false);
+    }
+  };
+
+  const canUndo = request.status === 'completed' || request.status === 'submitted';
+  const getUndoToStatus = () => {
+    if (request.status === 'completed') return 'submitted';
+    if (request.status === 'submitted') return 'pending';
+    return '';
+  };
+
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
@@ -69,6 +108,17 @@ export const LNPRequestDetailsDialog = ({
                 {request.status}
               </Badge>
               <div className="flex gap-2">
+                {canUndo && (
+                  <Button
+                    onClick={handleUndo}
+                    disabled={isUndoing}
+                    variant="outline"
+                    size="sm"
+                  >
+                    <Undo className="w-4 h-4 mr-2" />
+                    {isUndoing ? 'Undoing...' : `Undo to ${getUndoToStatus()}`}
+                  </Button>
+                )}
                 {request.status === 'pending' && (
                   <Button
                     onClick={() => setIsLOAFormOpen(true)}
