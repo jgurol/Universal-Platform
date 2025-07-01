@@ -231,6 +231,41 @@ export const CarrierCard = ({ carrier, onEdit, onDelete, onCopy, dragHandleProps
   // Only show base price if there are meaningful add-ons (total > 0) AND base price > 0 AND user is admin
   const shouldShowBasePrice = isAdmin && totalAddOnCosts > 0 && basePriceWithoutAddOns > 0 && basePriceWithoutAddOns !== displayPrice;
   
+  // Helper function to get site survey color
+  const getSiteSurveyColor = () => {
+    if (!carrier.site_survey_needed) return null;
+    
+    if (carrier.notes && carrier.notes.includes("Site Survey:")) {
+      const parts = carrier.notes.split("Site Survey:");
+      if (parts.length > 1) {
+        const colorPart = parts[1].trim().toLowerCase();
+        if (colorPart.startsWith("red")) return "red";
+        if (colorPart.startsWith("yellow")) return "yellow";
+        if (colorPart.startsWith("orange")) return "orange";
+        if (colorPart.startsWith("green")) return "green";
+      }
+    }
+    return "yellow"; // Default color if no specific color is found
+  };
+
+  // Helper function to get card background class based on site survey
+  const getCardBackgroundClass = () => {
+    if (isNoService) return 'bg-red-50 border-red-200';
+    
+    const siteSurveyColor = getSiteSurveyColor();
+    if (siteSurveyColor) {
+      switch (siteSurveyColor) {
+        case "red": return 'bg-red-100 border-red-300';
+        case "yellow": return 'bg-yellow-100 border-yellow-300';
+        case "orange": return 'bg-orange-100 border-orange-300';
+        case "green": return 'bg-green-100 border-green-300';
+        default: return 'bg-yellow-100 border-yellow-300';
+      }
+    }
+    
+    return 'bg-gray-50';
+  };
+
   // Helper function to get ticked checkboxes based on carrier details
   const getTickedCheckboxes = () => {
     const ticked = [];
@@ -248,20 +283,9 @@ export const CarrierCard = ({ carrier, onEdit, onDelete, onCopy, dragHandleProps
     if (carrier.site_survey_needed) {
       // Extract color from notes if present
       let surveyText = "Site Survey";
-      if (carrier.notes && carrier.notes.includes("Site Survey:")) {
-        const parts = carrier.notes.split("Site Survey:");
-        if (parts.length > 1) {
-          const colorPart = parts[1].trim().toLowerCase();
-          if (colorPart.startsWith("red")) {
-            surveyText = "Site Survey (RED)";
-          } else if (colorPart.startsWith("yellow")) {
-            surveyText = "Site Survey (YELLOW)";
-          } else if (colorPart.startsWith("orange")) {
-            surveyText = "Site Survey (ORANGE)";
-          } else if (colorPart.startsWith("green")) {
-            surveyText = "Site Survey (GREEN)";
-          }
-        }
+      const siteSurveyColor = getSiteSurveyColor();
+      if (siteSurveyColor) {
+        surveyText = `Site Survey (${siteSurveyColor.toUpperCase()})`;
       }
       ticked.push(surveyText);
     }
@@ -305,9 +329,7 @@ export const CarrierCard = ({ carrier, onEdit, onDelete, onCopy, dragHandleProps
   return (
     <>
       <div 
-        className={`border rounded-lg p-4 ${
-          isNoService ? 'bg-red-50 border-red-200' : 'bg-gray-50'
-        }`}
+        className={`border rounded-lg p-4 ${getCardBackgroundClass()}`}
       >
         <div className="flex items-center gap-4">
           {/* Drag handle for admins */}
