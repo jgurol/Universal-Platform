@@ -14,7 +14,7 @@ export const LNPPortingContent = () => {
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [selectedRequest, setSelectedRequest] = useState<any>(null);
   
-  const { lnpRequests, loading, createLNPRequest, updateLNPRequest, markCompleted } = useLNPPortingRequests();
+  const { lnpRequests, loading, createLNPRequest, updateLNPRequest, deleteLNPRequest, markCompleted } = useLNPPortingRequests();
 
   const filteredRequests = lnpRequests.filter(request => {
     const matchesSearch = request.business_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -245,6 +245,7 @@ export const LNPPortingContent = () => {
           open={!!selectedRequest}
           onOpenChange={(open) => !open && setSelectedRequest(null)}
           onUpdateRequest={updateLNPRequest}
+          onDeleteRequest={deleteLNPRequest}
           onMarkCompleted={markCompleted}
         />
       )}

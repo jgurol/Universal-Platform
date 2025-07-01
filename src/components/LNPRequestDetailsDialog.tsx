@@ -1,10 +1,9 @@
-
 import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { PhoneCall, Building, User, MapPin, Phone, FileText, Calendar, Undo } from 'lucide-react';
+import { PhoneCall, Building, User, MapPin, Phone, FileText, Calendar, Undo, Trash2 } from 'lucide-react';
 import { LNPPortingRequest } from '@/hooks/useLNPPortingRequests';
 import { LOAFormDialog } from '@/components/LOAFormDialog';
 import { FOCDateDialog } from '@/components/FOCDateDialog';
@@ -15,6 +14,7 @@ interface LNPRequestDetailsDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onUpdateRequest: (requestId: string, updates: Partial<LNPPortingRequest>) => Promise<void>;
+  onDeleteRequest?: (requestId: string) => Promise<void>;
   onMarkCompleted?: (requestId: string, completedDate: string) => Promise<void>;
 }
 
@@ -23,12 +23,14 @@ export const LNPRequestDetailsDialog = ({
   open, 
   onOpenChange, 
   onUpdateRequest,
+  onDeleteRequest,
   onMarkCompleted 
 }: LNPRequestDetailsDialogProps) => {
   const [isLOAFormOpen, setIsLOAFormOpen] = useState(false);
   const [isFOCDialogOpen, setIsFOCDialogOpen] = useState(false);
   const [isMarkCompletedOpen, setIsMarkCompletedOpen] = useState(false);
   const [isUndoing, setIsUndoing] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -83,6 +85,24 @@ export const LNPRequestDetailsDialog = ({
     }
   };
 
+  const handleDelete = async () => {
+    if (!onDeleteRequest) return;
+    
+    const confirmDelete = window.confirm(
+      `Are you sure you want to delete this LNP request for ${request.business_name}? This action cannot be undone.`
+    );
+    
+    if (!confirmDelete) return;
+
+    setIsDeleting(true);
+    try {
+      await onDeleteRequest(request.id);
+      onOpenChange(false);
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
   const canUndo = request.status === 'completed' || request.status === 'submitted';
   const getUndoToStatus = () => {
     if (request.status === 'completed') return 'submitted';
@@ -117,6 +137,18 @@ export const LNPRequestDetailsDialog = ({
                   >
                     <Undo className="w-4 h-4 mr-2" />
                     {isUndoing ? 'Undoing...' : `Undo to ${getUndoToStatus()}`}
+                  </Button>
+                )}
+                {onDeleteRequest && (
+                  <Button
+                    onClick={handleDelete}
+                    disabled={isDeleting}
+                    variant="outline"
+                    size="sm"
+                    className="text-red-600 hover:text-red-700"
+                  >
+                    <Trash2 className="w-4 h-4 mr-2" />
+                    {isDeleting ? 'Deleting...' : 'Delete'}
                   </Button>
                 )}
                 {request.status === 'pending' && (

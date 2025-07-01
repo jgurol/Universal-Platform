@@ -186,6 +186,31 @@ export const useLNPPortingRequests = () => {
     }
   };
 
+  const deleteLNPRequest = async (requestId: string) => {
+    try {
+      const { error } = await supabase
+        .from('lnp_porting_requests')
+        .delete()
+        .eq('id', requestId);
+
+      if (error) throw error;
+
+      setLNPRequests(prev => prev.filter(request => request.id !== requestId));
+
+      toast({
+        title: "Success",
+        description: "LNP request deleted successfully"
+      });
+    } catch (error) {
+      console.error('Error deleting LNP request:', error);
+      toast({
+        title: "Error",
+        description: "Failed to delete LNP request",
+        variant: "destructive"
+      });
+    }
+  };
+
   const markCompleted = async (requestId: string, completedDate: string) => {
     try {
       const { error } = await supabase
@@ -228,6 +253,7 @@ export const useLNPPortingRequests = () => {
     loading,
     createLNPRequest,
     updateLNPRequest,
+    deleteLNPRequest,
     markCompleted,
     refetch: fetchLNPRequests
   };
