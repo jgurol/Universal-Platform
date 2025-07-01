@@ -20,7 +20,7 @@ interface AssignDIDDialogProps {
 export const AssignDIDDialog = ({ did, open, onOpenChange, onAssignDID }: AssignDIDDialogProps) => {
   const [selectedClientId, setSelectedClientId] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const { clientInfos, loading } = useClientInfos();
+  const { clientInfos, isLoading } = useClientInfos();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -73,7 +73,7 @@ export const AssignDIDDialog = ({ did, open, onOpenChange, onAssignDID }: Assign
                   <SelectValue placeholder="Choose a client..." />
                 </SelectTrigger>
                 <SelectContent>
-                  {loading ? (
+                  {isLoading ? (
                     <SelectItem value="loading" disabled>Loading clients...</SelectItem>
                   ) : clientInfos.length === 0 ? (
                     <SelectItem value="no-clients" disabled>No clients available</SelectItem>
@@ -102,7 +102,7 @@ export const AssignDIDDialog = ({ did, open, onOpenChange, onAssignDID }: Assign
               </Button>
               <Button
                 type="submit"
-                disabled={isSubmitting || !selectedClientId || loading}
+                disabled={isSubmitting || !selectedClientId || isLoading}
                 className="bg-blue-600 hover:bg-blue-700"
               >
                 {isSubmitting ? 'Assigning...' : 'Assign DID'}

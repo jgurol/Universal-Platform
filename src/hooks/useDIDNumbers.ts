@@ -45,7 +45,14 @@ export const useDIDNumbers = () => {
         .order('did_number');
 
       if (error) throw error;
-      setDIDNumbers(data || []);
+      
+      // Transform and type cast the data
+      const transformedData: DIDNumber[] = (data || []).map(item => ({
+        ...item,
+        status: item.status as 'available' | 'assigned'
+      }));
+      
+      setDIDNumbers(transformedData);
     } catch (error) {
       console.error('Error fetching DID numbers:', error);
       toast({
@@ -75,7 +82,12 @@ export const useDIDNumbers = () => {
 
       if (error) throw error;
 
-      setDIDNumbers(prev => [...prev, data]);
+      const transformedData: DIDNumber = {
+        ...data,
+        status: data.status as 'available' | 'assigned'
+      };
+
+      setDIDNumbers(prev => [...prev, transformedData]);
       toast({
         title: "Success",
         description: "DID number added successfully"
@@ -114,8 +126,13 @@ export const useDIDNumbers = () => {
 
       if (error) throw error;
 
+      const transformedData: DIDNumber = {
+        ...data,
+        status: data.status as 'available' | 'assigned'
+      };
+
       setDIDNumbers(prev => prev.map(did => 
-        did.id === didId ? data : did
+        did.id === didId ? transformedData : did
       ));
 
       toast({
@@ -148,8 +165,14 @@ export const useDIDNumbers = () => {
 
       if (error) throw error;
 
+      const transformedData: DIDNumber = {
+        ...data,
+        status: data.status as 'available' | 'assigned',
+        client_info: undefined
+      };
+
       setDIDNumbers(prev => prev.map(did => 
-        did.id === didId ? { ...data, client_info: null } : did
+        did.id === didId ? transformedData : did
       ));
 
       toast({
