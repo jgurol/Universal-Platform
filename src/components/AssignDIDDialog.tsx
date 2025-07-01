@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
@@ -20,7 +20,14 @@ interface AssignDIDDialogProps {
 export const AssignDIDDialog = ({ did, open, onOpenChange, onAssignDID }: AssignDIDDialogProps) => {
   const [selectedClientId, setSelectedClientId] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const { clientInfos, isLoading } = useClientInfos();
+  const { clientInfos, isLoading, fetchClientInfos } = useClientInfos();
+
+  // Fetch clients when dialog opens
+  useEffect(() => {
+    if (open) {
+      fetchClientInfos();
+    }
+  }, [open, fetchClientInfos]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
