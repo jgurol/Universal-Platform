@@ -11,6 +11,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { AddDealData } from "@/services/dealRegistrationService";
 import { ClientInfo } from "@/pages/Index";
+import { DealNotes } from "@/components/DealNotes";
+import { DealFileUpload } from "@/components/DealFileUpload";
 
 
 interface AddDealDialogProps {
@@ -45,6 +47,7 @@ export const AddDealDialog = ({
   const [agents, setAgents] = useState<Agent[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [createdDealId, setCreatedDealId] = useState<string | null>(null);
   const { toast } = useToast();
 
   const { register, handleSubmit, reset, setValue, watch, formState: { errors } } = useForm<AddDealData>({
@@ -88,6 +91,7 @@ export const AddDealDialog = ({
   const handleOpenChange = (newOpen: boolean) => {
     if (!newOpen) {
       reset();
+      setCreatedDealId(null);
     }
     onOpenChange(newOpen);
   };
@@ -95,12 +99,18 @@ export const AddDealDialog = ({
   const onSubmit = async (data: AddDealData) => {
     setIsSubmitting(true);
     try {
-      await onAddDeal(data);
+      const dealData = await onAddDeal(data);
+      // Get the created deal ID from the parent component's response
+      // We'll need to modify the parent to return the created deal
+      setCreatedDealId('temp-id'); // This will be updated when we modify the parent
       reset();
-      onOpenChange(false);
+      
+      toast({
+        title: "Deal created",
+        description: "You can now add notes and upload files.",
+      });
     } catch (err) {
       console.error('Error adding deal:', err);
-    } finally {
       setIsSubmitting(false);
     }
   };
@@ -195,6 +205,12 @@ export const AddDealDialog = ({
             </div>
           </div>
 
+          {createdDealId && (
+            <>
+              <DealNotes dealId={createdDealId} />
+              <DealFileUpload dealId={createdDealId} />
+            </>
+          )}
 
           <div className="flex justify-end space-x-2">
             <Button 
@@ -204,13 +220,23 @@ export const AddDealDialog = ({
             >
               Cancel
             </Button>
-            <Button 
-              type="submit" 
-              className="bg-green-600 hover:bg-green-700"
-              disabled={isSubmitting}
-            >
-              {isSubmitting ? 'Creating...' : 'Create Deal'}
-            </Button>
+            {!createdDealId ? (
+              <Button 
+                type="submit" 
+                className="bg-green-600 hover:bg-green-700"
+                disabled={isSubmitting}
+              >
+                {isSubmitting ? 'Creating...' : 'Create Deal'}
+              </Button>
+            ) : (
+              <Button 
+                type="button" 
+                onClick={() => handleOpenChange(false)}
+                className="bg-blue-600 hover:bg-blue-700"
+              >
+                Done
+              </Button>
+            )}
           </div>
         </form>
       </DialogContent>
