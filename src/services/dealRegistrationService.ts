@@ -23,6 +23,10 @@ export interface AddDealData {
   deal_name: string;
   deal_value: number;
   expected_close_date: string | null;
+  probability?: number;
+  stage?: string;
+  description?: string | null;
+  notes?: string | null;
   client_info_id: string | null;
   agent_id: string | null;
 }
@@ -49,12 +53,18 @@ export const dealRegistrationService = {
   },
 
   async addDeal(dealData: AddDealData, userId: string): Promise<DealRegistration> {
-    // Convert empty strings to null for UUID fields
+    // Convert empty strings to null for UUID fields and provide defaults for required fields
     const cleanedData = {
       ...dealData,
       client_info_id: dealData.client_info_id === '' ? null : dealData.client_info_id,
       agent_id: dealData.agent_id === '' ? null : dealData.agent_id,
-      user_id: userId
+      user_id: userId,
+      // Provide defaults for required database fields that we no longer collect in the form
+      probability: dealData.probability || 50,
+      stage: dealData.stage || 'prospecting',
+      status: 'active',
+      description: dealData.description || null,
+      notes: dealData.notes || null
     };
 
     const { data, error } = await supabase
