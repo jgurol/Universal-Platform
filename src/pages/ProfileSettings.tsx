@@ -9,8 +9,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { Separator } from "@/components/ui/separator";
-import { User, Mail, Shield, Building, Clock } from "lucide-react";
+import { User, Mail, Shield, Building, Clock, Bell } from "lucide-react";
 import { updateUserTimezone, getAppTimezone } from "@/utils/dateUtils";
+import { NotificationPreferences } from "@/components/NotificationPreferences";
 
 const timezones = [
   { value: 'America/New_York', label: 'Eastern Time (ET)' },
@@ -280,6 +281,8 @@ export default function ProfileSettings() {
               )}
             </CardContent>
           </Card>
+
+          <NotificationPreferences />
         </div>
       </div>
     </div>
