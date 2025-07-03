@@ -11,6 +11,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { DealRegistration } from "@/services/dealRegistrationService";
 import { ClientInfo } from "@/pages/Index";
 import { DealFileUpload } from "@/components/DealFileUpload";
+import { DealNotes } from "@/components/DealNotes";
 
 interface EditDealDialogProps {
   open: boolean;
@@ -237,26 +238,8 @@ export const EditDealDialog = ({
             </div>
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="description">Description of customer intention</Label>
-            <Textarea
-              id="description"
-              {...register("description")}
-              placeholder="Example: Customer looking for both internet and phone service"
-              rows={3}
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="notes">Agent notes for California Telecom</Label>
-            <Textarea
-              id="notes"
-              {...register("notes")}
-              placeholder="Example: Customer currently has AT&T and does not want AT&T"
-              rows={3}
-            />
-          </div>
-
+          <DealNotes dealId={deal?.id} />
+          
           <DealFileUpload dealId={deal?.id} />
 
           <div className="flex justify-end space-x-2">

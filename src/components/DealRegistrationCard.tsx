@@ -146,47 +146,14 @@ export const DealRegistrationCard = ({ clientInfos, agentMapping }: DealRegistra
     }
   };
 
-  const getStageColor = (stage: string) => {
-    switch (stage) {
-      case 'prospecting':
-        return 'bg-gray-100 text-gray-800';
-      case 'qualification':
-        return 'bg-blue-100 text-blue-800';
-      case 'proposal':
-        return 'bg-yellow-100 text-yellow-800';
-      case 'negotiation':
-        return 'bg-orange-100 text-orange-800';
-      case 'closed-won':
-        return 'bg-green-100 text-green-800';
-      case 'closed-lost':
-        return 'bg-red-100 text-red-800';
-      default:
-        return 'bg-gray-100 text-gray-800';
-    }
-  };
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'active':
-        return 'bg-green-100 text-green-800';
-      case 'inactive':
-        return 'bg-gray-100 text-gray-800';
-      case 'completed':
-        return 'bg-blue-100 text-blue-800';
-      default:
-        return 'bg-gray-100 text-gray-800';
-    }
-  };
-
   const getClientName = (clientId: string | null) => {
     if (!clientId) return null;
     const client = clientInfos.find(c => c.id === clientId);
     return client?.company_name || 'Unknown Client';
   };
 
-  const activeDealCount = deals.filter(deal => deal.status === 'active' && !deal.archived).length;
+  const activeDealCount = deals.filter(deal => !deal.archived).length;
   const totalDealValue = deals.filter(deal => !deal.archived).reduce((sum, deal) => sum + deal.deal_value, 0);
-  const avgProbability = deals.filter(deal => !deal.archived).length > 0 ? deals.filter(deal => !deal.archived).reduce((sum, deal) => sum + deal.probability, 0) / deals.filter(deal => !deal.archived).length : 0;
 
   if (isLoading) {
     return (
@@ -265,10 +232,10 @@ export const DealRegistrationCard = ({ clientInfos, agentMapping }: DealRegistra
             <div className="bg-gradient-to-r from-purple-50 to-violet-50 p-3 rounded-lg border border-purple-200">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-purple-600 font-medium">Avg. Probability</p>
-                  <p className="text-xl font-bold text-purple-800">{avgProbability.toFixed(0)}%</p>
+                  <p className="text-sm text-purple-600 font-medium">This Month</p>
+                  <p className="text-xl font-bold text-purple-800">{deals.filter(deal => !deal.archived && new Date(deal.created_at).getMonth() === new Date().getMonth()).length}</p>
                 </div>
-                <TrendingUp className="h-6 w-6 text-purple-600" />
+                <Calendar className="h-6 w-6 text-purple-600" />
               </div>
             </div>
           </div>
@@ -304,22 +271,13 @@ export const DealRegistrationCard = ({ clientInfos, agentMapping }: DealRegistra
                           <span>{deal.deal_value.toLocaleString()}</span>
                         </div>
                       </div>
-                      <div className="flex gap-2 flex-shrink-0">
-                        <Badge className={`${getStageColor(deal.stage)} text-xs px-2 py-0.5`}>
-                          {deal.stage.charAt(0).toUpperCase() + deal.stage.slice(1).replace('-', ' ')}
-                        </Badge>
-                        <Badge className={`${getStatusColor(deal.status)} text-xs px-2 py-0.5`}>
-                          {deal.status.charAt(0).toUpperCase() + deal.status.slice(1)}
-                        </Badge>
-                        <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200 text-xs px-2 py-0.5">
-                          {deal.probability}%
-                        </Badge>
-                        {deal.archived && (
-                          <Badge variant="outline" className="bg-gray-50 text-gray-600 border-gray-300 text-xs px-2 py-0.5">
-                            Archived
-                          </Badge>
-                        )}
-                      </div>
+                       <div className="flex gap-2 flex-shrink-0">
+                         {deal.archived && (
+                           <Badge variant="outline" className="bg-gray-50 text-gray-600 border-gray-300 text-xs px-2 py-0.5">
+                             Archived
+                           </Badge>
+                         )}
+                       </div>
                     </div>
                     
                     <div className="flex gap-1 flex-shrink-0">
@@ -372,11 +330,6 @@ export const DealRegistrationCard = ({ clientInfos, agentMapping }: DealRegistra
                         <div className="flex items-center gap-1">
                           <Calendar className="w-3 h-3" />
                           <span>Close: {new Date(deal.expected_close_date).toLocaleDateString()}</span>
-                        </div>
-                      )}
-                      {deal.description && (
-                        <div className="flex-1 min-w-0">
-                          <span className="text-xs text-gray-600 line-clamp-1 truncate">{deal.description}</span>
                         </div>
                       )}
                     </div>

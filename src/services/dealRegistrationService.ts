@@ -23,10 +23,6 @@ export interface AddDealData {
   deal_name: string;
   deal_value: number;
   expected_close_date: string | null;
-  probability: number;
-  stage: string;
-  description: string | null;
-  notes: string | null;
   client_info_id: string | null;
   agent_id: string | null;
 }
@@ -81,13 +77,8 @@ export const dealRegistrationService = {
       deal_name: dealData.deal_name,
       deal_value: dealData.deal_value,
       expected_close_date: dealData.expected_close_date,
-      probability: dealData.probability,
-      stage: dealData.stage,
-      description: dealData.description,
-      notes: dealData.notes,
       client_info_id: dealData.client_info_id === '' ? null : dealData.client_info_id,
       agent_id: dealData.agent_id === '' ? null : dealData.agent_id,
-      status: dealData.status,
       updated_at: new Date().toISOString()
     };
 

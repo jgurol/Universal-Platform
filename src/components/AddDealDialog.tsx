@@ -52,16 +52,10 @@ export const AddDealDialog = ({
       deal_name: "",
       deal_value: 0,
       expected_close_date: null,
-      probability: 50,
-      stage: "prospecting",
-      description: null,
-      notes: null,
       client_info_id: null,
       agent_id: null
     }
   });
-
-  const selectedStage = watch('stage');
 
   useEffect(() => {
     if (open) {
@@ -201,25 +195,6 @@ export const AddDealDialog = ({
             </div>
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="description">Description</Label>
-            <Textarea
-              id="description"
-              {...register("description")}
-              placeholder="Enter deal description"
-              rows={3}
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="notes">Notes</Label>
-            <Textarea
-              id="notes"
-              {...register("notes")}
-              placeholder="Enter any additional notes"
-              rows={3}
-            />
-          </div>
 
           <div className="flex justify-end space-x-2">
             <Button 
