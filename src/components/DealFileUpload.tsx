@@ -87,7 +87,9 @@ export const DealFileUpload = ({ dealId, onDocumentsChange }: DealFileUploadProp
       try {
         // Upload to storage
         const fileExt = file.name.split('.').pop();
-        const fileName = `${Date.now()}-${file.name}`;
+        // Sanitize filename by replacing spaces and special characters
+        const sanitizedName = file.name.replace(/[^a-zA-Z0-9.-]/g, '_');
+        const fileName = `${Date.now()}-${sanitizedName}`;
         const filePath = `${user.id}/${fileName}`;
 
         const { error: uploadError } = await supabase.storage
