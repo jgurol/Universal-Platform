@@ -54,7 +54,9 @@ export const DealRegistrationCard = ({ clientInfos, agentMapping }: DealRegistra
     if (!user) return null;
 
     try {
+      console.log('DealRegistrationCard addDeal called with:', newDeal);
       const data = await dealRegistrationService.addDeal(newDeal, user.id);
+      console.log('DealRegistrationCard received deal data:', data);
       setDeals([data, ...deals]);
       toast({
         title: "Deal created",

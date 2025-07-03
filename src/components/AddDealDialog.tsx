@@ -99,8 +99,11 @@ export const AddDealDialog = ({
   const onSubmit = async (data: AddDealData) => {
     setIsSubmitting(true);
     try {
+      console.log('Submitting deal data:', data);
       const dealData = await onAddDeal(data);
+      console.log('Received deal data:', dealData);
       if (dealData) {
+        console.log('Setting createdDealId to:', dealData.id);
         setCreatedDealId(dealData.id);
         reset();
         
@@ -108,6 +111,8 @@ export const AddDealDialog = ({
           title: "Deal created",
           description: "You can now add notes and upload files.",
         });
+      } else {
+        console.error('No deal data received');
       }
     } catch (err) {
       console.error('Error adding deal:', err);
@@ -208,6 +213,10 @@ export const AddDealDialog = ({
 
           {createdDealId && (
             <>
+              <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-4">
+                <p className="text-green-800 font-medium">✅ Deal created successfully!</p>
+                <p className="text-green-600 text-sm">You can now add notes and upload files below.</p>
+              </div>
               <DealNotes dealId={createdDealId} />
               <DealFileUpload dealId={createdDealId} />
             </>
