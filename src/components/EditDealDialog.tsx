@@ -182,57 +182,6 @@ export const EditDealDialog = ({
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="stage">Deal Stage</Label>
-              <Select value={selectedStage || deal.stage || ''} onValueChange={(value) => setValue("stage", value)}>
-                <SelectTrigger className="text-left">
-                  <SelectValue placeholder="Select stage" />
-                </SelectTrigger>
-                <SelectContent>
-                  {dealStages.map((stage) => (
-                    <SelectItem key={stage} value={stage}>
-                      {stage.charAt(0).toUpperCase() + stage.slice(1).replace('-', ' ')}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="probability">Probability (%)</Label>
-              <Input
-                id="probability"
-                type="number"
-                min="0"
-                max="100"
-                {...register("probability", {
-                  min: { value: 0, message: "Probability must be between 0 and 100" },
-                  max: { value: 100, message: "Probability must be between 0 and 100" }
-                })}
-                placeholder="50"
-              />
-              {errors.probability && (
-                <p className="text-sm text-red-500">{errors.probability.message}</p>
-              )}
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="status">Status</Label>
-              <Select value={selectedStatus || deal.status || ''} onValueChange={(value) => setValue("status", value)}>
-                <SelectTrigger className="text-left">
-                  <SelectValue placeholder="Select status" />
-                </SelectTrigger>
-                <SelectContent>
-                  {dealStatuses.map((status) => (
-                    <SelectItem key={status} value={status}>
-                      {status.charAt(0).toUpperCase() + status.slice(1)}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
 
           <div className="space-y-2">
             <Label htmlFor="expected_close_date">Expected Close Date</Label>
