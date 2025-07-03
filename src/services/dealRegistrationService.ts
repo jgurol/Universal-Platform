@@ -26,6 +26,7 @@ export interface AddDealData {
   probability: number;
   stage: string;
   description: string | null;
+  notes: string | null;
   client_info_id: string | null;
   agent_id: string | null;
 }
@@ -55,7 +56,6 @@ export const dealRegistrationService = {
     // Convert empty strings to null for UUID fields
     const cleanedData = {
       ...dealData,
-      notes: null, // Always set notes to null since we removed it from the form
       client_info_id: dealData.client_info_id === '' ? null : dealData.client_info_id,
       agent_id: dealData.agent_id === '' ? null : dealData.agent_id,
       user_id: userId
