@@ -102,6 +102,7 @@ export const DealsList = ({ clientInfos, agentMapping }: DealsListProps) => {
         title: "Success",
         description: "Deal created successfully"
       });
+      return newDeal; // Return the created deal
     } catch (error) {
       console.error('Error adding deal:', error);
       toast({
@@ -109,6 +110,7 @@ export const DealsList = ({ clientInfos, agentMapping }: DealsListProps) => {
         description: "Failed to create deal",
         variant: "destructive"
       });
+      throw error; // Re-throw the error
     }
   };
 

@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useForm } from "react-hook-form";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { AddDealData } from "@/services/dealRegistrationService";
+import { AddDealData, DealRegistration } from "@/services/dealRegistrationService";
 import { ClientInfo } from "@/pages/Index";
 import { DealNotes } from "@/components/DealNotes";
 import { DealFileUpload } from "@/components/DealFileUpload";
@@ -18,7 +18,7 @@ import { DealFileUpload } from "@/components/DealFileUpload";
 interface AddDealDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onAddDeal: (newDeal: AddDealData) => Promise<void>;
+  onAddDeal: (newDeal: AddDealData) => Promise<DealRegistration | null>;
   clientInfos: ClientInfo[];
 }
 
@@ -100,17 +100,18 @@ export const AddDealDialog = ({
     setIsSubmitting(true);
     try {
       const dealData = await onAddDeal(data);
-      // Get the created deal ID from the parent component's response
-      // We'll need to modify the parent to return the created deal
-      setCreatedDealId('temp-id'); // This will be updated when we modify the parent
-      reset();
-      
-      toast({
-        title: "Deal created",
-        description: "You can now add notes and upload files.",
-      });
+      if (dealData) {
+        setCreatedDealId(dealData.id);
+        reset();
+        
+        toast({
+          title: "Deal created",
+          description: "You can now add notes and upload files.",
+        });
+      }
     } catch (err) {
       console.error('Error adding deal:', err);
+    } finally {
       setIsSubmitting(false);
     }
   };

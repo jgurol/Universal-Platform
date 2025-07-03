@@ -51,7 +51,7 @@ export const DealRegistrationCard = ({ clientInfos, agentMapping }: DealRegistra
   };
 
   const addDeal = async (newDeal: AddDealData) => {
-    if (!user) return;
+    if (!user) return null;
 
     try {
       const data = await dealRegistrationService.addDeal(newDeal, user.id);
@@ -60,6 +60,7 @@ export const DealRegistrationCard = ({ clientInfos, agentMapping }: DealRegistra
         title: "Deal created",
         description: `${data.deal_name} has been registered successfully.`,
       });
+      return data; // Return the created deal
     } catch (error) {
       console.error('Error adding deal:', error);
       toast({
@@ -67,6 +68,7 @@ export const DealRegistrationCard = ({ clientInfos, agentMapping }: DealRegistra
         description: "There was an error creating the deal registration",
         variant: "destructive"
       });
+      throw error; // Re-throw the error
     }
   };
 
