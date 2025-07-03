@@ -170,7 +170,18 @@ export const CircuitQuoteCardHeader = ({
               <div className="flex items-center gap-4 text-left">
                 <div className="flex items-center gap-1">
                   <MapPin className="h-4 w-4" />
-                  <span>{quote.location}</span>
+                  <button
+                    onClick={() => {
+                      const address = quote.suite 
+                        ? `${quote.location}, Suite ${quote.suite}`
+                        : quote.location;
+                      const googleMapsUrl = `https://maps.google.com/?q=${encodeURIComponent(address)}&t=k`;
+                      window.open(googleMapsUrl, '_blank');
+                    }}
+                    className="text-blue-600 hover:text-blue-700 hover:underline cursor-pointer"
+                  >
+                    {quote.location}
+                  </button>
                 </div>
                 {quote.suite && (
                   <div className="flex items-center gap-1">
