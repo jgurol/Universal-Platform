@@ -1363,6 +1363,45 @@ export type Database = {
         }
         Relationships: []
       }
+      notification_preferences: {
+        Row: {
+          carrier_quote_generated: boolean
+          circuit_quote_completed: boolean
+          circuit_quote_researching: boolean
+          created_at: string
+          customer_accepts_quote: boolean
+          customer_opens_email: boolean
+          id: string
+          quote_sent_to_customer: boolean
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          carrier_quote_generated?: boolean
+          circuit_quote_completed?: boolean
+          circuit_quote_researching?: boolean
+          created_at?: string
+          customer_accepts_quote?: boolean
+          customer_opens_email?: boolean
+          id?: string
+          quote_sent_to_customer?: boolean
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          carrier_quote_generated?: boolean
+          circuit_quote_completed?: boolean
+          circuit_quote_researching?: boolean
+          created_at?: string
+          customer_accepts_quote?: boolean
+          customer_opens_email?: boolean
+          id?: string
+          quote_sent_to_customer?: boolean
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       orders: {
         Row: {
           amount: number

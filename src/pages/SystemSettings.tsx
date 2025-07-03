@@ -11,6 +11,7 @@ import { SecuritySettingsTab } from "@/components/settings/SecuritySettingsTab";
 import { AgentsManagementTab } from "@/components/settings/AgentsManagementTab";
 import { QuoteTemplatesTab } from "@/components/settings/QuoteTemplatesTab";
 import { AgentAgreementTemplatesTab } from "@/components/settings/AgentAgreementTemplatesTab";
+import { NotificationPreferences } from "@/components/NotificationPreferences";
 import { useState } from "react";
 
 export default function SystemSettings() {
@@ -65,13 +66,14 @@ export default function SystemSettings() {
             </CardHeader>
             <CardContent>
               <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                <TabsList className="grid w-full grid-cols-6">
+                <TabsList className="grid w-full grid-cols-7">
                   <TabsTrigger value="general">General</TabsTrigger>
                   <TabsTrigger value="security">Security</TabsTrigger>
                   <TabsTrigger value="datetime">Date & Time</TabsTrigger>
                   <TabsTrigger value="agents">Agents</TabsTrigger>
                   <TabsTrigger value="quote-templates">Quote Templates</TabsTrigger>
                   <TabsTrigger value="agent-agreements">Agent Agreements</TabsTrigger>
+                  <TabsTrigger value="notifications">Notifications</TabsTrigger>
                 </TabsList>
                 
                 <TabsContent value="general" className="mt-6">
@@ -96,6 +98,10 @@ export default function SystemSettings() {
                 
                 <TabsContent value="agent-agreements" className="mt-6">
                   <AgentAgreementTemplatesTab />
+                </TabsContent>
+                
+                <TabsContent value="notifications" className="mt-6">
+                  <NotificationPreferences />
                 </TabsContent>
               </Tabs>
             </CardContent>
