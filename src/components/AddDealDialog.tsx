@@ -8,8 +8,10 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useForm } from "react-hook-form";
 import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 import { AddDealData } from "@/services/dealRegistrationService";
 import { ClientInfo } from "@/pages/Index";
+
 
 interface AddDealDialogProps {
   open: boolean;
@@ -43,6 +45,7 @@ export const AddDealDialog = ({
   const [agents, setAgents] = useState<Agent[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const { toast } = useToast();
 
   const { register, handleSubmit, reset, setValue, watch, formState: { errors } } = useForm<AddDealData>({
     defaultValues: {
@@ -107,6 +110,7 @@ export const AddDealDialog = ({
       setIsSubmitting(false);
     }
   };
+
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>

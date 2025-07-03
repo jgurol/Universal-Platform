@@ -10,6 +10,7 @@ import { useForm } from "react-hook-form";
 import { supabase } from "@/integrations/supabase/client";
 import { DealRegistration } from "@/services/dealRegistrationService";
 import { ClientInfo } from "@/pages/Index";
+import { DealFileUpload } from "@/components/DealFileUpload";
 
 interface EditDealDialogProps {
   open: boolean;
@@ -306,6 +307,8 @@ export const EditDealDialog = ({
               rows={3}
             />
           </div>
+
+          <DealFileUpload dealId={deal?.id} />
 
           <div className="flex justify-end space-x-2">
             <Button 
