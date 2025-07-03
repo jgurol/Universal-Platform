@@ -323,15 +323,6 @@ export const DealRegistrationCard = ({ clientInfos, agentMapping }: DealRegistra
                     </div>
                     
                     <div className="flex gap-1 flex-shrink-0">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setNotesDialogDeal(deal)}
-                        className="h-8 w-8 p-0 hover:bg-blue-50 hover:border-blue-300 text-blue-600"
-                      >
-                        <FileText className="w-3 h-3" />
-                      </Button>
-                      
                       {!deal.archived && (
                         <Button
                           variant="outline"
