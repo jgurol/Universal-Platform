@@ -52,7 +52,6 @@ export const AddDealDialog = ({
       probability: 50,
       stage: "prospecting",
       description: null,
-      notes: null,
       client_info_id: null,
       agent_id: null
     }
