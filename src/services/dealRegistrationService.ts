@@ -32,13 +32,15 @@ export interface AddDealData {
 }
 
 export const dealRegistrationService = {
-  async fetchDeals(includeArchived: boolean = false): Promise<DealRegistration[]> {
+  async fetchDeals(showArchived: boolean = false): Promise<DealRegistration[]> {
     let query = supabase
       .from('deal_registrations')
       .select('*')
       .order('created_at', { ascending: false });
 
-    if (!includeArchived) {
+    if (showArchived) {
+      query = query.eq('archived', true);
+    } else {
       query = query.or('archived.is.null,archived.eq.false');
     }
 

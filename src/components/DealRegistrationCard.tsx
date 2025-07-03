@@ -154,8 +154,9 @@ export const DealRegistrationCard = ({ clientInfos, agentMapping }: DealRegistra
     return client?.company_name || 'Unknown Client';
   };
 
-  const activeDealCount = deals.filter(deal => !deal.archived).length;
-  const totalDealValue = deals.filter(deal => !deal.archived).reduce((sum, deal) => sum + deal.deal_value, 0);
+  const activeDealCount = showArchived ? 0 : deals.filter(deal => !deal.archived).length;
+  const totalDealValue = showArchived ? 0 : deals.filter(deal => !deal.archived).reduce((sum, deal) => sum + deal.deal_value, 0);
+  const archivedDealCount = showArchived ? deals.length : 0;
 
   if (isLoading) {
     return (
@@ -224,8 +225,8 @@ export const DealRegistrationCard = ({ clientInfos, agentMapping }: DealRegistra
             <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-3 rounded-lg border border-blue-200">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-blue-600 font-medium">Active Deals</p>
-                  <p className="text-xl font-bold text-blue-800">{activeDealCount}</p>
+                  <p className="text-sm text-blue-600 font-medium">{showArchived ? 'Archived Deals' : 'Active Deals'}</p>
+                  <p className="text-xl font-bold text-blue-800">{showArchived ? archivedDealCount : activeDealCount}</p>
                 </div>
                 <Target className="h-6 w-6 text-blue-600" />
               </div>
@@ -235,7 +236,7 @@ export const DealRegistrationCard = ({ clientInfos, agentMapping }: DealRegistra
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-purple-600 font-medium">This Month</p>
-                  <p className="text-xl font-bold text-purple-800">{deals.filter(deal => !deal.archived && new Date(deal.created_at).getMonth() === new Date().getMonth()).length}</p>
+                  <p className="text-xl font-bold text-purple-800">{deals.filter(deal => new Date(deal.created_at).getMonth() === new Date().getMonth()).length}</p>
                 </div>
                 <Calendar className="h-6 w-6 text-purple-600" />
               </div>
