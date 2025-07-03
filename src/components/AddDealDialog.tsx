@@ -206,15 +206,15 @@ export const AddDealDialog = ({
             </div>
           </div>
 
+          <DealNotes dealId={createdDealId} />
+          
+          <DealFileUpload dealId={createdDealId} />
+
           {createdDealId && (
-            <>
-              <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-4">
-                <p className="text-green-800 font-medium">✅ Deal created successfully!</p>
-                <p className="text-green-600 text-sm">You can now add notes and upload files below.</p>
-              </div>
-              <DealNotes dealId={createdDealId} />
-              <DealFileUpload dealId={createdDealId} />
-            </>
+            <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-4">
+              <p className="text-green-800 font-medium">✅ Deal created successfully!</p>
+              <p className="text-green-600 text-sm">You can now add notes and upload files above.</p>
+            </div>
           )}
 
           <div className="flex justify-end space-x-2">
