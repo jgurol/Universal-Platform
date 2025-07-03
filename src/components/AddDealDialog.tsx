@@ -9,10 +9,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useForm } from "react-hook-form";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/context/AuthContext";
 import { AddDealData, DealRegistration } from "@/services/dealRegistrationService";
 import { ClientInfo } from "@/pages/Index";
-import { DealNotes } from "@/components/DealNotes";
-import { DealFileUpload } from "@/components/DealFileUpload";
+import { TempDealNotes } from "@/components/TempDealNotes";
+import { TempDealFileUpload } from "@/components/TempDealFileUpload";
 
 
 interface AddDealDialogProps {
@@ -48,7 +49,10 @@ export const AddDealDialog = ({
   const [isLoading, setIsLoading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [createdDealId, setCreatedDealId] = useState<string | null>(null);
+  const [pendingNotes, setPendingNotes] = useState<{id: string, content: string, timestamp: string, userName: string}[]>([]);
+  const [pendingFiles, setPendingFiles] = useState<File[]>([]);
   const { toast } = useToast();
+  const { user } = useAuth();
 
   const { register, handleSubmit, reset, setValue, watch, formState: { errors } } = useForm<AddDealData>({
     defaultValues: {
@@ -92,8 +96,57 @@ export const AddDealDialog = ({
     if (!newOpen) {
       reset();
       setCreatedDealId(null);
+      setPendingNotes([]);
+      setPendingFiles([]);
     }
     onOpenChange(newOpen);
+  };
+
+  const savePendingData = async (dealId: string) => {
+    if (!user) return;
+
+    // Save pending notes
+    for (const note of pendingNotes) {
+      try {
+        await supabase
+          .from('deal_registration_notes')
+          .insert({
+            deal_registration_id: dealId,
+            user_id: user.id,
+            content: note.content
+          });
+      } catch (error) {
+        console.error('Error saving note:', error);
+      }
+    }
+
+    // Save pending files
+    for (const file of pendingFiles) {
+      try {
+        const fileExt = file.name.split('.').pop();
+        const fileName = `${Date.now()}-${file.name}`;
+        const filePath = `${user.id}/${fileName}`;
+
+        const { error: uploadError } = await supabase.storage
+          .from('deal-registration-files')
+          .upload(filePath, file);
+
+        if (uploadError) throw uploadError;
+
+        await supabase
+          .from('deal_registration_documents')
+          .insert({
+            deal_registration_id: dealId,
+            file_name: file.name,
+            file_path: filePath,
+            file_type: file.type || 'application/octet-stream',
+            file_size: file.size,
+            uploaded_by: user.id
+          });
+      } catch (error) {
+        console.error('Error saving file:', error);
+      }
+    }
   };
 
   const onSubmit = async (data: AddDealData) => {
@@ -102,11 +155,15 @@ export const AddDealDialog = ({
       const dealData = await onAddDeal(data);
       if (dealData) {
         setCreatedDealId(dealData.id);
+        
+        // Save pending notes and files
+        await savePendingData(dealData.id);
+        
         reset();
         
         toast({
           title: "Deal created",
-          description: "You can now add notes and upload files.",
+          description: "Deal and all notes/files have been saved successfully.",
         });
       }
     } catch (err) {
@@ -206,9 +263,17 @@ export const AddDealDialog = ({
             </div>
           </div>
 
-          <DealNotes dealId={createdDealId} />
+          <TempDealNotes 
+            notes={pendingNotes} 
+            onNotesChange={setPendingNotes} 
+            disabled={!!createdDealId}
+          />
           
-          <DealFileUpload dealId={createdDealId} />
+          <TempDealFileUpload 
+            files={pendingFiles} 
+            onFilesChange={setPendingFiles} 
+            disabled={!!createdDealId}
+          />
 
           {createdDealId && (
             <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-4">
