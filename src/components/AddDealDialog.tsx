@@ -156,17 +156,20 @@ export const AddDealDialog = ({
     try {
       const dealData = await onAddDeal(data);
       if (dealData) {
-        setCreatedDealId(dealData.id);
-        
         // Save pending notes and files
         await savePendingData(dealData.id);
-        
-        reset();
         
         toast({
           title: "Deal created",
           description: "Deal and all notes/files have been saved successfully.",
         });
+        
+        // Reset and close dialog
+        reset();
+        setCreatedDealId(null);
+        setPendingNotes([]);
+        setPendingFiles([]);
+        onOpenChange(false);
       }
     } catch (err) {
       console.error('Error adding deal:', err);
