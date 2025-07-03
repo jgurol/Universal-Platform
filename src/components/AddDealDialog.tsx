@@ -242,15 +242,6 @@ export const AddDealDialog = ({
             />
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="notes">Notes</Label>
-            <Textarea
-              id="notes"
-              {...register("notes")}
-              placeholder="Enter any additional notes"
-              rows={3}
-            />
-          </div>
 
           <div className="flex justify-end space-x-2">
             <Button 
