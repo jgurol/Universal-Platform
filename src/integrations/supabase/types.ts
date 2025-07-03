@@ -1371,6 +1371,7 @@ export type Database = {
           created_at: string
           customer_accepts_quote: boolean
           customer_opens_email: boolean
+          deal_created_admin: boolean
           id: string
           quote_sent_to_customer: boolean
           updated_at: string
@@ -1383,6 +1384,7 @@ export type Database = {
           created_at?: string
           customer_accepts_quote?: boolean
           customer_opens_email?: boolean
+          deal_created_admin?: boolean
           id?: string
           quote_sent_to_customer?: boolean
           updated_at?: string
@@ -1395,6 +1397,7 @@ export type Database = {
           created_at?: string
           customer_accepts_quote?: boolean
           customer_opens_email?: boolean
+          deal_created_admin?: boolean
           id?: string
           quote_sent_to_customer?: boolean
           updated_at?: string

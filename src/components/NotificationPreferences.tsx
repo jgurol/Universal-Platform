@@ -15,6 +15,7 @@ interface NotificationPreferences {
   quote_sent_to_customer: boolean;
   customer_opens_email: boolean;
   customer_accepts_quote: boolean;
+  deal_created_admin: boolean;
 }
 
 export const NotificationPreferences = () => {
@@ -25,11 +26,12 @@ export const NotificationPreferences = () => {
     quote_sent_to_customer: true,
     customer_opens_email: true,
     customer_accepts_quote: true,
+    deal_created_admin: true,
   });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const { toast } = useToast();
-  const { user } = useAuth();
+  const { user, isAdmin } = useAuth();
 
   useEffect(() => {
     loadPreferences();
@@ -60,6 +62,7 @@ export const NotificationPreferences = () => {
           quote_sent_to_customer: data.quote_sent_to_customer,
           customer_opens_email: data.customer_opens_email,
           customer_accepts_quote: data.customer_accepts_quote,
+          deal_created_admin: data.deal_created_admin,
         });
       }
     } catch (error) {
@@ -146,6 +149,16 @@ export const NotificationPreferences = () => {
     }
   ];
 
+  const adminOnlyOptions = [
+    {
+      key: 'deal_created_admin' as const,
+      label: 'Deal is created (Admin Only)',
+      description: 'Get notified when a new deal is registered in the system'
+    }
+  ];
+
+  const displayOptions = isAdmin ? [...notificationOptions, ...adminOnlyOptions] : notificationOptions;
+
   if (loading) {
     return (
       <Card>
@@ -177,7 +190,7 @@ export const NotificationPreferences = () => {
       </CardHeader>
       <CardContent className="space-y-6">
         <div className="space-y-4">
-          {notificationOptions.map((option) => (
+          {displayOptions.map((option) => (
             <div key={option.key} className="flex items-start space-x-3">
               <Checkbox
                 id={option.key}
