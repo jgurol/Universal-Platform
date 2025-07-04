@@ -344,11 +344,6 @@ export const AddQuoteDialog = ({
                       </p>}
                   </div>}
 
-                {/* Commission Override - Only show for admins */}
-                {dialogData.isAdmin && <div className="space-y-3">
-                    <Label htmlFor="commissionOverride" className="text-sm font-semibold text-gray-800">Commission Override (%)</Label>
-                    <Input id="commissionOverride" type="number" step="0.01" min="0" max="100" value={formState.commissionOverride} onChange={e => formState.setCommissionOverride(e.target.value)} placeholder="Optional commission override" disabled={dialogData.isDataLoading} className="border-gray-300 bg-white focus:border-blue-500 transition-colors" />
-                  </div>}
 
                 <div className="space-y-3">
                   <Label htmlFor="notes" className="text-sm font-semibold text-gray-800">Notes</Label>
