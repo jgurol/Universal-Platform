@@ -43,6 +43,7 @@ export interface Quote {
   emailOpenedAt?: string;
   emailOpenCount?: number;
   user_id: string;
+  createdAt?: string;
 }
 
 export interface QuoteItem {
