@@ -72,6 +72,7 @@ export const QuoteTableCells = ({
   console.log('QuoteTableCells - Quote ID:', quote.id);
   console.log('QuoteTableCells - Quote user_id:', quote.user_id);
   console.log('QuoteTableCells - Salesperson name:', salespersonName);
+  console.log('Quote date data:', { created_at: quote.created_at, updated_at: quote.updated_at, id: quote.id });
 
   return (
     <>
@@ -97,7 +98,7 @@ export const QuoteTableCells = ({
       </TableCell>
       <TableCell>
         <div className="text-sm text-gray-600">
-          {quote.updated_at ? formatDate(quote.updated_at) : 'N/A'}
+          {quote.updated_at ? formatDate(quote.updated_at) : (quote.created_at ? formatDate(quote.created_at) : 'N/A')}
         </div>
       </TableCell>
       <TableCell className="text-right font-mono">
