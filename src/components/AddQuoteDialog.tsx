@@ -388,7 +388,7 @@ export const AddQuoteDialog = ({
               <CardHeader className="pb-4">
                 <CardTitle className="flex items-center gap-2 text-lg text-gray-900">
                   <Settings className="h-5 w-5 text-purple-600" />
-                  Quote Template
+                  Quote Terms
                 </CardTitle>
               </CardHeader>
               <CardContent>
