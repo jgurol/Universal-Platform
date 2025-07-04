@@ -349,20 +349,19 @@ export const AddQuoteDialog = ({
                   <Label htmlFor="notes" className="text-sm font-semibold text-gray-800">Notes</Label>
                   <Textarea id="notes" value={formState.notes} onChange={e => formState.setNotes(e.target.value)} placeholder="Additional notes about the quote" rows={4} disabled={dialogData.isDataLoading} className="border-gray-300 bg-white focus:border-blue-500 transition-colors resize-none" />
                 </div>
+
+                {/* Address Information */}
+                <div className="space-y-4">
+                  <h3 className="text-lg font-semibold text-gray-900">Address Information</h3>
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <AddressSelector clientInfoId={formState.clientInfoId !== "none" ? formState.clientInfoId : null} selectedAddressId={formState.selectedBillingAddressId || undefined} onAddressChange={formState.handleBillingAddressChange} label="Billing Address" autoSelectPrimary={true} />
+
+                    <AddressSelector clientInfoId={formState.clientInfoId !== "none" ? formState.clientInfoId : null} selectedAddressId={formState.selectedServiceAddressId || undefined} onAddressChange={formState.handleServiceAddressChange} label="Service Address (Optional)" autoSelectPrimary={false} />
+                  </div>
+                </div>
               </CardContent>
             </Card>
 
-            {/* Address Information */}
-            <Card className="border-gray-200">
-              <CardHeader className="pb-4">
-                <CardTitle className="text-lg text-gray-900">Address Information</CardTitle>
-              </CardHeader>
-              <CardContent className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <AddressSelector clientInfoId={formState.clientInfoId !== "none" ? formState.clientInfoId : null} selectedAddressId={formState.selectedBillingAddressId || undefined} onAddressChange={formState.handleBillingAddressChange} label="Billing Address" autoSelectPrimary={true} />
-
-                <AddressSelector clientInfoId={formState.clientInfoId !== "none" ? formState.clientInfoId : null} selectedAddressId={formState.selectedServiceAddressId || undefined} onAddressChange={formState.handleServiceAddressChange} label="Service Address (Optional)" autoSelectPrimary={false} />
-              </CardContent>
-            </Card>
 
             {/* Quote Items */}
             <Card className="border-gray-200">
