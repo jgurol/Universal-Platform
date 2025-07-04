@@ -394,93 +394,273 @@ export const EditQuoteDialog = ({
   });
   if (!quote) return null;
   return <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[1400px] max-h-[95vh] overflow-y-auto bg-gray-500">
-        <div className="space-y-6">
+      <DialogContent className="sm:max-w-[1400px] max-h-[95vh] overflow-y-auto bg-slate-300">
+        <div className="space-y-4">
           {/* Header */}
-          <div className="flex items-center gap-3 pb-4 border-b">
+          <div className="flex items-center gap-3 pb-3 border-b border-gray-200">
             <div className="p-2 bg-blue-100 rounded-lg">
               <FileText className="h-6 w-6 text-blue-600" />
             </div>
             <div>
-              <h2 className="text-2xl font-semibold">Edit Quote</h2>
-              <p className="text-muted-foreground">Update quote details and settings</p>
+              <h2 className="text-2xl font-semibold text-gray-900">Edit Quote</h2>
+              <p className="text-gray-600">Update quote details and settings</p>
             </div>
           </div>
         
-          <form onSubmit={handleSubmit} className="space-y-8">
-            {/* Quote Header Information */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg">Quote Information</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <EditQuoteHeader quoteNumber={quoteNumber} onQuoteNumberChange={setQuoteNumber} date={date} onDateChange={setDate} expiresAt={expiresAt} onExpiresAtChange={setExpiresAt} selectedSalesperson={selectedSalesperson} />
-              </CardContent>
-            </Card>
-            
-            {/* Client & Form Fields */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-lg">
-                  <Building2 className="h-5 w-5 text-green-600" />
-                  Client & Details
+          <form onSubmit={handleSubmit} className="space-y-6">
+            {/* Quote Information */}
+            <Card className="border-gray-200">
+              <CardHeader className="pb-2">
+                <CardTitle className="flex items-center gap-2 text-lg text-gray-900">
+                  <FileText className="h-5 w-5 text-blue-600" />
+                  Quote Information
                 </CardTitle>
               </CardHeader>
-              <CardContent>
-                <EditQuoteFormFields description={description} onDescriptionChange={setDescription} clientInfoId={clientInfoId} onClientInfoIdChange={setClientInfoId} clientInfos={clientInfos} status={status} onStatusChange={setStatus} commissionOverride={commissionOverride} onCommissionOverrideChange={setCommissionOverride} notes={notes} onNotesChange={setNotes} />
+              <CardContent className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                <div className="space-y-3">
+                  <div className="space-y-2">
+                    <label htmlFor="description" className="text-sm font-semibold text-gray-800">Quote Name</label>
+                    <input 
+                      id="description" 
+                      value={description} 
+                      onChange={(e) => setDescription(e.target.value)} 
+                      placeholder="Enter quote name" 
+                      className="w-full border rounded-md px-3 py-2 border-gray-300 bg-white focus:border-blue-500 transition-colors" 
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <label htmlFor="notes" className="text-sm font-semibold text-gray-800">Notes</label>
+                    <textarea 
+                      id="notes" 
+                      value={notes} 
+                      onChange={(e) => setNotes(e.target.value)} 
+                      placeholder="Additional notes about the quote" 
+                      rows={2} 
+                      className="w-full border rounded-md px-3 py-2 border-gray-300 bg-white focus:border-blue-500 transition-colors resize-none" 
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-3">
+                  <div className="space-y-2">
+                    <label htmlFor="quoteNumber" className="text-sm font-semibold text-gray-800">Quote Number</label>
+                    <input 
+                      id="quoteNumber" 
+                      value={quoteNumber} 
+                      onChange={(e) => setQuoteNumber(e.target.value)} 
+                      placeholder="Auto-generated" 
+                      disabled 
+                      className="w-full border rounded-md px-3 py-2 border-gray-300 bg-gray-100 text-gray-600" 
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <label htmlFor="date" className="text-sm font-semibold text-gray-800">
+                      Quote Date <span className="text-red-500">*</span>
+                    </label>
+                    <input 
+                      id="date" 
+                      type="date" 
+                      value={date} 
+                      onChange={(e) => setDate(e.target.value)} 
+                      required 
+                      className="w-full border rounded-md px-3 py-2 border-gray-300 bg-white focus:border-blue-500 transition-colors" 
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <label htmlFor="expiresAt" className="text-sm font-semibold text-gray-800">Expiration Date</label>
+                    <input 
+                      id="expiresAt" 
+                      type="date" 
+                      value={expiresAt} 
+                      onChange={(e) => setExpiresAt(e.target.value)} 
+                      className="w-full border rounded-md px-3 py-2 border-gray-300 bg-white focus:border-blue-500 transition-colors" 
+                    />
+                  </div>
+
+                  {/* Associated Salesperson */}
+                  {selectedSalesperson ? (
+                    <div className="space-y-2">
+                      <label className="text-sm font-semibold text-gray-800">Associated Salesperson</label>
+                      <div className="border rounded-md px-3 py-2 bg-gray-50 text-gray-700 border-gray-300">
+                        {selectedSalesperson.name} {selectedSalesperson.companyName && `(${selectedSalesperson.companyName})`}
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      <label className="text-sm font-semibold text-gray-800">Associated Salesperson</label>
+                      <div className="border rounded-md px-3 py-2 bg-gray-50 text-gray-700 border-gray-300">
+                        No Salesperson Assigned
+                      </div>
+                    </div>
+                  )}
+                </div>
               </CardContent>
             </Card>
 
-            {/* Address Section */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg">Address Information</CardTitle>
+            {/* Client Information */}
+            <Card className="border-gray-200">
+              <CardHeader className="pb-2">
+                <CardTitle className="flex items-center gap-2 text-lg text-gray-900">
+                  <Building2 className="h-5 w-5 text-green-600" />
+                  Client Info
+                </CardTitle>
               </CardHeader>
-              <CardContent>
-                <EditQuoteAddressSection clientInfoId={clientInfoId} selectedBillingAddressId={selectedBillingAddressId} onBillingAddressChange={handleBillingAddressChange} selectedServiceAddressId={selectedServiceAddressId} onServiceAddressChange={handleServiceAddressChange} />
+              <CardContent className="space-y-3">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <label htmlFor="clientInfo" className="text-sm font-semibold text-gray-800">
+                      Client Company <span className="text-red-500">*</span>
+                    </label>
+                    <select 
+                      value={clientInfoId} 
+                      onChange={(e) => setClientInfoId(e.target.value)} 
+                      required 
+                      className="w-full border rounded-md px-3 py-2 border-gray-300 bg-white focus:border-blue-500 transition-colors"
+                    >
+                      <option value="">Select a client company</option>
+                      {clientInfos.map((clientInfo) => (
+                        <option key={clientInfo.id} value={clientInfo.id}>
+                          {clientInfo.company_name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <label htmlFor="status" className="text-sm font-semibold text-gray-800">Status</label>
+                    <select 
+                      value={status} 
+                      onChange={(e) => setStatus(e.target.value)} 
+                      className="w-full border rounded-md px-3 py-2 border-gray-300 bg-white focus:border-blue-500 transition-colors"
+                    >
+                      <option value="pending">Pending</option>
+                      <option value="approved">Approved</option>
+                      <option value="rejected">Rejected</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <label htmlFor="commissionOverride" className="text-sm font-semibold text-gray-800">Commission Override (%)</label>
+                  <input 
+                    id="commissionOverride" 
+                    type="number" 
+                    step="0.01" 
+                    min="0" 
+                    max="100" 
+                    value={commissionOverride} 
+                    onChange={(e) => setCommissionOverride(e.target.value)} 
+                    placeholder="Leave empty to use default commission" 
+                    className="w-full border rounded-md px-3 py-2 border-gray-300 bg-white focus:border-blue-500 transition-colors" 
+                  />
+                </div>
+
+                {/* Address Information */}
+                <div className="space-y-3">
+                  <h3 className="text-lg font-semibold text-gray-900">Address Information</h3>
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                    <EditQuoteAddressSection 
+                      clientInfoId={clientInfoId} 
+                      selectedBillingAddressId={selectedBillingAddressId} 
+                      onBillingAddressChange={handleBillingAddressChange} 
+                      selectedServiceAddressId={selectedServiceAddressId} 
+                      onServiceAddressChange={handleServiceAddressChange} 
+                    />
+                  </div>
+                </div>
               </CardContent>
             </Card>
 
             {/* Quote Items */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-lg">
+            <Card className="border-gray-200">
+              <CardHeader className="pb-3">
+                <CardTitle className="flex items-center gap-2 text-lg text-gray-900">
                   <DollarSign className="h-5 w-5 text-emerald-600" />
-                  Quote Items
+                  Quote Items <span className="text-red-500">*</span>
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <QuoteItemsManager items={quoteItems} onItemsChange={setQuoteItems} clientInfoId={clientInfoId !== "none" ? clientInfoId : undefined} />
+                <QuoteItemsManager 
+                  items={quoteItems} 
+                  onItemsChange={setQuoteItems} 
+                  clientInfoId={clientInfoId !== "none" ? clientInfoId : undefined} 
+                />
+                {quoteItems.length === 0 && (
+                  <p className="text-sm text-red-500 mt-2 p-3 bg-red-50 rounded-md border border-red-200">
+                    Add at least one item to update the quote
+                  </p>
+                )}
               </CardContent>
             </Card>
 
-            {/* Template Section */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-lg">
+            {/* Quote Settings */}
+            <Card className="border-gray-200">
+              <CardHeader className="pb-3">
+                <CardTitle className="flex items-center gap-2 text-lg text-gray-900">
                   <Settings className="h-5 w-5 text-purple-600" />
-                  Quote Template
+                  Quote Terms
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <EditQuoteTemplateSection selectedTemplateId={selectedTemplateId} onTemplateChange={setSelectedTemplateId} templates={templates} term={term} onTermChange={handleTermChange} />
-                {templates.length === 0 && <p className="text-sm text-red-500 mt-2 p-3 bg-red-50 rounded-md border border-red-200">
-                    No templates available. Create templates in System Settings → Quote Templates.
-                  </p>}
+                <div className="space-y-2">
+                  <label htmlFor="templateId" className="text-sm font-semibold text-gray-800">
+                    Quote Template <span className="text-red-500">*</span>
+                  </label>
+                  <select 
+                    value={selectedTemplateId} 
+                    onChange={(e) => setSelectedTemplateId(e.target.value)} 
+                    required 
+                    className="w-full border rounded-md px-3 py-2 border-gray-300 bg-white focus:border-blue-500 transition-colors"
+                  >
+                    <option value="">Select a quote template</option>
+                    {templates.map((template) => (
+                      <option key={template.id} value={template.id}>
+                        {template.name}{template.is_default ? " (Default)" : ""}
+                      </option>
+                    ))}
+                  </select>
+                  {templates.length === 0 && (
+                    <p className="text-sm text-red-500 mt-2 p-3 bg-red-50 rounded-md border border-red-200">
+                      No quote templates found. Please create a template in System Settings → Quote Templates first.
+                    </p>
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <label htmlFor="term" className="text-sm font-semibold text-gray-800">Initial Term</label>
+                  <select 
+                    value={term} 
+                    onChange={(e) => handleTermChange(e.target.value)} 
+                    className="w-full border rounded-md px-3 py-2 border-gray-300 bg-white focus:border-blue-500 transition-colors"
+                  >
+                    <option value="">Select initial term</option>
+                    <option value="Month to Month">Month to Month</option>
+                    <option value="12 Months">12 Months</option>
+                    <option value="24 Months">24 Months</option>
+                    <option value="36 Months">36 Months</option>
+                  </select>
+                </div>
               </CardContent>
             </Card>
-
-            <Separator />
-
-            <div className="flex justify-end space-x-3 pt-4">
-              <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={isSubmitting} className="px-6">
+            
+            <Separator className="bg-gray-200" />
+            
+            <div className="flex justify-end space-x-3 pt-3">
+              <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={isSubmitting} className="px-6 border-gray-300 text-gray-700 hover:bg-gray-100">
                 Cancel
               </Button>
               <Button type="submit" className="bg-blue-600 hover:bg-blue-700 px-6" disabled={!isFormValid || isSubmitting}>
-                {isSubmitting ? <>
+                {isSubmitting ? (
+                  <>
                     <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                    Updating...
-                  </> : "Update Quote"}
+                    Updating Quote...
+                  </>
+                ) : (
+                  "Update Quote"
+                )}
               </Button>
             </div>
           </form>
