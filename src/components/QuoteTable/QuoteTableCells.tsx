@@ -32,6 +32,16 @@ const formatDate = (dateString?: string): string => {
   }
 };
 
+const getInitials = (fullName: string): string => {
+  if (!fullName || fullName.trim() === '') return '';
+  
+  return fullName
+    .split(' ')
+    .map(name => name.charAt(0).toUpperCase())
+    .join('')
+    .slice(0, 3); // Limit to 3 initials max
+};
+
 export const QuoteTableCells = ({
   quote,
   clientInfo,
@@ -68,7 +78,7 @@ export const QuoteTableCells = ({
       <TableCell className="font-medium">
         <div className="flex items-center">
           <span className="text-sm font-semibold text-gray-700" title={salespersonName}>
-            {salespersonName || 'Unknown User'}
+            {getInitials(salespersonName) || 'UN'}
           </span>
         </div>
       </TableCell>
