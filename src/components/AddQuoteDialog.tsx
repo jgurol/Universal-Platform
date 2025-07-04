@@ -234,15 +234,15 @@ export const AddQuoteDialog = ({
           <form onSubmit={handleSubmit} className="space-y-8">
             {/* Quote Header Information */}
             <Card className="border-gray-200">
-              <CardHeader className="pb-4">
+              <CardHeader className="pb-3">
                 <CardTitle className="flex items-center gap-2 text-lg text-gray-900">
                   <Calendar className="h-5 w-5 text-blue-600" />
                   Quote Information
                 </CardTitle>
               </CardHeader>
-              <CardContent className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <div className="space-y-6">
-                  <div className="space-y-3">
+              <CardContent className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                <div className="space-y-4">
+                  <div className="space-y-2">
                     <Label htmlFor="description" className="text-sm font-semibold text-gray-800">Quote Name</Label>
                     <Input id="description" value={formState.description} onChange={e => {
                     console.log('[AddQuoteDialog] Description changed to:', e.target.value);
@@ -250,38 +250,38 @@ export const AddQuoteDialog = ({
                   }} placeholder="Enter quote name (optional - will auto-generate if empty)" disabled={dialogData.isDataLoading} className="border-gray-300 bg-white focus:border-blue-500 transition-colors" />
                   </div>
 
-                  <div className="space-y-3">
+                  <div className="space-y-2">
                     <Label htmlFor="notes" className="text-sm font-semibold text-gray-800">Notes</Label>
-                    <Textarea id="notes" value={formState.notes} onChange={e => formState.setNotes(e.target.value)} placeholder="Additional notes about the quote" rows={4} disabled={dialogData.isDataLoading} className="border-gray-300 bg-white focus:border-blue-500 transition-colors resize-none" />
+                    <Textarea id="notes" value={formState.notes} onChange={e => formState.setNotes(e.target.value)} placeholder="Additional notes about the quote" rows={3} disabled={dialogData.isDataLoading} className="border-gray-300 bg-white focus:border-blue-500 transition-colors resize-none" />
                   </div>
                 </div>
 
-                <div className="space-y-6">
-                  <div className="space-y-3">
+                <div className="space-y-4">
+                  <div className="space-y-2">
                     <Label htmlFor="quoteNumber" className="text-sm font-semibold text-gray-800">Quote Number</Label>
                     <Input id="quoteNumber" value={quoteNumber} onChange={e => setQuoteNumber(e.target.value)} placeholder="Auto-generated" disabled className="border-gray-300 bg-gray-100 text-gray-600" />
                   </div>
 
-                  <div className="space-y-3">
+                  <div className="space-y-2">
                     <Label htmlFor="date" className="text-sm font-semibold text-gray-800">
                       Quote Date <span className="text-red-500">*</span>
                     </Label>
                     <Input id="date" type="date" value={formState.date} onChange={e => formState.setDate(e.target.value)} required className="border-gray-300 bg-white focus:border-blue-500 transition-colors" />
                   </div>
 
-                  <div className="space-y-3">
+                  <div className="space-y-2">
                     <Label htmlFor="expiresAt" className="text-sm font-semibold text-gray-800">Expiration Date</Label>
                     <Input id="expiresAt" type="date" value={formState.expiresAt} onChange={e => formState.setExpiresAt(e.target.value)} className="border-gray-300 bg-white focus:border-blue-500 transition-colors" />
                     <p className="text-xs text-gray-600">Auto-set to +60 days from quote date</p>
                   </div>
 
                   {/* Associated Salesperson */}
-                  {selectedSalesperson ? <div className="space-y-3">
+                  {selectedSalesperson ? <div className="space-y-2">
                       <Label className="text-sm font-semibold text-gray-800">Associated Salesperson</Label>
                       <div className="border rounded-md px-3 py-2 bg-gray-50 text-gray-700 border-gray-300">
                         {selectedSalesperson.name} {selectedSalesperson.companyName && `(${selectedSalesperson.companyName})`}
                       </div>
-                    </div> : <div className="space-y-3">
+                    </div> : <div className="space-y-2">
                       <Label className="text-sm font-semibold text-gray-800">Associated Salesperson</Label>
                       <div className="border rounded-md px-3 py-2 bg-gray-50 text-gray-700 border-gray-300">
                         {dialogData.currentUserName || 'Loading...'}
@@ -293,13 +293,13 @@ export const AddQuoteDialog = ({
 
             {/* Client Information */}
             <Card className="border-gray-200">
-              <CardHeader className="pb-4">
+              <CardHeader className="pb-3">
                 <CardTitle className="flex items-center gap-2 text-lg text-gray-900">
                   <Building2 className="h-5 w-5 text-green-600" />
                   Client Info
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-6">
+              <CardContent className="space-y-4">
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                   <div className="space-y-3">
                     <Label htmlFor="clientInfo" className="text-sm font-semibold text-gray-800">
