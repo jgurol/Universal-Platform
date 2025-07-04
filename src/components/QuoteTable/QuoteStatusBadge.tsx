@@ -238,50 +238,40 @@ export const QuoteStatusBadge = ({ quoteId, status, onStatusUpdate }: QuoteStatu
 
   const badgeClass = statusColors[status as keyof typeof statusColors] || 'bg-gray-50 text-gray-700 border-gray-200';
 
-  if (isAdmin) {
-    return (
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button variant="ghost" className="h-auto p-0 hover:bg-transparent">
-            <Badge 
-              variant="outline" 
-              className={`text-xs cursor-pointer hover:opacity-80 flex items-center gap-1 ${badgeClass}`}
-            >
-              {status.charAt(0).toUpperCase() + status.slice(1)}
-              <ChevronDown className="w-3 h-3" />
-            </Badge>
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className="bg-white border shadow-md">
-          <DropdownMenuItem 
-            onClick={() => handleStatusChange('pending')}
-            className="cursor-pointer hover:bg-gray-50"
-          >
-            Pending
-          </DropdownMenuItem>
-          <DropdownMenuItem 
-            onClick={() => handleStatusChange('approved')}
-            className="cursor-pointer hover:bg-gray-50"
-          >
-            Approved
-          </DropdownMenuItem>
-          <DropdownMenuItem 
-            onClick={() => handleStatusChange('rejected')}
-            className="cursor-pointer hover:bg-gray-50"
-          >
-            Rejected
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
-    );
-  }
-
+  // Allow all authenticated users to change status
   return (
-    <Badge 
-      variant="outline" 
-      className={`text-xs ${badgeClass}`}
-    >
-      {status.charAt(0).toUpperCase() + status.slice(1)}
-    </Badge>
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button variant="ghost" className="h-auto p-0 hover:bg-transparent">
+          <Badge 
+            variant="outline" 
+            className={`text-xs cursor-pointer hover:opacity-80 flex items-center gap-1 ${badgeClass}`}
+          >
+            {status.charAt(0).toUpperCase() + status.slice(1)}
+            <ChevronDown className="w-3 h-3" />
+          </Badge>
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="bg-white border shadow-md z-50">
+        <DropdownMenuItem 
+          onClick={() => handleStatusChange('pending')}
+          className="cursor-pointer hover:bg-gray-50"
+        >
+          Pending
+        </DropdownMenuItem>
+        <DropdownMenuItem 
+          onClick={() => handleStatusChange('approved')}
+          className="cursor-pointer hover:bg-gray-50"
+        >
+          Approved
+        </DropdownMenuItem>
+        <DropdownMenuItem 
+          onClick={() => handleStatusChange('rejected')}
+          className="cursor-pointer hover:bg-gray-50"
+        >
+          Rejected
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 };
