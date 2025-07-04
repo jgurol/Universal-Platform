@@ -28,6 +28,16 @@ export const QuoteTableHeader = ({ sortField, sortDirection, onSort }: QuoteTabl
       <TableHead>
         <Button
           variant="ghost"
+          onClick={() => onSort('createdDate')}
+          className="h-auto p-0 font-medium text-left justify-start"
+        >
+          Date
+          {getSortIcon('createdDate')}
+        </Button>
+      </TableHead>
+      <TableHead>
+        <Button
+          variant="ghost"
           onClick={() => onSort('quoteNumber')}
           className="h-auto p-0 font-medium text-left justify-start"
         >
@@ -46,16 +56,6 @@ export const QuoteTableHeader = ({ sortField, sortDirection, onSort }: QuoteTabl
         </Button>
       </TableHead>
       <TableHead>Description</TableHead>
-      <TableHead>
-        <Button
-          variant="ghost"
-          onClick={() => onSort('createdDate')}
-          className="h-auto p-0 font-medium text-left justify-start"
-        >
-          Date
-          {getSortIcon('createdDate')}
-        </Button>
-      </TableHead>
       <TableHead>NRC</TableHead>
       <TableHead>MRC</TableHead>
       <TableHead>

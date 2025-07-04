@@ -84,6 +84,11 @@ export const QuoteTableCells = ({
         </div>
       </TableCell>
       <TableCell>
+        <div className="text-sm text-gray-600">
+          {quote.updated_at ? formatDate(quote.updated_at) : (quote.created_at ? formatDate(quote.created_at) : 'N/A')}
+        </div>
+      </TableCell>
+      <TableCell>
         <div className="font-mono text-sm">
           {quote.quoteNumber || `Q-${quote.id.slice(0, 8)}`}
         </div>
@@ -94,11 +99,6 @@ export const QuoteTableCells = ({
       <TableCell>
         <div className="max-w-xs truncate" title={quote.description}>
           {quote.description || 'Untitled Quote'}
-        </div>
-      </TableCell>
-      <TableCell>
-        <div className="text-sm text-gray-600">
-          {quote.updated_at ? formatDate(quote.updated_at) : (quote.created_at ? formatDate(quote.created_at) : 'N/A')}
         </div>
       </TableCell>
       <TableCell className="text-right font-mono">
