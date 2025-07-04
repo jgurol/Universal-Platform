@@ -52,7 +52,7 @@ export const QuoteTableHeader = ({ sortField, sortDirection, onSort }: QuoteTabl
           onClick={() => onSort('createdDate')}
           className="h-auto p-0 font-medium text-left justify-start"
         >
-          Created Date
+          Date
           {getSortIcon('createdDate')}
         </Button>
       </TableHead>
