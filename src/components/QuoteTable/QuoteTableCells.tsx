@@ -97,7 +97,7 @@ export const QuoteTableCells = ({
       </TableCell>
       <TableCell>
         <div className="text-sm text-gray-600">
-          {quote.created_at ? formatDate(quote.created_at) : 'N/A'}
+          {quote.updated_at ? formatDate(quote.updated_at) : 'N/A'}
         </div>
       </TableCell>
       <TableCell className="text-right font-mono">
