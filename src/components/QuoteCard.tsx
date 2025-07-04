@@ -193,6 +193,12 @@ export const QuoteCard = ({
           
           <div className="text-xs text-gray-500 mt-1 flex flex-wrap gap-2">
             <span>Date: {formatDateForDisplay(quote.date)}</span>
+            {quote.created_at && (
+              <span className="flex items-center gap-1">
+                <Calendar className="w-3 h-3" />
+                Created: {formatDateForDisplay(quote.created_at)}
+              </span>
+            )}
             {quote.expiresAt && (
               <span className="flex items-center gap-1">
                 <Calendar className="w-3 h-3" />
