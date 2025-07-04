@@ -60,6 +60,8 @@ export const mapQuoteData = async (
     acceptedAt: acceptedAt, // Get from quote_acceptances table
     acceptedBy: quoteData.accepted_by,
     archived: quoteData.archived || false,
+    created_at: quoteData.created_at, // Preserve created_at
+    updated_at: quoteData.updated_at, // Preserve updated_at
     user_profile: quoteData.user_profile // Preserve the attached user profile data
   };
   
