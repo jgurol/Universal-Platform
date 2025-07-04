@@ -249,36 +249,38 @@ export const AddQuoteDialog = ({
                 }} placeholder="Enter quote name (optional - will auto-generate if empty)" disabled={dialogData.isDataLoading} className="border-gray-300 bg-white focus:border-blue-500 transition-colors" />
                 </div>
 
-                <div className="space-y-3">
-                  <Label htmlFor="quoteNumber" className="text-sm font-semibold text-gray-800">Quote Number</Label>
-                  <Input id="quoteNumber" value={quoteNumber} onChange={e => setQuoteNumber(e.target.value)} placeholder="Auto-generated" disabled className="border-gray-300 bg-gray-100 text-gray-600" />
-                </div>
+                <div className="space-y-6">
+                  <div className="space-y-3">
+                    <Label htmlFor="quoteNumber" className="text-sm font-semibold text-gray-800">Quote Number</Label>
+                    <Input id="quoteNumber" value={quoteNumber} onChange={e => setQuoteNumber(e.target.value)} placeholder="Auto-generated" disabled className="border-gray-300 bg-gray-100 text-gray-600" />
+                  </div>
 
-                <div className="space-y-3">
-                  <Label htmlFor="date" className="text-sm font-semibold text-gray-800">
-                    Quote Date <span className="text-red-500">*</span>
-                  </Label>
-                  <Input id="date" type="date" value={formState.date} onChange={e => formState.setDate(e.target.value)} required className="border-gray-300 bg-white focus:border-blue-500 transition-colors" />
-                </div>
+                  <div className="space-y-3">
+                    <Label htmlFor="date" className="text-sm font-semibold text-gray-800">
+                      Quote Date <span className="text-red-500">*</span>
+                    </Label>
+                    <Input id="date" type="date" value={formState.date} onChange={e => formState.setDate(e.target.value)} required className="border-gray-300 bg-white focus:border-blue-500 transition-colors" />
+                  </div>
 
-                <div className="space-y-3">
-                  <Label htmlFor="expiresAt" className="text-sm font-semibold text-gray-800">Expiration Date</Label>
-                  <Input id="expiresAt" type="date" value={formState.expiresAt} onChange={e => formState.setExpiresAt(e.target.value)} className="border-gray-300 bg-white focus:border-blue-500 transition-colors" />
-                  <p className="text-xs text-gray-600">Auto-set to +60 days from quote date</p>
-                </div>
+                  <div className="space-y-3">
+                    <Label htmlFor="expiresAt" className="text-sm font-semibold text-gray-800">Expiration Date</Label>
+                    <Input id="expiresAt" type="date" value={formState.expiresAt} onChange={e => formState.setExpiresAt(e.target.value)} className="border-gray-300 bg-white focus:border-blue-500 transition-colors" />
+                    <p className="text-xs text-gray-600">Auto-set to +60 days from quote date</p>
+                  </div>
 
-                {/* Associated Salesperson */}
-                {selectedSalesperson ? <div className="space-y-3">
-                    <Label className="text-sm font-semibold text-gray-800">Associated Salesperson</Label>
-                    <div className="border rounded-md px-3 py-2 bg-gray-50 text-gray-700 border-gray-300">
-                      {selectedSalesperson.name} {selectedSalesperson.companyName && `(${selectedSalesperson.companyName})`}
-                    </div>
-                  </div> : <div className="space-y-3">
-                    <Label className="text-sm font-semibold text-gray-800">Associated Salesperson</Label>
-                    <div className="border rounded-md px-3 py-2 bg-gray-50 text-gray-700 border-gray-300">
-                      {dialogData.currentUserName || 'Loading...'}
-                    </div>
-                  </div>}
+                  {/* Associated Salesperson */}
+                  {selectedSalesperson ? <div className="space-y-3">
+                      <Label className="text-sm font-semibold text-gray-800">Associated Salesperson</Label>
+                      <div className="border rounded-md px-3 py-2 bg-gray-50 text-gray-700 border-gray-300">
+                        {selectedSalesperson.name} {selectedSalesperson.companyName && `(${selectedSalesperson.companyName})`}
+                      </div>
+                    </div> : <div className="space-y-3">
+                      <Label className="text-sm font-semibold text-gray-800">Associated Salesperson</Label>
+                      <div className="border rounded-md px-3 py-2 bg-gray-50 text-gray-700 border-gray-300">
+                        {dialogData.currentUserName || 'Loading...'}
+                      </div>
+                    </div>}
+                </div>
               </CardContent>
             </Card>
 
