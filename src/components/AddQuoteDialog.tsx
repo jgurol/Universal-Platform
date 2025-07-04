@@ -15,6 +15,7 @@ import { AddressSelector } from "@/components/AddressSelector";
 import { useToast } from "@/hooks/use-toast";
 import { useAddQuoteForm } from "@/hooks/useAddQuoteForm";
 import { useQuoteDialogData } from "@/hooks/useQuoteDialogData";
+import { supabase } from "@/integrations/supabase/client";
 import { useQuoteNumberGeneration } from "@/hooks/useQuoteNumberGeneration";
 interface AddQuoteDialogProps {
   open: boolean;
@@ -88,6 +89,44 @@ export const AddQuoteDialog = ({
   useEffect(() => {
     formState.setAssociatedDeals(dialogData.associatedDeals);
   }, [dialogData.associatedDeals, formState.setAssociatedDeals]);
+
+  // AI Quote Name Generation
+  const generateQuoteName = async (clientName: string, items: any[]) => {
+    if (!clientName || items.length === 0) return;
+    
+    try {
+      console.log('[AddQuoteDialog] Generating AI quote name for:', clientName, 'with items:', items);
+      const { data, error } = await supabase.functions.invoke('generate-quote-name', {
+        body: { clientName, items }
+      });
+      
+      if (error) {
+        console.error('[AddQuoteDialog] Error generating quote name:', error);
+        return;
+      }
+      
+      if (data?.quoteName && !formState.description) {
+        console.log('[AddQuoteDialog] Setting AI generated quote name:', data.quoteName);
+        formState.setDescription(data.quoteName);
+      }
+    } catch (error) {
+      console.error('[AddQuoteDialog] Error in generateQuoteName:', error);
+    }
+  };
+
+  // Get selected client info for AI generation
+  const selectedClientInfo = formState.clientInfoId && formState.clientInfoId !== "none" ? dialogData.filteredClientInfos.find(info => info.id === formState.clientInfoId) : null;
+
+  // Generate quote name when client or items change
+  useEffect(() => {
+    if (selectedClientInfo && formState.quoteItems.length > 0 && !formState.description) {
+      const debounceTimer = setTimeout(() => {
+        generateQuoteName(selectedClientInfo.company_name, formState.quoteItems);
+      }, 500); // Debounce to avoid too many API calls
+      
+      return () => clearTimeout(debounceTimer);
+    }
+  }, [selectedClientInfo?.company_name, formState.quoteItems, formState.description]);
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (formState.isSubmitting) {
@@ -191,7 +230,6 @@ export const AddQuoteDialog = ({
     }
   };
   const selectedSalesperson = formState.clientId ? clients.find(c => c.id === formState.clientId) : null;
-  const selectedClientInfo = formState.clientInfoId && formState.clientInfoId !== "none" ? dialogData.filteredClientInfos.find(info => info.id === formState.clientInfoId) : null;
 
   // Check if form is valid for submission
   const isFormValid = !!(user && formState.clientInfoId && formState.clientInfoId !== "none" && formState.date && formState.quoteItems.length > 0 && formState.selectedTemplateId && !formState.isSubmitting && !dialogData.isDataLoading);
