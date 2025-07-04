@@ -314,6 +314,11 @@ export const AddQuoteDialog = ({
                         {clientInfos.length === 0 ? "No client companies found in the database. Please add a client company in Deal Registration first." : "No client companies available for your user role. Contact your administrator if this seems incorrect."}
                       </p>}
                   </div>
+
+                  <div className="space-y-3">
+                    <Label htmlFor="notes" className="text-sm font-semibold text-gray-800">Notes</Label>
+                    <Textarea id="notes" value={formState.notes} onChange={e => formState.setNotes(e.target.value)} placeholder="Additional notes about the quote" rows={4} disabled={dialogData.isDataLoading} className="border-gray-300 bg-white focus:border-blue-500 transition-colors resize-none" />
+                  </div>
                 </div>
 
                 {/* Associated Salesperson */}
@@ -343,12 +348,6 @@ export const AddQuoteDialog = ({
                         Deal selected: {dialogData.associatedDeals.find(d => d.id === formState.selectedDealId)?.deal_name}
                       </p>}
                   </div>}
-
-
-                <div className="space-y-3">
-                  <Label htmlFor="notes" className="text-sm font-semibold text-gray-800">Notes</Label>
-                  <Textarea id="notes" value={formState.notes} onChange={e => formState.setNotes(e.target.value)} placeholder="Additional notes about the quote" rows={4} disabled={dialogData.isDataLoading} className="border-gray-300 bg-white focus:border-blue-500 transition-colors resize-none" />
-                </div>
 
                 {/* Address Information */}
                 <div className="space-y-4">
