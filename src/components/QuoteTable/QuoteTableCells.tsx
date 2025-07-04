@@ -85,6 +85,11 @@ export const QuoteTableCells = ({
           {quote.description || 'Untitled Quote'}
         </div>
       </TableCell>
+      <TableCell>
+        <div className="text-sm text-gray-600">
+          {quote.created_at ? formatDate(quote.created_at) : 'N/A'}
+        </div>
+      </TableCell>
       <TableCell className="text-right font-mono">
         ${nrcTotal.toLocaleString()}
       </TableCell>
