@@ -97,7 +97,7 @@ export const QuoteTableCells = ({
         {clientInfo?.company_name || 'N/A'}
       </TableCell>
       <TableCell>
-        <div className="max-w-xs truncate" title={quote.description}>
+        <div className="max-w-xs" title={quote.description}>
           {quote.description || 'Untitled Quote'}
         </div>
       </TableCell>
