@@ -157,8 +157,6 @@ export const EditQuoteForm = ({ quote, clientInfo, onSave, onCancel }: EditQuote
         onCommissionOverrideChange={setCommissionOverride}
         notes={notes}
         onNotesChange={setNotes}
-        term={term}
-        onTermChange={handleTermChange}
       />
 
       <EditQuoteAddressSection
@@ -179,6 +177,8 @@ export const EditQuoteForm = ({ quote, clientInfo, onSave, onCancel }: EditQuote
         selectedTemplateId={selectedTemplateId}
         onTemplateChange={setSelectedTemplateId}
         templates={[]}
+        term={term}
+        onTermChange={handleTermChange}
       />
 
       <div className="flex justify-end space-x-2 pt-4">

@@ -301,21 +301,6 @@ export const AddQuoteDialog = ({
                         {clientInfos.length === 0 ? "No client companies found in the database. Please add a client company in Deal Registration first." : "No client companies available for your user role. Contact your administrator if this seems incorrect."}
                       </p>}
                   </div>
-
-                  <div className="space-y-3">
-                    <Label htmlFor="term" className="text-sm font-semibold text-gray-800">Initial Term</Label>
-                    <Select value={formState.term} onValueChange={formState.setTerm} disabled={dialogData.isDataLoading}>
-                      <SelectTrigger className="border-gray-300 bg-white focus:border-blue-500 transition-colors">
-                        <SelectValue placeholder="Select initial term" />
-                      </SelectTrigger>
-                      <SelectContent className="bg-white border-gray-200 shadow-lg z-50">
-                        <SelectItem value="Month to Month" className="hover:bg-gray-100">Month to Month</SelectItem>
-                        <SelectItem value="12 Months" className="hover:bg-gray-100">12 Months</SelectItem>
-                        <SelectItem value="24 Months" className="hover:bg-gray-100">24 Months</SelectItem>
-                        <SelectItem value="36 Months" className="hover:bg-gray-100">36 Months</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
                 </div>
 
                 {/* Associated Salesperson */}
@@ -428,8 +413,23 @@ export const AddQuoteDialog = ({
                   {!dialogData.isDataLoading && dialogData.templates.length === 0 && <p className="text-sm text-red-500 mt-2 p-3 bg-red-50 rounded-md border border-red-200">
                       No quote templates found. Please create a template in System Settings → Quote Templates first.
                     </p>}
-                </div>
-              </CardContent>
+                 </div>
+
+                 <div className="space-y-3">
+                   <Label htmlFor="term" className="text-sm font-semibold text-gray-800">Initial Term</Label>
+                   <Select value={formState.term} onValueChange={formState.setTerm} disabled={dialogData.isDataLoading}>
+                     <SelectTrigger className="border-gray-300 bg-white focus:border-blue-500 transition-colors">
+                       <SelectValue placeholder="Select initial term" />
+                     </SelectTrigger>
+                     <SelectContent className="bg-white border-gray-200 shadow-lg z-50">
+                       <SelectItem value="Month to Month" className="hover:bg-gray-100">Month to Month</SelectItem>
+                       <SelectItem value="12 Months" className="hover:bg-gray-100">12 Months</SelectItem>
+                       <SelectItem value="24 Months" className="hover:bg-gray-100">24 Months</SelectItem>
+                       <SelectItem value="36 Months" className="hover:bg-gray-100">36 Months</SelectItem>
+                     </SelectContent>
+                   </Select>
+                 </div>
+               </CardContent>
             </Card>
             
             <Separator className="bg-gray-200" />

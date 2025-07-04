@@ -427,7 +427,7 @@ export const EditQuoteDialog = ({
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <EditQuoteFormFields description={description} onDescriptionChange={setDescription} clientInfoId={clientInfoId} onClientInfoIdChange={setClientInfoId} clientInfos={clientInfos} status={status} onStatusChange={setStatus} commissionOverride={commissionOverride} onCommissionOverrideChange={setCommissionOverride} notes={notes} onNotesChange={setNotes} term={term} onTermChange={handleTermChange} />
+                <EditQuoteFormFields description={description} onDescriptionChange={setDescription} clientInfoId={clientInfoId} onClientInfoIdChange={setClientInfoId} clientInfos={clientInfos} status={status} onStatusChange={setStatus} commissionOverride={commissionOverride} onCommissionOverrideChange={setCommissionOverride} notes={notes} onNotesChange={setNotes} />
               </CardContent>
             </Card>
 
@@ -463,7 +463,7 @@ export const EditQuoteDialog = ({
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <EditQuoteTemplateSection selectedTemplateId={selectedTemplateId} onTemplateChange={setSelectedTemplateId} templates={templates} />
+                <EditQuoteTemplateSection selectedTemplateId={selectedTemplateId} onTemplateChange={setSelectedTemplateId} templates={templates} term={term} onTermChange={handleTermChange} />
                 {templates.length === 0 && <p className="text-sm text-red-500 mt-2 p-3 bg-red-50 rounded-md border border-red-200">
                     No templates available. Create templates in System Settings → Quote Templates.
                   </p>}

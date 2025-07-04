@@ -17,8 +17,6 @@ interface EditQuoteFormFieldsProps {
   onCommissionOverrideChange: (value: string) => void;
   notes: string;
   onNotesChange: (value: string) => void;
-  term?: string;
-  onTermChange?: (value: string) => void;
 }
 
 export const EditQuoteFormFields = ({
@@ -32,28 +30,8 @@ export const EditQuoteFormFields = ({
   commissionOverride,
   onCommissionOverrideChange,
   notes,
-  onNotesChange,
-  term,
-  onTermChange
+  onNotesChange
 }: EditQuoteFormFieldsProps) => {
-  console.log('[EditQuoteFormFields] Rendering with term:', {
-    term,
-    termType: typeof term,
-    termLength: term?.length,
-    termTruthy: !!term,
-    termValue: JSON.stringify(term)
-  });
-  
-  const handleTermChange = (value: string) => {
-    console.log('[EditQuoteFormFields] Term change triggered:', {
-      newValue: value,
-      oldTerm: term,
-      onTermChangeExists: !!onTermChange
-    });
-    if (onTermChange) {
-      onTermChange(value);
-    }
-  };
   
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -113,21 +91,7 @@ export const EditQuoteFormFields = ({
         />
       </div>
 
-      <div className="md:col-span-2 space-y-3">
-        <Label htmlFor="term" className="text-sm font-semibold text-gray-800">Initial Term</Label>
-        <Select value={term || undefined} onValueChange={handleTermChange}>
-          <SelectTrigger className="border-gray-300 bg-gray-50 focus:bg-white focus:border-blue-500 transition-colors">
-            <SelectValue placeholder="Select initial term" />
-          </SelectTrigger>
-          <SelectContent className="bg-white border-gray-200 shadow-lg">
-            <SelectItem value="Month to Month" className="hover:bg-gray-100">Month to Month</SelectItem>
-            <SelectItem value="12 Months" className="hover:bg-gray-100">12 Months</SelectItem>
-            <SelectItem value="24 Months" className="hover:bg-gray-100">24 Months</SelectItem>
-            <SelectItem value="36 Months" className="hover:bg-gray-100">36 Months</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
-
+      {/* Notes section moved to full width */}
       <div className="md:col-span-2 space-y-3">
         <Label htmlFor="notes" className="text-sm font-semibold text-gray-800">Notes</Label>
         <Textarea
