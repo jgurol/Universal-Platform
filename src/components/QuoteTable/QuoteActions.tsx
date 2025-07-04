@@ -68,9 +68,9 @@ export const QuoteActions = ({
       const pdfBlob = pdf.output('blob');
       const pdfUrl = URL.createObjectURL(pdfBlob);
       
-      // Replace popup content with PDF
+      // Replace popup content with PDF (disable sidebar/thumbnails)
       if (popup && !popup.closed) {
-        popup.location.href = pdfUrl;
+        popup.location.href = pdfUrl + '#toolbar=0&navpanes=0&scrollbar=0';
       }
       
       toast({
