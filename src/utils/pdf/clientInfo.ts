@@ -32,7 +32,11 @@ export const addClientInfo = (doc: jsPDF, context: PDFGenerationContext): number
   doc.setFont('helvetica', 'bold');
   doc.setTextColor(0, 0, 0);
   doc.text('Billing Information', billingCol, yPos);
-  doc.text('Service Address', serviceCol, yPos);
+  
+  // Resolve service address to determine the right column label
+  const resolvedServiceAddress = resolveServiceAddress(context, resolveBillingAddress(context));
+  const rightColumnLabel = resolvedServiceAddress && resolvedServiceAddress.trim() !== '' ? 'Shipping Address' : 'Service Address';
+  doc.text(rightColumnLabel, serviceCol, yPos);
   
   // Underlines
   doc.setDrawColor(200, 200, 200);
