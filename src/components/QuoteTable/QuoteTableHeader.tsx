@@ -24,7 +24,7 @@ export const QuoteTableHeader = ({ sortField, sortDirection, onSort }: QuoteTabl
 
   return (
     <>
-      <TableHead>Salesperson</TableHead>
+      <TableHead>Owner</TableHead>
       <TableHead>
         <Button
           variant="ghost"
