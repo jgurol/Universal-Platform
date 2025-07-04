@@ -46,7 +46,7 @@ const QuotingSystem = () => {
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
       <NavigationBar />
       <QuickNavigation />
-      <div className="container mx-auto px-4 py-8 max-w-7xl">
+      <div className="container mx-auto px-4 py-8 max-w-full">
         {/* Page Title */}
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">Quoting System</h1>
