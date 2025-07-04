@@ -156,7 +156,7 @@ export const CircuitQuoteCardHeader = ({
                   <img 
                     src="/lovable-uploads/f119a7dc-7b67-446d-ab32-0da508a6de5b.png" 
                     alt="Router Required" 
-                    className="w-8 h-8 object-contain"
+                    className="w-10 h-10 object-contain"
                     title="Router Required"
                   />
                 </Badge>
