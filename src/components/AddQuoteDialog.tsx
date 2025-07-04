@@ -241,12 +241,19 @@ export const AddQuoteDialog = ({
                 </CardTitle>
               </CardHeader>
               <CardContent className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <div className="space-y-3">
-                  <Label htmlFor="description" className="text-sm font-semibold text-gray-800">Quote Name</Label>
-                  <Input id="description" value={formState.description} onChange={e => {
-                  console.log('[AddQuoteDialog] Description changed to:', e.target.value);
-                  formState.setDescription(e.target.value);
-                }} placeholder="Enter quote name (optional - will auto-generate if empty)" disabled={dialogData.isDataLoading} className="border-gray-300 bg-white focus:border-blue-500 transition-colors" />
+                <div className="space-y-6">
+                  <div className="space-y-3">
+                    <Label htmlFor="description" className="text-sm font-semibold text-gray-800">Quote Name</Label>
+                    <Input id="description" value={formState.description} onChange={e => {
+                    console.log('[AddQuoteDialog] Description changed to:', e.target.value);
+                    formState.setDescription(e.target.value);
+                  }} placeholder="Enter quote name (optional - will auto-generate if empty)" disabled={dialogData.isDataLoading} className="border-gray-300 bg-white focus:border-blue-500 transition-colors" />
+                  </div>
+
+                  <div className="space-y-3">
+                    <Label htmlFor="notes" className="text-sm font-semibold text-gray-800">Notes</Label>
+                    <Textarea id="notes" value={formState.notes} onChange={e => formState.setNotes(e.target.value)} placeholder="Additional notes about the quote" rows={4} disabled={dialogData.isDataLoading} className="border-gray-300 bg-white focus:border-blue-500 transition-colors resize-none" />
+                  </div>
                 </div>
 
                 <div className="space-y-6">
@@ -317,10 +324,6 @@ export const AddQuoteDialog = ({
                       </p>}
                   </div>
 
-                  <div className="space-y-3">
-                    <Label htmlFor="notes" className="text-sm font-semibold text-gray-800">Notes</Label>
-                    <Textarea id="notes" value={formState.notes} onChange={e => formState.setNotes(e.target.value)} placeholder="Additional notes about the quote" rows={4} disabled={dialogData.isDataLoading} className="border-gray-300 bg-white focus:border-blue-500 transition-colors resize-none" />
-                  </div>
                 </div>
 
                 {/* Associated Salesperson */}
