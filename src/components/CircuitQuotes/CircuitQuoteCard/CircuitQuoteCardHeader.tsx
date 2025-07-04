@@ -154,9 +154,9 @@ export const CircuitQuoteCardHeader = ({
               {quote.mikrotik_required && (
                 <Badge variant="outline" className="text-orange-600 border-orange-200 p-1">
                   <img 
-                    src="/lovable-uploads/db031d96-f323-4cd4-81be-e4259c262272.png" 
+                    src="/lovable-uploads/f119a7dc-7b67-446d-ab32-0da508a6de5b.png" 
                     alt="Router Required" 
-                    className="w-15 h-15 object-contain"
+                    className="w-6 h-6 object-contain"
                     title="Router Required"
                   />
                 </Badge>
