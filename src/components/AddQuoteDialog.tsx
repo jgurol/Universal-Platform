@@ -287,7 +287,7 @@ export const AddQuoteDialog = ({
               <CardHeader className="pb-4">
                 <CardTitle className="flex items-center gap-2 text-lg text-gray-900">
                   <Building2 className="h-5 w-5 text-green-600" />
-                  Client & Details
+                  Client Info
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-6">
