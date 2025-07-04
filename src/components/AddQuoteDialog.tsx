@@ -92,7 +92,10 @@ export const AddQuoteDialog = ({
 
   // AI Quote Name Generation
   const generateQuoteName = async (clientName: string, items: any[]) => {
-    if (!clientName || items.length === 0) return;
+    if (!clientName || items.length === 0) {
+      console.log('[AddQuoteDialog] Skipping AI generation - missing client or items:', { clientName, itemsCount: items.length });
+      return;
+    }
     
     try {
       console.log('[AddQuoteDialog] Generating AI quote name for:', clientName, 'with items:', items);
@@ -105,7 +108,7 @@ export const AddQuoteDialog = ({
         return;
       }
       
-      if (data?.quoteName && !formState.description) {
+      if (data?.quoteName) {
         console.log('[AddQuoteDialog] Setting AI generated quote name:', data.quoteName);
         formState.setDescription(data.quoteName);
       }
@@ -119,14 +122,33 @@ export const AddQuoteDialog = ({
 
   // Generate quote name when client or items change
   useEffect(() => {
-    if (selectedClientInfo && formState.quoteItems.length > 0 && !formState.description) {
+    if (selectedClientInfo && formState.quoteItems.length > 0) {
+      console.log('[AddQuoteDialog] Triggering AI quote name generation for:', selectedClientInfo.company_name, 'with', formState.quoteItems.length, 'items');
       const debounceTimer = setTimeout(() => {
         generateQuoteName(selectedClientInfo.company_name, formState.quoteItems);
-      }, 500); // Debounce to avoid too many API calls
+      }, 800); // Debounce to avoid too many API calls
+      
+      return () => clearTimeout(debounceTimer);
+    } else {
+      console.log('[AddQuoteDialog] Not generating quote name:', { 
+        hasClient: !!selectedClientInfo, 
+        clientName: selectedClientInfo?.company_name,
+        itemsCount: formState.quoteItems.length 
+      });
+    }
+  }, [selectedClientInfo?.company_name, formState.quoteItems.length, JSON.stringify(formState.quoteItems.map(item => ({ name: item.name, quantity: item.quantity })))]);
+
+  // Also trigger when switching clients to regenerate for new client
+  useEffect(() => {
+    if (selectedClientInfo && formState.quoteItems.length > 0 && formState.description) {
+      console.log('[AddQuoteDialog] Client changed, regenerating quote name');
+      const debounceTimer = setTimeout(() => {
+        generateQuoteName(selectedClientInfo.company_name, formState.quoteItems);
+      }, 500);
       
       return () => clearTimeout(debounceTimer);
     }
-  }, [selectedClientInfo?.company_name, formState.quoteItems, formState.description]);
+  }, [selectedClientInfo?.id]);
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (formState.isSubmitting) {
