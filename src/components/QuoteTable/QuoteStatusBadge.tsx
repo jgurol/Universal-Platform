@@ -161,7 +161,7 @@ export const QuoteStatusBadge = ({ quoteId, status, onStatusUpdate }: QuoteStatu
           });
         }
 
-      } else if (newStatus === 'rejected') {
+      } else if (newStatus === 'lost') {
         // For rejection, just update the status
         const { error } = await supabase
           .from('quotes')
@@ -233,7 +233,7 @@ export const QuoteStatusBadge = ({ quoteId, status, onStatusUpdate }: QuoteStatu
   const statusColors = {
     approved: 'bg-green-50 text-green-700 border-green-200',
     pending: 'bg-yellow-50 text-yellow-700 border-yellow-200',
-    rejected: 'bg-red-50 text-red-700 border-red-200'
+    lost: 'bg-red-50 text-red-700 border-red-200'
   };
 
   const badgeClass = statusColors[status as keyof typeof statusColors] || 'bg-gray-50 text-gray-700 border-gray-200';
@@ -266,10 +266,10 @@ export const QuoteStatusBadge = ({ quoteId, status, onStatusUpdate }: QuoteStatu
           Approved
         </DropdownMenuItem>
         <DropdownMenuItem 
-          onClick={() => handleStatusChange('rejected')}
+          onClick={() => handleStatusChange('lost')}
           className="cursor-pointer hover:bg-gray-50"
         >
-          Rejected
+          Lost
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
