@@ -55,23 +55,7 @@ export const addClientInfo = (doc: jsPDF, context: PDFGenerationContext): number
   // Render sections
   renderBillingInfo(doc, context, yPos, billingAddress, billingCol);
   renderServiceAddress(doc, context, yPos, serviceAddress, serviceCol);
-  
-  // Add quote date and created date below addresses
-  yPos += 25; // Move down from address sections
-  doc.setFontSize(9);
-  doc.setFont('helvetica', 'normal');
-  doc.setTextColor(0, 0, 0);
-  
-  // Add quote date on left column
-  doc.text(`Quote Date: ${quote.date}`, billingCol, yPos);
-  
-  // Add created date on right column if available
-  if (quote.createdAt) {
-    const createdDate = new Date(quote.createdAt).toLocaleDateString();
-    doc.text(`Created: ${createdDate}`, serviceCol, yPos);
-  }
-  
-  renderContactInfo(doc, context, yPos + 8, billingCol, serviceCol);
+  renderContactInfo(doc, context, yPos, billingCol, serviceCol);
   
   console.log('PDF clientInfo.ts - Completed addClientInfo, returning Y position:', 125);
   return 125; // Reduced from 145 to just 2 lines separation
