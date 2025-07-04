@@ -326,26 +326,30 @@ export const DealRegistrationCard = ({ clientInfos, agentMapping }: DealRegistra
                     </div>
                   </div>
                   
-                  {/* Line 2: Description and Agent Company */}
-                  <div className="flex items-center justify-between text-sm text-gray-600">
-                    <div className="flex items-center gap-4 flex-1 min-w-0">
-                      {deal.expected_close_date && (
-                        <div className="flex items-center gap-1">
-                          <Calendar className="w-3 h-3" />
-                          <span>Close: {new Date(deal.expected_close_date).toLocaleDateString()}</span>
-                        </div>
-                      )}
-                    </div>
-                    
-                    <div className="flex items-center gap-4 flex-shrink-0">
-                      {deal.agent_id && agentMapping[deal.agent_id] && (
-                        <div className="flex items-center gap-1">
-                          <User className="w-3 h-3" />
-                          <span className="truncate max-w-32">{agentMapping[deal.agent_id]}</span>
-                        </div>
-                      )}
-                    </div>
-                  </div>
+                   {/* Line 2: Description and Agent Company */}
+                   <div className="flex items-center justify-between text-sm text-gray-600">
+                     <div className="flex items-center gap-4 flex-1 min-w-0">
+                       <div className="flex items-center gap-1">
+                         <Calendar className="w-3 h-3" />
+                         <span>Created: {new Date(deal.created_at).toLocaleDateString('en-US', { month: '2-digit', day: '2-digit', year: '2-digit' })}</span>
+                       </div>
+                       {deal.expected_close_date && (
+                         <div className="flex items-center gap-1">
+                           <Target className="w-3 h-3" />
+                           <span>Close: {new Date(deal.expected_close_date).toLocaleDateString('en-US', { month: '2-digit', day: '2-digit', year: '2-digit' })}</span>
+                         </div>
+                       )}
+                     </div>
+                     
+                     <div className="flex items-center gap-4 flex-shrink-0">
+                       {deal.agent_id && agentMapping[deal.agent_id] && (
+                         <div className="flex items-center gap-1">
+                           <User className="w-3 h-3" />
+                           <span className="truncate max-w-32">{agentMapping[deal.agent_id]}</span>
+                         </div>
+                       )}
+                     </div>
+                   </div>
                 </div>
               ))
             )}
