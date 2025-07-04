@@ -43,11 +43,12 @@ export const QuoteActions = ({
       const pdf = await generateQuotePDF(quote, clientInfo, salespersonName);
       const pdfBlob = pdf.output('blob');
       const pdfUrl = URL.createObjectURL(pdfBlob);
-      window.open(pdfUrl, '_blank');
+      // Open PDF in popup window
+      window.open(pdfUrl, 'PDFPreview', 'width=800,height=600,scrollbars=yes,resizable=yes');
       
       toast({
         title: "PDF Generated",
-        description: "Quote PDF has been opened in a new tab",
+        description: "Quote PDF has been opened in a popup window",
       });
     } catch (error) {
       console.error('Error generating PDF:', error);
