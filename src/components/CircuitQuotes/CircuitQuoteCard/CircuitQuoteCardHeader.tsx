@@ -99,10 +99,9 @@ export const CircuitQuoteCardHeader = ({
           <div className="flex-1 space-y-2">
             <div className="flex items-center gap-3 flex-wrap">
               <h3 className="text-lg font-semibold text-gray-900">{quote.client_name}</h3>
-              <CircuitQuoteStatusSelect
-                value={quote.status}
-                onValueChange={onStatusChange}
-              />
+              <Badge className={statusColors[quote.status]}>
+                {statusLabels[quote.status]}
+              </Badge>
               {quote.deal_registration_id && (
                 <Button
                   size="sm"
@@ -223,6 +222,10 @@ export const CircuitQuoteCardHeader = ({
                 <Trash2 className="h-4 w-4" />
               </Button>
               
+              <CircuitQuoteStatusSelect
+                value={quote.status}
+                onValueChange={onStatusChange}
+              />
             </>
           )}
         </div>
