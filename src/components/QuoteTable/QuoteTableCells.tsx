@@ -102,10 +102,10 @@ export const QuoteTableCells = ({
         </div>
       </TableCell>
       <TableCell className="text-right font-mono">
-        ${nrcTotal.toLocaleString()}
+        ${nrcTotal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
       </TableCell>
       <TableCell className="text-right font-mono">
-        ${mrcTotal.toLocaleString()}
+        ${mrcTotal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
       </TableCell>
       <TableCell>
         <div className="flex flex-col gap-1">
