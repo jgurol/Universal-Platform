@@ -9,17 +9,40 @@ import { supabase } from "@/integrations/supabase/client";
 interface EmailStatusButtonProps {
   quoteId: string;
   onEmailClick: () => void;
+  emailStatus?: 'idle' | 'success' | 'error';
+  emailOpened?: boolean;
+  emailOpenCount?: number;
+  emailOpenedAt?: string | null;
+  emailSentAt?: string | null;
 }
 
-export const EmailStatusButton = ({ quoteId, onEmailClick }: EmailStatusButtonProps) => {
+export const EmailStatusButton = ({ 
+  quoteId, 
+  onEmailClick,
+  emailStatus: propEmailStatus,
+  emailOpened: propEmailOpened,
+  emailOpenCount: propEmailOpenCount,
+  emailOpenedAt: propEmailOpenedAt,
+  emailSentAt: propEmailSentAt
+}: EmailStatusButtonProps) => {
   const [emailStatus, setEmailStatus] = useState<'idle' | 'success' | 'error'>('idle');
   const [emailOpened, setEmailOpened] = useState(false);
   const [emailOpenCount, setEmailOpenCount] = useState(0);
   const [emailOpenedAt, setEmailOpenedAt] = useState<string | null>(null);
   const [emailSentAt, setEmailSentAt] = useState<string | null>(null);
 
-  // Load email status from database when component mounts
+  // Load email status from database when component mounts, or use props if provided
   useEffect(() => {
+    // If props are provided, use them instead of fetching
+    if (propEmailStatus !== undefined) {
+      setEmailStatus(propEmailStatus);
+      setEmailOpened(propEmailOpened || false);
+      setEmailOpenCount(propEmailOpenCount || 0);
+      setEmailOpenedAt(propEmailOpenedAt || null);
+      setEmailSentAt(propEmailSentAt || null);
+      return;
+    }
+
     const loadEmailStatus = async () => {
       try {
         const { data, error } = await supabase
@@ -43,7 +66,7 @@ export const EmailStatusButton = ({ quoteId, onEmailClick }: EmailStatusButtonPr
     };
 
     loadEmailStatus();
-  }, [quoteId]);
+  }, [quoteId, propEmailStatus, propEmailOpened, propEmailOpenCount, propEmailOpenedAt, propEmailSentAt]);
 
   const getEmailIcon = () => {
     if (emailStatus === 'success') return <Mail className="w-4 h-4 text-green-600" />;

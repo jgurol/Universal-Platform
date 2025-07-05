@@ -135,6 +135,11 @@ export const QuoteActions = ({
         <EmailStatusButton 
           quoteId={quote.id}
           onEmailClick={onEmailClick}
+          emailStatus={quote.emailStatus as 'idle' | 'success' | 'error'}
+          emailOpened={quote.emailOpened}
+          emailOpenCount={quote.emailOpenCount}
+          emailOpenedAt={quote.emailOpenedAt}
+          emailSentAt={quote.emailSentAt}
         />
         
         {onCopyQuote && (
