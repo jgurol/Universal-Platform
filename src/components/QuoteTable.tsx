@@ -20,6 +20,7 @@ interface QuoteTableProps {
   onUpdateQuote?: (quote: Quote) => void;
   onCopyQuote?: (quote: Quote) => void;
   onPermanentlyDeleteQuote?: (quoteId: string) => void;
+  onEmailSent?: () => void;
   showArchived?: boolean;
 }
 
@@ -34,6 +35,7 @@ export const QuoteTable = ({
   onUpdateQuote,
   onCopyQuote,
   onPermanentlyDeleteQuote,
+  onEmailSent,
   showArchived = false
 }: QuoteTableProps) => {
   const [sortField, setSortField] = useState<SortField>('quoteNumber');
@@ -136,6 +138,7 @@ export const QuoteTable = ({
               onUpdateQuote={onUpdateQuote}
               onCopyQuote={onCopyQuote}
               onPermanentlyDeleteQuote={onPermanentlyDeleteQuote}
+              onEmailSent={onEmailSent}
             />
           ))}
         </TableBody>

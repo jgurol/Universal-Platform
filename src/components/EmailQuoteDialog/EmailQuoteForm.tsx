@@ -19,6 +19,7 @@ interface EmailQuoteFormProps {
   onEmailStatusChange: (status: 'idle' | 'success' | 'error') => void;
   onClose: () => void;
   emailStatus: 'idle' | 'success' | 'error';
+  onEmailSent?: () => void;
 }
 
 export const EmailQuoteForm = ({
@@ -27,7 +28,8 @@ export const EmailQuoteForm = ({
   salespersonName,
   onEmailStatusChange,
   onClose,
-  emailStatus
+  emailStatus,
+  onEmailSent
 }: EmailQuoteFormProps) => {
   const [recipientEmail, setRecipientEmail] = useState("");
   const [ccEmails, setCcEmails] = useState("");
@@ -343,6 +345,11 @@ ${quoteOwnerName}`;
               title: "Email sent successfully",
               description: `Quote has been sent to ${totalRecipients} recipient(s)`,
             });
+            
+            // Notify parent component to refresh data
+            if (onEmailSent) {
+              onEmailSent();
+            }
             
             setTimeout(() => {
               onClose();

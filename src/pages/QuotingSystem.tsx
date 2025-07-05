@@ -72,6 +72,7 @@ const QuotingSystem = () => {
               onDeleteQuote={deleteQuote}
               onUnarchiveQuote={unarchiveQuote}
               onPermanentlyDeleteQuote={permanentlyDeleteQuote}
+              onEmailSent={fetchQuotes}
               associatedAgentId={associatedAgentId}
             />
           </TabsContent>

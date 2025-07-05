@@ -11,6 +11,7 @@ interface EmailQuoteDialogProps {
   quote: Quote;
   clientInfo?: ClientInfo;
   salespersonName?: string;
+  onEmailSent?: () => void;
 }
 
 export const EmailQuoteDialog = ({ 
@@ -18,7 +19,8 @@ export const EmailQuoteDialog = ({
   onOpenChange, 
   quote, 
   clientInfo, 
-  salespersonName
+  salespersonName,
+  onEmailSent
 }: EmailQuoteDialogProps) => {
   const [emailStatus, setEmailStatus] = useState<'idle' | 'success' | 'error'>('idle');
 
@@ -52,6 +54,7 @@ export const EmailQuoteDialog = ({
           onEmailStatusChange={setEmailStatus}
           onClose={handleClose}
           emailStatus={emailStatus}
+          onEmailSent={onEmailSent}
         />
       </DialogContent>
     </Dialog>

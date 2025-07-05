@@ -16,6 +16,7 @@ interface QuoteTableRowProps {
   onCopyQuote?: (quote: Quote) => void;
   onUnarchiveQuote?: (quoteId: string) => void;
   onPermanentlyDeleteQuote?: (quoteId: string) => void;
+  onEmailSent?: () => void;
 }
 
 export const QuoteTableRow = ({
@@ -27,7 +28,8 @@ export const QuoteTableRow = ({
   onUpdateQuote,
   onCopyQuote,
   onUnarchiveQuote,
-  onPermanentlyDeleteQuote
+  onPermanentlyDeleteQuote,
+  onEmailSent
 }: QuoteTableRowProps) => {
   const [isEmailDialogOpen, setIsEmailDialogOpen] = useState(false);
   const [quoteOwnerName, setQuoteOwnerName] = useState<string>('Loading...');
@@ -101,6 +103,7 @@ export const QuoteTableRow = ({
         quote={quote}
         clientInfo={clientInfo}
         salespersonName={quoteOwnerName}
+        onEmailSent={onEmailSent}
       />
     </>
   );
